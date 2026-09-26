@@ -77,7 +77,7 @@ extension Illustrations {
         // a baby goes on a table: closer view, the rescuer stands behind it
         let floor = infant ? 244.0 : 266
         s.room(floor: infant ? 300 : floor)
-        let rh = infant ? 400.0 : child ? 210 : 192
+        let rh = infant ? 400.0 : who.age == .toddler ? 260 : child ? 210 : 192
         let ground = infant ? floor + 0.45 * rh : floor
         let c = Casualty(who, adult: rh * 0.95)
 
@@ -120,11 +120,12 @@ extension Illustrations {
             r.right = CGPoint(x: target.x + 9, y: target.y + 4)
         } else if st == 4 {
             // at the head: one hand on the forehead, fingers under the chin
-            r.bow = 0.35
+            // leaning down over the face
+            r.bow = 0.42
             let head = pt.headCentre
-            r.neck = CGPoint(x: head.x + 10, y: floor - (infant ? 0.3 : 0.5) * rh)
-            r.left = pt.headPoint(0.45, -0.9)
-            r.right = pt.headPoint(0.6, 1.15)
+            r.neck = CGPoint(x: head.x + 8, y: floor - (infant ? 0.27 : 0.44) * rh)
+            r.left = infant ? pt.headPoint(-0.2, -1.0) : pt.headPoint(0.45, -0.9)
+            r.right = infant ? pt.front(0.45) : pt.headPoint(0.6, 1.15)
             r.hands = infant ? .open : .twoFingers
         } else if st == 5 {
             r.hands = .open
@@ -181,7 +182,7 @@ extension Illustrations {
             s.phone(infant ? 98 : 118, floor - 26, number: number, t: t)
             s.bubble("Get an AED!", "快去拿 AED！", 150, 62, tip: CGPoint(x: rhead.x - rr * 0.8, y: rhead.y + rr * 0.2))
             if infant || child {
-                s.tag("Alone? 2 min CPR first, then call", "独自一人：先做 2 分钟再呼救", 250, 26, size: 10, color: red, bold: true)
+                s.tag("Alone? 2 min CPR first, then call", "独自一人：先做 2 分钟再呼救", infant ? 180 : 250, infant ? 272 : 26, size: 10, color: red, bold: true)
             }
         case 2, 6:
             if st == 2 {
@@ -216,7 +217,7 @@ extension Illustrations {
             s.chestMap(238, 8, 114, 112, mark: infant || child ? .padsFrontBack : .pads, baby: infant, title: Bilingual("Pads on bare skin", "电极片贴在裸露皮肤上"))
             s.bubble("Stand clear!", "都别碰！", rhead.x - rr - 60, rhead.y - rr, tip: CGPoint(x: rhead.x - rr * 0.8, y: rhead.y + rr * 0.3),
                      color: red, border: red)
-            s.tag("then 30:2 until help takes over", "之后继续 30:2，直到急救人员接手", 110, 30, size: 10, bold: true)
+            s.tag("then 30:2 until help takes over", "之后继续 30:2，直到急救人员接手", 110, infant ? 272 : 30, size: 10, bold: true)
         default: break
         }
     }
