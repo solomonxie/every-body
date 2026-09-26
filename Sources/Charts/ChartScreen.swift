@@ -16,6 +16,9 @@ struct ChartScreen: View {
     @State private var pan: CGSize = .zero
     @State private var panBase: CGSize = .zero
     @State private var inset = BodyScene()
+    /// share of the stage given to the 3D body; the bar between the halves drags it
+    @State private var split: CGFloat = 0.42
+    @State private var splitStart: CGFloat?
     @State private var ready = false
 
     private var chart: ReflexChart { Catalog.chart(chartID) ?? Catalog.charts.charts[0] }
@@ -27,11 +30,13 @@ struct ChartScreen: View {
             controls
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
+            // body on top, chart below — each pinch-zooms on its own, both start fitted
             GeometryReader { stage in
-                HStack(spacing: 0) {
-                    chartPane
-                        .frame(width: stage.size.width * 0.6)
+                VStack(spacing: 0) {
                     bodyPane
+                        .frame(height: stage.size.height * split)
+                    splitBar(total: stage.size.height)
+                    chartPane
                 }
             }
             zoneList
@@ -93,6 +98,22 @@ struct ChartScreen: View {
     }
 
     /// Full-height body: a standing figure is tall and narrow, so a tall pane shows it large.
+    private func splitBar(total: CGFloat) -> some View {
+        Capsule()
+            .fill(Color.secondary.opacity(splitStart == nil ? 0.35 : 0.7))
+            .frame(width: 44, height: 5)
+            .frame(maxWidth: .infinity, minHeight: 22)
+            .contentShape(.rect)
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { v in
+                    let start = splitStart ?? split
+                    splitStart = start
+                    split = min(0.8, max(0.15, start + v.translation.height / max(total, 1)))
+                }
+                .onEnded { _ in splitStart = nil })
+            .accessibilityLabel(settings.t("Resize body and chart", "调整人体与图的大小"))
+    }
+
     private var bodyPane: some View {
         ZStack(alignment: .top) {
             BodyView(scene: inset, compact: true)
@@ -110,7 +131,7 @@ struct ChartScreen: View {
                 .padding(.horizontal, 6)
         }
         .clipShape(.rect(cornerRadius: 16))
-        .padding(.trailing, 10)
+        .padding(.horizontal, 10)
         .padding(.vertical, 4)
     }
 
@@ -144,7 +165,7 @@ struct ChartScreen: View {
                 }
                 .padding(.horizontal, 12).padding(.vertical, 8)
             }
-            .frame(height: 130)
+            .frame(height: 96)
             .onChange(of: selected?.id) { _, id in
                 if let id { withAnimation { proxy.scrollTo(id, anchor: .center) } }
             }
@@ -170,7 +191,7 @@ struct ChartScreen: View {
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 104, maxHeight: 170, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 72, maxHeight: 150, alignment: .topLeading)
         .padding(16)
         .background(Color(uiColor: .secondarySystemBackground))
     }
