@@ -11,6 +11,7 @@ Sources/App/Info.plist
 
 # python (icon script)
 venv/
+__pycache__/
 
 # macOS
 .DS_Store
