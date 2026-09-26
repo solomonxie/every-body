@@ -49,3 +49,5 @@ scripts/screenshot.sh viewer/skeletal /tmp/shot.png   # open a screen via bodyat
 
 Data lives in `Resources/Data/*.json` (body parts, organs, joints, points, charts, systems).
 App icon: `venv/bin/python scripts/make_icons.py` (needs Pillow in `venv/`).
+Body: `venv/bin/python scripts/gen_body.py` regenerates `body.json`; `scripts/preview_body.py` plots it.
+Illustrations: `scripts/render_scenes/render.sh /tmp/scenes` renders every step to PNG on the Mac.

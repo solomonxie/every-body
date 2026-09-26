@@ -4,7 +4,7 @@ extension Illustrations {
     /// reduction path: quadratic curve from in-place (u = 0) to dislocated (u = 1)
     static func humeralHead(_ u: Double) -> CGPoint {
         let a = (1 - u) * (1 - u), b = 2 * u * (1 - u), c = u * u
-        return CGPoint(x: a * 158 + b * 222 + c * 190, y: a * 120 + b * 138 + c * 196)
+        return CGPoint(x: a * 142 + b * 128 + c * 182, y: a * 128 + b * 205 + c * 168)
     }
 
     static let shoulder = Scenario(
@@ -26,16 +26,19 @@ extension Illustrations {
                    "用吊带固定约 3 周，让拉伤的韧带愈合，之后进行康复训练。", set: ["disloc": 0, "showPath": 0, "sling": 1]),
         ],
         draw: { s, p, _ in
+            // right shoulder, front view: the arm is on the left of the picture, the chest on the right
             let head = humeralHead(p[v: "disloc"])
             let inPlace = p[v: "disloc"] < 0.08
-            let shaft = CGPoint(x: head.x + 60, y: head.y + 150)
-            let bone = hex("#8F7E63")
-            s.path("M 60 40 L 130 70 L 128 190 L 70 250", stroke: hex("#D9CBB0"), lw: 22, cap: .round)
-            s.text("shoulder blade 肩胛骨", 20, 30, color: bone)
-            s.path("M 146 84 A 36 36 0 0 0 146 156", stroke: bone, lw: 8)
-            s.text("socket 关节盂", 86, 172, color: bone)
-            s.path("M 118 60 Q 170 40 205 70", stroke: hex("#D9CBB0"), lw: 12, cap: .round)
-            s.text("collarbone 锁骨", 180, 52, color: bone)
+            let shaft = CGPoint(x: head.x - 38 + p[v: "disloc"] * 12, y: head.y + 160)
+            let bone = hex("#E9E2CF"), edge = hex("#B8A58A"), label = hex("#8F7E63")
+            for k in 0..<4 { s.path("M \(240 + Double(k) * 8) \(130 + Double(k) * 38) C 280 \(120 + Double(k) * 38), 320 \(125 + Double(k) * 38), 350 \(140 + Double(k) * 38)", stroke: hex("#E6DDD0"), lw: 7, cap: .round) }
+            // scapula behind the ribs, glenoid facing out to the arm
+            s.path("M 168 100 C 205 104, 236 140, 248 205 C 244 236, 222 246, 204 230 C 190 186, 178 148, 166 134 Z", fill: hex("#EFE9DA"), stroke: edge, lw: 1.5)
+            s.path("M 166 104 C 152 114, 151 142, 165 152", stroke: hex("#9C8A6A"), lw: 7, cap: .round)
+            s.path("M 186 82 C 168 72, 146 70, 128 80 C 124 91, 138 95, 150 90", fill: bone, stroke: edge, lw: 1.5)          // acromion
+            s.path("M 190 100 C 180 92, 164 100, 158 114 C 164 118, 172 110, 180 110 Z", fill: bone, stroke: edge, lw: 1.5)   // coracoid
+            s.path("M 320 100 C 280 90, 232 70, 192 78 C 168 82, 150 78, 136 74", stroke: bone, lw: 13, cap: .round)          // clavicle
+            s.path("M 320 100 C 280 90, 232 70, 192 78 C 168 82, 150 78, 136 74", stroke: edge, lw: 1)
             if p[v: "showPath"] > 0.5 {
                 var guide = Path()
                 for i in 0...20 {
@@ -43,13 +46,22 @@ extension Illustrations {
                     if i == 0 { guide.move(to: pt) } else { guide.addLine(to: pt) }
                 }
                 s.shape(guide, stroke: hex("#3F95D6"), lw: 2, dash: [5, 4])
-                s.shape(Path(ellipseIn: CGRect(x: 128, y: 90, width: 60, height: 60)), stroke: hex("#2E9E5B"), lw: 2, dash: [4, 4])
+                s.shape(Path(ellipseIn: CGRect(x: 118, y: 104, width: 48, height: 48)), stroke: hex("#2E9E5B"), lw: 2, dash: [4, 4])
             }
-            s.line(head.x, head.y, shaft.x, shaft.y, stroke: hex("#E4DECB"), lw: 26, cap: .round)
-            s.circle(head.x, head.y, 30, fill: inPlace ? hex("#E4DECB") : hex("#F1D08A"), stroke: inPlace ? bone : hex("#D8434B"), lw: 3)
-            s.text("upper arm 肱骨", shaft.x - 6, shaft.y - 30, color: bone, anchor: .end)
+            s.line(head.x, head.y, shaft.x, shaft.y, stroke: bone, lw: 24, cap: .round)
+            s.line(head.x, head.y, shaft.x, shaft.y, stroke: edge, lw: 0.8)
+            s.circle(head.x - 14, head.y + 6, 9, fill: bone, stroke: edge)                                                  // greater tubercle
+            s.circle(head.x, head.y, 24, fill: inPlace ? bone : hex("#F1D08A"), stroke: inPlace ? edge : hex("#D8434B"), lw: 2.5)
+            s.text("clavicle 锁骨", 250, 70, size: 9, color: label)
+            s.text("acromion 肩峰", 88, 64, size: 9, color: label)
+            s.text("coracoid 喙突", 196, 104, size: 9, color: label)
+            s.text("socket 关节盂", 176, 140, size: 9, color: label)
+            s.text("humerus 肱骨", shaft.x + 16, shaft.y - 20, size: 9, color: label)
+            if !inPlace && p[v: "disloc"] > 0.9 { s.text("below the coracoid 喙突下", 208, 186, size: 9, color: hex("#D8434B")) }
             if p[v: "sling"] > 0.5 {
-                s.path("M 110 60 Q 250 150 \(shaft.x + 10) \(shaft.y)", stroke: hex("#3F95D6"), lw: 16, opacity: 0.7)
+                s.path("M 300 40 L \(shaft.x + 14) \(shaft.y - 40)", stroke: hex("#3F95D6"), lw: 10, opacity: 0.6, cap: .round)
+                s.rect(shaft.x - 26, shaft.y - 56, 52, 30, r: 10, fill: hex("#3F95D6"), opacity: 0.55)
+                s.text("sling 吊带", shaft.x + 30, shaft.y - 36, size: 9, color: hex("#3F95D6"))
             }
             let status = inPlace ? hex("#2E9E5B") : hex("#D8434B")
             s.rect(220, 6, 132, 30, r: 8, fill: .white, stroke: status, lw: 2)
@@ -62,6 +74,6 @@ extension Illustrations {
             } ?? 0
             return ["disloc": best]
         },
-        sources: ["Orthopaedic references on anterior shoulder dislocation (≈95% anterior)"]
+        sources: ["Anterior (subcoracoid) dislocation ≈ 95% of shoulder dislocations; reduction by traction–external rotation"]
     )
 }

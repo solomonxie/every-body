@@ -31,21 +31,32 @@ extension Illustrations {
         ],
         draw: { s, p, t in
             let (sys, dia) = pressures(p)
-            func wave(_ ph: Double) -> Double { ph < 0.15 ? sin(ph / 0.15 * .pi / 2) : exp(-(ph - 0.15) * 4.5) }
+            // arterial pulse: fast upstroke, systolic peak, dicrotic notch (aortic valve closing), diastolic run-off
+            func wave(_ ph: Double) -> Double {
+                if ph < 0.12 { return sin(ph / 0.12 * .pi / 2) }
+                if ph < 0.34 { return 1 - 0.47 * (ph - 0.12) / 0.22 }
+                let bump = ph < 0.46 ? 0.07 * sin((ph - 0.34) / 0.12 * .pi) : 0
+                return 0.53 * exp(-(ph - 0.34) * 3) + bump
+            }
             let hr = p[v: "hr"], stiff = p[v: "stiffness"]
             func at(_ time: Double) -> Double { dia + (sys - dia) * wave((time * hr / 60).wrap(1)) }
             let stretch = (at(t) - dia) / max(1, sys - dia)
             let radius = 42 + stretch * (12 * (1 - stiff) + 2), wall = 6 + 8 * stiff
-            let cat: (String, Color) = sys >= 140 || dia >= 90 ? ("High 高血压", hex("#D8434B"))
-                : sys >= 130 || dia >= 80 ? ("Raised 偏高", hex("#E39B4B")) : ("Normal 正常", hex("#2E9E5B"))
+            // 2017 ACC/AHA categories
+            let cat: (String, Color) = sys >= 140 || dia >= 90 ? ("Stage 2 高血压2级", hex("#D8434B"))
+                : sys >= 130 || dia >= 80 ? ("Stage 1 高血压1级", hex("#E0603C"))
+                : sys >= 120 ? ("Elevated 血压偏高", hex("#E39B4B")) : ("Normal 正常", hex("#2E9E5B"))
             let x0 = 170.0, x1 = 352.0, y0 = 60.0, y1 = 230.0
             func yOf(_ mm: Double) -> Double { y1 - (mm - 40) / 160 * (y1 - y0) }
 
-            s.circle(85, 145, radius + wall / 2, fill: hex("#E8B4B8"))
+            s.circle(85, 145, radius + wall / 2 + 5, fill: hex("#F3DCC8"))                 // adventitia
+            s.circle(85, 145, radius + wall / 2, fill: hex("#D9707A"))                     // media: smooth muscle
+            s.circle(85, 145, radius - wall / 2 + 1.5, fill: hex("#F2C4CC"))               // intima
             s.circle(85, 145, radius - wall / 2, fill: hex("#C8323C"))
             s.text("blood 血", 85, 150, size: 11, color: .white, anchor: .middle)
             s.text("Artery cross-section", 85, 222, color: hex("#8A3B45"), anchor: .middle)
-            s.text("动脉横截面 · wall 管壁", 85, 236, color: hex("#8A3B45"), anchor: .middle)
+            s.text("动脉横截面 · intima · media · adventitia", 85, 236, size: 8, color: hex("#8A3B45"), anchor: .middle)
+            s.text("dicrotic notch 重搏切迹", 262, yOf(dia + (sys - dia) * 0.5) - 28, size: 7)
             s.rect(x0, y0, x1 - x0, y1 - y0, fill: hex("#FAFAFC"), stroke: hex("#DDDDDD"))
             for mm in [80.0, 120, 140] {
                 s.line(x0, yOf(mm), x1, yOf(mm), stroke: mm == 140 ? hex("#E8A7A7") : hex("#9CC9A8"), dash: [4, 3])

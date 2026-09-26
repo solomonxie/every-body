@@ -21,33 +21,72 @@ extension Illustrations {
         draw: { s, p, _ in
             let st = Int(p[v: "stage"].rounded()), press = p[v: "press"]
             let out = min(1, p[v: "dislodge"])
-            let obj = CGPoint(x: 162 + (150 - 162) * out - out * out * 40, y: 170 + (70 - 170) * out)
             let cleared = out >= 0.99
-            let skin = hex("#F2C9A5"), line = hex("#C9A58A"), airway = hex("#E8C4B0")
-            s.circle(150, 60, 34, fill: skin, stroke: line, lw: 2)
-            s.rect(110, 96, 100, 170, r: 30, fill: hex("#8FB3E0"), stroke: hex("#5F87B8"), lw: 2)
-            s.path("M 150 72 L 160 110 L 162 176", stroke: airway, lw: 14, cap: .round)
-            s.path("M 162 176 L 140 200 M 162 176 L 184 200", stroke: airway, lw: 10, cap: .round)
-            s.circle(obj.x, obj.y, 8, fill: cleared ? hex("#2E9E5B") : hex("#8A5A2B"))
-            s.text(cleared ? "out 排出" : "food 异物", obj.x + 12, obj.y + 4)
-            if st == 0 { s.text("Can’t speak, cough or breathe 无法说话、咳嗽、呼吸", 10, 290, size: 11, color: hex("#D8434B")) }
+            let floor = 290.0, h = 230.0
+            // casualty faces right; bent forward for back blows, upright for abdominal thrusts
+            let lean = st == 1 ? 40.0 : 8
+            let hip = CGPoint(x: 170, y: floor - 0.49 * h)
+            let casualty = Person(h: h, shirt: hex("#DCE6F2"), shirtLine: hex("#9FB3CC"), lean: lean,
+                                  shoulder: st == 0 ? 35 : 20, elbow: st == 0 ? 125 : 30)
+            func local(_ x: Double, _ y: Double) -> CGPoint {
+                let a = lean * .pi / 180
+                return CGPoint(x: hip.x + x * cos(a) - y * sin(a), y: hip.y + x * sin(a) + y * cos(a))
+            }
+            let rescuerHip = CGPoint(x: hip.x - (st == 1 ? 75 : 45), y: hip.y)
+            let reachLength = 0.33 * h
+            func shoulderOf(_ lean: Double) -> CGPoint {
+                let a = lean * .pi / 180
+                return CGPoint(x: rescuerHip.x + 0.29 * h * sin(a), y: rescuerHip.y - 0.29 * h * cos(a))
+            }
             if st == 1 {
-                s.path("M \(250 - press * 12) 150 l 30 -10 l 6 20 l -30 10 Z", fill: hex("#EBB98F"), stroke: line)
-                s.text("heel of hand 掌根", 220, 200)
-                s.text("between shoulder blades", 220, 214)
-                s.text("两肩胛骨之间", 220, 228)
+                // rescuer beside and behind, arm swung to the upper back
+                let target = local(-0.075 * h, -0.24 * h)
+                let sh = shoulderOf(15)
+                let angle = atan2(target.x - sh.x, target.y - sh.y) * 180 / .pi
+                let rescuer = Person(h: h, lean: 15, shoulder: angle - 15, elbow: 0)
+                let dx = target.x - (sh.x + sin(angle * .pi / 180) * reachLength)
+                rescuer.draw(&s, at: CGPoint(x: rescuerHip.x + dx, y: rescuerHip.y))
             }
             if st == 2 {
-                s.circle(100 + press * 10, 196, 12, fill: hex("#EBB98F"), stroke: line)
-                s.path("M \(70 + press * 10) 196 l 18 0", stroke: hex("#555555"), lw: 2)
-                s.path("M 116 186 l 10 -12", stroke: hex("#D8434B"), lw: 3)
-                s.text("fist above the navel 肚脐上方", 10, 230)
-                s.text("pull in and up 向内向上冲击", 10, 244)
+                Person(h: h, lean: 10, shoulder: 60, elbow: 30).draw(&s, at: rescuerHip, farArm: false)
             }
+            casualty.draw(&s, at: hip)
+            if st == 2 {
+                // the rescuer's near arm wraps round the casualty's waist to the fist
+                let fist = local(0.07 * h, -0.08 * h)
+                let sh = shoulderOf(10)
+                let elbow = CGPoint(x: (sh.x + fist.x) / 2 - 6, y: fist.y - 2)
+                s.line(sh.x, sh.y, elbow.x, elbow.y, stroke: hex("#8FB3E0"), lw: 0.045 * h, cap: .round)
+                s.line(elbow.x, elbow.y, fist.x, fist.y, stroke: hex("#F2C9A5"), lw: 0.036 * h, cap: .round)
+            }
+            // airway: mouth → throat → windpipe, with the object lodged in it
+            let mouth = local(0.06 * h, -0.39 * h), larynx = local(0.02 * h, -0.34 * h), trachea = local(0.01 * h, -0.25 * h)
+            s.path("M \(mouth.x) \(mouth.y) Q \(larynx.x + 6) \(larynx.y - 10) \(larynx.x) \(larynx.y) L \(trachea.x) \(trachea.y)", stroke: hex("#E8B4A0"), lw: 7, cap: .round)
+            let obj = CGPoint(x: larynx.x + (mouth.x + 26 - larynx.x) * out, y: larynx.y + (mouth.y - 4 - larynx.y) * out - out * (1 - out) * 30)
+            s.circle(obj.x, obj.y, 6, fill: cleared ? hex("#2E9E5B") : hex("#8A5A2B"))
+            s.text(cleared ? "out 排出" : "food 异物", obj.x + 10, obj.y - 6, size: 9)
+            s.line(0, floor, 360, floor, stroke: hex("#BBBBBB"), lw: 2)
+            if st == 1 {
+                // heel of the hand between the shoulder blades
+                let blades = local(-0.075 * h, -0.24 * h)
+                s.path("M \(blades.x - 24 - press * 8) \(blades.y - 30) L \(blades.x - 8) \(blades.y - 12)", stroke: hex("#D8434B"), lw: 2.5, cap: .round)
+                s.text("heel of hand, between shoulder blades", 10, 60, size: 10)
+                s.text("掌根拍击两肩胛骨之间 · lean them well forward 身体前倾", 10, 74, size: 10)
+            }
+            if st == 2 {
+                // fist above the navel, below the breastbone; pull in and up
+                let fist = local(0.07 * h, -0.08 * h)
+                s.circle(fist.x + press * 4, fist.y, 9, fill: hex("#EBB98F"), stroke: hex("#C9A58A"))
+                s.path("M \(fist.x + 18) \(fist.y + 10) L \(fist.x + 6) \(fist.y - 8)", stroke: hex("#D8434B"), lw: 2.5, cap: .round)
+                s.path("M \(fist.x + 2) \(fist.y - 14) l -3 6 l 6 0 Z", fill: hex("#D8434B"))
+                s.text("fist above the navel, below the ribs 肚脐上方、肋下", 10, 60, size: 10)
+                s.text("pull sharply in and up 向内向上快速冲击", 10, 74, size: 10)
+            }
+            if st == 0 { s.text("Can’t speak, cough or breathe 无法说话、咳嗽、呼吸 · hands at throat", 10, 60, size: 10, color: hex("#D8434B")) }
             let status = cleared ? hex("#2E9E5B") : hex("#D8434B")
-            s.rect(220, 6, 132, 44, r: 8, fill: .white, stroke: status, lw: 2)
-            s.text(cleared ? "Airway clear 通畅" : "Blocked 梗阻", 286, 26, size: 12, color: status, anchor: .middle, bold: true)
-            if st >= 1 { s.text("\(Int(p[v: "taps"].rounded())) / 5", 286, 42, anchor: .middle) }
+            s.rect(220, 6, 132, 38, r: 8, fill: .white, stroke: status, lw: 2)
+            s.text(cleared ? "Airway clear 通畅" : "Blocked 梗阻", 286, 24, size: 12, color: status, anchor: .middle, bold: true)
+            if st >= 1 { s.text("\(Int(p[v: "taps"].rounded())) / 5", 286, 38, anchor: .middle) }
         },
         onTap: { p in Int(p[v: "stage"].rounded()) == 2 ? ["dislodge": min(1, p[v: "dislodge"] + 0.2)] : [:] },
         sources: ["Red Cross / ERC adult choking: 5 back blows, 5 abdominal thrusts"]
@@ -120,22 +159,48 @@ extension Illustrations {
                    "面积大于伤者手掌，或位于面部、手足、会阴，或看起来较深——需就医。"),
         ],
         draw: { s, p, t in
-            let depth = heatDepth(p), cooled = depth < 8
-            for (name, y, h, color) in [("Epidermis 表皮", 90.0, 30.0, "#F5D7BF"), ("Dermis 真皮", 120, 70, "#EFC1A8"), ("Fat 皮下脂肪", 190, 60, "#F7E3A1")] {
-                s.rect(40, y, 280, h, fill: hex(color))
-                s.text(name, 326, y + h / 2 + 4, size: 9, color: hex("#8F7E63"), anchor: .end)
+            // skin cross-section, true proportions: thin epidermis, thick dermis, fat, then muscle
+            let depth = heatDepth(p)
+            let top = 70.0, epi = 80.0, derm = 150.0, fat = 220.0, bottom = 246.0
+            s.rect(20, top, 300, epi - top, fill: hex("#F5D7BF"))
+            s.rect(20, epi, 300, derm - epi, fill: hex("#EFC1A8"))
+            s.rect(20, derm, 300, fat - derm, fill: hex("#F7E3A1"))
+            for k in 0..<10 { s.circle(35 + Double(k) * 30, derm + 18 + Double(k % 2) * 30, 14, fill: hex("#F2D98A"), stroke: hex("#E6C66E"), lw: 0.8) }
+            s.rect(20, fat, 300, bottom - fat, fill: hex("#C1443C"))
+            for k in 0..<6 { s.line(20, fat + 4 + Double(k) * 4, 320, fat + 4 + Double(k) * 4, stroke: hex("#A8352E"), lw: 0.6) }
+            // hair follicle, sweat gland, capillary loops, nerve ending
+            s.path("M 70 40 L 90 \(top) L 104 128", stroke: hex("#5A3A2A"), lw: 2)
+            s.path("M 96 104 C 90 112, 94 132, 106 134 C 116 134, 118 118, 110 104", fill: hex("#E4B7A0"), stroke: hex("#B98A74"))
+            s.path("M 262 \(top) C 258 100, 266 120, 260 140 C 254 146, 270 150, 262 156 C 254 150, 250 144, 262 140", stroke: hex("#6FA8C8"), lw: 1.5)
+            for x in [150.0, 190, 226] { s.path("M \(x) \(derm - 20) C \(x) 88, \(x + 10) 88, \(x + 10) \(derm - 20)", stroke: hex("#C8323C"), lw: 1.5) }
+            s.path("M 300 \(derm - 10) C 290 120, 300 100, 292 86", stroke: hex("#E8B923"), lw: 1.5)
+            // heat front, then the burn classes it has reached
+            let reach = depth * 1.45
+            if depth > 1 { s.path("M 120 \(top) C 130 \(top + reach), 230 \(top + reach), 240 \(top) Z", fill: hex("#E0503C"), opacity: 0.55) }
+            if depth > 20 { s.path("M 130 \(top) C 150 \(top - 16), 210 \(top - 16), 230 \(top)", fill: hex("#FFF6EA"), stroke: hex("#E0B89A")) }
+            let classes: [(String, Double, Double)] = [("superficial 浅表（I度）", top, epi), ("partial thickness 部分皮层（II度）", epi, derm), ("full thickness 全层（III度）", derm, fat)]
+            for (name, y0, y1) in classes {
+                s.line(324, y0 + 1, 324, y1 - 1, stroke: hex("#999999"))
+                s.text(name, 318, (y0 + y1) / 2 + 3, size: 7, anchor: .end)
             }
-            s.path("M 120 90 Q 180 \(90 + depth * 2) 240 90 Z", fill: hex("#E0503C"), opacity: 0.75)
+            s.text("epidermis 表皮", 24, top + 8, size: 7)
+            s.text("dermis 真皮", 24, epi + 12, size: 7)
+            s.text("fat 皮下脂肪", 24, derm + 12, size: 7)
+            s.text("muscle 肌肉", 24, fat + 14, size: 7, color: .white)
+            s.text("hair 毛囊", 60, 36, size: 7)
+            s.text("sweat gland 汗腺", 226, 166, size: 7)
             if p[v: "cooling"] > 0.5 {
                 for i in 0..<6 {
-                    let y = (t * 60 + Double(i) * 13).wrap(50) + 20
+                    let y = (t * 60 + Double(i) * 13).wrap(40) + 10
                     s.line(110 + Double(i) * 26, y, 110 + Double(i) * 26, y + 12, stroke: hex("#3F95D6"), lw: 3, cap: .round)
                 }
             }
+            let cooled = depth < 8
+            let reached = depth < 1 ? "none 无" : top + reach * 0.75 < epi ? "superficial 浅表" : top + reach * 0.75 < derm ? "partial 部分皮层" : "full thickness 全层"
             let status = cooled ? hex("#2E9E5B") : hex("#E0503C")
             s.rect(8, 256, 344, 38, r: 8, fill: .white, stroke: status, lw: 2)
-            s.text("Cool running water 流动冷水  \(Int((p[v: "minutes"] * p[v: "cooling"]).rounded())) / 20 min", 20, 272, size: 11)
-            s.text(cooled ? "Heat drawn out 热量已散出" : "Heat still spreading inward 热量仍在向深层扩散", 20, 287, size: 11, color: status, bold: true)
+            s.text("Cooling 冷水冲洗 \(Int((p[v: "minutes"] * p[v: "cooling"]).rounded())) / 20 min · heat reaches 热损伤深度: \(reached)", 18, 272, size: 10)
+            s.text(cooled ? "Heat drawn out 热量已散出" : "Heat still spreading inward 热量仍在向深层扩散", 18, 287, size: 11, color: status, bold: true)
         },
         sources: ["ILCOR / Red Cross burns first aid: cool with running water for 20 minutes"]
     )
