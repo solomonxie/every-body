@@ -7,13 +7,6 @@ The app's only root page (no tab bar). Code: `Sources/Screens/ExploreView.swift`
  ┌────────────────────────────────────────────────────┐
  │ 🔍 Body parts, illnesses, procedures               │  ← typing swaps sections for results
  └────────────────────────────────────────────────────┘
- Human body
- ┌────────────────┬────────────────┬────────────────┐
- │  (skeleton)    │  (muscles)     │  (vessels)     │
- │ Skeletal       │ Muscular       │ Circulatory    │
- ├────────────────┼────────────────┼────────────────┤
- │ Nervous        │ Organs         │ Digestive      │
- └────────────────┴────────────────┴────────────────┘
  Reflex & acupressure
  ┌────────────────┬────────────────┬────────────────┐
  │  (3D points)   │  (hand chart)  │  (foot chart)  │
@@ -22,6 +15,13 @@ The app's only root page (no tab bar). Code: `Sources/Screens/ExploreView.swift`
  │  (ear chart)   │
  │ Ear points     │
  └────────────────┘
+ Human body
+ ┌────────────────┬────────────────┬────────────────┐
+ │  (skeleton)    │  (muscles)     │  (vessels)     │
+ │ Skeletal       │ Muscular       │ Circulatory    │
+ ├────────────────┼────────────────┼────────────────┤
+ │ Nervous        │ Organs         │ Digestive      │
+ └────────────────┴────────────────┴────────────────┘
  Illustrations
  Watch each step, then try it yourself.
  ╭──────────────────────────────────────────────────╮
@@ -46,7 +46,7 @@ Focused search, nothing typed:
  (🔍 CPR) (🔍 Choking) (🔍 Stroke) (🔍 Burn) (🔍 Femur) …
 ```
 
-- Two sections: Human body (anatomy systems; 2 rows, ▾ expands) and Reflex & acupressure (3D point map + charts).
+- Two sections: Reflex & acupressure (3D point map + charts) first, then Human body (anatomy systems; 2 rows, ▾ expands).
 - Tiles: card with a square thumbnail on a system-colour gradient + 2-line name.
   Chart tiles draw the chart; the 3D point map is drawn in SwiftUI (icon motif);
   system tiles are transparent PNGs from `scripts/render_body/tiles.sh`.
