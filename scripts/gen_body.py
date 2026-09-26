@@ -144,11 +144,11 @@ def lerp(a, b, t):
 # ---------------------------------------------------------------- body surface (skin lofts, reused to lay muscles on)
 
 TORSO = {
-    "male": [(0.83, 0.0, 0.07, 0.065), (0.875, -0.016, 0.166, 0.1), (0.93, -0.016, 0.172, 0.108), (0.99, -0.006, 0.156, 0.1),
+    "male": [(0.815, 0.0, 0.05, 0.05), (0.875, -0.016, 0.152, 0.1), (0.93, -0.016, 0.172, 0.108), (0.99, -0.006, 0.156, 0.1),
              (1.05, 0.004, 0.144, 0.094), (1.11, 0.005, 0.141, 0.095), (1.19, 0.005, 0.151, 0.1), (1.27, 0.01, 0.164, 0.108),
              (1.34, 0.005, 0.172, 0.106), (1.39, -0.006, 0.176, 0.098), (1.425, -0.016, 0.158, 0.08), (1.45, -0.02, 0.105, 0.064),
              (1.475, -0.02, 0.062, 0.055)],
-    "female": [(0.83, 0.0, 0.075, 0.066), (0.875, -0.02, 0.178, 0.104), (0.93, -0.02, 0.186, 0.112), (0.99, -0.008, 0.162, 0.1),
+    "female": [(0.815, 0.0, 0.055, 0.05), (0.875, -0.02, 0.162, 0.104), (0.93, -0.02, 0.186, 0.112), (0.99, -0.008, 0.162, 0.1),
                (1.05, 0.002, 0.128, 0.088), (1.11, 0.003, 0.125, 0.088), (1.19, 0.003, 0.136, 0.093), (1.27, 0.006, 0.15, 0.1),
                (1.34, 0.002, 0.158, 0.098), (1.39, -0.008, 0.162, 0.09), (1.425, -0.016, 0.145, 0.074), (1.45, -0.02, 0.098, 0.06),
                (1.475, -0.02, 0.058, 0.052)],
@@ -158,7 +158,7 @@ UPPER_ARM = [(0.19, 1.428, -0.025, 0.026, 0.03), (0.192, 1.412, -0.025, 0.046, 0
     (0.215, 1.09, -0.012, 0.035, 0.034)]
 FOREARM = [(0.215, 1.1, -0.012, 0.036, 0.034), (0.225, 1.03, -0.008, 0.039, 0.036), (0.235, 0.94, 0.0, 0.03, 0.026),
     (0.242, 0.86, 0.006, 0.026, 0.018)]
-THIGH = [(0.088, 0.93, -0.012, 0.07, 0.08), (0.095, 0.87, -0.004, 0.076, 0.085), (0.099, 0.78, 0.008, 0.072, 0.077),
+THIGH = [(0.09, 0.93, -0.012, 0.075, 0.085), (0.097, 0.87, -0.004, 0.082, 0.088), (0.099, 0.78, 0.008, 0.072, 0.077),
     (0.098, 0.68, 0.012, 0.062, 0.068), (0.097, 0.59, 0.012, 0.053, 0.058), (0.097, 0.52, 0.008, 0.048, 0.052),
     (0.097, 0.49, 0.008, 0.048, 0.05)]
 SHIN = [(0.097, 0.49, 0.008, 0.047, 0.05), (0.097, 0.44, -0.006, 0.048, 0.058), (0.096, 0.38, -0.012, 0.05, 0.062),
@@ -210,11 +210,19 @@ def panel(sections, origin, insertion, k=0.965, square=2.0, converge=None, nu=14
     return grid
 
 
+def tubes(paths, r):
+    """Several thin branches as one piece (stored under "grid")."""
+    return {"kind": "tubes", "grid": [[U(*p) for p in path] for path in paths], "radius": L(r)}
+
+
 def slab(grid, thickness):
     return {"kind": "slab", "grid": [[U(*p) for p in row] for row in grid], "thickness": L(thickness)}
 
 
 # ---------------------------------------------------------------- skeleton
+
+RIBS = []
+
 
 def skeleton():
     # skull: cranium, eye sockets, cheekbones, upper jaw with teeth, lower jaw with rami
@@ -300,6 +308,7 @@ def skeleton():
             phi = 0.25 + (end - 0.25) * k / 8
             pts.append((a * math.sin(phi), yb - drop * (phi / math.pi) ** 1.3, zc - b * math.cos(phi)))
         pair(f"rib-{i + 1}", f"Rib {i + 1}", f"第{i + 1}肋", "skeletal", BONE, tube(pts, 0.0055))
+        RIBS.append(pts)
         if not floating:
             front = pts[-1]
             if i < 7:
@@ -520,6 +529,48 @@ def vessels():
     vp("radial-nerve", "Radial nerve", "桡神经", "nervous", NERVE, [(0.17, 1.37, -0.03), (0.19, 1.27, -0.045), (0.222, 1.18, -0.02), (0.228, 1.08, 0.004), (0.25, 0.9, 0.0)], 0.0028)
     vp("common-peroneal", "Common peroneal nerve", "腓总神经", "nervous", NERVE, [(0.1, 0.52, -0.04), (0.13, 0.46, -0.02), (0.13, 0.4, 0.02), (0.1, 0.12, 0.035)], 0.003)
     vp("vagus", "Vagus nerve", "迷走神经", "nervous", NERVE, [(0.02, 1.575, -0.01), (0.022, 1.47, 0.02), (0.018, 1.38, 0.0), (0.012, 1.25, -0.03), (0.02, 1.15, -0.01)], 0.0022)
+    # --- branches: small vessels and nerves that make each system read as a tree
+    tp = lambda pid, name, zh, layer, color, paths, r: pair(pid, name, zh, layer, color, tubes(paths, r))
+    elbow, wrist = (0.222, 1.09, 0.018), (0.245, 0.86, 0.02)
+    vp("radial-artery", "Radial artery", "桡动脉", "circulatory", ARTERY, [elbow, (0.235, 1.0, 0.024), (0.248, 0.9, 0.024), (0.252, 0.84, 0.018)], 0.0032)
+    vp("ulnar-artery", "Ulnar artery", "尺动脉", "circulatory", ARTERY, [elbow, (0.212, 1.02, 0.012), (0.218, 0.92, 0.012), (0.226, 0.84, 0.014)], 0.0032)
+    # palm: arch across the palm, one artery down each finger
+    fingers = [(0.258, 0.08), (0.24, 0.088), (0.223, 0.082), (0.207, 0.064)]
+    tp("hand-arteries", "Palmar arch & digital arteries", "掌弓与指动脉", "circulatory", ARTERY,
+       [[(0.252, 0.84, 0.018), (0.255, 0.8, 0.02), (0.235, 0.79, 0.022), (0.212, 0.8, 0.02), (0.226, 0.84, 0.014)]] +
+       [[(x, 0.79, 0.022), (x + (x - 0.232) * 0.02, 0.765 - l * 0.4, 0.024), (x + (x - 0.232) * 0.04, 0.765 - l * 0.9, 0.02)] for x, l in fingers], 0.0018)
+    vp("cephalic-vein", "Cephalic vein", "头静脉", "circulatory", VEIN,
+       [(0.252, 0.85, 0.015), (0.25, 0.97, 0.02), (0.238, 1.1, 0.022), (0.228, 1.25, 0.03), (0.2, 1.4, 0.035), (0.14, 1.43, 0.06)], 0.0032)
+    vp("basilic-vein", "Basilic vein", "贵要静脉", "circulatory", VEIN,
+       [(0.225, 0.85, 0.0), (0.21, 0.97, -0.005), (0.198, 1.1, -0.005), (0.195, 1.22, 0.0), (0.18, 1.33, 0.0)], 0.0032)
+    knee = (0.095, 0.49, -0.035)
+    vp("anterior-tibial", "Anterior tibial & dorsalis pedis", "胫前动脉与足背动脉", "circulatory", ARTERY,
+       [knee, (0.11, 0.44, 0.0), (0.1, 0.3, 0.02), (0.09, 0.12, 0.03), (0.09, 0.05, 0.06), (0.085, 0.03, 0.12)], 0.0035)
+    vp("posterior-tibial", "Posterior tibial artery", "胫后动脉", "circulatory", ARTERY,
+       [knee, (0.09, 0.4, -0.035), (0.08, 0.25, -0.025), (0.07, 0.1, -0.02), (0.075, 0.035, 0.02), (0.08, 0.018, 0.1)], 0.0035)
+    vp("deep-femoral", "Deep femoral artery", "股深动脉", "circulatory", ARTERY, [(0.09, 0.84, 0.035), (0.11, 0.78, 0.0), (0.12, 0.65, -0.02)], 0.004)
+    vp("great-saphenous", "Great saphenous vein", "大隐静脉", "circulatory", VEIN,
+       [(0.068, 0.04, 0.03), (0.068, 0.1, 0.0), (0.06, 0.3, -0.02), (0.052, 0.49, -0.02), (0.045, 0.7, 0.02), (0.06, 0.87, 0.06)], 0.0035)
+    vp("external-carotid", "External carotid & facial artery", "颈外动脉与面动脉", "circulatory", ARTERY,
+       [(0.04, 1.53, 0.02), (0.05, 1.55, 0.04), (0.045, 1.54, 0.07), (0.03, 1.57, 0.085), (0.02, 1.6, 0.09)], 0.0025)
+    vp("temporal-artery", "Superficial temporal artery", "颞浅动脉", "circulatory", ARTERY,
+       [(0.045, 1.55, 0.0), (0.07, 1.6, -0.005), (0.074, 1.65, 0.0), (0.068, 1.68, 0.015)], 0.0022)
+    # ribs: an artery and a nerve under each rib (nerve lowest), ribs 2-11
+    under = lambda dy, pts: [(x, y - dy, z) for x, y, z in pts[:-1]]
+    tp("intercostal-arteries", "Intercostal arteries", "肋间动脉", "circulatory", ARTERY, [under(0.006, r) for r in RIBS[1:11]], 0.0015)
+    tp("intercostal-veins", "Intercostal veins", "肋间静脉", "circulatory", VEIN, [under(0.0035, r) for r in RIBS[1:11]], 0.0015)
+    tp("intercostal-nerves", "Intercostal nerves", "肋间神经", "nervous", NERVE, [under(0.009, r) for r in RIBS[1:11]], 0.0013)
+    # spinal nerve roots: one pair leaving between each vertebra, angling down
+    roots = []
+    for k in range(24):
+        y = 1.575 - k * 0.0255
+        z = -0.035 - 0.05 * math.sin(min(1, k / 14) * math.pi / 2)
+        roots.append([(0.004, y, z), (0.022, y - 0.006, z + 0.004), (0.04, y - 0.016, z + 0.01)])
+    tp("spinal-nerves", "Spinal nerves", "脊神经", "nervous", NERVE, roots, 0.0022)
+    vp("tibial-nerve", "Tibial nerve", "胫神经", "nervous", NERVE, [(0.1, 0.52, -0.04), (0.095, 0.4, -0.04), (0.08, 0.2, -0.03), (0.07, 0.08, -0.018), (0.075, 0.03, 0.03)], 0.003)
+    vp("facial-nerve", "Facial nerve", "面神经", "nervous", NERVE, [(0.06, 1.595, -0.02), (0.065, 1.585, 0.02), (0.055, 1.6, 0.06)], 0.002)
+    vp("pulmonary-veins", "Pulmonary veins", "肺静脉", "circulatory", ARTERY, [(0.07, 1.31, -0.01), (0.04, 1.3, 0.02), (0.02, 1.295, 0.035)], 0.005)
+
     v("esophagus", "Esophagus", "食管", "organs", "#E0A080", [(0, 1.52, -0.015), (0.0, 1.4, -0.03), (0.01, 1.27, -0.035), (0.03, 1.21, 0.0)], 0.0075)
     v("trachea", "Trachea & bronchi", "气管与支气管", "organs", "#E8C4B0",
       [(0, 1.52, 0.02), (0, 1.43, 0.012), (0, 1.36, 0.0), (0.045, 1.33, -0.005)], 0.009)
@@ -552,7 +603,8 @@ def skin():
     torso = TORSO
     for sex, rows in torso.items():
         s(f"torso-{sex}", loft([(0, y, z, rx, rz) for y, z, rx, rz in rows], square=2.6), sex)
-    sp("breast", sphere((0.082, 1.285, 0.098), 0.055, [1, 0.92, 0.8]), "female")
+    # breast: a dome rising out of the chest wall, fuller low
+    sp("breast", lathe((0.08, 1.29, 0.06), (0.086, 1.27, 0.145), [0.062, 0.061, 0.056, 0.047, 0.036, 0.024], [1, 1, 0.92]), "female")
     # upper arm starts as a rounded deltoid cap tucked under the shoulder slope
     sp("upper-arm", loft(UPPER_ARM))
     sp("forearm", loft(FOREARM))
@@ -622,7 +674,10 @@ def organs():
     # heart: base (upper right, back) to apex (lower left, front); flattened front-to-back; ventricles bulge low
     organ("heart", "#C8323C", (0.02, 1.27, 0.055), [
         loft([(-0.012, 1.315, 0.028, 0.03, 0.022), (0.0, 1.3, 0.04, 0.045, 0.034), (0.015, 1.275, 0.055, 0.052, 0.04),
-              (0.03, 1.25, 0.068, 0.046, 0.036), (0.042, 1.228, 0.08, 0.03, 0.024), (0.05, 1.215, 0.088, 0.008, 0.008)]),
+              (0.03, 1.25, 0.068, 0.046, 0.036), (0.043, 1.23, 0.08, 0.03, 0.025), (0.049, 1.22, 0.086, 0.017, 0.014)]),
+        # pulmonary trunk rising from the right ventricle, left auricle tucked at the top left
+        tube([(0.012, 1.3, 0.07), (0.008, 1.325, 0.06), (0.0, 1.335, 0.045)], 0.011, [0.012, 0.011, 0.01]),
+        sphere((0.05, 1.29, 0.05), 0.012, [1.1, 0.7, 0.8]),
         # right atrium bulge and auricles
         sphere((-0.03, 1.29, 0.04), 0.024, [0.9, 1.1, 0.9]),
         sphere((0.04, 1.305, 0.055), 0.012, [1.2, 0.7, 0.8]),
