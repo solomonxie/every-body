@@ -10,19 +10,19 @@ it unblocks both the UI and asset tracks.
 - [x] T1.1 Expo Router + TS scaffold, tabs, Viewer/Info stubs — see `src/app` — depends: none
 - [x] T1.2 `BodyPoint` / `FlowPath` types + reflex & circulation point data — see `src/types`, `src/data` — depends: none
 - [x] T1.3 Placeholder reflex pulse on sphere — see `src/components/canvas/reflex-pulse.tsx` — depends: T1.2
-- [ ] T1.4 `Category` model + Explore tile presets (systems, focus) — see `uiux/explore.md` → Tile table, `src/data/categories.ts` — depends: none
-- [ ] T1.5 Settings store (names, theme, background, quality, auto-rotate), persisted via AsyncStorage — see `src/state/settings.ts` — depends: none
-- [ ] T1.6 `BilingualName` + string table (copy keys from `uiux/*.md`) — see `uiux/components.md` → BilingualName, `src/i18n/` — depends: T1.5
+- [x] T1.4 `Category` model + Explore tile presets (systems, focus) — see `uiux/explore.md` → Tile table, `src/data/categories.ts` — depends: none
+- [x] T1.5 Settings store (names, theme, background, quality, auto-rotate), persisted via AsyncStorage — see `src/state/settings.ts` — depends: none
+- [ ] T1.6 `BilingualName` + string table (in-progress: `useName`/`useBilingual` wired to cards and captions; no string table) (copy keys from `uiux/*.md`) — see `uiux/components.md` → BilingualName, `src/i18n/` — depends: T1.5
 - [ ] T1.7 CI: `tsc --noEmit` + `expo lint` on push — see `.github/workflows/` — depends: none
 
 ## Phase 2: App shell on placeholder geometry
 Build every v1 screen against the existing sphere so UI work doesn't wait on assets.
 
-- [ ] T2.1 Explore: search field, 3-col `CategoryTile` grid — see `uiux/explore.md` — depends: T1.4, T1.6
-- [ ] T2.2 Viewer frame: full-bleed canvas, `RailButton` rails, ◐ background, ⌂ reset — see `uiux/viewer.md` — depends: T1.5
+- [x] T2.1 Explore: search field, 3-col `CategoryTile` grid — see `uiux/explore.md` — depends: T1.4, T1.6
+- [x] T2.2 Viewer frame: full-bleed canvas, `RailButton` rails, ◐ background, ⌂ reset — see `uiux/viewer.md` — depends: T1.5
 - [ ] T2.3 Camera controls: orbit / pinch / pan / double-tap, auto-rotate until first touch (in-progress: all but 2-finger pan) — see `src/components/canvas/` — depends: T2.2
 - [ ] T2.4 `Sheet` component (peek/half/full, one-at-a-time) + Toast — see `uiux/components.md` — depends: none
-- [ ] T2.5 Settings screen + Licenses + Disclaimer pages — see `uiux/settings.md` — depends: T1.5, T1.6
+- [x] T2.5 Settings screen + disclaimer + sources (one page) — see `uiux/settings.md` — depends: T1.5, T1.6
 - [ ] T2.6 Viewer states: loading, error, no-GL, first-run hint — see `uiux/viewer.md` → States — depends: T2.2
 - [x] T2.7 Review build: primitive mannequin with organs, Reflex Map press → pulse → organ, blood flow + heart-rate try, app icon, device install script — see `src/components/canvas`, `scripts/` — depends: none
 
@@ -44,8 +44,8 @@ Picking and per-part state; Search and Part info key on the same part ids.
 - [x] T4.1 Raycast picking + highlight + Part card — see `uiux/viewer.md` → Part card — depends: T3.4, T2.4
 - [ ] T4.2 Viewer part state (hide / isolate / fade / layer opacity) + undo stack (in-progress: hide + show all done) — see `src/state/viewer.ts` — depends: T3.4
 - [ ] T4.3 Layers sheet + Display sheet (in-progress: layer pill bar done) — see `uiux/viewer.md` → Layers / Display — depends: T4.2, T2.4
-- [ ] T4.4 Part info page (part / point / system variants), Show on model — see `uiux/part-info.md` — depends: T3.1
-- [ ] T4.5 Search index (EN, 中文, pinyin) + Search sheet + recents — see `uiux/search.md` — depends: T3.1, T2.4
+- [ ] T4.4 Part info page (part / point / system variants), Show on model (in-progress: system pages with facts, links, tappable parts) — see `uiux/part-info.md` — depends: T3.1
+- [x] T4.5 Search index (EN, 中文) over systems, illustrations, zones, points, parts — pinyin and recents not yet — see `uiux/search.md` — depends: T3.1, T2.4
 
 ## Phase 5: Points & flow on the real model
 Move the existing sphere-based points onto mesh surfaces; the pulse/flow engines here are
@@ -99,5 +99,5 @@ watch + try steps, EN/中 captions, cited sources, clinician sign-off.
 - [ ] T9.7 Medical review pass + sources page per topic — see `DESIGN.md` → Risks — depends: T9.1, T9.2, T9.3, T9.4
 
 ## Phase 10: Later
-- [ ] T10.1 Quiz mode (rail slot reserved) — needs its own design pass — depends: T4.4
+- [x] T10.1 Quiz mode: name the glowing part, 10 rounds, per system — see `src/app/quiz/[id].tsx` — depends: T4.4
 - [ ] T10.2 Schematic female variant (pelvis, reproductive organs) — see `src/data/anatomy.ts` — depends: T3.2

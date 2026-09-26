@@ -15,6 +15,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="viewer/[id]" options={{ title: 'Viewer', headerBackTitle: 'Explore' }} />
             <Stack.Screen name="info/[id]" options={{ title: 'Info' }} />
+            <Stack.Screen name="quiz/[id]" options={{ title: 'Quiz', headerBackTitle: 'Back' }} />
             <Stack.Screen name="search" options={{ title: 'Search', headerBackTitle: 'Back' }} />
             <Stack.Screen name="illustration/[id]" options={{ title: 'Illustration', headerBackTitle: 'Back' }} />
             <Stack.Screen name="reflex/[chart]" options={{ title: 'Reflex chart', headerBackTitle: 'Back' }} />

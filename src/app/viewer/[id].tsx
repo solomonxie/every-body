@@ -106,9 +106,16 @@ export default function ViewerScreen() {
         options={{
           title: system.name,
           headerRight: () => (
-            <Pressable accessibilityLabel="System info" hitSlop={10} onPress={() => router.push(`/info/${system.id}`)}>
-              <Text style={styles.infoGlyph}>ⓘ</Text>
-            </Pressable>
+            <View style={styles.headerButtons}>
+              {!isReflex && (
+                <Pressable accessibilityLabel="Quiz" hitSlop={10} onPress={() => router.push(`/quiz/${system.id}`)}>
+                  <Text style={styles.headerText}>Quiz 测验</Text>
+                </Pressable>
+              )}
+              <Pressable accessibilityLabel="System info" hitSlop={10} onPress={() => router.push(`/info/${system.id}`)}>
+                <Text style={styles.infoGlyph}>ⓘ</Text>
+              </Pressable>
+            </View>
           ),
         }}
       />
@@ -179,6 +186,16 @@ const styles = StyleSheet.create({
   placeholder: {
     paddingHorizontal: Spacing.three,
     paddingBottom: Spacing.two,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  headerText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#6C4F9E',
   },
   infoGlyph: {
     fontSize: 22,

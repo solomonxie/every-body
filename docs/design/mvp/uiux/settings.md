@@ -2,6 +2,10 @@
 
 Second tab. Code: `src/app/(tabs)/settings.tsx`.
 
+Built (v1): NAMES `[ English | 中文 | Both 双语 ]` · VIEWER background `[ Gray | White ]`,
+Auto-rotate ─● · ABOUT: health disclaimer + sources inline, version. Theme and Quality below
+are not built yet; Licenses/Disclaimer pages collapsed into the About cards.
+
 ```
  Settings
  ──────────────────────────────────────────────────────
