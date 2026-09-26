@@ -37,6 +37,8 @@ final class Renderer: NSObject, NSApplicationDelegate {
                 scene.goalFocusY = focus.0; scene.goalDistance = focus.1
             }
             scene.focusY = scene.goalFocusY; scene.distance = scene.goalDistance
+            // PANX=0.45 slides the camera sideways (hands sit off the midline)
+            if let pan = ProcessInfo.processInfo.environment["PANX"].flatMap(Float.init) { scene.panX = pan }
             let anchor = AnchorEntity(world: .zero)
             anchor.addChild(scene.root)
             view.scene.addAnchor(anchor)
