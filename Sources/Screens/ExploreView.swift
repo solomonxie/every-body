@@ -4,7 +4,7 @@ import SwiftUI
 struct ExploreView: View {
     @Environment(Settings.self) private var settings
     @State private var query = ""
-    @State private var showAllMaps = false
+    @State private var showAllBody = false
 
     private struct Tile: Identifiable {
         let id: String
@@ -14,23 +14,31 @@ struct ExploreView: View {
         var chart: String? = nil
     }
 
-    private var tiles: [Tile] {
-        let systems = Catalog.systems.map {
+    /// acupressure: the 3D point map and the three 2D reflex charts
+    private var reflexTiles: [Tile] {
+        let map = Catalog.systems.first { $0.id == "acupoint-reflex-map" }.map {
             Tile(id: $0.id, name: Bilingual($0.name, $0.nameZh), color: $0.color, route: .viewer(system: $0.id))
         }
-        let charts = [
+        return (map.map { [$0] } ?? []) + [
             Tile(id: "hand-chart", name: Bilingual("Hand chart", "手部反射区"), color: "#E8A87C", route: .chart(id: "hand"), chart: "hand"),
             Tile(id: "foot-chart", name: Bilingual("Foot chart", "足底反射区"), color: "#C9A06A", route: .chart(id: "foot"), chart: "foot"),
             Tile(id: "ear-chart", name: Bilingual("Ear points", "耳穴"), color: "#D98BA8", route: .chart(id: "ear"), chart: "ear"),
         ]
-        return [systems[0]] + charts + systems.dropFirst()
+    }
+
+    /// anatomy: the body systems
+    private var bodyTiles: [Tile] {
+        Catalog.systems.filter { $0.id != "acupoint-reflex-map" }.map {
+            Tile(id: $0.id, name: Bilingual($0.name, $0.nameZh), color: $0.color, route: .viewer(system: $0.id))
+        }
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 if query.trimmingCharacters(in: .whitespaces).isEmpty {
-                    maps
+                    grid(settings.t("Human body", "人体"), bodyTiles, expanded: $showAllBody)
+                    grid(settings.t("Reflex & acupressure", "反射区与穴位"), reflexTiles, expanded: nil)
                     IllustrationsSection()
                     SettingsSection()
                 } else {
@@ -45,23 +53,26 @@ struct ExploreView: View {
         .profileToolbar()
     }
 
-    private var maps: some View {
+    /// titled 3-column grid; with `expanded`, shows two rows until "Show more"
+    private func grid(_ title: String, _ tiles: [Tile], expanded: Binding<Bool>?) -> some View {
         let columns = 3
-        let shown = showAllMaps ? tiles : Array(tiles.prefix(columns * 2))
+        let limit = columns * 2
+        let open = expanded?.wrappedValue ?? true
+        let shown = open ? tiles : Array(tiles.prefix(limit))
         return VStack(alignment: .leading, spacing: 8) {
-            SectionTitle(settings.t("Reflex maps & body", "反射图与人体"))
+            SectionTitle(title)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: columns), spacing: 8) {
                 ForEach(shown) { tile in
                     NavigationLink(value: tile.route) { TileView(tile: tile) }
                         .buttonStyle(.plain)
                 }
             }
-            if tiles.count > columns * 2 {
+            if let expanded, tiles.count > limit {
                 Button {
-                    withAnimation { showAllMaps.toggle() }
+                    withAnimation { expanded.wrappedValue.toggle() }
                 } label: {
-                    Label(showAllMaps ? settings.t("Show less", "收起") : settings.t("Show more (\(tiles.count - columns * 2))", "显示更多（\(tiles.count - columns * 2)）"),
-                          systemImage: showAllMaps ? "chevron.up" : "chevron.down")
+                    Label(open ? settings.t("Show less", "收起") : settings.t("Show more (\(tiles.count - limit))", "显示更多（\(tiles.count - limit)）"),
+                          systemImage: open ? "chevron.up" : "chevron.down")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
