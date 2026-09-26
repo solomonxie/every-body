@@ -15,6 +15,7 @@ struct BodyView: View {
     @Environment(Settings.self) private var settings
     @State private var hintVisible = true
     @State private var dragStart: (yaw: Float, pitch: Float)?
+    @State private var panStart: (x: Float, y: Float)?
     @State private var zoomStart: Float?
 
     var body: some View {
@@ -27,14 +28,16 @@ struct BodyView: View {
                     MainActor.assumeIsolated { scene.update(dt: Float(event.deltaTime)) }
                 }
             }
-            .gesture(drag.simultaneously(with: zoom))
+            .gesture(PanRecognizer(touches: 1, onChange: rotate, onEnd: { dragStart = nil }))
+            .gesture(PanRecognizer(touches: 2, onChange: move, onEnd: { panStart = nil }))
+            .gesture(PinchRecognizer(onChange: zoom, onEnd: { zoomStart = nil }))
             .gesture(SpatialTapGesture(count: 2).onEnded { _ in scene.resetView() })
             .gesture(tap)
 
             if !compact {
                 rail
                 if hintVisible {
-                    Text("Drag to spin · pinch to zoom · tap a part")
+                    Text(settings.t("1 finger: spin · 2 fingers: move · pinch: zoom · tap a part", "单指旋转 · 双指移动 · 捏合缩放 · 点击部位"))
                         .font(.footnote)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14).padding(.vertical, 8)
@@ -50,8 +53,8 @@ struct BodyView: View {
 
     private var rail: some View {
         VStack(spacing: 10) {
-            RailButton(symbol: "house", label: "Reset view") { scene.resetView() }
-            RailButton(symbol: "circle.lefthalf.filled", label: "Background") { settings.whiteBackground.toggle() }
+            RailButton(symbol: "house", label: settings.t("Reset view", "重置视角")) { scene.resetView() }
+            RailButton(symbol: "circle.lefthalf.filled", label: settings.t("Background", "背景")) { settings.whiteBackground.toggle() }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .padding(12)
@@ -62,30 +65,34 @@ struct BodyView: View {
         hintVisible = false
     }
 
-    private var drag: some Gesture {
-        DragGesture(minimumDistance: 4)
-            .onChanged { value in
-                firstTouch()
-                let start = dragStart ?? (scene.yaw, scene.pitch)
-                dragStart = start
-                scene.goalYaw = nil
-                scene.yaw = start.yaw + Float(value.translation.width) * 0.008
-                scene.pitch = max(-0.9, min(0.9, start.pitch + Float(value.translation.height) * 0.008))
-            }
-            .onEnded { _ in dragStart = nil }
+    /// one finger: spin and tilt
+    private func rotate(_ t: CGPoint) {
+        firstTouch()
+        let start = dragStart ?? (scene.yaw, scene.pitch)
+        dragStart = start
+        scene.goalYaw = nil
+        scene.yaw = start.yaw + Float(t.x) * 0.008
+        scene.pitch = max(-0.9, min(0.9, start.pitch + Float(t.y) * 0.008))
     }
 
-    private var zoom: some Gesture {
-        MagnifyGesture()
-            .onChanged { value in
-                firstTouch()
-                let start = zoomStart ?? scene.goalDistance
-                zoomStart = start
-                let next = max(1.2, min(9, start / Float(value.magnification)))
-                scene.goalDistance = next
-                scene.distance = next
-            }
-            .onEnded { _ in zoomStart = nil }
+    /// two fingers: slide the whole body, scaled so it tracks the fingers at any zoom
+    private func move(_ t: CGPoint) {
+        firstTouch()
+        let start = panStart ?? (scene.panX, scene.goalFocusY)
+        panStart = start
+        let k = scene.distance * 0.0012
+        scene.panX = max(-2, min(2, start.x - Float(t.x) * k))
+        scene.goalFocusY = max(-1.8, min(1.8, start.y + Float(t.y) * k))
+        scene.focusY = scene.goalFocusY
+    }
+
+    private func zoom(_ scale: CGFloat) {
+        firstTouch()
+        let start = zoomStart ?? scene.goalDistance
+        zoomStart = start
+        let next = max(1.2, min(9, start / Float(scale)))
+        scene.goalDistance = next
+        scene.distance = next
     }
 
     private var tap: some Gesture {
@@ -118,4 +125,55 @@ struct RailButton: View {
         }
         .accessibilityLabel(label)
     }
+}
+
+/// UIKit pan with an exact finger count — SwiftUI's drag can't tell one finger from two.
+struct PanRecognizer: UIGestureRecognizerRepresentable {
+    let touches: Int
+    let onChange: (CGPoint) -> Void
+    let onEnd: () -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let g = UIPanGestureRecognizer()
+        g.minimumNumberOfTouches = touches
+        g.maximumNumberOfTouches = touches
+        g.delegate = context.coordinator
+        return g
+    }
+
+    func handleUIGestureRecognizerAction(_ g: UIPanGestureRecognizer, context: Context) {
+        switch g.state {
+        case .changed: onChange(g.translation(in: g.view))
+        case .ended, .cancelled, .failed: onEnd()
+        default: break
+        }
+    }
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Simultaneous { Simultaneous() }
+}
+
+struct PinchRecognizer: UIGestureRecognizerRepresentable {
+    let onChange: (CGFloat) -> Void
+    let onEnd: () -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UIPinchGestureRecognizer {
+        let g = UIPinchGestureRecognizer()
+        g.delegate = context.coordinator
+        return g
+    }
+
+    func handleUIGestureRecognizerAction(_ g: UIPinchGestureRecognizer, context: Context) {
+        switch g.state {
+        case .changed: onChange(g.scale)
+        case .ended, .cancelled, .failed: onEnd()
+        default: break
+        }
+    }
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Simultaneous { Simultaneous() }
+}
+
+/// lets two-finger pan and pinch run together
+final class Simultaneous: NSObject, UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
 }
