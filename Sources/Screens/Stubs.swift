@@ -6,14 +6,6 @@ struct IllustrationsSection: View {
     var body: some View { EmptyView() }
 }
 
-struct ChartScreen: View {
-    let chartID: String
-    var initialFace: String?
-    var initialZone: String?
-    var initialSide: Side?
-    var body: some View { Text("Chart \(chartID) — porting") }
-}
-
 struct IllustrationScreen: View {
     let id: String
     var body: some View { Text("Illustration \(id) — porting") }
