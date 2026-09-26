@@ -3,6 +3,23 @@
 Why: [DESIGN.md](DESIGN.md) · What it looks like: [UIUX_DESIGN.md](UIUX_DESIGN.md).
 `depends: none` tasks within a phase are the parallel batch.
 
+> Phases 1–10 were first built in React Native + Expo, now removed (DESIGN → Native only).
+> Their checkboxes record the feature design as proven; **Phase 0** tracks re-building each
+> one natively. A feature ships again only when its Phase 0 task is checked.
+
+## Phase 0: Native port (SwiftUI + RealityKit)
+Remove the Expo/React Native app and rebuild every feature natively, data first, then the
+3D core everything else overlays, then the 2D screens.
+
+- [x] T0.1 Remove Expo/RN code, scaffold xcodegen project, icon, signing via gitignored `Local.xcconfig`, device install script — see `project.yml`, `scripts/` — depends: none
+- [x] T0.2 Port data: body parts, organs, joints, points, reflex charts, system info — see `Sources/Data/` — depends: T0.1
+- [x] T0.3 Mesh generators (capsule, ellipsoid, tube, torus arc) + `BodyEntity` with layers — see `Sources/Body/` — depends: T0.2
+- [ ] T0.4 Viewer: orbit camera, tap-to-name, layers, hide/fade/isolate/undo, joints — see `Sources/Viewer/` — depends: T0.3
+- [ ] T0.5 Reflex Map pulse + blood flow on the body — see `Sources/Viewer/` — depends: T0.4
+- [ ] T0.6 Reflex charts in `Canvas` (hand, foot, ear), zoom, 3D inset — see `Sources/Charts/` — depends: T0.3
+- [ ] T0.7 Illustration player + 18 scenes in `Canvas` — see `Sources/Illustrations/` — depends: T0.1
+- [ ] T0.8 Explore, search, quiz, info, settings — see `Sources/Screens/` — depends: T0.4, T0.6, T0.7
+
 ## Phase 1: Foundations
 Data types, settings, and name display every later screen reads. No 3D dependency, so
 it unblocks both the UI and asset tracks.

@@ -32,15 +32,20 @@ Not medical advice — effects of reflex points are traditional claims.
 
 ## Setup
 
+Native SwiftUI + RealityKit (iOS 18+). No Expo, Metro or JS toolchain.
+
 ```bash
-npm install && npx expo start
+brew install xcodegen          # once
+xcodegen generate              # BodyAtlas.xcodeproj from project.yml
 ```
 
-Install on a connected iPhone (Release build, no Metro needed) — put `DEVELOPMENT_TEAM`
-and `IOS_BUNDLE_ID` in the gitignored `.env.local` first:
+Install on a connected iPhone — put `DEVELOPMENT_TEAM` and `IOS_BUNDLE_ID` in the gitignored
+`.env.local` first:
 
 ```bash
 scripts/install-ios-device.sh
+scripts/screenshot.sh viewer/skeletal /tmp/shot.png   # open a screen via bodyatlas:// and capture it
 ```
 
+Data lives in `Resources/Data/*.json` (body parts, organs, joints, points, charts, systems).
 App icon: `venv/bin/python scripts/make_icons.py` (needs Pillow in `venv/`).

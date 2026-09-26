@@ -1,9 +1,9 @@
-"""Render the app icon, splash mark and Android adaptive layers into assets/images."""
+"""Render the app icon into the asset catalog."""
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-OUT = Path(__file__).resolve().parent.parent / "assets" / "images"
+OUT = Path(__file__).resolve().parent.parent / "Resources" / "Assets.xcassets" / "AppIcon.appiconset"
 BG_TOP = (84, 62, 158)
 BG_BOTTOM = (40, 28, 92)
 FIGURE = (255, 255, 255)
@@ -54,14 +54,6 @@ def main():
     icon = gradient(1024).convert("RGBA")
     icon.alpha_composite(figure(1024, 0.82))
     icon.convert("RGB").save(OUT / "icon.png")
-
-    figure(1024, 0.9).save(OUT / "splash-icon.png")
-    figure(1024, 0.55).save(OUT / "android-icon-foreground.png")
-    gradient(1024).save(OUT / "android-icon-background.png")
-    mono = Image.new("RGBA", (1024, 1024), (255, 255, 255, 0))
-    mono.putalpha(figure(1024, 0.55).getchannel("A"))
-    mono.save(OUT / "android-icon-monochrome.png")
-    icon.resize((48, 48), Image.LANCZOS).save(OUT / "favicon.png")
 
 
 if __name__ == "__main__":

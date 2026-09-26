@@ -1,0 +1,249 @@
+{
+ "acupoint-reflex-map": {
+  "points": [
+   {
+    "id": "foot-head",
+    "name": "Head/Brain Reflex Zone (Foot)",
+    "nameZh": "头部/脑反射区(足)",
+    "description": "Tips of all toes.",
+    "region": "foot",
+    "position": [0.16, -1.52, 0.25],
+    "target": {
+     "name": "Brain",
+     "nameZh": "脑",
+     "effect": "Eases tension headache, sharpens mental clarity.",
+     "effectZh": "缓解紧张性头痛，提升头脑清晰度。",
+     "organIds": [
+      "brain"
+     ]
+    }
+   },
+   {
+    "id": "foot-kidney",
+    "name": "Kidney Reflex Zone (Foot)",
+    "nameZh": "肾反射区(足)",
+    "description": "Center of the sole.",
+    "region": "foot",
+    "position": [0.16, -1.49, 0.02],
+    "target": {
+     "name": "Kidneys",
+     "nameZh": "肾",
+     "effect": "Stimulates kidney filtration, relieves lower-back tension.",
+     "effectZh": "促进肾脏排毒，缓解腰部紧张。",
+     "organIds": [
+      "kidney-l",
+      "kidney-r"
+     ]
+    }
+   },
+   {
+    "id": "foot-liver",
+    "name": "Liver Reflex Zone (Foot)",
+    "nameZh": "肝反射区(足)",
+    "description": "Upper right sole, right foot only.",
+    "region": "foot",
+    "position": [-0.16, -1.49, 0.14],
+    "target": {
+     "name": "Liver",
+     "nameZh": "肝",
+     "effect": "Supports detox function, eases right-shoulder tightness.",
+     "effectZh": "支持肝脏排毒，缓解右肩紧绷。",
+     "organIds": [
+      "liver"
+     ]
+    }
+   },
+   {
+    "id": "foot-stomach",
+    "name": "Stomach Reflex Zone (Foot)",
+    "nameZh": "胃反射区(足)",
+    "description": "Mid-sole, just below the ball.",
+    "region": "foot",
+    "position": [0.16, -1.49, 0.14],
+    "target": {
+     "name": "Stomach",
+     "nameZh": "胃",
+     "effect": "Calms stomach acid, relieves bloating.",
+     "effectZh": "平缓胃酸，减轻腹胀。",
+     "organIds": [
+      "stomach"
+     ]
+    }
+   },
+   {
+    "id": "hand-hegu",
+    "name": "Hegu (LI4, Hand)",
+    "nameZh": "合谷(手)",
+    "description": "Web between thumb and index finger.",
+    "region": "hand",
+    "position": [0.55, 0.1, 0.05],
+    "target": {
+     "name": "Face & Shoulder Muscles",
+     "nameZh": "面部与肩部肌肉",
+     "effect": "Relaxes facial and shoulder tension, relieves headache.",
+     "effectZh": "放松面部与肩部肌肉，缓解头痛。",
+     "organIds": [
+      "shoulders"
+     ]
+    }
+   },
+   {
+    "id": "hand-neiguan",
+    "name": "Neiguan (PC6, Hand)",
+    "nameZh": "内关(手)",
+    "description": "Inner forearm, above the wrist.",
+    "region": "hand",
+    "position": [0.5, 0.26, 0.07],
+    "target": {
+     "name": "Heart & Stomach",
+     "nameZh": "心与胃",
+     "effect": "Calms palpitations, eases nausea.",
+     "effectZh": "平复心悸，缓解恶心。",
+     "organIds": [
+      "heart",
+      "stomach"
+     ]
+    }
+   },
+   {
+    "id": "ear-shenmen",
+    "name": "Shenmen (Ear)",
+    "nameZh": "神门(耳)",
+    "description": "Triangular fossa at the top of the ear.",
+    "region": "ear",
+    "position": [0.23, 1.49, 0.01],
+    "target": {
+     "name": "Nervous System",
+     "nameZh": "神经系统",
+     "effect": "Reduces stress response, promotes relaxation.",
+     "effectZh": "降低应激反应，促进放松。",
+     "organIds": [
+      "brain"
+     ]
+    }
+   },
+   {
+    "id": "body-zusanli",
+    "name": "Zusanli (ST36, Leg)",
+    "nameZh": "足三里(腿)",
+    "description": "Below the knee, outer leg.",
+    "region": "body",
+    "position": [0.26, -0.84, 0.04],
+    "target": {
+     "name": "Digestive Tract",
+     "nameZh": "消化道",
+     "effect": "Boosts digestion, strengthens immune response.",
+     "effectZh": "促进消化，增强免疫力。",
+     "organIds": [
+      "stomach",
+      "intestines"
+     ]
+    }
+   },
+   {
+    "id": "body-baihui",
+    "name": "Baihui (GV20, Head)",
+    "nameZh": "百会(头)",
+    "description": "Crown of the head — governing vessel.",
+    "region": "body",
+    "position": [0, 1.65, 0],
+    "target": {
+     "name": "Whole-Body Qi",
+     "nameZh": "全身气机",
+     "effect": "Calms the mind, lifts overall energy.",
+     "effectZh": "安神定志，提升整体气机。",
+     "organIds": [
+      "brain",
+      "heart",
+      "lung-l",
+      "lung-r",
+      "stomach"
+     ]
+    }
+   },
+   {
+    "id": "body-sanyinjiao",
+    "name": "Sanyinjiao (SP6, Leg)",
+    "nameZh": "三阴交(腿)",
+    "description": "Inner ankle, above the bone.",
+    "region": "body",
+    "position": [0.08, -1.38, 0.02],
+    "target": {
+     "name": "Reproductive & Digestive Organs",
+     "nameZh": "生殖与消化器官",
+     "effect": "Regulates hormonal balance, eases menstrual cramps.",
+     "effectZh": "调节内分泌平衡，缓解经期不适。",
+     "organIds": [
+      "uterus",
+      "intestines"
+     ]
+    }
+   }
+  ]
+ },
+ "circulatory": {
+  "points": [
+   {
+    "id": "heart",
+    "name": "Heart",
+    "nameZh": "心脏",
+    "description": "Pumps blood into the circulatory loop.",
+    "position": [0.06, 0.92, 0.1]
+   },
+   {
+    "id": "aorta",
+    "name": "Aorta",
+    "nameZh": "主动脉",
+    "description": "Main artery leaving the heart.",
+    "position": [0.02, 1.06, 0.06]
+   },
+   {
+    "id": "arteries",
+    "name": "Arteries",
+    "nameZh": "动脉",
+    "description": "Carry oxygen-rich blood to tissues.",
+    "position": [0.48, 0.62, 0.06]
+   },
+   {
+    "id": "capillaries",
+    "name": "Capillaries",
+    "nameZh": "毛细血管",
+    "description": "Exchange oxygen and nutrients at tissues.",
+    "position": [0.52, 0.05, 0.06]
+   },
+   {
+    "id": "veins",
+    "name": "Veins",
+    "nameZh": "静脉",
+    "description": "Carry oxygen-poor blood back toward the heart.",
+    "position": [0.44, 0.9, 0.04]
+   },
+   {
+    "id": "venacava",
+    "name": "Vena Cava",
+    "nameZh": "腔静脉",
+    "description": "Returns blood to the right atrium.",
+    "position": [-0.04, 0.72, 0.02]
+   },
+   {
+    "id": "lungs",
+    "name": "Lungs",
+    "nameZh": "肺",
+    "description": "Reoxygenates blood via pulmonary circulation.",
+    "position": [-0.15, 0.96, 0.02]
+   }
+  ],
+  "flow": {
+   "kind": "blood",
+   "pointIds": [
+    "heart",
+    "aorta",
+    "arteries",
+    "capillaries",
+    "veins",
+    "venacava",
+    "lungs"
+   ]
+  }
+ }
+}
