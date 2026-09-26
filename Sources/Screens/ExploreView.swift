@@ -37,8 +37,8 @@ struct HomeContent: View {
             } else if searching {
                 SearchSuggestions(query: $query)
             } else {
-                TileGrid(title: settings.t("Human body", "人体"), tiles: Tile.body, expanded: $showAllBody)
                 TileGrid(title: settings.t("Reflex & acupressure", "反射区与穴位"), tiles: Tile.reflex, expanded: nil)
+                TileGrid(title: settings.t("Human body", "人体"), tiles: Tile.body, expanded: $showAllBody)
                 IllustrationsSection()
                 SettingsSection()
             }
