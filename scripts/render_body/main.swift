@@ -15,7 +15,8 @@ final class Renderer: NSObject, NSApplicationDelegate {
         let out = a.count > 1 ? a[1] : "/tmp/body.png"
         let layers = Set((a.count > 2 ? a[2] : "skeletal").split(separator: ",").compactMap { LayerID(rawValue: String($0)) })
         let yaw = a.count > 3 ? Float(a[3]) ?? 0 : 0
-        let focus = a.count > 5 ? (Float(a[4]) ?? 0.05, Float(a[5]) ?? 5.8) : (0.05, 5.8)
+        // "-" keeps the scene's own framing for the age
+        let focus: (Float, Float)? = a.count > 5 && a[4] != "-" ? (Float(a[4]) ?? 0.05, Float(a[5]) ?? 5.8) : nil
         let female = a.count > 6 && a[6] == "female"
         let age = a.count > 7 ? AgeGroup(rawValue: a[7]) ?? .adult : .adult
 
@@ -32,8 +33,10 @@ final class Renderer: NSObject, NSApplicationDelegate {
             scene.setLayers(layers)
             scene.touched = true
             scene.yaw = yaw
-            scene.goalFocusY = focus.0; scene.focusY = focus.0
-            scene.goalDistance = focus.1; scene.distance = focus.1
+            if let focus {
+                scene.goalFocusY = focus.0; scene.goalDistance = focus.1
+            }
+            scene.focusY = scene.goalFocusY; scene.distance = scene.goalDistance
             let anchor = AnchorEntity(world: .zero)
             anchor.addChild(scene.root)
             view.scene.addAnchor(anchor)

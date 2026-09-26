@@ -23,7 +23,7 @@ extension Illustrations {
             sources: ["ILCOR 2025 CoSTR / Red Cross first aid: direct pressure; tourniquet for life-threatening limb bleeding"]
         )
         s.profileNote = switch who.age {
-        case .infant, .child: Bilingual("Children have much less blood — a loss that looks small can be serious. Call 120 early.",
+        case .infant, .toddler, .child: Bilingual("Children have much less blood — a loss that looks small can be serious. Call 120 early.",
                                         "儿童血量少得多——看起来不多的失血也可能很危险。尽早拨打 120。")
         case .senior: Bilingual("65+: many take blood thinners, so bleeding lasts longer — press longer and tell 120 their medicines.",
                                 "老人：很多人服用抗凝药，出血更久——按压时间要更长，并告知 120 所用药物。")
@@ -170,7 +170,7 @@ extension Illustrations {
         s.profileNote = switch who.age {
         case .infant: Bilingual("Baby: cool the burn 20 min but keep the rest of the baby wrapped and warm. Any burn on a baby needs a doctor.",
                                 "婴儿：冲凉烫伤处 20 分钟，但身体其他部位要包好保暖。婴儿烫伤一律就医。")
-        case .child: Bilingual("Child: a burn bigger than the child’s own palm, or on the face, hands or groin → hospital. Keep them warm.",
+        case .toddler, .child: Bilingual("Child: a burn bigger than the child’s own palm, or on the face, hands or groin → hospital. Keep them warm.",
                                "儿童：面积大于孩子自己的手掌，或在面部、手部、会阴——去医院。注意保暖。")
         case .senior: Bilingual("65+: thin skin burns deeper at lower heat — see a doctor sooner.", "老人：皮肤薄，较低温度也会烫得更深——更应及早就医。")
         case .adult: nil

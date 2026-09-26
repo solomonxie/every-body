@@ -59,7 +59,11 @@ struct ChartScreen: View {
         .profileToolbar()
         .navigationBarTitleDisplayMode(.inline)
         .onAppear(perform: setUp)
-        .onChange(of: settings.age) { inset.setAge(settings.age) }
+        .onChange(of: settings.age) {
+            inset.setAge(settings.age)
+            inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, points: [], flowStops: [])
+            inset.setLayers([.skin, .organs])
+        }
     }
 
     private var controls: some View {

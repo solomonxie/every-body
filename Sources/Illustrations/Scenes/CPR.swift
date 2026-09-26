@@ -2,7 +2,7 @@ import SwiftUI
 
 extension Illustrations {
     static func cpr(for who: Profile) -> Scenario {
-        let infant = who.age == .infant, child = who.age == .child, pregnant = who.isPregnant
+        let infant = who.age == .infant, child = who.age.isChild, pregnant = who.isPregnant
         let depth = infant ? Bilingual("about 4 cm (⅓ of the chest)", "约 4 厘米（胸廓厚度 1/3）")
             : child ? Bilingual("about 5 cm (⅓ of the chest)", "约 5 厘米（胸廓厚度 1/3）") : Bilingual("5–6 cm deep", "深 5–6 厘米")
         var steps: [Step] = [
@@ -60,7 +60,7 @@ extension Illustrations {
         s.profileNote = switch who.age {
         case .infant: Bilingual("Baby: two thumbs on the breastbone, about 4 cm deep, breaths cover mouth and nose. Alone? 2 min of CPR, then call.",
                                 "婴儿：双拇指按压胸骨，深约 4 厘米，吹气时包住口鼻。独自一人：先做 2 分钟再呼救。")
-        case .child: Bilingual("Child: one hand (two if big), about 5 cm deep. Alone? 2 min of CPR, then call 120.",
+        case .toddler, .child: Bilingual("Child: one hand (two if big), about 5 cm deep. Alone? 2 min of CPR, then call 120.",
                                "儿童：单手按压（大孩子用双手），深约 5 厘米。独自一人：先做 2 分钟再拨打 120。")
         case .senior: Bilingual("65+: same as adults. Ribs may crack under proper compressions — don’t stop.",
                                 "老人：方法同成人。正确按压可能压断肋骨——不要停。")
@@ -72,7 +72,7 @@ extension Illustrations {
     }
 
     private static func drawCPR(_ s: inout Sketch, _ p: Params, _ t: Double, _ who: Profile) {
-        let infant = who.age == .infant, child = who.age == .child
+        let infant = who.age == .infant, child = who.age.isChild
         let st = Int(p[v: "stage"].rounded()), press = p[v: "press"], taps = p[v: "taps"], rate = p[v: "rate"]
         // a baby goes on a table: closer view, the rescuer stands behind it
         let floor = infant ? 244.0 : 266
