@@ -8,6 +8,7 @@ import { FOCUS, type SceneBusRef } from '@/components/canvas/scene-bus';
 import type { JointAngles } from '@/components/canvas/articulated';
 import type { Pick, Picker } from '@/components/canvas/tap-picker';
 import { useSettings } from '@/state/settings';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { createOrbitGesture, resetView } from './orbit-gesture';
 
@@ -35,9 +36,10 @@ export function ModelView({ busRef, skinColor, onPick, skinOpacity, showOrgans, 
   const background = settings.background;
   const setBackground = (next: keyof typeof BACKGROUNDS) => update({ background: next });
 
+  const reducedMotion = useReducedMotion();
   useEffect(() => {
-    if (!settings.autoRotate) busRef.current.touched = true;
-  }, [settings.autoRotate, busRef]);
+    if (!settings.autoRotate || reducedMotion) busRef.current.touched = true;
+  }, [settings.autoRotate, reducedMotion, busRef]);
   const [hintVisible, setHintVisible] = useState(!compact);
 
   const onPickRef = useRef(onPick);
@@ -69,6 +71,7 @@ export function ModelView({ busRef, skinColor, onPick, skinOpacity, showOrgans, 
                 selectedId={selectedId}
                 angles={angles}
                 organVisible={organVisible}
+                female={settings.body === 'female'}
                 pickerRef={pickerRef}
               >
                 {children}

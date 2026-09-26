@@ -14,6 +14,7 @@ import { findIllustration, ILLUSTRATIONS } from '@/illustrations';
 import { SCENE_H, SCENE_W, type Scenario } from '@/illustrations/types';
 import { usePlayer } from '@/illustrations/use-player';
 import { useBilingual } from '@/state/settings';
+import { useReducedMotion } from 'react-native-reanimated';
 
 /** stable function identity that always calls the latest closure */
 function useCallbackRef<A extends unknown[]>(fn: (...args: A) => void) {
@@ -31,7 +32,8 @@ export default function IllustrationScreen() {
 }
 
 function Player({ scenario }: { scenario: Scenario }) {
-  const { step, stepIndex, goTo, params, t, setParams, easeParams, pulse, solved } = usePlayer(scenario);
+  const reducedMotion = useReducedMotion();
+  const { step, stepIndex, goTo, params, t, setParams, easeParams, pulse, solved } = usePlayer(scenario, reducedMotion);
   const [size, setSize] = useState({ w: 1, h: 1 });
   const dragRef = useRef<PointHandler | null>(null);
   const { Scene } = scenario;

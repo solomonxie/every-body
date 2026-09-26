@@ -14,9 +14,11 @@ import type { Pick, Picker } from '@/components/canvas/tap-picker';
 
 const ROTATE_PER_PX = 0.008;
 const MAX_PITCH = 0.9;
+const PAN_PER_PX = 0.0016;
 
 export function resetView(bus: SceneBus) {
   bus.pitch = 0;
+  bus.panX = 0;
   faceFront(bus);
   setFocus(bus, FOCUS.all);
 }
@@ -37,12 +39,25 @@ export function createOrbitGesture({ busRef, pickerRef, onPickRef, onFirstTouch 
 
   const pan = Gesture.Pan()
     .runOnJS(true)
+    .maxPointers(1)
     .onBegin(firstTouch)
     .onChange((e) => {
       const b = busRef.current;
       b.goalYaw = null;
       b.yaw += e.changeX * ROTATE_PER_PX;
       b.pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, b.pitch + e.changeY * ROTATE_PER_PX));
+    });
+
+  /** two fingers slide the view */
+  const slide = Gesture.Pan()
+    .runOnJS(true)
+    .minPointers(2)
+    .onChange((e) => {
+      const b = busRef.current;
+      const perPx = b.distance * PAN_PER_PX;
+      b.panX -= e.changeX * perPx;
+      b.goalFocusY += e.changeY * perPx;
+      b.focusY = b.goalFocusY;
     });
 
   const pinch = Gesture.Pinch()
@@ -69,5 +84,5 @@ export function createOrbitGesture({ busRef, pickerRef, onPickRef, onFirstTouch 
     .runOnJS(true)
     .onEnd(() => resetView(busRef.current));
 
-  return Gesture.Race(Gesture.Simultaneous(pan, pinch), Gesture.Exclusive(doubleTap, tap));
+  return Gesture.Race(Gesture.Simultaneous(pan, slide, pinch), Gesture.Exclusive(doubleTap, tap));
 }

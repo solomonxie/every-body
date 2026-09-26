@@ -7,9 +7,10 @@ export interface Settings {
   names: NameMode;
   background: 'gray' | 'white';
   autoRotate: boolean;
+  body: 'male' | 'female';
 }
 
-const DEFAULTS: Settings = { names: 'both', background: 'gray', autoRotate: true };
+const DEFAULTS: Settings = { names: 'both', background: 'gray', autoRotate: true, body: 'male' };
 const KEY = 'settings.v1';
 
 const SettingsContext = createContext<{ settings: Settings; update: (patch: Partial<Settings>) => void }>({

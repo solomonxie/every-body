@@ -15,12 +15,13 @@ type Props = {
   selectedId?: string;
   angles?: JointAngles;
   organVisible?: (id: string) => boolean;
+  female?: boolean;
   pickerRef: RefObject<Picker | null>;
   /** overlays that rotate with the body */
   children?: ReactNode;
 };
 
-export function BodyScene({ busRef, skinColor, background, skinOpacity, showOrgans, selectedId, angles, organVisible, pickerRef, children }: Props) {
+export function BodyScene({ busRef, skinColor, background, skinOpacity, showOrgans, selectedId, angles, organVisible, female, pickerRef, children }: Props) {
   return (
     <>
       <color attach="background" args={[background]} />
@@ -28,7 +29,9 @@ export function BodyScene({ busRef, skinColor, background, skinOpacity, showOrga
       <directionalLight position={[3, 4, 5]} intensity={1.1} />
       <directionalLight position={[-3, 2, -4]} intensity={0.4} />
       <OrbitRig busRef={busRef}>
-        <Mannequin skinColor={skinColor} busRef={busRef} skinOpacity={skinOpacity} showOrgans={showOrgans} selectedId={selectedId} angles={angles} organVisible={organVisible} />
+        <Mannequin skinColor={skinColor} busRef={busRef} skinOpacity={skinOpacity} showOrgans={showOrgans} selectedId={selectedId} angles={angles} organVisible={organVisible}
+          female={female}
+        />
         {children}
       </OrbitRig>
       <TapPicker pickerRef={pickerRef} />

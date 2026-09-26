@@ -1,31 +1,30 @@
 # Body Atlas
 
-> 🚧 Work in progress — first demo: Reflex Map and blood flow on a placeholder figure.
+> 🚧 Work in progress — iPhone build, schematic body, reflex charts, 18 illustrations.
 
-A free way to explore the human body in 3D, layer by layer and system by system — skeletal, muscular, circulatory, nervous, organs, digestive, and more. Spin the model, peel back a layer, and see what's underneath, all from your phone, with no purchase required.
+A free, offline way to explore the human body — every system, the hand/foot/ear reflex maps,
+and how common conditions and first aid work. Bilingual (English / 中文).
 
-Real, licensed anatomy models are a future addition. This build uses a placeholder figure (primitive shapes with the main organs inside, `src/data/anatomy.ts`) to prove out the 3D viewer pipeline — React Native + Expo, rendering through `@react-three/fiber` and `three` via `expo-gl`/`expo-three` — before real assets are sourced.
+Everything is **schematic, not lifelike**: drawn from simple geometry and math, judged on
+correct positions and cause → effect (see `docs/design/mvp/DESIGN.md`). Every feature is
+**watch, then try** — an animation plus something to drag, tap, hold or compare.
 
-## Try it
+## What's in it
 
-- **Reflex Map (穴位反射图)** — press a foot / hand / ear / body point (dot or name) → a
-  pulse travels to the organ it's said to act on, the organ lights up, the effect card shows.
-  Filter by region to zoom there.
-- **Circulatory** — red/blue blood cells loop heart → arteries → capillaries → veins → lungs;
-  drag the heart rate and the flow and heartbeat follow.
-- Drag to spin, pinch to zoom, double-tap to reset; ⌂ reset, ◐ gray/white background.
+- **Body** — bones, muscles, vessels, nerves and organs as ~150 math-built parts
+  (`src/data/body/`). Layers, tap to name, Hide / Fade / Isolate / Undo, bend shoulder, elbow
+  and knee (muscles bulge), male / female variant. Quiz: name the glowing part.
+- **Reflex Map 穴位反射图** — hand, foot and ear charts with zones per the standard maps
+  (GB/T 13734 ear points, WHO acupoints). Press a zone → a pulse travels to the organ it's
+  said to act on. Tapping an organ lists its zones.
+- **Illustrations 图解** — 18 topics in 5 groups: bone setting, first aid (CPR, choking,
+  bleeding, burns, sprain), blood sugar / pressure / fats, illnesses (stroke, heart attack,
+  cold vs flu, asthma, reflux, kidney stones), pregnancy & labour. Each scene is a small
+  model (`src/illustrations/scenes/`).
+- **Search** across all of it, EN or 中文; **Settings** for names language, background,
+  auto-rotate, body.
 
-Points: `src/data/system-points.ts` (positions on the figure, target organs).
-
-## Screen design
-
-- **Viewer** — model centered and rotatable; left edge rail of icon
-  buttons (search, layers, settings, info, quiz mode); right edge rail
-  (undo, background shade toggle — gray/white). Layers button opens the
-  system picker instead of a persistent sidebar.
-- **Browse** — 3-column grid of category tiles (thumbnail + label):
-  Skeleton, Muscles, Brain, Heart, Organs, Male, Female, Hand, Ear, Foot.
-  Tapping a tile jumps the Viewer straight to that system.
+Not medical advice — effects of reflex points are traditional claims.
 
 ## Design docs
 

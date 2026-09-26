@@ -22,8 +22,8 @@ export function OrbitRig({ busRef, children }: { busRef: SceneBusRef; children: 
     b.distance += (b.goalDistance - b.distance) * k;
     b.focusY += (b.goalFocusY - b.focusY) * k;
 
-    camera.position.set(0, b.focusY, b.distance);
-    camera.lookAt(0, b.focusY, 0);
+    camera.position.set(b.panX, b.focusY, b.distance);
+    camera.lookAt(b.panX, b.focusY, 0);
     if (ref.current) {
       ref.current.rotation.y = b.yaw;
       ref.current.rotation.x = b.pitch;

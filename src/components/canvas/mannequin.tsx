@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import type { Mesh, MeshStandardMaterial } from 'three';
 
 import { REFLEX_RESPONSE_MS } from '@/constants/reflex';
-import { BODY_PARTS, ORGAN_NAMES, ORGANS, type BodyPart, type OrganId } from '@/data/anatomy';
+import { bodyParts, ORGAN_NAMES, organAt, ORGANS, type BodyPart, type OrganId } from '@/data/anatomy';
 
 import { Articulated, type JointAngles } from './articulated';
 import type { SceneBusRef } from './scene-bus';
@@ -21,9 +21,9 @@ function PartGeometry({ shape }: Pick<BodyPart, 'shape'>) {
   }
 }
 
-function OrganMesh({ id, busRef, selected }: { id: OrganId; busRef: SceneBusRef; selected: boolean }) {
+function OrganMesh({ id, busRef, selected, female }: { id: OrganId; busRef: SceneBusRef; selected: boolean; female: boolean }) {
   const ref = useRef<Mesh>(null);
-  const organ = ORGANS[id];
+  const organ = organAt(id, female);
   const base = organ.scale ?? [1, 1, 1];
 
   useFrame(({ clock }) => {
@@ -72,15 +72,16 @@ type Props = {
   selectedId?: string;
   angles?: JointAngles;
   organVisible?: (id: string) => boolean;
+  female?: boolean;
 };
 
-export function Mannequin({ skinColor, busRef, skinOpacity = 0.32, showOrgans = true, selectedId, angles = {}, organVisible }: Props) {
+export function Mannequin({ skinColor, busRef, skinOpacity = 0.32, showOrgans = true, selectedId, angles = {}, organVisible, female = false }: Props) {
   return (
     <group>
       {skinOpacity > 0 && (
         <Articulated
           angles={angles}
-          items={BODY_PARTS.map((part) => ({
+          items={bodyParts(female).map((part) => ({
             id: part.id,
             node: (
               <mesh key={part.id} position={part.position} rotation={[0, 0, part.rotationZ ?? 0]} scale={part.scale ?? [1, 1, 1]} renderOrder={1}>
@@ -94,7 +95,7 @@ export function Mannequin({ skinColor, busRef, skinOpacity = 0.32, showOrgans = 
       {(Object.keys(ORGANS) as OrganId[])
         .filter((id) => ORGANS[id].region || (showOrgans && (organVisible?.(id) ?? true)))
         .map((id) => (
-          <OrganMesh key={id} id={id} busRef={busRef} selected={id === selectedId} />
+          <OrganMesh key={id} id={id} busRef={busRef} selected={id === selectedId} female={female} />
         ))}
     </group>
   );

@@ -9,6 +9,7 @@ export interface SceneBus {
   pitch: number;
   distance: number;
   focusY: number;
+  panX: number;
   goalDistance: number;
   goalFocusY: number;
   goalYaw: number | null;
@@ -43,6 +44,7 @@ export function createSceneBus(litOrgans: OrganId[] = []): SceneBus {
     pitch: 0,
     distance: FOCUS.all.distance,
     focusY: FOCUS.all.y,
+    panX: 0,
     goalDistance: FOCUS.all.distance,
     goalFocusY: FOCUS.all.y,
     goalYaw: null,
