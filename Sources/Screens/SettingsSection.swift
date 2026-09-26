@@ -39,7 +39,7 @@ struct SettingsSection: View {
             .padding(12)
             .background(Color.secondary.opacity(0.1), in: .rect(cornerRadius: 14))
             VStack(alignment: .leading, spacing: 6) {
-                Text(settings.t("Body Atlas is for learning, not medical advice. Reflex and acupoint effects describe traditional practice, not proven treatment. In an emergency call 120 / 911.",
+                Text(settings.t("Every Body is for learning, not medical advice. Reflex and acupoint effects describe traditional practice, not proven treatment. In an emergency call 120 / 911.",
                                 "本应用仅供学习，不构成医疗建议。穴位与反射区功效为传统说法。紧急情况请拨打 120。"))
                 Text(settings.t("Ear points: GB/T 13734-2008. Acupoints: WHO Standard Acupuncture Point Locations (2008). First aid: ILCOR / Red Cross. All drawings are schematic.",
                                 "耳穴：GB/T 13734-2008。穴位：WHO 标准针灸穴位定位（2008）。急救：ILCOR / 红十字会。所有图均为示意图。"))

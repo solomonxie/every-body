@@ -3,7 +3,7 @@
 The app's only root page (no tab bar). Code: `Sources/Screens/ExploreView.swift`.
 
 ```
- Body Atlas                                 [👤 Adult M ▾]
+ Every Body                                 [👤 Adult M ▾]
  ┌────────────────────────────────────────────────────┐
  │ 🔍 Body parts, illnesses, procedures               │  ← typing swaps sections for results
  └────────────────────────────────────────────────────┘

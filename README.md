@@ -1,4 +1,4 @@
-# Body Atlas
+# Every Body
 
 > 🚧 Work in progress — native iPhone app (SwiftUI + RealityKit): schematic body, reflex charts, 18 illustrations.
 
@@ -36,7 +36,7 @@ Native SwiftUI + RealityKit (iOS 18+). No Expo, Metro or JS toolchain.
 
 ```bash
 brew install xcodegen          # once
-xcodegen generate              # BodyAtlas.xcodeproj from project.yml
+xcodegen generate              # EveryBody.xcodeproj from project.yml
 ```
 
 Install on a connected iPhone — put `DEVELOPMENT_TEAM` and `IOS_BUNDLE_ID` in the gitignored
@@ -44,7 +44,7 @@ Install on a connected iPhone — put `DEVELOPMENT_TEAM` and `IOS_BUNDLE_ID` in 
 
 ```bash
 scripts/install-ios-device.sh
-scripts/screenshot.sh viewer/skeletal /tmp/shot.png   # open a screen via bodyatlas:// and capture it
+scripts/screenshot.sh viewer/skeletal /tmp/shot.png   # open a screen via everybody:// and capture it
 ```
 
 Data lives in `Resources/Data/*.json` (body parts, organs, joints, points, charts, systems).

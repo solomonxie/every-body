@@ -168,7 +168,7 @@ struct SearchResults: View {
     }
 }
 
-/// bodyatlas://search — the same results on their own page.
+/// everybody://search — the same results on their own page.
 struct SearchScreen: View {
     @State private var query = ""
     @Environment(Settings.self) private var settings

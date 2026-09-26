@@ -1,4 +1,4 @@
-# Body Atlas — Implementation plan
+# Every Body — Implementation plan
 
 Why: [DESIGN.md](DESIGN.md) · What it looks like: [UIUX_DESIGN.md](UIUX_DESIGN.md).
 `depends: none` tasks within a phase are the parallel batch.

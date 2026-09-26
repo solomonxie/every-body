@@ -41,7 +41,7 @@ struct ExploreView: View {
         }
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                     prompt: settings.t("Body parts, illnesses, procedures", "身体部位、疾病、操作"))
-        .navigationTitle("Body Atlas")
+        .navigationTitle("Every Body")
         .profileToolbar()
     }
 
