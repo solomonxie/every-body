@@ -38,44 +38,125 @@ struct InfoScreen: View {
     var body: some View {
         let system = Catalog.system(systemID)
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                RoundedRectangle(cornerRadius: 4).fill(Color(hex: system?.color ?? "#999999")).frame(height: 8)
-                if let info = system?.info {
-                    Text(settings.name(info.summary, info.summaryZh))
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(info.facts, id: \.self) { fact in
-                            Text("• " + settings.name(fact[0], fact[1])).font(.footnote)
-                        }
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.secondary.opacity(0.1), in: .rect(cornerRadius: 14))
-                    ForEach(info.links, id: \.route) { link in
-                        if let route = Route(path: link.route) {
-                            NavigationLink("\(settings.t(route.title)) ›", value: route).font(.subheadline.weight(.semibold))
-                        }
+            InfoContent(systemID: systemID)
+                .padding(.horizontal, Space.l)
+                .padding(.top, Space.s)
+                .padding(.bottom, Space.xxl)
+        }
+        .background(Color.page)
+        .navigationTitle(system.map { settings.name($0.name, $0.nameZh) } ?? "")
+        .navigationBarTitleDisplayMode(.inline)
+        .profileToolbar()
+    }
+}
+
+struct InfoContent: View {
+    let systemID: String
+    @Environment(Settings.self) private var settings
+
+    var body: some View {
+        let system = Catalog.system(systemID)
+        let color = Color(hex: system?.color ?? "#999999")
+        let parts = systemID == "acupoint-reflex-map" ? [] : systemParts(systemID)
+        VStack(alignment: .leading, spacing: Space.xl) {
+            HStack(spacing: Space.l) {
+                ZStack {
+                    LinearGradient(colors: [color.opacity(0.18), color.opacity(0.42)], startPoint: .top, endPoint: .bottom)
+                    if systemID == "acupoint-reflex-map" {
+                        ReflexMapThumb()
+                    } else if UIImage(named: "tile-\(systemID)") != nil {
+                        Image("tile-\(systemID)").resizable().scaledToFill()
                     }
                 }
-                let parts = systemID == "acupoint-reflex-map" ? [] : systemParts(systemID)
-                if !parts.isEmpty {
-                    Text("\(settings.t("PARTS", "部位")) · \(parts.count)").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
-                    FlowLayout(spacing: 8) {
+                .frame(width: 72, height: 72)
+                .clipShape(.rect(cornerRadius: Radius.tile, style: .continuous))
+                .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    Text(system.map { settings.name($0.name, $0.nameZh) } ?? "").font(.title2.weight(.bold))
+                        .accessibilityAddTraits(.isHeader)
+                    if !parts.isEmpty {
+                        Text(settings.t("\(parts.count) parts", "\(parts.count) 个部位")).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            if let info = system?.info {
+                Text(settings.name(info.summary, info.summaryZh))
+                    .font(.body)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !info.facts.isEmpty {
+                    VStack(alignment: .leading, spacing: Space.s) {
+                        Eyebrow(settings.t("Key facts", "要点")).padding(.horizontal, Space.xs)
+                        VStack(alignment: .leading, spacing: Space.m) {
+                            ForEach(info.facts, id: \.self) { fact in
+                                HStack(alignment: .firstTextBaseline, spacing: Space.m) {
+                                    Circle().fill(color).frame(width: 7, height: 7).alignmentGuide(.firstTextBaseline) { $0[.bottom] - 1 }
+                                    Text(settings.name(fact[0], fact[1])).font(.subheadline)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+                        .card()
+                    }
+                }
+                let links = info.links.compactMap { Route(path: $0.route) }
+                if !links.isEmpty {
+                    VStack(alignment: .leading, spacing: Space.s) {
+                        Eyebrow(settings.t("See also", "相关")).padding(.horizontal, Space.xs)
+                        VStack(spacing: 0) {
+                            ForEach(Array(links.enumerated()), id: \.offset) { i, route in
+                                if i > 0 { Divider().padding(.leading, Space.l + 30 + Space.m) }
+                                NavigationLink(value: route) { linkRow(route) }
+                                    .buttonStyle(RowButtonStyle())
+                            }
+                        }
+                        .background(Color.card, in: .rect(cornerRadius: Radius.card, style: .continuous))
+                        .clipShape(.rect(cornerRadius: Radius.card, style: .continuous))
+                    }
+                }
+            }
+            if !parts.isEmpty {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    Eyebrow("\(settings.t("Parts", "部位")) · \(parts.count)").padding(.horizontal, Space.xs)
+                    Text(settings.t("Tap one to find it on the 3D model.", "点击即可在 3D 模型上找到。"))
+                        .font(.footnote).foregroundStyle(.secondary).padding(.horizontal, Space.xs)
+                    FlowLayout(spacing: Space.s) {
                         ForEach(parts, id: \.self) { part in
                             NavigationLink(value: Route.viewer(system: systemID, part: part.partID)) {
-                                Text(settings.name(part.name, part.nameZh)).font(.footnote)
-                                    .padding(.horizontal, 12).padding(.vertical, 6)
-                                    .background(Color.secondary.opacity(0.12), in: .capsule)
+                                Text(settings.name(part.name, part.nameZh)).font(.subheadline)
+                                    .foregroundStyle(.primary)
+                                    .padding(.horizontal, Space.m)
+                                    .frame(minHeight: 34)
+                                    .background(Color.card, in: .capsule)
+                                    .padding(.vertical, 5)
+                                    .contentShape(.rect)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(PressableStyle())
                         }
                     }
                 }
             }
-            .padding(16)
         }
-        .navigationTitle(system.map { settings.name($0.name, $0.nameZh) } ?? "")
-        .profileToolbar()
-        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func linkRow(_ route: Route) -> some View {
+        let (symbol, color): (String, Color) = switch route {
+        case .chart: ("hand.raised.fill", Color(hex: "#D9853B"))
+        case let .illustration(id): ("play.fill", Illustrations.find(id)?.group.color ?? .brandFill)
+        case .viewer: ("cube.fill", .brandFill)
+        case .info: ("info", .blue)
+        case .search: ("magnifyingglass", .gray)
+        }
+        return HStack(spacing: Space.m) {
+            IconBadge(symbol: symbol, color: color)
+            Text(settings.t(route.title)).foregroundStyle(.primary).multilineTextAlignment(.leading)
+            Spacer(minLength: Space.s)
+            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, Space.l)
+        .padding(.vertical, Space.m)
+        .frame(minHeight: minTap)
+        .contentShape(.rect)
     }
 }
 

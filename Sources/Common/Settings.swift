@@ -15,6 +15,7 @@ final class Settings {
     var female: Bool { didSet { save() } }
     var age: AgeGroup { didSet { save() } }
     var pregnant: Bool { didSet { save() } }
+    private(set) var recentSearches: [String] { didSet { save() } }
 
     private let store = UserDefaults.standard
 
@@ -26,6 +27,7 @@ final class Settings {
         female = store.bool(forKey: "female")
         age = AgeGroup(rawValue: store.string(forKey: "age") ?? "") ?? .adult
         pregnant = store.bool(forKey: "pregnant")
+        recentSearches = store.stringArray(forKey: "recentSearches") ?? []
     }
 
     private func save() {
@@ -35,7 +37,17 @@ final class Settings {
         store.set(female, forKey: "female")
         store.set(age.rawValue, forKey: "age")
         store.set(pregnant, forKey: "pregnant")
+        store.set(recentSearches, forKey: "recentSearches")
     }
+
+    /// newest first, 6 kept
+    func remember(search: String) {
+        let q = search.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return }
+        recentSearches = Array(([q] + recentSearches.filter { $0.caseInsensitiveCompare(q) != .orderedSame }).prefix(6))
+    }
+
+    func clearRecentSearches() { recentSearches = [] }
 
     var profile: Profile { Profile(age: age, female: female, pregnant: pregnant) }
 
