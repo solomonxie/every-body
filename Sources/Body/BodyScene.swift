@@ -154,7 +154,9 @@ final class BodyScene {
             organEntities[organ.id] = container
         }
 
-        for part in Catalog.body.parts where part.layer != .skin {
+        // internal sex-specific parts (ovaries, testes) exist at every age
+        let organSex = female ? "female" : "male"
+        for part in Catalog.body.parts where part.layer != .skin && (part.sex == nil || part.sex == organSex) {
             let entity = Self.entity(for: part.shape)
             entity.name = part.id
             baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1, texture: Textures.for(part.layer))
