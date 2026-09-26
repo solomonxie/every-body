@@ -139,3 +139,11 @@ peel layers, and see what a point connects to — on a phone, free, offline.
 - **Graphic content**: fractures, labor — schematic by design (no gore), age rating 12+.
 - Reflex zones on feet/hands/ears need detailed local geometry; body-scale model may be
   too coarse → possible dedicated foot/hand/ear sub-models.
+
+## Render budget (3D body)
+
+- ~420 pieces, ~400k triangles with every layer on; a normal view shows 2–3 layers.
+- Cost driver is draw calls (pieces) and see-through overdraw, not triangles: merge
+  strands into one mesh (sheet muscles), keep skin solid unless inner layers show.
+- Opaque parts are back-face culled; textures are 64×64 procedural tints only.
+
