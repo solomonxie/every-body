@@ -15,15 +15,17 @@ type Props = {
   busRef: SceneBusRef;
   skinColor: string;
   onPickPoint?: (pointId: string) => void;
+  /** small inset: no rails, no hint */
+  compact?: boolean;
   /** extra scene content that rotates with the body */
   children?: ReactNode;
 };
 
 /** Full-bleed 3D body: drag to spin, pinch to zoom, tap a point, double-tap to reset. */
-export function ModelView({ busRef, skinColor, onPickPoint, children }: Props) {
+export function ModelView({ busRef, skinColor, onPickPoint, compact = false, children }: Props) {
   const pickerRef = useRef<Picker | null>(null);
   const [background, setBackground] = useState<keyof typeof BACKGROUNDS>('gray');
-  const [hintVisible, setHintVisible] = useState(true);
+  const [hintVisible, setHintVisible] = useState(!compact);
 
   const onPickRef = useRef(onPickPoint);
   useEffect(() => {
@@ -53,14 +55,16 @@ export function ModelView({ busRef, skinColor, onPickPoint, children }: Props) {
         </View>
       </GestureDetector>
 
-      <View style={styles.rail} pointerEvents="box-none">
-        <RailButton label="Reset view" glyph="⌂" onPress={reset} />
-        <RailButton
-          label={background === 'gray' ? 'White background' : 'Gray background'}
-          glyph="◐"
-          onPress={() => setBackground(background === 'gray' ? 'white' : 'gray')}
-        />
-      </View>
+      {!compact && (
+        <View style={styles.rail} pointerEvents="box-none">
+          <RailButton label="Reset view" glyph="⌂" onPress={reset} />
+          <RailButton
+            label={background === 'gray' ? 'White background' : 'Gray background'}
+            glyph="◐"
+            onPress={() => setBackground(background === 'gray' ? 'white' : 'gray')}
+          />
+        </View>
+      )}
 
       {hintVisible && (
         <View style={styles.hint} pointerEvents="none">

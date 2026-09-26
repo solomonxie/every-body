@@ -12,6 +12,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="viewer/[id]" options={{ title: 'Viewer', headerBackTitle: 'Explore' }} />
           <Stack.Screen name="info/[id]" options={{ title: 'Info' }} />
+          <Stack.Screen name="reflex/[chart]" options={{ title: 'Reflex chart', headerBackTitle: 'Back' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

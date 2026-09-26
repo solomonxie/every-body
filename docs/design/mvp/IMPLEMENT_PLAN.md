@@ -26,47 +26,49 @@ Build every v1 screen against the existing sphere so UI work doesn't wait on ass
 - [ ] T2.6 Viewer states: loading, error, no-GL, first-run hint — see `uiux/viewer.md` → States — depends: T2.2
 - [x] T2.7 Review build: primitive mannequin with organs, Reflex Map press → pulse → organ, blood flow + heart-rate try, app icon, device install script — see `src/components/canvas`, `scripts/` — depends: none
 
-## Phase 3: Anatomy asset pipeline
-Real geometry is what parts, points and scenarios all anchor to; nothing past Phase 3
-is meaningful on a sphere.
+## Phase 3: Schematic body
+Parts, points and scenarios anchor to the body's part ids, so the procedural body must
+cover every system before later phases. Schematic geometry only (DESIGN → Decision).
 
-- [ ] T3.1 Confirm licence terms + publish plan for converted models — see `DESIGN.md` → Risks — depends: none
-- [ ] T3.2 Blender → per-system GLB conversion script (ids, decimate, Draco/meshopt, Low tier) — see `asset-pipeline.md` — depends: T3.1
-- [ ] T3.3 Part metadata extract: id, EN/中 names, system, region, parent — see `asset-pipeline.md` → Metadata — depends: T3.2
-- [ ] T3.4 Tile thumbnails rendered from GLBs — see `asset-pipeline.md` → Thumbnails — depends: T3.2
-- [ ] T3.5 Runtime loader: lazy per-system GLB via expo-asset + GLTFLoader, progress events — see `src/components/canvas/` — depends: T3.2, T2.6
-- [ ] T3.6 Replace `RotatingMesh` with `BodyModel` (layers by system, quality tier) — see `src/components/canvas/` — depends: T3.5
+- [x] T3.0 Primitive mannequin with main organs + regions — see `src/data/anatomy.ts` — depends: none
+- [ ] T3.1 Part schema: id, EN/中 names, system, region, parent, primitive params — see `src/data/anatomy.ts` — depends: T3.0
+- [ ] T3.2 Skeletal system as primitives (skull, spine segments, ribs, pelvis, limb bones, joints) — see `src/data/anatomy.ts` — depends: T3.1
+- [ ] T3.3 Muscular, nervous, digestive, circulatory as primitives/curves (tubes along splines) — see `src/data/anatomy.ts` — depends: T3.1
+- [ ] T3.4 `BodyModel`: layers by system, per-part visibility/opacity — see `src/components/canvas/` — depends: T3.2, T3.3
+- [ ] T3.5 Tile thumbnails rendered from the schematic body — see `scripts/` — depends: T3.4
+- Deferred: Z-Anatomy GLB pipeline (`asset-pipeline.md`) — only if schematic proves insufficient
 
 ## Phase 4: Part interaction
 Picking and per-part state; Search and Part info key on the same part ids.
 
-- [ ] T4.1 Raycast picking + highlight + Part card — see `uiux/viewer.md` → Part card — depends: T3.6, T2.4
-- [ ] T4.2 Viewer part state (hide / isolate / fade / layer opacity) + undo stack — see `src/state/viewer.ts` — depends: T3.6
+- [ ] T4.1 Raycast picking + highlight + Part card — see `uiux/viewer.md` → Part card — depends: T3.4, T2.4
+- [ ] T4.2 Viewer part state (hide / isolate / fade / layer opacity) + undo stack — see `src/state/viewer.ts` — depends: T3.4
 - [ ] T4.3 Layers sheet + Display sheet — see `uiux/viewer.md` → Layers / Display — depends: T4.2, T2.4
-- [ ] T4.4 Part info page (part / point / system variants), Show on model — see `uiux/part-info.md` — depends: T3.3
-- [ ] T4.5 Search index (EN, 中文, pinyin) + Search sheet + recents — see `uiux/search.md` — depends: T3.3, T2.4
+- [ ] T4.4 Part info page (part / point / system variants), Show on model — see `uiux/part-info.md` — depends: T3.1
+- [ ] T4.5 Search index (EN, 中文, pinyin) + Search sheet + recents — see `uiux/search.md` — depends: T3.1, T2.4
 
 ## Phase 5: Points & flow on the real model
 Move the existing sphere-based points onto mesh surfaces; the pulse/flow engines here are
 reused by Phase 7 overlays.
 
-- [ ] T5.1 Point anchors: replace lat/lon with part id + surface position; re-place all points — see `src/types/BodyPoint.ts`, `src/data/system-points.ts` — depends: T3.3
+- [ ] T5.1 Point anchors: replace lat/lon with part id + surface position; re-place all points — see `src/types/BodyPoint.ts`, `src/data/system-points.ts` — depends: T3.1
 - [ ] T5.2 Surface-path reflex pulse + target flash + camera framing — see `uiux/points.md` → Press sequence — depends: T5.1
 - [ ] T5.3 Points sheet: filter, chips, effect card, claim ⓘ — see `uiux/points.md` — depends: T5.1, T2.4
 - [ ] T5.4 Blood-flow particle engine along vessel path, pause/speed, stops — see `uiux/points.md` → Blood flow — depends: T5.1
+- [x] T5.5 Hand + ear reflex charts (geometric SVG, zones per standard maps, L/R mirror, palm/back, 3D inset pulse) — see `uiux/points.md` → Hand & ear charts, `src/data/reflex-charts.ts` — depends: T5.1
 
 ## Phase 6: v1 release
 Ship core atlas before Illustrations; store review, size, and perf gate everything after.
 
 - [ ] T6.1 Reduce-motion variants (pulse, flow, camera) — see `uiux/points.md` → States — depends: T5.2, T5.4
-- [ ] T6.2 Perf pass on a low-end Android + Low quality auto-detect — see `src/components/canvas/` — depends: T3.6, T5.4
-- [ ] T6.3 Install-size budget check (≤ 60 MB) — see `asset-pipeline.md` → Budget — depends: T3.2
+- [ ] T6.2 Perf pass on a low-end Android + Low quality auto-detect — see `src/components/canvas/` — depends: T3.4, T5.4
+- [ ] T6.3 Install-size budget check (≤ 30 MB) — see `app.json` — depends: T3.4
 - [ ] T6.4 Store listing, age rating 12+, health-claim wording review — see `DESIGN.md` → Risks — depends: T5.3, T2.5
 
 ## Phase 7: Scenario engine — Watch
 One data-driven player for every Illustration; must exist before any topic is authored.
 
-- [ ] T7.1 `Scenario` / `Step` schema + validator — see `scenario-format.md` — depends: T3.3
+- [ ] T7.1 `Scenario` / `Step` schema + validator — see `scenario-format.md` — depends: T3.1
 - [ ] T7.2 Step runner: camera, layers, part transform/tint tweens, captions — see `scenario-format.md` → Runner — depends: T7.1, T4.2
 - [ ] T7.3 Overlay primitives: arrow, particles (reuse T5.4), gauge, plaque/narrowing, counter — see `uiux/illustrations.md` → Overlay primitives — depends: T7.1, T5.4
 - [ ] T7.4 Player UI: step dots, Prev/Next, auto-advance, end state, clinician-only hint — see `uiux/illustrations.md` → Player — depends: T7.2
@@ -90,10 +92,10 @@ watch + try steps, EN/中 captions, cited sources, clinician sign-off.
 - [ ] T9.2 First aid ×7 (ILCOR-based) + emergency-number reminder — see `uiux/illustrations.md` — depends: T7.3, T8.1, T8.2
 - [ ] T9.3 Blood sugar / pressure / fats — see `uiux/illustrations.md` → Metric topic — depends: T7.3, T8.1
 - [ ] T9.4 Common illnesses ×8 — see `uiux/illustrations.md` — depends: T7.3, T8.3
-- [ ] T9.5 Pregnancy sub-model sourcing (pelvis, uterus, fetus by stage) — see `DESIGN.md` → Risks — depends: T3.2
+- [ ] T9.5 Schematic pregnancy sub-model (pelvis, uterus, fetus by week as parametric shapes) — see `DESIGN.md` → Risks — depends: T3.1
 - [ ] T9.6 Pregnancy & labor topics — see `uiux/illustrations.md` — depends: T9.5, T7.3, T8.1
 - [ ] T9.7 Medical review pass + sources page per topic — see `DESIGN.md` → Risks — depends: T9.1, T9.2, T9.3, T9.4
 
 ## Phase 10: Later
 - [ ] T10.1 Quiz mode (rail slot reserved) — needs its own design pass — depends: T4.4
-- [ ] T10.2 Female model — depends: a licensed asset (DESIGN Risks)
+- [ ] T10.2 Schematic female variant (pelvis, reproductive organs) — see `src/data/anatomy.ts` — depends: T3.2

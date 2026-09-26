@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -8,6 +9,8 @@ import type { BodyPoint, PointRegion } from '@/types/BodyPoint';
 import { Pill } from './pill';
 
 export type RegionFilter = PointRegion | 'all';
+
+const CHART_LINKS = { foot: 'foot chart 足底反射区', hand: 'hand chart 手部反射区', ear: 'ear chart 耳穴图' } as const;
 
 const FILTERS: { id: RegionFilter; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -42,6 +45,12 @@ export function ReflexPanel({ points, filter, onFilter, activePoint, effectVisib
           <Pill key={point.id} label={point.nameZh} selected={point.id === activePoint?.id} onPress={() => onPress(point)} />
         ))}
       </ScrollView>
+
+      {filter !== 'all' && filter !== 'body' && (
+        <Pressable onPress={() => router.push(`/reflex/${filter}`)} style={styles.chartLink}>
+          <ThemedText type="smallBold">Open {CHART_LINKS[filter]} ›</ThemedText>
+        </Pressable>
+      )}
 
       {activePoint ? (
         <ThemedView style={styles.card}>
@@ -106,6 +115,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     paddingTop: Spacing.one,
+  },
+  chartLink: {
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.one,
   },
   prompt: {
     paddingHorizontal: Spacing.three,
