@@ -8,5 +8,5 @@ mkdir -p build
 swiftc -O -parse-as-library -o "$BIN" \
   scripts/render_scenes/Shim.swift scripts/render_scenes/main.swift \
   Sources/Illustrations/Scenario.swift Sources/Illustrations/Sketch.swift Sources/Illustrations/Illustrations.swift \
-  Sources/Illustrations/Figures.swift Sources/Data/Profile.swift Sources/Illustrations/Scenes/*.swift Sources/Charts/SVGPath.swift 2>&1 | grep -E "error" || true
+  Sources/Illustrations/Figures.swift Sources/Illustrations/SidePerson.swift Sources/Data/Profile.swift Sources/Illustrations/Scenes/*.swift Sources/Charts/SVGPath.swift 2>&1 | grep -E "error" || true
 "$BIN" "$@"
