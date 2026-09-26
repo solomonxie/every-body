@@ -44,6 +44,8 @@ enum PartShape: Codable, Sendable, Hashable {
     case sheet(origins: [Vec3], insertions: [Vec3], bulge: Vec3, thickness: Float)
     /// muscle lying on the body: a grid of surface points (rows run along the fibres)
     case slab(grid: [[Vec3]], thickness: Float)
+    /// many thin branches drawn as one piece (small vessels, nerve roots)
+    case tubes(paths: [[Vec3]], radius: Float)
 
     private enum Key: String, CodingKey {
         case kind, center, radius, scale, size, rotation, from, to, points, radii, thickness, sections, origins, insertions, bulge, grid
@@ -71,6 +73,8 @@ enum PartShape: Codable, Sendable, Hashable {
                          radii: try c.decodeIfPresent([Float].self, forKey: .radii))
         case "loft":
             self = .loft(sections: try c.decode([[Float]].self, forKey: .sections))
+        case "tubes":
+            self = .tubes(paths: try c.decode([[Vec3]].self, forKey: .grid), radius: try f(.radius))
         case "slab":
             self = .slab(grid: try c.decode([[Vec3]].self, forKey: .grid), thickness: try f(.thickness))
         case "sheet":
