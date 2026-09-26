@@ -387,7 +387,8 @@ final class BodyScene {
             entity.model?.materials = [m]
         }
         for (id, entity) in organEntities where Catalog.organ(id)?.region != true {
-            entity.isEnabled = layers.contains(.organs) && parts.visible(id)
+            // the brain is an organ but belongs in the nervous system view too
+            entity.isEnabled = (layers.contains(.organs) || (id == "brain" && layers.contains(.nervous))) && parts.visible(id)
         }
     }
 
