@@ -855,17 +855,22 @@ def organs():
     for side, sx, zh in (("l", 1, "左肺"), ("r", -1, "右肺")):
         notch = 0.018 if side == "l" else 0.0
         secs = []
-        for y, cx, rx, rz in ((1.465, 0.055, 0.008, 0.01), (1.445, 0.06, 0.025, 0.03), (1.41, 0.07, 0.04, 0.05), (1.36, 0.08, 0.05, 0.065),
+        for y, cx, rx, rz in ((1.472, 0.054, 0.006, 0.007), (1.462, 0.056, 0.016, 0.019), (1.445, 0.06, 0.027, 0.032), (1.41, 0.07, 0.04, 0.05), (1.36, 0.08, 0.05, 0.065),
                               (1.31, 0.085 + notch * 0.6, 0.055 - notch * 0.6, 0.075), (1.26, 0.09 + notch, 0.058 - notch, 0.08),
                               (1.225, 0.092 + notch * 0.5, 0.058 - notch * 0.5, 0.078), (1.2, 0.095, 0.05, 0.06)):
             if side == "r":
                 rx *= 1.05
             secs.append((sx * cx, y - (0.012 if side == "r" else 0), -0.01, rx, rz))
-        organ(f"lung-{side}", "#E5868F", (0.085 * sx, 1.32, -0.005), [loft(secs)], ["Left lung" if side == "l" else "Right lung", zh])
+        # the inner face is hollowed where it wraps the heart and the great vessels
+        medial = 150 if side == "l" else 30
+        dent = 0.22 if side == "l" else 0.12
+        shape = limb_skin(secs, lambda y, th, m=medial, d=dent: -d * near(th, m, 32) * bell(y, 1.2, 1.36)
+                          - 0.1 * near(th, 180 if m > 90 else 0, 30) * bell(y, 1.3, 1.44), step=0.012)
+        organ(f"lung-{side}", "#E5868F", (0.085 * sx, 1.32, -0.005), [shape], ["Left lung" if side == "l" else "Right lung", zh])
 
     # liver: wedge running right → left (rx = half-height, rz = half-depth); big right lobe, thin left lobe tip
     organ("liver", "#8C3B2E", (-0.055, 1.175, 0.03), [loft([
-        (-0.145, 1.165, 0.0, 0.035, 0.05), (-0.12, 1.17, 0.015, 0.068, 0.075), (-0.08, 1.18, 0.03, 0.07, 0.078),
+        (-0.15, 1.162, -0.004, 0.045, 0.06), (-0.12, 1.17, 0.015, 0.068, 0.076), (-0.08, 1.18, 0.03, 0.07, 0.078),
         (-0.04, 1.19, 0.04, 0.055, 0.07), (0.0, 1.2, 0.05, 0.038, 0.055), (0.04, 1.21, 0.05, 0.022, 0.04), (0.075, 1.215, 0.04, 0.008, 0.018),
     ])], ["Liver", "肝"])
     organ("stomach", "#E39B4B", (0.065, 1.14, 0.05), [tube(
