@@ -170,8 +170,9 @@ struct ChartScreen: View {
         ZStack(alignment: .top) {
             BodyView(scene: inset, compact: true)
             Text(selected.map { z in
-                settings.name(z.name, z.nameZh) + " → " + z.organIds.compactMap { Catalog.organ($0)?.names }.map { settings.name($0[0], $0[1]) }
+                let organs = z.organIds.compactMap { Catalog.organ($0)?.names }.map { settings.name($0[0], $0[1]) }
                     .joined(separator: settings.zh ? "、" : ", ")
+                return settings.name(z.name, z.nameZh) + (organs.isEmpty ? "" : " → " + organs)
             } ?? settings.t("where it acts", "作用部位"))
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(Color(hex: "#2B2250"))
@@ -278,134 +279,6 @@ struct ChartScreen: View {
             try? await Task.sleep(for: .milliseconds(1400))
             if selected?.id == zone.id { effectVisible = true }
         }
-    }
-}
-
-/// Draws one chart face; the undrawn side is the drawing mirrored.
-struct ChartCanvas: View {
-    let chart: ReflexChart
-    let face: ChartFace
-    let side: Side
-    let zones: [ReflexZone]
-    let selectedID: String?
-    let showLabels: Bool
-    var zh = true
-    var flagged: Set<String> = []
-    let zoom: CGFloat
-    let pan: CGSize
-
-    private static let skin = Color(hex: "#F5D7BF")
-    private static let line = Color(hex: "#C9A58A")
-    private static let ink = Color(hex: "#2B2250")
-
-    var body: some View {
-        Canvas { ctx, size in
-            let view = Self.viewTransform(size: size, chart: chart, zoom: zoom, pan: pan)
-            let mirror = Self.mirror(chart: chart, face: face, side: side)
-            var drawing = ctx
-            drawing.transform = mirror.concatenating(view)
-
-            for shape in face.outline {
-                drawing.fill(Self.outlinePath(shape), with: .color(Self.skin))
-            }
-            for shape in face.outline {
-                drawing.stroke(Self.outlinePath(shape), with: .color(Self.line), lineWidth: 2)
-            }
-            for d in face.bones {
-                drawing.stroke(SVGPath.parse(d), with: .color(Self.line), style: StrokeStyle(lineWidth: 1.2, dash: [4, 4]))
-            }
-            for d in face.guides {
-                drawing.stroke(SVGPath.parse(d), with: .color(Self.line), style: StrokeStyle(lineWidth: 2, lineCap: .round))
-            }
-            for zone in zones {
-                let isSelected = zone.id == selectedID
-                let dimmed = selectedID != nil && !isSelected
-                let color = Color(hex: Catalog.charts.groups[zone.group]?.color ?? "#999999")
-                for e in zone.shapes {
-                    let p = Self.ellipse(e)
-                    drawing.fill(p, with: .color(color.opacity(isSelected ? 0.95 : dimmed ? 0.3 : 0.65)))
-                    let warn = flagged.contains(zone.id)
-                    drawing.stroke(p, with: .color(isSelected ? Self.ink : warn ? Color(hex: "#D8434B") : .white),
-                                   style: StrokeStyle(lineWidth: isSelected ? 2.5 : warn ? 2 : 1.2, dash: warn && !isSelected ? [3, 2] : []))
-                }
-            }
-            do {
-                var labels = ctx
-                labels.transform = view
-                for zone in zones where showLabels || zone.id == selectedID {
-                    guard let e = zone.shapes.first else { continue }
-                    let below = zone.point == true || e.rx < 10
-                    let x = side == face.drawnSide ? e.cx : chart.mirrorWidth - e.cx
-                    let y = e.cy + (below ? e.ry + chart.labelSize : 0)
-                    let text = Text(zh ? zone.label ?? String(zone.nameZh.split(separator: "·").first ?? "") : Self.shortName(zone.name))
-                        .font(.system(size: chart.labelSize, weight: zone.id == selectedID ? .bold : .regular))
-                        .foregroundStyle(Self.ink)
-                    if zone.id == selectedID {
-                        // selected name sits on a white tag so it reads over the zones
-                        let resolved = labels.resolve(Text(zh ? zone.nameZh : zone.name)
-                            .font(.system(size: chart.labelSize * 1.15, weight: .bold)).foregroundStyle(Self.ink))
-                        let size = resolved.measure(in: CGSize(width: 400, height: 100))
-                        let at = CGPoint(x: x, y: e.cy - e.ry - size.height)
-                        labels.fill(Path(roundedRect: CGRect(x: at.x - size.width / 2 - 4, y: at.y - size.height / 2 - 2,
-                                                             width: size.width + 8, height: size.height + 4), cornerRadius: 4),
-                                    with: .color(.white.opacity(0.92)))
-                        labels.draw(resolved, at: at, anchor: .center)
-                    } else {
-                        labels.draw(text, at: CGPoint(x: x, y: y), anchor: .center)
-                    }
-                }
-            }
-        }
-    }
-
-    /// "Lung & bronchi" → "Lung"; keeps chart labels as short as the Chinese ones
-    static func shortName(_ name: String) -> String {
-        let first = name.components(separatedBy: CharacterSet(charactersIn: "&/(,·")).first ?? name
-        return first.trimmingCharacters(in: .whitespaces)
-    }
-
-    static func viewTransform(size: CGSize, chart: ReflexChart, zoom: CGFloat, pan: CGSize) -> CGAffineTransform {
-        let (vx, vy, vw, vh) = (chart.viewBox[0], chart.viewBox[1], chart.viewBox[2], chart.viewBox[3])
-        let s = min(size.width / vw, size.height / vh)
-        let ox = (size.width - vw * s) / 2, oy = (size.height - vh * s) / 2
-        let c = CGPoint(x: size.width / 2, y: size.height / 2)
-        return CGAffineTransform(translationX: -vx, y: -vy)
-            .concatenating(CGAffineTransform(scaleX: s, y: s))
-            .concatenating(CGAffineTransform(translationX: ox - c.x, y: oy - c.y))
-            .concatenating(CGAffineTransform(scaleX: zoom, y: zoom))
-            .concatenating(CGAffineTransform(translationX: c.x + pan.width, y: c.y + pan.height))
-    }
-
-    static func mirror(chart: ReflexChart, face: ChartFace, side: Side) -> CGAffineTransform {
-        side == face.drawnSide ? .identity : CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: chart.mirrorWidth, ty: 0)
-    }
-
-    static func ellipse(_ e: ChartEllipse) -> Path {
-        let rect = CGRect(x: e.cx - e.rx, y: e.cy - e.ry, width: e.rx * 2, height: e.ry * 2)
-        let p = Path(ellipseIn: rect)
-        guard let rot = e.rot else { return p }
-        return p.applying(CGAffineTransform(translationX: -e.cx, y: -e.cy)
-            .concatenating(CGAffineTransform(rotationAngle: rot * .pi / 180))
-            .concatenating(CGAffineTransform(translationX: e.cx, y: e.cy)))
-    }
-
-    static func outlinePath(_ s: OutlineShape) -> Path {
-        if s.kind == "path", let d = s.d { return SVGPath.parse(d) }
-        let rect = CGRect(x: s.x ?? 0, y: s.y ?? 0, width: s.w ?? 0, height: s.h ?? 0)
-        let p = Path(roundedRect: rect, cornerRadius: s.r ?? 0)
-        guard let rot = s.rot, let ox = s.ox, let oy = s.oy else { return p }
-        return p.applying(CGAffineTransform(translationX: -ox, y: -oy)
-            .concatenating(CGAffineTransform(rotationAngle: rot * .pi / 180))
-            .concatenating(CGAffineTransform(translationX: ox, y: oy)))
-    }
-
-    /// Topmost (smallest) zone under a tap.
-    static func hitTest(_ point: CGPoint, size: CGSize, chart: ReflexChart, face: ChartFace, side: Side, zones: [ReflexZone],
-                        zoom: CGFloat, pan: CGSize) -> ReflexZone? {
-        let toDrawing = mirror(chart: chart, face: face, side: side).concatenating(viewTransform(size: size, chart: chart, zoom: zoom, pan: pan)).inverted()
-        let p = point.applying(toDrawing)
-        let hits = zones.filter { zone in zone.shapes.contains { ellipse($0).contains(p) || hypot($0.cx - p.x, $0.cy - p.y) < 9 } }
-        return hits.min { a, b in (a.shapes.first.map { $0.rx * $0.ry } ?? 0) < (b.shapes.first.map { $0.rx * $0.ry } ?? 0) }
     }
 }
 
