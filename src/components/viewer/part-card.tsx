@@ -5,6 +5,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { ORGAN_NAMES, type OrganId } from '@/data/anatomy';
 import { LAYERS, SCHEMATIC_PARTS } from '@/data/body';
+import { useName } from '@/state/settings';
 
 export function partLabel(partId: string) {
   const part = SCHEMATIC_PARTS.find((p) => p.id === partId);
@@ -21,13 +22,12 @@ type Props = { partId: string; onHide: (partId: string) => void; onClose: () => 
 /** Name of the tapped part, with Hide. */
 export function PartCard({ partId, onHide, onClose }: Props) {
   const label = partLabel(partId);
+  const name = useName();
   if (!label) return null;
   return (
     <ThemedView style={styles.card}>
       <View style={styles.text}>
-        <ThemedText type="smallBold">
-          {label.name} · {label.nameZh}
-        </ThemedText>
+        <ThemedText type="smallBold">{name(label.name, label.nameZh)}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {label.layer}
         </ThemedText>

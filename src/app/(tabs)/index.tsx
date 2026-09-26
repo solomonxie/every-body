@@ -29,6 +29,11 @@ export default function ExploreScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['left', 'right', 'bottom']}>
+        <Pressable onPress={() => router.push('/search')}>
+          <ThemedView type="backgroundElement" style={styles.search}>
+            <ThemedText themeColor="textSecondary">🔍 Search parts, points, zones, topics 搜索</ThemedText>
+          </ThemedView>
+        </Pressable>
         <ThemedText type="small" themeColor="textSecondary" style={styles.intro}>
           Pick a system or chart. ▶ tiles are interactive — press points, change the heart rate.
         </ThemedText>
@@ -85,6 +90,12 @@ function IllustrationsSection() {
 }
 
 const styles = StyleSheet.create({
+  search: {
+    borderRadius: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two + 2,
+    marginBottom: Spacing.two,
+  },
   section: {
     gap: Spacing.two,
     paddingTop: Spacing.three,
