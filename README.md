@@ -13,7 +13,7 @@ correct positions and cause → effect (see `docs/design/mvp/DESIGN.md`). Every 
 
 - **Body** — bones, muscles, vessels, nerves and organs as ~150 math-built parts
   (`Resources/Data/body.json`, meshes in `Sources/Body/`). Layers, tap to name, Hide / Fade / Isolate / Undo, bend shoulder, elbow
-  and knee (muscles bulge), male / female variant. Quiz: name the glowing part.
+  and knee (muscles bulge), male / female variant.
 - **Reflex Map 穴位反射图** — hand, foot and ear charts with zones per the standard maps
   (GB/T 13734 ear points, WHO acupoints). Press a zone → a pulse travels to the organ it's
   said to act on. Tapping an organ lists its zones.

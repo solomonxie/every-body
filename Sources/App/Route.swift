@@ -6,7 +6,6 @@ enum Route: Hashable {
     case chart(id: String, face: String? = nil, zone: String? = nil, side: Side? = nil)
     case illustration(id: String)
     case info(system: String)
-    case quiz(system: String)
     case search
 
     /// "/reflex/foot", "/illustration/stroke" — links stored in systems.json
@@ -19,7 +18,6 @@ enum Route: Hashable {
         case "illustration": self = .illustration(id: parts[1])
         case "viewer": self = .viewer(system: parts[1])
         case "info": self = .info(system: parts[1])
-        case "quiz": self = .quiz(system: parts[1])
         default: return nil
         }
     }

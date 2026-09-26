@@ -14,7 +14,7 @@ Code: `Sources/Viewer/ViewerScreen.swift`, 3D in `Sources/Body/`.
 │                      / |   | \                       │
 │ ⓘ                      |   |                         │
 │                        /   \                         │
-│ Quiz·                 /     \                        │ ← post-v1, hidden in v1
+│                       /     \                        │
 │                                                      │
 └──────────────────────────────────────────────────────┘
   left rail: 🔍 Search · Layers · Display · ⓘ system info

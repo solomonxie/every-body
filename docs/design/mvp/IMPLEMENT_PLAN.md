@@ -18,7 +18,7 @@ Remove the Expo/React Native app and rebuild every feature natively, data first,
 - [x] T0.5 Reflex Map pulse + blood flow on the body — see `Sources/Viewer/` — depends: T0.4
 - [x] T0.6 Reflex charts in `Canvas` (hand, foot, ear), zoom, 3D inset — see `Sources/Charts/` — depends: T0.3
 - [x] T0.7 Illustration player + 18 scenes in `Canvas` — see `Sources/Illustrations/` — depends: T0.1
-- [x] T0.8 Explore, search, quiz, info, settings — see `Sources/Screens/` — depends: T0.4, T0.6, T0.7
+- [x] T0.8 Explore, search, info, settings — see `Sources/Screens/` — depends: T0.4, T0.6, T0.7
 - [x] T0.9 Anatomical accuracy: landmark-based generator (bones with processes/discs/cartilage, hand & foot bones, ~30 muscles origin→insertion, shaped organs, proportioned skin) — see `scripts/gen_body.py`, `scripts/preview_body.py` — depends: T0.3
 
 ## Phase 1: Foundations
@@ -117,5 +117,5 @@ watch + try steps, EN/中 captions, cited sources, clinician sign-off.
 - [ ] T9.7 Medical review pass + sources page per topic — see `DESIGN.md` → Risks — depends: T9.1, T9.2, T9.3, T9.4
 
 ## Phase 10: Later
-- [x] T10.1 Quiz mode: name the glowing part, 10 rounds, per system — see `src/app/quiz/[id].tsx` — depends: T4.4
+- [x] T10.1 Quiz mode — built, then removed at the owner's request
 - [x] T10.2 Schematic female variant (pelvis, reproductive organs) — see `src/data/anatomy.ts` — depends: T3.2
