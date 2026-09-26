@@ -21,7 +21,8 @@ final class Renderer: NSObject, NSApplicationDelegate {
         let age = a.count > 7 ? AgeGroup(rawValue: a[7]) ?? .adult : .adult
 
         view = ARView(frame: NSRect(x: 0, y: 0, width: 600, height: 900))
-        view.environment.background = .color(NSColor(hex: "#DADCE2"))
+        // BG=#FFFFFF / #000000 renders a pair for alpha matting (tiles)
+        view.environment.background = .color(NSColor(hex: ProcessInfo.processInfo.environment["BG"] ?? "#DADCE2"))
         window = NSWindow(contentRect: view.frame, styleMask: [.titled], backing: .buffered, defer: false)
         window.contentView = view
         window.orderFrontRegardless()
