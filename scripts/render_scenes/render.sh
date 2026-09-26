@@ -1,6 +1,6 @@
 #!/bin/sh
 # Render illustration steps to PNG on the Mac (no phone needed).
-# Usage: [ZH=1] [PROFILE=infant|child|adult|senior|pregnant] scripts/render_scenes/render.sh /tmp/scenes [scenario-id…]
+# Usage: [ZH=1] [PROFILE=infant|toddler|child|adult|senior|pregnant] scripts/render_scenes/render.sh /tmp/scenes [scenario-id…]
 set -e
 cd "$(dirname "$0")/../.."
 BIN=build/render-scenes
