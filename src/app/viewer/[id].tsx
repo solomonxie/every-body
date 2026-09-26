@@ -15,6 +15,7 @@ import { FlowPanel } from '@/components/viewer/flow-panel';
 import { JointControl } from '@/components/viewer/joint-control';
 import { LayerBar } from '@/components/viewer/layer-bar';
 import { PartCard } from '@/components/viewer/part-card';
+import { applyAction, changedCount, EMPTY_PART_STATE, type PartAction, type PartState } from '@/components/viewer/part-state';
 import { ModelView } from '@/components/viewer/model-view';
 import { ReflexPanel, type RegionFilter } from '@/components/viewer/reflex-panel';
 import { REFLEX_TRAVEL_MS } from '@/constants/reflex';
@@ -48,7 +49,8 @@ export default function ViewerScreen() {
     const base = DEFAULT_LAYERS[system.id] ?? ['skin', 'organs'];
     return partLayer && !base.includes(partLayer) ? [...base, partLayer] : base;
   });
-  const [hidden, setHidden] = useState<string[]>([]);
+  const [parts, setParts] = useState<PartState>(EMPTY_PART_STATE);
+  const [history, setHistory] = useState<PartState[]>([]);
   const [selectedPartId, setSelectedPartId] = useState<string | undefined>(partParam);
   const innerLayers = layers.some((layer) => layer !== 'skin');
   const [angles, setAngles] = useState<Record<string, number>>({});
@@ -82,9 +84,19 @@ export default function ViewerScreen() {
   const toggleLayer = (layer: LayerId) =>
     setLayers(layers.includes(layer) ? layers.filter((l) => l !== layer) : [...layers, layer]);
 
-  const hidePart = (partId: string) => {
-    setHidden([...hidden, partId]);
-    setSelectedPartId(undefined);
+  const changeParts = (next: PartState) => {
+    setHistory([...history, parts]);
+    setParts(next);
+  };
+
+  const partAction = (action: PartAction, partId: string) => {
+    changeParts(applyAction(parts, action, partId));
+    if (action === 'hide') setSelectedPartId(undefined);
+  };
+
+  const undo = () => {
+    setParts(history[history.length - 1] ?? EMPTY_PART_STATE);
+    setHistory(history.slice(0, -1));
   };
 
   const changeFilter = (next: RegionFilter) => {
@@ -126,9 +138,10 @@ export default function ViewerScreen() {
         showOrgans={layers.includes('organs')}
         selectedId={selectedPartId}
         angles={angles}
+        organVisible={(organId) => !parts.hidden.includes(organId) && (!parts.isolated || parts.isolated === organId)}
         onPick={pick}
       >
-        <SchematicBody layers={layers} hidden={hidden} selectedId={selectedPartId} angles={angles} />
+        <SchematicBody layers={layers} parts={parts} selectedId={selectedPartId} angles={angles} />
         {systemPoints && <PointMarkers points={systemPoints.points} activeId={activePointId} />}
         {isReflex && <ReflexPulse point={activePoint} triggerKey={pressTrigger} busRef={busRef} />}
         {flowStops && <BloodFlow stops={flowStops} busRef={busRef} />}
@@ -137,9 +150,22 @@ export default function ViewerScreen() {
       <ThemedView type="backgroundElement" style={styles.panel}>
         <SafeAreaView edges={['bottom']}>
           <View style={styles.panelBody}>
-            <LayerBar layers={layers} onToggle={toggleLayer} hiddenCount={hidden.length} onShowAll={() => setHidden([])} />
+            <LayerBar
+              layers={layers}
+              onToggle={toggleLayer}
+              changedCount={changedCount(parts)}
+              onShowAll={() => changeParts(EMPTY_PART_STATE)}
+              canUndo={history.length > 0}
+              onUndo={undo}
+            />
             {selectedPartId && (
-              <PartCard partId={selectedPartId} onHide={hidePart} onClose={() => setSelectedPartId(undefined)} />
+              <PartCard
+                partId={selectedPartId}
+                onAction={partAction}
+                faded={parts.faded.includes(selectedPartId)}
+                isolated={parts.isolated === selectedPartId}
+                onClose={() => setSelectedPartId(undefined)}
+              />
             )}
             {tryJoint && (
               <JointControl

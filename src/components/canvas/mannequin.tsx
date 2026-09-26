@@ -71,9 +71,10 @@ type Props = {
   showOrgans?: boolean;
   selectedId?: string;
   angles?: JointAngles;
+  organVisible?: (id: string) => boolean;
 };
 
-export function Mannequin({ skinColor, busRef, skinOpacity = 0.32, showOrgans = true, selectedId, angles = {} }: Props) {
+export function Mannequin({ skinColor, busRef, skinOpacity = 0.32, showOrgans = true, selectedId, angles = {}, organVisible }: Props) {
   return (
     <group>
       {skinOpacity > 0 && (
@@ -91,7 +92,7 @@ export function Mannequin({ skinColor, busRef, skinOpacity = 0.32, showOrgans = 
         />
       )}
       {(Object.keys(ORGANS) as OrganId[])
-        .filter((id) => showOrgans || ORGANS[id].region)
+        .filter((id) => ORGANS[id].region || (showOrgans && (organVisible?.(id) ?? true)))
         .map((id) => (
           <OrganMesh key={id} id={id} busRef={busRef} selected={id === selectedId} />
         ))}
