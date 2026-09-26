@@ -13,7 +13,7 @@ it unblocks both the UI and asset tracks.
 - [x] T1.4 `Category` model + Explore tile presets (systems, focus) — see `uiux/explore.md` → Tile table, `src/data/categories.ts` — depends: none
 - [x] T1.5 Settings store (names, theme, background, quality, auto-rotate), persisted via AsyncStorage — see `src/state/settings.ts` — depends: none
 - [ ] T1.6 `BilingualName` + string table (in-progress: `useName`/`useBilingual` wired to cards and captions; no string table) (copy keys from `uiux/*.md`) — see `uiux/components.md` → BilingualName, `src/i18n/` — depends: T1.5
-- [ ] T1.7 CI: `tsc --noEmit` + `expo lint` on push — see `.github/workflows/` — depends: none
+- [x] T1.7 CI: `tsc --noEmit` + `expo lint` on push — see `.github/workflows/` — depends: none
 
 ## Phase 2: App shell on placeholder geometry
 Build every v1 screen against the existing sphere so UI work doesn't wait on assets.
@@ -35,7 +35,7 @@ cover every system before later phases. Schematic geometry only (DESIGN → Deci
 - [x] T3.2 Skeletal system as primitives (skull, spine segments, ribs, pelvis, limb bones, joints) — see `src/data/anatomy.ts` — depends: T3.1
 - [x] T3.3 Muscular, nervous, digestive, circulatory as primitives/curves (tubes along splines) — see `src/data/anatomy.ts` — depends: T3.1
 - [x] T3.4 `SchematicBody`: layers by system, per-part visibility — see `src/components/canvas/schematic-body.tsx` — depends: T3.2, T3.3
-- [ ] T3.5 Tile thumbnails rendered from the schematic body — see `scripts/` — depends: T3.4
+- [x] T3.5 Tile thumbnails rendered from the schematic body — see `scripts/thumbnails/` — depends: T3.4
 - Deferred: Z-Anatomy GLB pipeline (`asset-pipeline.md`) — only if schematic proves insufficient
 
 ## Phase 4: Part interaction

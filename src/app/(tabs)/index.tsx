@@ -1,11 +1,12 @@
 import { router, type Href } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { POINTS_BY_SYSTEM } from '@/data/system-points';
+import { TILE_IMAGES } from '@/data/tile-images';
 import { ILLUSTRATION_GROUPS, ILLUSTRATIONS } from '@/illustrations';
 import { BODY_SYSTEMS } from '@/types/BodySystem';
 
@@ -48,6 +49,7 @@ export default function ExploreScreen() {
             <Pressable style={styles.cardWrapper} onPress={() => router.push(item.href)}>
               <ThemedView type="backgroundElement" style={styles.card}>
                 <ThemedView style={[styles.swatch, { backgroundColor: item.color }]}>
+                  {TILE_IMAGES[item.id] && <Image source={TILE_IMAGES[item.id]} style={styles.thumb} />}
                   {item.interactive && <ThemedText style={styles.badge}>▶</ThemedText>}
                 </ThemedView>
                 <ThemedText type="smallBold" numberOfLines={2}>
@@ -142,6 +144,14 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.two,
     alignItems: 'flex-end',
     padding: Spacing.one,
+  },
+  thumb: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: Spacing.two,
   },
   badge: {
     color: '#FFFFFF',
