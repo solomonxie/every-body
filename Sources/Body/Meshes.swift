@@ -323,6 +323,9 @@ enum Meshes {
         case let .sheet(origins, insertions, bulge, thickness):
             sheet(origins: origins.map(\.simd), insertions: insertions.map(\.simd), bulge: bulge.simd, thickness: thickness)
         case let .slab(grid, thickness): slab(grid: grid.map { $0.map(\.simd) }, thickness: thickness)
+        case let .tubes(paths, radius):
+            paths.filter { $0.count > 1 }.map { tube(points: $0.map(\.simd), radius: radius, samples: max(8, $0.count * 4), sides: 6) }
+                .reduce(RawMesh(positions: [], normals: [], indices: [], uvs: [])) { $0.appending($1) }
         }
     }
 }
@@ -333,6 +336,12 @@ struct RawMesh: Sendable {
     var normals: [SIMD3<Float>]
     var indices: [UInt32]
     var uvs: [SIMD2<Float>]?
+
+    func appending(_ other: RawMesh) -> RawMesh {
+        let offset = UInt32(positions.count)
+        return RawMesh(positions: positions + other.positions, normals: normals + other.normals,
+                       indices: indices + other.indices.map { $0 + offset }, uvs: (uvs ?? []) + (other.uvs ?? []))
+    }
 
     @MainActor func resource() -> MeshResource {
         var d = MeshDescriptor()
