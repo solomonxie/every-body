@@ -78,3 +78,12 @@ struct ChartCanvas: View {
         RoundedRectangle(cornerRadius: 30).fill(Color(hex: "#F5D7BF")).padding(12)
     }
 }
+
+// BodyScene.swift stand-ins (RealityKit isn't compiled here)
+struct PartState: Equatable {
+    var hidden: Set<String> = []
+    var faded: Set<String> = []
+    var isolated: String?
+}
+
+enum Focus { case all, foot, hand, ear }

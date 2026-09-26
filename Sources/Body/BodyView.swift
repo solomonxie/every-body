@@ -20,7 +20,7 @@ struct BodyView: View {
 
     var body: some View {
         ZStack {
-            (settings.whiteBackground ? Color.white : Color(hex: "#DADCE2"))
+            (settings.whiteBackground ? Color.white : Color(light: "#DADCE2", dark: "#2B2D33"))
             RealityView { content in
                 content.camera = .virtual
                 scene.root.removeFromParent()
@@ -38,24 +38,26 @@ struct BodyView: View {
             if !compact {
                 rail
                 if hintVisible {
-                    Text(settings.t("1 finger: spin · 2 fingers: move · pinch: zoom · tap a part", "单指旋转 · 双指移动 · 捏合缩放 · 点击部位"))
-                        .font(.footnote)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14).padding(.vertical, 8)
-                        .background(Color(hex: "#2B2250").opacity(0.85), in: .capsule)
+                    Label(settings.t("Drag to spin · pinch to zoom · tap a part", "拖动旋转 · 捏合缩放 · 点击部位"), systemImage: "hand.draw")
+                        .font(.footnote.weight(.medium))
+                        .padding(.horizontal, Space.l).padding(.vertical, Space.s)
+                        .background(.regularMaterial, in: .capsule)
                         .frame(maxHeight: .infinity, alignment: .bottom)
-                        .padding(.bottom, 14)
+                        .padding(.bottom, Radius.sheet + Space.m)
                         .allowsHitTesting(false)
+                        .transition(.opacity)
                 }
             }
         }
+        .animation(.easeOut(duration: 0.3), value: hintVisible)
         .onAppear { if !settings.autoRotate || UIAccessibility.isReduceMotionEnabled { scene.touched = true } }
     }
 
     private var rail: some View {
         VStack(spacing: 10) {
-            RailButton(symbol: "house", label: settings.t("Reset view", "重置视角")) { scene.resetView() }
-            RailButton(symbol: "circle.lefthalf.filled", label: settings.t("Background", "背景")) { settings.whiteBackground.toggle() }
+            RailButton(symbol: "arrow.counterclockwise", label: settings.t("Reset view", "重置视角")) { scene.resetView() }
+            RailButton(symbol: settings.whiteBackground ? "square.fill" : "square", label: settings.t("White background", "白色背景"),
+                       on: settings.whiteBackground) { settings.whiteBackground.toggle() }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .padding(12)
@@ -114,17 +116,22 @@ struct BodyView: View {
 struct RailButton: View {
     let symbol: String
     let label: String
+    var on: Bool? = nil
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(Color(hex: "#2B2250"))
-                .frame(width: 44, height: 44)
-                .background(.white.opacity(0.8), in: .circle)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(width: minTap, height: minTap)
+                .background(.regularMaterial, in: .circle)
+                .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
         }
+        .buttonStyle(PressableStyle())
         .accessibilityLabel(label)
+        .accessibilityAddTraits(on == true ? .isSelected : [])
+        .sensoryFeedback(.impact(weight: .light), trigger: on ?? false)
     }
 }
 
