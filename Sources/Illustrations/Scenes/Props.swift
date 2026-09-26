@@ -55,6 +55,14 @@ extension Sketch {
         ctx.draw(txt, in: CGRect(x: x0, y: y - m.height / 2, width: m.width + 1, height: m.height + 1))
     }
 
+    /// Label on a pill with a thin leader line to `to` (dot at the end).
+    mutating func callout(_ en: String, _ zh: String, _ x: Double, _ y: Double, to: CGPoint, size: Double = 9,
+                          color: Color = hex("#444444"), anchor: Anchor = .middle, bold: Bool = true, width: Double = 170) {
+        line(x, y, to.x, to.y, stroke: color, lw: 1, opacity: 0.8)
+        circle(to.x, to.y, 2, fill: color, stroke: .white, lw: 0.8)
+        tag(en, zh, x, y, size: size, color: color, anchor: anchor, bold: bold, width: width)
+    }
+
     /// Speech bubble centred at (x, y) with its tail at `tip`.
     mutating func bubble(_ en: String, _ zh: String, _ x: Double, _ y: Double, tip: CGPoint, size: Double = 11,
                          color: Color = hex("#333333"), border: Color = hex("#999999")) {
