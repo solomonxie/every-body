@@ -375,7 +375,10 @@ def skeleton():
     pair("ilium", "Hip bone (ilium)", "髂骨", "skeletal", BONE,
          sheet([(0.118, 1.03, 0.068), (0.145, 1.07, 0.035), (0.148, 1.088, -0.01), (0.125, 1.082, -0.05), (0.075, 1.04, -0.075), (0.052, 1.0, -0.062)],
                [(0.1, 0.945, 0.03), (0.1, 0.935, 0.005), (0.09, 0.938, -0.02), (0.07, 0.955, -0.045), (0.055, 0.975, -0.055)],
-               (0.012, 0, 0.0), 0.006))
+               (0.012, 0, 0.0), 0.009))
+    pair("iliac-crest", "Hip bone (ilium)", "髂骨", "skeletal", BONE,
+         tube([(0.118, 1.03, 0.068), (0.145, 1.07, 0.035), (0.148, 1.088, -0.01), (0.125, 1.082, -0.05), (0.075, 1.04, -0.075), (0.052, 1.0, -0.062)],
+              0.006, [0.006, 0.0065, 0.007, 0.0065, 0.006, 0.0055]))
     pair("acetabulum", "Hip socket (acetabulum)", "髋臼", "skeletal", BONE,
          tube([(HIP[0] + 0.004 + 0.027 * math.cos(a) * 0.3, HIP[1] + 0.027 * math.sin(a), HIP[2] + 0.027 * math.cos(a)) for a in [k * math.pi / 6 for k in range(13)]], 0.006))
     pair("pubis-ischium", "Hip bone (pubis & ischium)", "耻骨与坐骨", "skeletal", BONE,
@@ -465,8 +468,11 @@ def muscles():
     m("sternocleidomastoid", "Sternocleidomastoid", "胸锁乳突肌", (0.056, 1.585, -0.022), (0.02, 1.44, 0.095), 0.012)
 
     # trunk, front: fibres run to the arm (pectoralis) or down the belly
-    on("pectoralis", "Pectoralis major", "胸大肌", torso, ((1.44, 85), (1.255, 88)), ((1.4, 22), (1.35, 14)), 0.009, 0.97, 2.6,
-       converge=((0.19, 1.37, 0.005), 0.72))
+    # pectoralis: clavicular head from the inner collarbone, sternal head from the breastbone, both twisting into the humerus
+    on("pectoralis-clavicular", "Pectoralis major", "胸大肌", torso, ((1.445, 86), (1.45, 55)), ((1.405, 24), (1.41, 20)), 0.008, 0.97, 2.6,
+       converge=((0.19, 1.375, 0.008), 0.7), nv=6)
+    on("pectoralis", "Pectoralis major", "胸大肌", torso, ((1.425, 88), (1.255, 86)), ((1.39, 22), (1.35, 16)), 0.01, 0.97, 2.6,
+       converge=((0.19, 1.365, 0.004), 0.72))
     for n, (y0, y1) in enumerate(((1.245, 1.18), (1.17, 1.11), (1.1, 1.04), (1.03, 0.9))):
         on(f"rectus-abdominis-{n + 1}", "Rectus abdominis", "腹直肌", torso, ((y0, 89.6), (y0, 70)), ((y1, 89.6), (y1, 71)), 0.007, 0.985, 2.6, nv=6)
     on("external-oblique", "External oblique", "腹外斜肌", torso, ((1.26, 30), (1.02, 4)), ((1.14, 69), (0.93, 62)), 0.006, 0.975, 2.6)
@@ -670,6 +676,8 @@ def skin():
         s(f"torso-{sex}", loft([(0, y, z, rx, rz, 2.6 if y < 1.36 else 2.25 if y < 1.44 else 2.0) for y, z, rx, rz in rows]), sex)
     # breast: a dome rising out of the chest wall, fuller low
     sp("breast", lathe((0.08, 1.29, 0.06), (0.086, 1.27, 0.145), [0.062, 0.061, 0.056, 0.047, 0.036, 0.024], [1, 1, 0.92]), "female")
+    # buttocks round out the seat below the lower back
+    sp("buttock", sphere((0.056, 0.918, -0.058), 0.068, [0.95, 0.85, 0.72]))
     # upper arm starts as a rounded deltoid cap tucked under the shoulder slope
     sp("upper-arm", loft(UPPER_ARM))
     sp("forearm", loft(FOREARM))
