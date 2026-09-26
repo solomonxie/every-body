@@ -144,22 +144,30 @@ def lerp(a, b, t):
 def skeleton():
     # skull: cranium, eye sockets, cheekbones, upper jaw with teeth, lower jaw with rami
     part("skull", "Skull (cranium)", "颅骨", "skeletal", BONE,
-         loft([(0, 1.585, -0.035, 0.05, 0.06), (0, 1.605, -0.02, 0.066, 0.086), (0, 1.64, -0.013, 0.071, 0.094),
-               (0, 1.68, -0.014, 0.069, 0.091), (0, 1.715, -0.018, 0.057, 0.077), (0, 1.742, -0.02, 0.028, 0.038)]))
-    part("face-bones", "Facial bones (maxilla)", "上颌骨", "skeletal", BONE, sphere((0, 1.58, 0.05), 0.045, [0.95, 0.72, 0.75]))
-    part("nasal-bone", "Nasal bone", "鼻骨", "skeletal", BONE, segment((0, 1.625, 0.085), (0, 1.603, 0.095), 0.006))
-    pair("orbit", "Orbit (eye socket)", "眼眶", "skeletal", "#4A4550", sphere((0.03, 1.625, 0.072), 0.017, [1.05, 0.9, 0.55]))
-    part("nasal-aperture", "Nasal cavity", "鼻腔", "skeletal", "#4A4550", sphere((0, 1.593, 0.083), 0.012, [0.75, 1.1, 0.5]))
+         # cranium and upper face in one: maxilla at the bottom front, occiput behind, orbits at 1.625
+         loft([(0, 1.555, 0.012, 0.042, 0.066), (0, 1.58, -0.002, 0.056, 0.086), (0, 1.61, -0.01, 0.066, 0.094),
+               (0, 1.64, -0.013, 0.071, 0.096), (0, 1.68, -0.014, 0.07, 0.093), (0, 1.712, -0.017, 0.063, 0.084),
+               (0, 1.73, -0.019, 0.05, 0.066), (0, 1.74, -0.02, 0.034, 0.046)]))
+    part("face-bones", "Facial bones (maxilla)", "上颌骨", "skeletal", BONE, sphere((0, 1.575, 0.062), 0.03, [1.0, 0.6, 0.45]))
+    part("nasal-bone", "Nasal bone", "鼻骨", "skeletal", BONE, segment((0, 1.622, 0.086), (0, 1.607, 0.092), 0.005))
+    # eye socket: a dark hollow set into the face, ringed by a bony rim
+    pair("orbit", "Orbit (eye socket)", "眼眶", "skeletal", "#4A4550", sphere((0.031, 1.624, 0.079), 0.017, [1.05, 0.9, 0.35]))
+    pair("orbit-rim", "Orbit (eye socket)", "眼眶", "skeletal", BONE,
+         tube([(0.031 + 0.019 * math.cos(a), 1.624 + 0.016 * math.sin(a), 0.084 - 0.008 * max(0, math.cos(a))) for a in [k * math.pi / 6 for k in range(13)]], 0.0028))
+    part("nasal-aperture", "Nasal cavity", "鼻腔", "skeletal", "#4A4550", sphere((0, 1.595, 0.086), 0.011, [0.75, 1.1, 0.4]))
     pair("zygomatic", "Cheekbone (zygomatic)", "颧骨", "skeletal", BONE,
          tube([(0.045, 1.608, 0.066), (0.063, 1.6, 0.04), (0.068, 1.598, 0.01), (0.066, 1.6, -0.018)], 0.006))
     part("upper-teeth", "Teeth", "牙齿", "skeletal", "#F7F4EA",
-         tube([(0.03, 1.558, 0.045), (0.024, 1.557, 0.07), (0, 1.556, 0.084), (-0.024, 1.557, 0.07), (-0.03, 1.558, 0.045)], 0.0055))
+         tube([(0.03, 1.558, 0.045), (0.024, 1.557, 0.07), (0, 1.556, 0.082), (-0.024, 1.557, 0.07), (-0.03, 1.558, 0.045)], 0.004))
     part("lower-teeth", "Teeth", "牙齿", "skeletal", "#F7F4EA",
-         tube([(0.028, 1.546, 0.045), (0.022, 1.546, 0.068), (0, 1.546, 0.081), (-0.022, 1.546, 0.068), (-0.028, 1.546, 0.045)], 0.005))
+         tube([(0.028, 1.548, 0.045), (0.022, 1.548, 0.067), (0, 1.548, 0.079), (-0.022, 1.548, 0.067), (-0.028, 1.548, 0.045)], 0.0038))
+    # lower jaw: a curved band from under the teeth to its lower border, rising at the back to the joint
     part("mandible", "Mandible", "下颌骨", "skeletal", BONE,
-         tube([(0.05, 1.53, 0.0), (0.042, 1.522, 0.04), (0.022, 1.512, 0.072), (0, 1.505, 0.084),
-               (-0.022, 1.512, 0.072), (-0.042, 1.522, 0.04), (-0.05, 1.53, 0.0)], 0.01))
-    pair("mandible-ramus", "Mandible", "下颌骨", "skeletal", BONE, tube([(0.05, 1.53, 0.0), (0.052, 1.56, -0.006), (0.054, 1.585, -0.014)], 0.008))
+         sheet([(0.047, 1.544, 0.005), (0.04, 1.543, 0.042), (0.022, 1.543, 0.068), (0, 1.543, 0.078), (-0.022, 1.543, 0.068), (-0.04, 1.543, 0.042), (-0.047, 1.544, 0.005)],
+               [(0.05, 1.518, -0.004), (0.043, 1.513, 0.04), (0.024, 1.508, 0.068), (0, 1.506, 0.08), (-0.024, 1.508, 0.068), (-0.043, 1.513, 0.04), (-0.05, 1.518, -0.004)],
+               (0, 0, 0), 0.005))
+    pair("mandible-ramus", "Mandible", "下颌骨", "skeletal", BONE,
+         sheet([(0.05, 1.518, -0.004), (0.047, 1.544, 0.012)], [(0.055, 1.585, -0.016), (0.053, 1.578, 0.006)], (0.002, 0, 0), 0.004))
 
     # spine: body centre follows the S-curve; sizes grow downwards
     curve = [(1.585, -0.012), (1.49, -0.022), (1.40, -0.055), (1.26, -0.075), (1.12, -0.058), (1.02, -0.035), (0.965, -0.03)]
@@ -193,9 +201,10 @@ def skeleton():
                 part(f"disc-{prefix}{n}", "Intervertebral disc", "椎间盘", "skeletal", DISC,
                      lathe((0, y, zd), (0, y - disc, zd), [radius, radius], [1.15, 1, 0.85]))
                 y -= disc
+    # sacrum: wide wedge under L5 narrowing to the coccyx, curved backwards
     part("sacrum", "Sacrum", "骶骨", "skeletal", BONE,
-         plate([(0.052, 0.99, -0.04), (0.046, 0.9, -0.07), (0.012, 0.83, -0.095), (-0.012, 0.83, -0.095),
-                (-0.046, 0.9, -0.07), (-0.052, 0.99, -0.04)], 0.03))
+         sheet([(0.054, 0.992, -0.045), (0.0, 0.998, -0.038), (-0.054, 0.992, -0.045)], [(0.012, 0.835, -0.093), (-0.012, 0.835, -0.093)],
+               (0, 0, -0.022), 0.012))
     part("coccyx", "Coccyx", "尾骨", "skeletal", BONE, tube([(0, 0.83, -0.097), (0, 0.805, -0.09), (0, 0.79, -0.075)], 0.006))
 
     # thorax: rib i leaves vertebra T_i, sweeps round an ellipse and descends to the front
@@ -209,7 +218,8 @@ def skeleton():
         zc = zs + b * 0.92
         floating = i >= 10
         end = 1.3 if floating else 2.35 if i < 7 else 2.2
-        drop = 0.02 + 0.05 * min(i, 7) / 7
+        # ribs slope down from the spine to the front, steeper lower down
+        drop = 0.03 + 0.075 * min(i, 7) / 7
         pts = []
         for k in range(9):
             phi = 0.25 + (end - 0.25) * k / 8
@@ -228,8 +238,10 @@ def skeleton():
          lathe((0, sternum_top, zst - 0.012), (0, 1.215, zst + 0.004), [0.024, 0.02, 0.016, 0.017, 0.018, 0.012, 0.006], [1, 1, 0.35]))
     pair("clavicle", "Clavicle", "锁骨", "skeletal", BONE,
          tube([(0.02, 1.44, 0.1), (0.07, 1.447, 0.09), (0.12, 1.455, 0.045), (0.165, 1.46, 0.005), (0.19, 1.452, -0.015)], 0.0075))
+    # scapula: triangle from the medial border to the glenoid, curved over the back of the ribs
     pair("scapula", "Scapula", "肩胛骨", "skeletal", BONE,
-         plate([(0.075, 1.425, -0.1), (0.155, 1.405, -0.075), (0.172, 1.38, -0.055), (0.12, 1.3, -0.085), (0.1, 1.235, -0.1), (0.085, 1.33, -0.105)], 0.007))
+         sheet([(0.075, 1.428, -0.1), (0.08, 1.33, -0.106), (0.1, 1.232, -0.1)], [(0.158, 1.41, -0.072), (0.172, 1.38, -0.054), (0.162, 1.35, -0.06)],
+               (0, 0, -0.01), 0.004))
     pair("scapular-spine", "Scapula", "肩胛骨", "skeletal", BONE, tube([(0.082, 1.385, -0.108), (0.14, 1.41, -0.092), (0.19, 1.445, -0.04)], 0.006))
 
     # upper limb
@@ -238,7 +250,8 @@ def skeleton():
          lathe((0.188, 1.39, -0.028), (0.212, 1.105, -0.015), [0.02, 0.012, 0.0105, 0.0105, 0.012, 0.018, 0.022], [1.1, 1, 0.8]))
     pair("ulna", "Ulna", "尺骨", "skeletal", BONE, lathe((0.2, 1.118, -0.03), (0.224, 0.852, -0.004), [0.011, 0.0095, 0.0075, 0.0065, 0.006, 0.0075]))
     pair("radius", "Radius", "桡骨", "skeletal", BONE, lathe((0.226, 1.096, -0.008), (0.25, 0.853, 0.012), [0.0075, 0.007, 0.0075, 0.009, 0.011, 0.014]))
-    pair("carpals", "Carpal bones", "腕骨", "skeletal", BONE, sphere((0.238, 0.832, 0.006), 0.02, [1.1, 0.6, 0.55]))
+    pair("carpals", "Carpal bones", "腕骨", "skeletal", BONE,
+         loft([(0.24, 0.848, 0.005, 0.019, 0.009), (0.239, 0.834, 0.006, 0.025, 0.011), (0.237, 0.82, 0.007, 0.026, 0.01)], square=2.5))
     fingers = [("index", "食指", 0.258, 0.08), ("middle", "中指", 0.24, 0.088), ("ring", "无名指", 0.223, 0.082), ("little", "小指", 0.207, 0.064)]
     for key, zh, x, length in fingers:
         base, knuckle = (x - 0.003 * (x - 0.232) / 0.03, 0.822, 0.006), (x, 0.765, 0.008)
@@ -256,9 +269,13 @@ def skeleton():
         pair(f"thumb-{j + 1}", name, zh, "skeletal", BONE, lathe(thumb[j], thumb[j + 1], [0.0062, 0.0048, 0.005]))
 
     # pelvis: ilium plate + pubis/ischium ring
+    # ilium: a flared wing from the iliac crest down to the hip socket, bowl-shaped inside
     pair("ilium", "Hip bone (ilium)", "髂骨", "skeletal", BONE,
-         plate([(0.115, 1.035, 0.07), (0.145, 1.07, 0.02), (0.14, 1.085, -0.03), (0.095, 1.065, -0.075), (0.05, 0.97, -0.055),
-                (0.07, 0.935, -0.02), (0.1, 0.93, 0.02), (0.115, 0.98, 0.06)], 0.012))
+         sheet([(0.118, 1.03, 0.068), (0.145, 1.07, 0.035), (0.148, 1.088, -0.01), (0.125, 1.082, -0.05), (0.075, 1.04, -0.075), (0.052, 1.0, -0.062)],
+               [(0.1, 0.945, 0.03), (0.1, 0.935, 0.005), (0.09, 0.938, -0.02), (0.07, 0.955, -0.045), (0.055, 0.975, -0.055)],
+               (0.012, 0, 0.0), 0.006))
+    pair("acetabulum", "Hip socket (acetabulum)", "髋臼", "skeletal", BONE,
+         tube([(HIP[0] + 0.004 + 0.027 * math.cos(a) * 0.3, HIP[1] + 0.027 * math.sin(a), HIP[2] + 0.027 * math.cos(a)) for a in [k * math.pi / 6 for k in range(13)]], 0.006))
     pair("pubis-ischium", "Hip bone (pubis & ischium)", "耻骨与坐骨", "skeletal", BONE,
          tube([(0.1, 0.935, 0.02), (0.06, 0.9, 0.055), (0.012, 0.88, 0.065), (0.03, 0.85, 0.045), (0.06, 0.835, 0.0),
                (0.07, 0.85, -0.035), (0.085, 0.9, -0.02), (0.1, 0.935, 0.02)], 0.011))
@@ -273,7 +290,10 @@ def skeleton():
     pair("tibia", "Tibia", "胫骨", "skeletal", BONE,
          lathe((0.095, 0.475, 0.004), (0.083, 0.078, 0.008), [0.034, 0.02, 0.0145, 0.013, 0.0135, 0.017, 0.02], [1.2, 1, 0.9]))
     pair("fibula", "Fibula", "腓骨", "skeletal", BONE, lathe((0.128, 0.46, -0.012), (0.122, 0.07, -0.008), [0.009, 0.006, 0.0055, 0.0065, 0.01]))
-    pair("talus-calcaneus", "Heel bones (talus & calcaneus)", "距骨与跟骨", "skeletal", BONE, sphere((0.09, 0.04, -0.02), 0.03, [0.8, 1.0, 1.55]))
+    # heel: calcaneus runs back from mid-foot to the heel; talus sits on it under the shin bones
+    pair("talus-calcaneus", "Heel bones (talus & calcaneus)", "距骨与跟骨", "skeletal", BONE,
+         loft([(0.088, 0.035, 0.04, 0.02, 0.016), (0.089, 0.038, 0.01, 0.022, 0.022), (0.09, 0.034, -0.025, 0.021, 0.026), (0.09, 0.03, -0.052, 0.017, 0.022)]))
+    pair("talus", "Heel bones (talus & calcaneus)", "距骨与跟骨", "skeletal", BONE, sphere((0.087, 0.066, -0.002), 0.019, [1.0, 0.8, 1.25]))
     toes = [("big", "拇趾", 0.068, 0.2, 0.012), ("2nd", "第2趾", 0.086, 0.196, 0.008), ("3rd", "第3趾", 0.1, 0.19, 0.0075),
             ("4th", "第4趾", 0.112, 0.18, 0.007), ("5th", "第5趾", 0.123, 0.168, 0.0065)]
     for key, zh, x, tip, r in toes:
@@ -410,7 +430,7 @@ def skin():
     sp = lambda pid, shape, sex=None: pair(pid, "Skin", "皮肤", "skin", SKIN, shape, sex)
     # head: chin → vertex, face forward of the skull
     # head: chin → vertex; face forward, jaw narrower than the skull, occiput behind
-    s("head", loft([(0, 1.5, 0.068, 0.016, 0.014), (0, 1.515, 0.052, 0.04, 0.034), (0, 1.535, 0.036, 0.056, 0.062),
+    s("head", loft([(0, 1.502, 0.066, 0.022, 0.018), (0, 1.515, 0.052, 0.04, 0.034), (0, 1.535, 0.036, 0.056, 0.062),
                     (0, 1.56, 0.02, 0.064, 0.083), (0, 1.59, 0.006, 0.07, 0.095), (0, 1.625, 0.0, 0.074, 0.1),
                     (0, 1.66, -0.006, 0.076, 0.1), (0, 1.695, -0.012, 0.072, 0.094), (0, 1.725, -0.016, 0.058, 0.076),
                     (0, 1.743, -0.018, 0.03, 0.04), (0, 1.748, -0.018, 0.012, 0.016)]))
@@ -440,7 +460,7 @@ def skin():
         s(f"torso-{sex}", loft([(0, y, z, rx, rz) for y, z, rx, rz in rows], square=2.6), sex)
     sp("breast", sphere((0.082, 1.285, 0.098), 0.055, [1, 0.92, 0.8]), "female")
     # upper arm starts as a rounded deltoid cap tucked under the shoulder slope
-    sp("upper-arm", loft([(0.185, 1.468, -0.025, 0.02, 0.026), (0.188, 1.445, -0.025, 0.046, 0.05), (0.197, 1.39, -0.022, 0.052, 0.054),
+    sp("upper-arm", loft([(0.19, 1.428, -0.025, 0.026, 0.03), (0.192, 1.412, -0.025, 0.046, 0.05), (0.197, 1.39, -0.022, 0.052, 0.054),
                           (0.203, 1.3, -0.02, 0.045, 0.05), (0.208, 1.2, -0.017, 0.04, 0.045), (0.213, 1.12, -0.013, 0.036, 0.038),
                           (0.215, 1.09, -0.012, 0.035, 0.034)]))
     sp("forearm", loft([(0.215, 1.1, -0.012, 0.036, 0.034), (0.225, 1.03, -0.008, 0.039, 0.036), (0.235, 0.94, 0.0, 0.03, 0.026),
