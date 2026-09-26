@@ -1,11 +1,12 @@
 import { router, type Href } from 'expo-router';
-import { FlatList, Pressable, StyleSheet } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { POINTS_BY_SYSTEM } from '@/data/system-points';
+import { ILLUSTRATION_GROUPS, ILLUSTRATIONS } from '@/illustrations';
 import { BODY_SYSTEMS } from '@/types/BodySystem';
 
 type Tile = { id: string; name: string; color: string; href: Href; interactive: boolean };
@@ -37,6 +38,7 @@ export default function ExploreScreen() {
           keyExtractor={(item) => item.id}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
+          ListFooterComponent={IllustrationsSection}
           renderItem={({ item }) => (
             <Pressable style={styles.cardWrapper} onPress={() => router.push(item.href)}>
               <ThemedView type="backgroundElement" style={styles.card}>
@@ -55,7 +57,48 @@ export default function ExploreScreen() {
   );
 }
 
+function IllustrationsSection() {
+  return (
+    <View style={styles.section}>
+      <ThemedText type="smallBold" themeColor="textSecondary">
+        ILLUSTRATIONS · 图解 — watch, then try
+      </ThemedText>
+      {ILLUSTRATION_GROUPS.map((group) => (
+        <ThemedView key={group.id} type="backgroundElement" style={styles.group}>
+          <ThemedText type="smallBold" style={{ color: group.color }}>
+            {group.title.en} · {group.title.zh}
+          </ThemedText>
+          {ILLUSTRATIONS.filter((s) => s.group === group.id).map((scenario) => (
+            <Pressable key={scenario.id} onPress={() => router.push(`/illustration/${scenario.id}`)} style={styles.topic}>
+              <ThemedText>
+                {scenario.title.zh} {scenario.title.en}
+              </ThemedText>
+              <ThemedText themeColor="textSecondary">
+                {scenario.steps.length} steps ›
+              </ThemedText>
+            </Pressable>
+          ))}
+        </ThemedView>
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  section: {
+    gap: Spacing.two,
+    paddingTop: Spacing.three,
+  },
+  group: {
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
+    gap: Spacing.one,
+  },
+  topic: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.two,
+  },
   container: {
     flex: 1,
   },

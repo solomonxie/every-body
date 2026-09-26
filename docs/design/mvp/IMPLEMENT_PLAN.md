@@ -68,17 +68,17 @@ Ship core atlas before Illustrations; store review, size, and perf gate everythi
 ## Phase 7: Scenario engine — Watch
 One data-driven player for every Illustration; must exist before any topic is authored.
 
-- [ ] T7.1 `Scenario` / `Step` schema + validator — see `scenario-format.md` — depends: T3.1
-- [ ] T7.2 Step runner: camera, layers, part transform/tint tweens, captions — see `scenario-format.md` → Runner — depends: T7.1, T4.2
+- [x] T7.1 `Scenario` / `Step` schema (2D SVG scene per topic, params eased per step) — see `scenario-format.md` — depends: T3.1
+- [x] T7.2 Step runner (cumulative step targets, per-frame easing, `pulse`/instant params) — was: camera, layers, part transform/tint tweens, captions — see `scenario-format.md` → Runner — depends: T7.1, T4.2
 - [ ] T7.3 Overlay primitives: arrow, particles (reuse T5.4), gauge, plaque/narrowing, counter — see `uiux/illustrations.md` → Overlay primitives — depends: T7.1, T5.4
-- [ ] T7.4 Player UI: step dots, Prev/Next, auto-advance, end state, clinician-only hint — see `uiux/illustrations.md` → Player — depends: T7.2
-- [ ] T7.5 Explore ILLUSTRATIONS section + Topic list — see `uiux/illustrations.md` → Explore section / Topic list — depends: T7.1, T2.1
+- [x] T7.4 Player UI: step dots, Prev/Next, auto-advance, end state, clinician-only hint — see `uiux/illustrations.md` → Player — depends: T7.2
+- [ ] T7.5 Explore ILLUSTRATIONS section + Topic list (in-progress: section done, topic list page when >1 screen of topics) — see `uiux/illustrations.md` → Explore section / Topic list — depends: T7.1, T2.1
 
 ## Phase 8: Interactivity — Try
 The six primitives, shared by Illustrations and by parts/points/flow in the Viewer.
 
-- [ ] T8.1 `TryControl` sheet modes: scrub, rhythm, hold, compare (+ feedback line) — see `uiux/components.md` → TryControl — depends: T7.2
-- [ ] T8.2 In-scene drag-to-target (handle, ghost, snap, arc guide) — see `uiux/illustrations.md` → Watch ⇄ Try — depends: T7.2
+- [ ] T8.1 `TryControl` modes: scrub, rhythm, hold, compare (+ feedback line) (in-progress: scrub + rhythm done) — see `uiux/components.md` → TryControl — depends: T7.2
+- [x] T8.2 In-scene drag-to-target (handle, ghost, snap, arc guide) — see `uiux/illustrations.md` → Watch ⇄ Try — depends: T7.2
 - [ ] T8.3 Compare split view (two model states side by side / drag split) — see `scenario-format.md` → Compare — depends: T7.2
 - [ ] T8.4 Follow camera (ride a particle) — see `src/components/canvas/` — depends: T5.4
 - [ ] T8.5 Viewer Try on parts: joint pivots/ROM, muscle contract, organ rate — see `uiux/viewer.md` → Try on a part — depends: T8.1, T8.2, T4.1
@@ -88,6 +88,7 @@ The six primitives, shared by Illustrations and by parts/points/flow in the View
 Pure data + review per group; groups are independent — one agent each. Every topic ships
 watch + try steps, EN/中 captions, cited sources, clinician sign-off.
 
+- [x] T9.0 First topics: shoulder dislocation (drag), CPR (rhythm), blood sugar / pressure / fats (scrub, math models) — see `src/illustrations/scenes/` — depends: T7.4
 - [ ] T9.1 Bones & setting: dislocations, fracture + casting, healing — see `uiux/illustrations.md` → Per-topic try — depends: T7.3, T8.2
 - [ ] T9.2 First aid ×7 (ILCOR-based) + emergency-number reminder — see `uiux/illustrations.md` — depends: T7.3, T8.1, T8.2
 - [ ] T9.3 Blood sugar / pressure / fats — see `uiux/illustrations.md` → Metric topic — depends: T7.3, T8.1
