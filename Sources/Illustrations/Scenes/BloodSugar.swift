@@ -141,16 +141,22 @@ extension Illustrations {
         // after the meal: a brisk walk
         if ex > 0.02 {
             s.group(opacity: ex.clamped(0, 1)) { w in
-                let hip = CGPoint(x: 80, y: 190), h = 200.0, ph = t * 4
-                var walker = Person(h: h, shirt: hex("#8FC8A0"), shirtLine: hex("#4F8F63"), shoulder: 25 * sin(ph), elbow: 40, hip: 25 * sin(ph), knee: 25 * max(0, -sin(ph)) + 5)
-                if p[v: "pregnant"] > 0.5 { walker.shirt = hex("#E8B4C8"); walker.shirtLine = hex("#B77A95") }
-                let thigh = 0.245 * h, a1 = -25 * sin(ph) * .pi / 180, a2 = a1 - (25 * max(0, sin(ph)) + 5) * .pi / 180
-                let k = CGPoint(x: hip.x + sin(a1) * thigh, y: hip.y + cos(a1) * thigh), f = CGPoint(x: k.x + sin(a2) * thigh, y: k.y + cos(a2) * thigh)
-                w.line(hip.x, hip.y, k.x, k.y, stroke: hex("#46546F"), lw: 0.075 * h, cap: .round)
-                w.line(k.x, k.y, f.x, f.y, stroke: hex("#46546F"), lw: 0.06 * h, cap: .round)
-                w.line(f.x, f.y, f.x + 0.1 * h, f.y + 2, stroke: hex("#3E3E4A"), lw: 0.035 * h, cap: .round)
-                walker.draw(&w, at: hip)
+                let ph = t * 4, sw = sin(ph)
+                var walker = SideFigure(Casualty(type1 ? ["kid": 1] : p, adult: 200), lean: 4)
+                if walker.bump == 0 { walker.look.top = hex("#8FC8A0"); walker.look.topLine = hex("#4F8F63") }
+                walker.look.longSleeves = false
+                // front foot flat, back foot pushing off the toes
+                func leg(_ a: Double, _ bend: Double) -> SideFigure.Leg {
+                    let knee = 4 + 26 * max(0, bend)
+                    return .init(hip: a, knee: knee, point: a - knee + (a < 0 ? 28 * min(1, -a / 12) : 0))
+                }
+                walker.nearLeg = leg(18 * sw, -sin(ph + 0.8))
+                walker.farLeg = leg(-18 * sw, sin(ph + 0.8))
+                walker.near = .init(shoulder: -20 * sw, elbow: 35)
+                walker.far = .init(shoulder: 20 * sw, elbow: 35)
+                walker.hip = CGPoint(x: 84, y: walker.hipY(onFloor: 292))
                 w.line(0, 292, 180, 292, stroke: hex("#BBBBBB"), lw: 2)
+                walker.draw(&w)
                 w.label("thigh & calf muscles burn glucose", "腿部肌肉消耗葡萄糖", 90, 70, size: 9, color: hex("#4F8F63"), anchor: .middle, bold: true)
             }
         }

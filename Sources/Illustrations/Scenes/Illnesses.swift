@@ -59,41 +59,62 @@ extension Illustrations {
     }
 
     @MainActor private static func drawSneeze(_ s: inout Sketch, _ p: Params, _ t: Double) {
-        let elbow = p[v: "elbow"], floor = 268.0, h = 180.0
-        let hip = CGPoint(x: 70, y: floor - 0.49 * h - 4)
-        var sneezer = Person(h: h, lean: 14)
-        if elbow > 0.5 { sneezer.shoulder = 107; sneezer.elbow = 137 } else { sneezer.shoulder = 8; sneezer.elbow = 12 }
-        s.line(0, floor, 360, floor, stroke: hex("#BBBBBB"), lw: 2)
+        let elbow = p[v: "elbow"] > 0.5, floor = 262.0
+        s.room(floor: floor)
         // the other person, facing back
-        let kid = p[v: "kid"] > 0.5, oh = kid ? 120.0 : 180.0
-        s.group(translate: CGPoint(x: 300, y: floor - 0.49 * oh - 4)) { g in
-            g.ctx.scaleBy(x: -1, y: 1)
-            Person(h: oh, shirt: hex("#F2D48A"), shirtLine: hex("#C9A14F"), shoulder: 6, elbow: 10).draw(&g, at: .zero)
+        let other = p[v: "kid"] > 0.5 ? Casualty(Profile(age: .child), adult: 176) : Casualty(Profile.standard, adult: 172, adultLook: .helper)
+        var o = SideFigure(other, facing: -1)
+        o.nearLeg = .init(hip: 3, knee: 2)
+        o.farLeg = .init(hip: -4, knee: 2)
+        o.near = .init(shoulder: 6, elbow: 12)
+        o.far = .init(shoulder: -4, elbow: 10)
+        o.hip = CGPoint(x: 300, y: o.hipY(onFloor: floor))
+        o.draw(&s)
+        // the sneezer, jerking forward
+        var v = SideFigure(Casualty(Profile.standard, adult: 180), lean: elbow ? 20 : 12, face: elbow ? .closed : .distress)
+        v.headTilt = elbow ? 14 : 4
+        v.nearLeg = .init(hip: 6, knee: 3)
+        v.farLeg = .init(hip: -6, knee: 2)
+        v.hip = CGPoint(x: 72, y: v.hipY(onFloor: floor))
+        v.far = .init(shoulder: -8, elbow: 16)
+        let mouth = v.mouth
+        if elbow {
+            // elbow crook in front of the mouth, forearm across the face to the far side
+            let sh = v.shoulderPoint, U = v.build.upperArm * v.h, dy = mouth.y + 1 - sh.y
+            let e = CGPoint(x: sh.x + max(0, U * U - dy * dy).squareRoot(), y: sh.y + dy), c = v.torso(-0.2, 1.0)
+            let up = atan2(e.x - sh.x, e.y - sh.y) * 180 / .pi, fore = atan2(c.x - e.x, c.y - e.y) * 180 / .pi
+            v.near = .init(shoulder: up - v.lean, elbow: (fore - up + 540).truncatingRemainder(dividingBy: 360) - 180, hand: .fist)
+            // forearm and hand pass behind the head; only the sleeve over mouth and nose shows
+            v.drawBack(&s)
+            v.drawArm(&s, near: true)
+            v.drawBody(&s)
+            let e2 = v.elbow()
+            s.limb([lerp(sh, e2, 0.3), e2, lerp(e2, v.palm(), 0.3)], w: v.build.armW * v.h, fill: v.look.top, line: v.look.topLine)
+        } else {
+            v.near = .init(shoulder: -4, elbow: 22)
+            v.draw(&s)
         }
-        sneezer.draw(&s, at: hip)
-        // mouth, after the lean
-        let a = 14 * Double.pi / 180, m = CGPoint(x: 0.07 * h, y: -0.39 * h)
-        let mouth = CGPoint(x: hip.x + m.x * cos(a) - m.y * sin(a), y: hip.y + m.x * sin(a) + m.y * cos(a))
-        let reach = elbow > 0.5 ? 0.06 : 1.0, blue = hex("#3F95D6")
-        for i in 0..<(elbow > 0.5 ? 8 : 60) {
+        let reach = elbow ? 0.06 : 1.0, blue = hex("#3F95D6")
+        for i in 0..<(elbow ? 8 : 60) {
             let u = (t * 0.5 + Double(i) * 0.137).wrap(1)
             let spread = (Double(i) * 0.618).wrap(1) - 0.45
-            let x = mouth.x + 6 + u * 230 * reach, y = mouth.y + spread * u * 90 * reach + u * u * 40 * reach
+            let x = mouth.x + 8 + u * 220 * reach, y = mouth.y + spread * u * 90 * reach + u * u * 40 * reach
             s.circle(x, y, 1.2 + Double(i % 3) * 0.7, fill: blue, opacity: 0.8 * (1 - u * 0.5))
-            if i % 12 == 0 && elbow < 0.5 { virus(&s, x, y - 6, 2) }
+            if i % 12 == 0 && !elbow { virus(&s, x, y - 6, 2) }
         }
-        if elbow < 0.5 {
-            s.line(mouth.x + 10, floor + 10, 280, floor + 10, stroke: hex("#777777"), lw: 1)
-            s.path("M \(mouth.x + 16) \(floor + 6) L \(mouth.x + 10) \(floor + 10) L \(mouth.x + 16) \(floor + 14) M 274 \(floor + 6) L 280 \(floor + 10) L 274 \(floor + 14)",
-                   stroke: hex("#777777"), lw: 1)
-            s.label("droplets fly 1–2 m", "飞沫可达 1–2 米", (mouth.x + 280) / 2, floor + 20, size: 10, color: hex("#555555"), anchor: .middle)
+        if !elbow {
+            let a = mouth.x + 10, b = 290.0, y = floor + 14
+            s.line(a, y, b, y, stroke: hex("#8A7A66"), lw: 1)
+            s.path("M \(a + 6) \(y - 4) L \(a) \(y) L \(a + 6) \(y + 4) M \(b - 6) \(y - 4) L \(b) \(y) L \(b - 6) \(y + 4)", stroke: hex("#8A7A66"), lw: 1)
+            s.tag("droplets fly 1–2 m", "飞沫可达 1–2 米", (a + b) / 2, y + 12, size: 10, color: hex("#555555"))
         } else {
-            s.label("caught in the sleeve", "被袖子挡住", mouth.x + 30, mouth.y - 30, size: 10, color: hex("#2E9E5B"), bold: true)
+            s.tag("caught in the sleeve", "被袖子挡住", mouth.x + 70, mouth.y - 18, size: 10, color: hex("#2E9E5B"), bold: true)
         }
-        s.label("Achoo!", "阿嚏！", mouth.x + 14, mouth.y - 50, size: 14, color: hex("#6C4F9E"), bold: true)
-        s.rect(200, 8, 152, 36, r: 8, fill: .white, stroke: elbow > 0.5 ? hex("#2E9E5B") : hex("#D8434B"), lw: 2)
-        s.label(elbow > 0.5 ? "elbow: few escape" : "open air: thousands", elbow > 0.5 ? "用肘挡：极少飞出" : "直接打：成千上万", 276, 23, size: 11,
-                color: elbow > 0.5 ? hex("#2E9E5B") : hex("#D8434B"), anchor: .middle, bold: true)
+        s.label("Achoo!", "阿嚏！", mouth.x + 10, mouth.y - 42, size: 14, color: hex("#6C4F9E"), bold: true)
+        let ok = elbow ? hex("#2E9E5B") : hex("#D8434B")
+        s.rect(200, 8, 152, 36, r: 8, fill: .white, stroke: ok, lw: 2)
+        s.label(elbow ? "elbow: few escape" : "open air: thousands", elbow ? "用肘挡：极少飞出" : "直接打：成千上万", 276, 23, size: 11,
+                color: ok, anchor: .middle, bold: true)
         s.label("virus rides on droplets", "病毒附着在飞沫上", 276, 38, size: 9, color: hex("#555555"), anchor: .middle)
     }
 
@@ -204,30 +225,35 @@ extension Illustrations {
     @MainActor private static func drawAsthma(_ s: inout Sketch, _ p: Params, _ t: Double) {
         let r = airway(p), flow = airflow(p), attack = p[v: "attack"], inh = p[v: "inhaler"], kid = p[v: "kid"] > 0.5
         let squeeze = attack * (1 - 0.8 * inh)
-        let floor = 284.0, h = kid ? 150.0 : 200.0, ink = hex("#555555")
-        let hip = CGPoint(x: 70, y: floor - 0.49 * h - 4)
-        var person = Person(h: h, shirt: hex("#B7D3A8"), shirtLine: hex("#6E9E4F"), lean: 8 * attack)
-        let a = person.lean * .pi / 180
-        func leaned(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: hip.x + (x * cos(a) - y * sin(a)) * h, y: hip.y + (x * sin(a) + y * cos(a)) * h) }
-        let mouth = leaned(0.075, -0.39)
+        let floor = 284.0, ink = hex("#555555")
+        let who = kid ? Casualty(Profile(age: .child), adult: 210) : Casualty(Profile.standard, adult: 200)
         let using = inh > 0.2
+        var v = SideFigure(who, lean: 8 * attack * (using ? 0.5 : 1), face: attack > 0.5 && !using ? .distress : .calm)
+        v.look.top = hex("#B7D3A8"); v.look.topLine = hex("#6E9E4F")
+        v.nearLeg = .init(hip: 4, knee: 2)
+        v.farLeg = .init(hip: -5, knee: 2)
+        v.hip = CGPoint(x: 72, y: v.hipY(onFloor: floor))
+        let h = v.h, mouth = v.mouth
         let spacerEnd = CGPoint(x: mouth.x + 0.17 * h, y: mouth.y + 2)
+        let tubeH = 0.09 * h
         if using {
-            person.aimHand(at: CGPoint(x: spacerEnd.x - hip.x, y: spacerEnd.y - hip.y - 0.02 * h))
+            // near hand grips the canister, far hand cradles the tube
+            v.near = .init(reach: CGPoint(x: spacerEnd.x + 2, y: mouth.y + 1), hand: .fist)
+            v.far = .init(reach: CGPoint(x: (mouth.x + spacerEnd.x) / 2, y: mouth.y + tubeH / 2 + 2), hand: .open, handAngle: 0)
         } else if attack > 0.5 {
-            person.aimHand(at: CGPoint(x: 0.07 * h, y: -0.22 * h))
+            v.near = .init(reach: v.front(0.72), hand: .open, handAngle: 200)
+            v.far = .init(reach: v.front(0.6), hand: .open, handAngle: 200)
+        } else {
+            v.near = .init(shoulder: 6, elbow: 12)
+            v.far = .init(shoulder: -3, elbow: 10)
         }
         s.line(0, floor, 190, floor, stroke: hex("#BBBBBB"), lw: 2)
-        person.draw(&s, at: hip)
+        v.drawBack(&s)
+        v.drawBody(&s)
         // faint airway tree inside the chest, with a zoom to the cross-section
-        let chest = leaned(0.01, -0.22)
-        s.path("M \(chest.x) \(chest.y - 18) L \(chest.x) \(chest.y) M \(chest.x) \(chest.y) L \(chest.x - 8) \(chest.y + 12) M \(chest.x) \(chest.y) L \(chest.x + 8) \(chest.y + 12)",
-               stroke: hex("#D8434B"), lw: 1.5, opacity: 0.6)
-        s.circle(chest.x + 6, chest.y + 12, 6, stroke: ink, lw: 1)
-        s.line(chest.x + 12, chest.y + 12, 200, 150, stroke: ink, lw: 0.8, dash: [3, 2])
+        let chest = v.torso(-0.05, 0.62)
         if using {
             // spacer: clear tube from the mouth, inhaler canister at the far end
-            let tubeH = 0.09 * h
             if kid {
                 s.path("M \(mouth.x - 2) \(mouth.y - 12) L \(mouth.x + 12) \(mouth.y - tubeH / 2) L \(mouth.x + 12) \(mouth.y + tubeH / 2) L \(mouth.x - 2) \(mouth.y + 10) Z",
                        fill: hex("#CFE3F2"), stroke: hex("#5F87B8"), lw: 1.5)
@@ -250,6 +276,11 @@ extension Illustrations {
             }
             s.label("wheeze, tight chest", "喘鸣、胸闷", mouth.x + 10, mouth.y - 18, size: 10, color: hex("#D8434B"), bold: true)
         }
+        v.drawArm(&s, near: true)
+        s.path("M \(chest.x) \(chest.y - 18) L \(chest.x) \(chest.y) M \(chest.x) \(chest.y) L \(chest.x - 8) \(chest.y + 12) M \(chest.x) \(chest.y) L \(chest.x + 8) \(chest.y + 12)",
+               stroke: hex("#D8434B"), lw: 1.5, opacity: 0.6)
+        s.circle(chest.x + 6, chest.y + 12, 6, stroke: ink, lw: 1)
+        s.line(chest.x + 12, chest.y + 12, 200, 150, stroke: ink, lw: 0.8, dash: [3, 2])
 
         // airway cross-section
         let c = CGPoint(x: 272, y: 150), R = 56.0
@@ -265,7 +296,7 @@ extension Illustrations {
         if attack > 0.3 { s.path("M \(c.x - R * r) \(c.y) Q \(c.x) \(c.y + R * r * 0.5) \(c.x + R * r) \(c.y) Z", fill: hex("#F2E0A0"), opacity: 0.8 * squeeze + 0.2) }
         for i in 0..<5 { s.circle(c.x + Double(i - 2) * R * r * 0.3, c.y - R * r * 0.5 + breath * R * r, 3, fill: hex("#3F95D6"), opacity: flow) }
         s.label("muscle", "平滑肌", 352, c.y - R - 8, size: 9, color: hex("#C1443C"), anchor: .end)
-        s.label("swollen lining", "黏膜水肿", c.x - R - 14, c.y + R + 16, size: 9, color: hex("#B77A85"))
+        s.label("swollen lining", "黏膜水肿", c.x - R - 16, c.y + R + 21, size: 9, color: hex("#B77A85"))
         if attack > 0.3 { s.label("mucus", "痰", c.x, c.y + R * r * 0.22 + 3, size: 8, color: hex("#9A8A3B"), anchor: .middle) }
         s.label("small airway, cut across", "小气道横截面", c.x, 244, size: 9, color: hex("#8A3B45"), anchor: .middle, bold: true)
         let status = flow < 0.3 ? hex("#D8434B") : hex("#2E9E5B")
@@ -323,12 +354,16 @@ extension Illustrations {
         let hurt = rf > 0.6
 
         // the person: upright after the meal, lying flat, or on a bed raised at the head
+        let who = Casualty(p, adult: 132)
         if pose == 0 {
-            var person = FacingPerson(h: 104, face: hurt ? .pain : .calm, legs: true)
-            person.bump = p[v: "pregnant"] > 0.5
-            person.rightHand = hurt ? CGPoint(x: 2, y: 0.12 * person.h) : nil
+            var v = SideFigure(Casualty(p, adult: 96), face: hurt ? .distress : .calm)
+            v.nearLeg = .init(hip: 2, knee: 1)
+            v.farLeg = .init(hip: -3, knee: 1)
+            v.hip = CGPoint(x: 70, y: v.hipY(onFloor: 112))
+            v.near = hurt ? .init(reach: v.front(0.72), hand: .open, handAngle: 200) : .init(shoulder: 4, elbow: 10)
+            v.far = .init(shoulder: -4, elbow: 10)
             s.line(20, 112, 200, 112, stroke: hex("#BBBBBB"), lw: 2)
-            person.draw(&s, at: CGPoint(x: 70, y: 26))
+            v.draw(&s)
             s.label("upright after eating", "饭后保持直立", 150, 62, size: 9, color: ink, anchor: .middle)
         } else {
             let tilt = pose == 1 ? 7.0 : 0
@@ -336,11 +371,15 @@ extension Illustrations {
                 g.rect(24, 92, 190, 12, r: 4, fill: hex("#DCE6F2"), stroke: hex("#9FB3CC"))
                 g.rect(20, 76, 8, 36, r: 2, fill: hex("#B08A64"))
                 g.rect(28, 80, 34, 12, r: 6, fill: .white, stroke: hex("#CCCCCC"))
-                var person = FacingPerson(h: 132, face: hurt ? .pain : .calm, legs: true)
-                person.rightHand = CGPoint(x: -0.11 * 132, y: 0.32 * 132)
-                person.leftHand = CGPoint(x: 0.11 * 132, y: 0.32 * 132)
-                person.bump = p[v: "pregnant"] > 0.5
-                g.group(translate: CGPoint(x: 72, y: 92 - 0.115 * 132), rotate: -90, about: .zero) { q in person.draw(&q, at: .zero) }
+                // on the back, head on the pillow
+                var v = SideFigure(who, face: hurt ? .distress : .calm)
+                v.rotation = -90
+                v.hip = CGPoint(x: 100, y: 92 - v.build.depth * v.h * 0.5 - 1)
+                v.nearLeg = .init(hip: 2, knee: 3, point: 25)
+                v.farLeg = .init(hip: 1, knee: 2, point: 25)
+                v.near = hurt ? .init(reach: v.front(0.72), hand: .open, handAngle: 180) : .init(shoulder: 6, elbow: 10)
+                v.far = .init(shoulder: 3, elbow: 8)
+                v.draw(&g)
             }
             if pose == 1 {
                 s.rect(16, 89, 16, 23, r: 2, fill: hex("#8A6A4A"))
@@ -379,7 +418,7 @@ extension Illustrations {
             if hurt { a.rect(-11, -90, 22, 86, r: 8, stroke: hex("#D8434B"), lw: 3, opacity: 0.4 + 0.3 * sin(t * 4)) }
         }
         let top = world(0, -90)
-        s.label("diaphragm", "膈肌", world(-120, -14).x, world(-120, -14).y - 10, size: 8, color: hex("#B8544C"))
+        s.label("diaphragm", "膈肌", world(-120, -14).x - 5, world(-120, -14).y + 3, size: 8, color: hex("#B8544C"), anchor: .end)
         let valve = world(0, 0), pooled = world(deepPoint.0 - g.x * 14 - 6, deepPoint.1 - g.y * 14), fundus = world(40, 20)
         s.label("gullet", "食管", top.x + 12, top.y + 12, size: 9, color: label, bold: true)
         s.line(valve.x - 8, valve.y, 120, valve.y + 8, stroke: label, lw: 0.6)
