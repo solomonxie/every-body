@@ -31,6 +31,9 @@ struct RootView: View {
         }
         .onOpenURL { url in
             guard let route = Route(path: "/\(url.host() ?? "")\(url.path())") else { return }
+            // ?yaw=1.57 pins the 3D view at an angle (for screenshots)
+            BodyScene.pinnedYaw = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?.first { $0.name == "yaw" }?.value.flatMap(Float.init)
             tab = 0
             path = [route]
         }

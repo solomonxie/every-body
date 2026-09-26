@@ -15,13 +15,16 @@ struct PartState: Equatable {
 enum Focus {
     case all, foot, hand, ear
 
-    var y: Float { switch self { case .all: 0; case .foot: -1.35; case .hand: 0.2; case .ear: 1.42 } }
-    var distance: Float { switch self { case .all: 5.8; case .foot: 2.1; case .hand: 2.4; case .ear: 1.5 } }
+    var y: Float { switch self { case .all: 0.05; case .foot: -1.48; case .hand: -0.1; case .ear: 1.43 } }
+    var distance: Float { switch self { case .all: 5.8; case .foot: 1.3; case .hand: 1.5; case .ear: 0.9 } }
 }
 
 /// The schematic body as RealityKit entities, plus everything animated on it.
 @MainActor
 final class BodyScene {
+    /// set from a bodyatlas://…?yaw= link: start at this angle, no auto-rotate
+    static var pinnedYaw: Float?
+
     let root = Entity()
     let camera = PerspectiveCamera()
     var subscription: EventSubscription?
@@ -43,8 +46,7 @@ final class BodyScene {
     private var partLayer: [String: LayerID] = [:]
     private var baseMaterials: [String: PhysicallyBasedMaterial] = [:]
     private var skinEntities: [ModelEntity] = []
-    private var organEntities: [String: ModelEntity] = [:]
-    private var organBaseScale: [String: SIMD3<Float>] = [:]
+    private var organEntities: [String: Entity] = [:]
     private var jointOuter: [String: Entity] = [:]
     private var pointEntities: [String: ModelEntity] = [:]
     private var pulseDots: [ModelEntity] = []
@@ -65,6 +67,10 @@ final class BodyScene {
     private var skinColor = UIColor(hex: "#F2C9A5")
 
     init() {
+        if let yaw = Self.pinnedYaw {
+            self.yaw = yaw
+            touched = true
+        }
         root.addChild(rig)
         root.addChild(camera)
         camera.camera.fieldOfViewInDegrees = 40
@@ -106,32 +112,34 @@ final class BodyScene {
             Catalog.body.joints.first { $0.parts.contains(id) }.map(container(for:)) ?? rig
         }
 
-        for skin in female ? Catalog.body.femaleSkin : Catalog.body.skin {
-            let entity = ModelEntity(mesh: Self.skinMesh(skin.shape), materials: [Self.material(skinColor, opacity: 0.3)])
-            entity.position = skin.position.simd
-            entity.orientation = simd_quatf(angle: skin.rotationZ ?? 0, axis: SIMD3(0, 0, 1))
-            if let s = skin.scale { entity.scale = s.simd }
-            parent(of: skin.id).addChild(entity)
+        let sex = female ? "female" : "male"
+        for part in Catalog.body.parts where part.layer == .skin && (part.sex == nil || part.sex == sex) {
+            let entity = Self.entity(for: part.shape)
+            entity.model?.materials = [Self.material(skinColor, opacity: 0.3)]
+            parent(of: part.id).addChild(entity)
             skinEntities.append(entity)
         }
 
         for organ in Catalog.body.organs {
-            let place = (!female && organ.male != nil) ? organ.male! : Organ.Placement(position: organ.position, radius: organ.radius, scale: organ.scale, color: organ.color)
-            let entity = ModelEntity(mesh: .generateSphere(radius: place.radius),
-                                     materials: [Self.material(UIColor(hex: place.color), opacity: organ.region == true ? 0.45 : 1)])
-            entity.name = organ.names == nil ? "" : organ.id
-            entity.position = place.position.simd
-            let scale = place.scale?.simd ?? SIMD3(repeating: 1)
-            entity.scale = scale
-            organBaseScale[organ.id] = scale
-            entity.isEnabled = organ.region != true
-            if organ.names != nil { Self.makeTappable(entity) }
-            rig.addChild(entity)
-            organEntities[organ.id] = entity
+            let variant = (!female ? organ.male : nil) ?? Organ.Variant(position: organ.position, color: organ.color, shapes: organ.shapes)
+            // container sits on the pulse target so it scales about it
+            let container = Entity()
+            container.position = variant.position.simd
+            for shape in variant.shapes {
+                let piece = Self.entity(for: shape)
+                piece.position -= variant.position.simd
+                piece.model?.materials = [Self.material(UIColor(hex: variant.color), opacity: organ.region == true ? 0.45 : 1)]
+                piece.name = organ.names == nil ? "" : organ.id
+                if organ.names != nil { Self.makeTappable(piece) }
+                container.addChild(piece)
+            }
+            container.isEnabled = organ.region != true
+            rig.addChild(container)
+            organEntities[organ.id] = container
         }
 
-        for part in Catalog.body.parts {
-            let entity = Self.entity(for: part)
+        for part in Catalog.body.parts where part.layer != .skin {
+            let entity = Self.entity(for: part.shape)
             entity.name = part.id
             baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1)
             entity.model?.materials = [baseMaterials[part.id]!]
@@ -225,7 +233,7 @@ final class BodyScene {
         }
         let muscleOpacity: Float = layers.contains(.skeletal) ? 0.55 : 0.95
         for (id, entity) in partEntities {
-            let layer = partLayer[id]!
+            guard let layer = partLayer[id] else { continue }
             entity.isEnabled = layers.contains(layer) && parts.visible(id)
             var m = baseMaterials[id]!
             let opacity: Float = parts.faded.contains(id) ? 0.18 : layer == .muscular ? muscleOpacity : 1
@@ -281,12 +289,13 @@ final class BodyScene {
                 pulse = t < 0.8 ? sin(t / 0.8 * .pi) * 0.6 : 0
             }
             if id == "heart" { pulse += pow(max(0, sin(clock * bpm / 60 * 2 * .pi)), 4) * 0.18 }
-            entity.scale = (organBaseScale[id] ?? .one) * (1 + pulse)
+            entity.scale = SIMD3(repeating: 1 + pulse)
             if organ?.region == true { entity.isEnabled = lit }
-            if var m = entity.model?.materials.first as? PhysicallyBasedMaterial {
+            for case let piece as ModelEntity in entity.children {
+                guard var m = piece.model?.materials.first as? PhysicallyBasedMaterial else { continue }
                 m.emissiveColor = .init(color: organ?.region == true ? UIColor(hex: organ!.color) : UIColor(hex: id == selected ? "#FFD166" : "#4ECB71"))
                 m.emissiveIntensity = lit ? 0.6 + pulse : id == selected ? 0.6 : 0
-                entity.model?.materials = [m]
+                piece.model?.materials = [m]
             }
         }
     }
@@ -341,47 +350,47 @@ final class BodyScene {
         }
     }
 
-    private static func skinMesh(_ s: SkinPart.Shape) -> MeshResource {
-        switch s.kind {
-        case "sphere": .generateSphere(radius: s.radius ?? 0.1)
-        case "capsule": Meshes.capsule(radius: s.radius ?? 0.1, length: s.length ?? 0.1)
-        default: .generateBox(size: s.size?.simd ?? SIMD3(repeating: 0.1))
-        }
+    private static func orient(_ e: ModelEntity, from a: SIMD3<Float>, to b: SIMD3<Float>) {
+        e.position = (a + b) / 2
+        e.orientation = simd_quatf(from: SIMD3(0, 1, 0), to: simd_normalize(b - a))
     }
 
-    private static func entity(for part: SchematicPart) -> ModelEntity {
-        switch part.shape {
-        case let .sphere(center, radius, scale):
+    private static func entity(for shape: PartShape) -> ModelEntity {
+        switch shape {
+        case let .sphere(center, radius, scale, rotation):
             let e = ModelEntity(mesh: .generateSphere(radius: radius))
             e.position = center.simd
             if let scale { e.scale = scale.simd }
+            if let r = rotation { e.orientation = euler(r) }
             return e
         case let .box(center, size, rotation):
             let e = ModelEntity(mesh: .generateBox(size: size.simd))
             e.position = center.simd
-            if let r = rotation {
-                e.orientation = simd_quatf(angle: r.x, axis: SIMD3(1, 0, 0)) * simd_quatf(angle: r.y, axis: SIMD3(0, 1, 0)) * simd_quatf(angle: r.z, axis: SIMD3(0, 0, 1))
-            }
+            if let r = rotation { e.orientation = euler(r) }
             return e
         case let .segment(from, to, radius):
-            let dir = to.simd - from.simd
-            let e = ModelEntity(mesh: Meshes.capsule(radius: radius, length: max(0.001, simd_length(dir))))
-            e.position = (from.simd + to.simd) / 2
-            e.orientation = simd_quatf(from: SIMD3(0, 1, 0), to: simd_normalize(dir))
+            let e = ModelEntity(mesh: Meshes.capsule(radius: radius, length: max(0.001, simd_distance(from.simd, to.simd))))
+            orient(e, from: from.simd, to: to.simd)
             return e
         case let .spindle(from, to, radius):
-            let dir = to.simd - from.simd
             let e = ModelEntity(mesh: .generateSphere(radius: 1))
-            e.position = (from.simd + to.simd) / 2
-            e.orientation = simd_quatf(from: SIMD3(0, 1, 0), to: simd_normalize(dir))
-            e.scale = SIMD3(radius, simd_length(dir) / 2, radius * 0.8)
+            orient(e, from: from.simd, to: to.simd)
+            e.scale = SIMD3(radius, simd_distance(from.simd, to.simd) / 2, radius * 0.8)
             return e
-        case let .tube(points, radius):
-            return ModelEntity(mesh: Meshes.tube(points: points.map(\.simd), radius: radius))
-        case let .arc(center, radius, tube, start, sweep, depth):
-            let e = ModelEntity(mesh: Meshes.arc(radius: radius, tube: tube, start: start, sweep: sweep, depth: depth))
-            e.position = center.simd
+        case let .lathe(from, to, radii, scale):
+            let e = ModelEntity(mesh: Meshes.profile(radii: radii, length: max(0.001, simd_distance(from.simd, to.simd))))
+            orient(e, from: from.simd, to: to.simd)
+            if let scale { e.scale = scale.simd }
             return e
+        case let .tube(points, radius, radii):
+            return ModelEntity(mesh: Meshes.tube(points: points.map(\.simd), radius: radius, radii: radii))
+        case let .plate(points, thickness):
+            return ModelEntity(mesh: Meshes.plate(points: points.map(\.simd), thickness: thickness))
         }
+    }
+
+    /// three.js-style XYZ Euler
+    private static func euler(_ r: Vec3) -> simd_quatf {
+        simd_quatf(angle: r.x, axis: SIMD3(1, 0, 0)) * simd_quatf(angle: r.y, axis: SIMD3(0, 1, 0)) * simd_quatf(angle: r.z, axis: SIMD3(0, 0, 1))
     }
 }
