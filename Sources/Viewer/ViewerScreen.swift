@@ -6,6 +6,7 @@ struct ViewerScreen: View {
     var initialPart: String?
 
     @Environment(Settings.self) private var settings
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var scene = BodyScene()
     @State private var layers: Set<LayerID> = []
     @State private var parts = PartState()
@@ -40,7 +41,15 @@ struct ViewerScreen: View {
             }
             .overlay { if !built { LoadingBadge(text: settings.t("Loading 3D body…", "正在载入 3D 人体…")) } }
             .padding(.bottom, -Radius.sheet)
-            panel
+            if typeSize.isAccessibilitySize {
+                // huge type: cap the sheet and let it scroll so the model keeps half the screen
+                ScrollView { panel }
+                    .containerRelativeFrame(.vertical) { h, _ in h * 0.5 }
+                    .background(Color.card)
+                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: Radius.sheet, topTrailingRadius: Radius.sheet, style: .continuous))
+            } else {
+                panel
+            }
         }
         .background(Color.page)
         .navigationTitle(settings.name(system.name, system.nameZh))

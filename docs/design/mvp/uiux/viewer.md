@@ -49,6 +49,20 @@ Auto-rotate (setting, default on) runs until the first touch, never resumes that
 │ [ Hide ]  [ Isolate ]  [ Fade ]         Details ›    │
 └──────────────────────────────────────────────────────┘
 ```
+Built (bottom sheet under the model, rounded top, overlaps the canvas by 22 pt):
+```
+ (↶) (●Skin) (●Muscles) (●Bones) … (👁 Show all (2))     ← chips scroll
+ Femur                                              (✕)
+ Bones
+ ╭────────╮ ╭────────╮ ╭────────╮
+ │  ⌀     │ │  ◐     │ │  ⌖     │   filled = on (Fade / Isolate)
+ │ Hide   │ │ Fade   │ │Isolate │
+ ╰────────╯ ╰────────╯ ╰────────╯
+ REFLEX ZONES  ( Hand: Heart › ) ( Foot: Heart › )
+ ╭ ✋ Elbow — bend          90° ╮
+ │ ├──────●─────┤               │   joint slider when the part moves one
+ ╰ Working muscle: Biceps …     ╯
+```
 - Peek height only; drag ▲ → Part info page (same as Details ›).
 - Hide / Isolate / Fade each push one Undo step.
 - Long name: `Flexor digitorum superficialis · 指浅屈肌` wraps to 2 lines, then `…`.
@@ -105,11 +119,11 @@ step per toggle / per slider release. No Done button — drag ▼ or tap canvas 
 ## States
 
 ```
-loading     ⟳ Loading Skeleton…   [██████░░░░] 60%       rails hidden
+loading     ( ⟳ Loading 3D body… )  material capsule over the canvas
 error       ⚠ Couldn't load Muscles.        [ Retry ]
 no GL       ⚠ 3D isn't supported on this device.
             Explore still works; the model can't be shown.
-all hidden  All layers are hidden.          [ Show all ]  centered over empty canvas
+all hidden  ⧉ All layers are hidden. Turn one on above.   (panel hint)
 first-run   ⌐ Drag to spin · pinch to zoom · tap a part ¬
             ← once ever, dismissed by first touch
 undo empty  ↶·
