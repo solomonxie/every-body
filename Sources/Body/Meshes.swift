@@ -136,6 +136,7 @@ enum Meshes {
     }
 
     /// Smooth skin through elliptical sections (centre, half-width along x, half-depth), capped at both ends.
+    /// An optional 6th value squares the section off (superellipse exponent: 2 = ellipse, 3 ≈ rounded box).
     static func loft(sections: [[Float]], sides: Int = 20) -> RawMesh {
         let n = sections.count
         let steps = (n - 1) * 4
@@ -144,7 +145,7 @@ enum Meshes {
             let i = Int(f), t = f - Float(i)
             let a = sections[max(0, i - 1)], b = sections[i], c = sections[min(n - 1, i + 1)], d = sections[min(n - 1, i + 2)]
             let t2 = t * t, t3 = t2 * t
-            return (0..<5).map { k in
+            return (0..<a.count).map { k in
                 0.5 * (2 * b[k] + (-a[k] + c[k]) * t + (2 * a[k] - 5 * b[k] + 4 * c[k] - d[k]) * t2 + (-a[k] + 3 * b[k] - 3 * c[k] + d[k]) * t3)
             }
         }
@@ -163,8 +164,14 @@ enum Meshes {
             let depth = simd_cross(side, t)
             for s in 0...sides {
                 let a = Float(s) / Float(sides) * 2 * .pi
-                positions.append(c + cos(a) * r[3] * side + sin(a) * r[4] * depth)
-                normals.append(simd_normalize(cos(a) / max(r[3], 1e-4) * side + sin(a) / max(r[4], 1e-4) * depth))
+                let e = r.count > 5 ? 2 / max(r[5], 1) : 1
+                let ca = cos(a), sa = sin(a)
+                let cx = copysign(pow(abs(ca), e), ca), sy = copysign(pow(abs(sa), e), sa)
+                positions.append(c + cx * r[3] * side + sy * r[4] * depth)
+                // normal of |x/a|^n + |y/b|^n = 1
+                let nExp = 2 / e
+                let nx = copysign(pow(abs(cx), nExp - 1), cx) / max(r[3], 1e-4), ny = copysign(pow(abs(sy), nExp - 1), sy) / max(r[4], 1e-4)
+                normals.append(simd_normalize(nx * side + ny * depth + 1e-6))
                 uvs.append(SIMD2(Float(s) / Float(sides), Float(i) / Float(rows.count - 1)))
             }
         }
@@ -204,8 +211,15 @@ enum Meshes {
         simd_normalize(simd_cross(v, abs(v.y) < 0.9 ? SIMD3(0, 1, 0) : SIMD3(1, 0, 0)))
     }
 
+    /// Winds every triangle to face along its vertex normals — renderers light back faces as unlit insides.
     private static func build(_ positions: [SIMD3<Float>], _ normals: [SIMD3<Float>], _ indices: [UInt32], _ uvs: [SIMD2<Float>]? = nil) -> RawMesh {
-        RawMesh(positions: positions, normals: normals, indices: indices, uvs: uvs)
+        var out = indices
+        for t in Swift.stride(from: 0, to: out.count - 2, by: 3) {
+            let a = Int(out[t]), b = Int(out[t + 1]), c = Int(out[t + 2])
+            let face = simd_cross(positions[b] - positions[a], positions[c] - positions[a])
+            if simd_dot(face, normals[a] + normals[b] + normals[c]) < 0 { out.swapAt(t + 1, t + 2) }
+        }
+        return RawMesh(positions: positions, normals: normals, indices: out, uvs: uvs)
     }
 
     /// Geometry for shapes that aren't a built-in primitive; nil for sphere / box / spindle.

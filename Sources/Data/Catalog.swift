@@ -17,7 +17,9 @@ enum Catalog {
     static func joint(_ id: String) -> Joint? { body.joints.first { $0.id == id } }
 
     private static func load<T: Decodable>(_ name: String) -> T {
-        guard let url = Bundle.main.url(forResource: name, withExtension: "json") else {
+        // BODY_ATLAS_DATA lets the Mac render tool read the repo's data folder
+        let dir = ProcessInfo.processInfo.environment["BODY_ATLAS_DATA"].map { URL(fileURLWithPath: $0) }
+        guard let url = dir?.appendingPathComponent("\(name).json") ?? Bundle.main.url(forResource: name, withExtension: "json") else {
             fatalError("missing \(name).json in the bundle")
         }
         do {
