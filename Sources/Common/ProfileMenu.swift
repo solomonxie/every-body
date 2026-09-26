@@ -23,6 +23,8 @@ struct ProfileMenu: View {
                 .font(.footnote.weight(.semibold))
         }
         .accessibilityLabel(settings.t("Person type", "人群"))
+        .accessibilityValue(label)
+        .sensoryFeedback(.selection, trigger: label)
     }
 
     private var label: String {

@@ -5,7 +5,8 @@ section → Topic list → Player. Why/scope: `DESIGN.md` → Illustrations.
 
 ## Explore section
 
-Below the system grid on Explore; one row per topic group.
+Below the system grid on Explore. Built as one card per group, topics listed inline
+(see explore.md); the single-card mock below is the earlier plan.
 
 ```
  ILLUSTRATIONS · 图解
@@ -77,6 +78,25 @@ Viewer in scenario mode: rails swap to player controls, captions in a bottom she
 │ ( ‹ Prev )            ( ❚❚ )             ( Next › )  │
 └──────────────────────────────────────────────────────┘
 ```
+Built (2D scene):
+```
+ ‹            CPR                         [👤 Adult M]
+   ╭──────────────────────────────────────────────╮
+   │   scene 360×300 on a white card, centred     │
+   ╰──────────────────────────────────────────────╯
+   [👤 Adult: both hands, 5–6 cm deep …]  [⚠ warning]
+ ╭────────────────────────────────────────────────────╮
+ │ Step 4 of 6                          (✋ Try it)   │
+ │ ▬▬ ▬▬ ▬▬ ████ ▬▬ ▬▬        tap a segment to jump   │
+ │ Your turn: tap for each compression …             │
+ │   ( PUSH )   112  per minute · aim 100–120        │  rhythm: 96 pt circle + rate
+ │ ✓ Good rhythm.                                    │
+ │ (‹)  ( ▶ Show me )  (    Next    )                │  Next filled once solved,
+ ╰────────────────────────────────────────────────────╯  else quiet "Skip"
+```
+Haptics: selection on step change, success when a try step is solved, impact per
+rhythm tap and on hold press. Hold = 96 pt circle with a progress ring.
+
 - Each step animates camera + layers + parts, then holds; model stays rotatable.
 - Swipe the caption ◀ ▶ = Prev / Next. Step dots tappable.
 - Auto-advance off by default; ❚❚/▶ toggles it.

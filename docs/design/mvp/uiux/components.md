@@ -2,13 +2,35 @@
 
 Parts used on 2+ surfaces. Code: `Sources/Common/`, `Sources/Viewer/ViewerPanels.swift`.
 
+## Tokens
+
+Code: `Sources/Common/Theme.swift`, `Color+Hex.swift`.
+
+| Token | Values |
+|---|---|
+| Space | 2 · 4 · 8 · 12 · 16 · 24 · 32 |
+| Radius | small 8 · tile 12 · card 16 · sheet 22 (continuous) |
+| Hit target | ≥ 44 pt (pills: 36 visual inside 44) |
+| Surfaces | page = systemGroupedBackground, card = secondarySystemGrouped, fill = tertiarySystemFill |
+| Brand | text/tint #6C4F9E · dark #A98FE3; fills under white text `brandFill` (#7458B8 dark) |
+| Status | caution, success, emergency, note — each light/dark |
+| Type | Dynamic Type styles only; section = title3 bold, eyebrow = footnote caps |
+
+```
+ Section header           Eyebrow           IconBadge
+ Human body   Show all ⌄  KEY FACTS         [▣] 30 pt, white glyph on colour
+ ( Primary ▬▬▬▬ )  ( Secondary ░░░ )  press: scale .97 · disabled 40%
+```
+Accessibility sizes: 3-col grids → 2, segmented pickers → menus, Player/Viewer
+panels scroll.
+
 ## RailButton
 
 ```
  ┌────┐   ┌────┐   ┌────┐
  │ 🔍 │   │ ↶  │   │ ↶  │·
  └────┘   └────┘   └────┘
- default  pressed   disabled      44×44 pt, translucent bg, a11y label required
+ default  pressed   disabled      44×44 pt, material circle, a11y label required
           (bg +10%)
 ```
 Props: `icon`, `label`, `onPress`, `disabled`. Used in both Viewer rails.
