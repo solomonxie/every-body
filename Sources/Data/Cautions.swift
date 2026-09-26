@@ -3,9 +3,9 @@ import Foundation
 /// Who should skip or go gently on a point or zone, by person type.
 enum Cautions {
     private static let pregnancyAvoid: Set<String> = [
-        "hand-hegu", "body-sanyinjiao",
-        "palm-gonads", "sole-gonads", "palm-pituitary", "sole-pituitary",
-        "ear-genitals", "ear-pelvis", "ear-endocrine",
+        "hand-hegu", "back-hegu", "body-sanyinjiao",
+        "palm-gonads", "sole-gonads", "palm-pituitary", "sole-pituitary", "palm-uterus", "back-groin", "top-fallopian",
+        "ear-genitals", "ear-ext-genitals", "ear-pelvis", "ear-endocrine",
     ]
 
     /// Warnings for one point or zone id; the first is the most specific.
@@ -13,7 +13,7 @@ enum Cautions {
         var out: [Bilingual] = []
         if p.isPregnant {
             switch id {
-            case "hand-hegu":
+            case "hand-hegu", "back-hegu":
                 out.append(Bilingual("Pregnant: avoid Hegu (the web of the thumb). Strong pressure here is traditionally said to trigger contractions — skip it unless your midwife or doctor says otherwise.",
                                      "孕妇：避免按压合谷（虎口）。传统认为重按此穴可能诱发宫缩——除非医生或助产士同意，请跳过。"))
             case "body-sanyinjiao":
