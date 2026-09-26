@@ -191,6 +191,8 @@ struct OutlineShape: Codable, Sendable {
     let x: Double?, y: Double?, w: Double?, h: Double?, r: Double?
     let rot: Double?, ox: Double?, oy: Double?
     let d: String?
+    /// nil = silhouette; otherwise a shading layer drawn on it ("shade", "deep", "nail", "light")
+    let tone: String?
 }
 
 enum Side: String, Codable, Sendable, CaseIterable {
@@ -202,7 +204,9 @@ struct ReflexZone: Codable, Sendable, Identifiable {
     let name: String
     let nameZh: String
     let label: String?
-    let shapes: [ChartEllipse]
+    /// SVG d; drawn and hit-tested instead of `shapes` when present
+    let path: String?
+    let shapes: [ChartEllipse]?
     let group: String
     let organIds: [String]
     let effect: String
