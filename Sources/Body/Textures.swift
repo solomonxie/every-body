@@ -6,9 +6,10 @@ import RealityKit
 @MainActor
 enum Textures {
     static let muscle = make { x, y in
-        // fibres run along the length (v), so stripes vary around (u)
-        let stripe = 0.5 + 0.5 * sin(Double(x) / 64 * 2 * .pi * 14 + sin(Double(y) / 64 * 2 * .pi) * 0.8)
-        return 0.78 + 0.22 * stripe
+        // fibres run along the length (v), so stripes vary around (u); both ends pale into tendon
+        let stripe = 0.5 + 0.5 * sin(Double(x) / 64 * 2 * .pi * 8 + sin(Double(y) / 64 * 2 * .pi) * 0.8)
+        let v = Double(y) / 63, tendon = max(0, 1 - min(v, 1 - v) / 0.1)
+        return 0.82 + 0.18 * stripe + tendon * 0.6
     }
     static let bone = make { x, y in 0.9 + 0.1 * noise(x, y, 11) }
     static let organ = make { x, y in 0.9 + 0.1 * smooth(x, y, 8) }
