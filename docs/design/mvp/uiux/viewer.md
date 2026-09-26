@@ -1,7 +1,7 @@
 # Viewer
 
 Full-bleed 3D model with edge rails. Reached from Explore tiles, Search, Part info.
-Code: `src/app/viewer/[id].tsx`.
+Code: `Sources/Viewer/ViewerScreen.swift`, 3D in `Sources/Body/`.
 
 ```
  ‹ Explore           Skeleton

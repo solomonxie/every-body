@@ -1,7 +1,7 @@
 # Part info
 
 Stack page. From Part card Details › / drag ▲, or Viewer ⓘ (system-level).
-Code: `src/app/info/[id].tsx`.
+Code: `Sources/Screens/InfoAndQuiz.swift`.
 
 ```
  ‹ Skeleton             Femur

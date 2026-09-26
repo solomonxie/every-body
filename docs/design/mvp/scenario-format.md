@@ -1,12 +1,12 @@
 # Scenario format (T7.1–T7.2, T8.3)
 
-Built: `src/illustrations/` — each topic is a `Scenario` with a 2D SVG `Scene({ params, t })`
+Built: `Sources/Illustrations/` — each topic is a `Scenario` with a `draw(&Sketch, params, t)` closure on SwiftUI `Canvas`
 drawn from math (per DESIGN → schematic, not lifelike); steps set param targets, the player
 eases toward them each frame. Try modes: `scrub`, `rhythm`, `drag` (scene `onDrag` maps the
 finger to params). The 3D-body fields below remain the target for topics that need the body.
 
 
-One file per topic: `src/data/scenarios/<group>/<topic>.ts`.
+One file per topic group: `Sources/Illustrations/Scenes/*.swift`.
 
 ```ts
 Scenario {
@@ -39,7 +39,7 @@ Step {
 
 ## Pivots
 
-Models aren't rigged. Joint rotation uses pivot points in `src/data/pivots.ts`
+Models aren't rigged. Joint rotation uses pivot points in `Resources/Data/body.json` → `joints`
 (`{ jointId, pivot: [x,y,z], axis, rangeDeg, childParts[] }`), shared with Viewer "Try on a part".
 
 ## Compare

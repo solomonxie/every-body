@@ -1,7 +1,7 @@
 # Points sheet — Reflex Map & Blood flow
 
 Persistent bottom sheet on the Viewer when the system has points
-(`POINTS_BY_SYSTEM`). Code: `src/components/canvas/reflex-pulse.tsx`, `src/data/system-points.ts`.
+(`POINTS_BY_SYSTEM`). Code: `Sources/Body/BodyScene.swift` (pulse), `Sources/Charts/`, data `Resources/Data/points.json`.
 
 ## Reflex Map
 
