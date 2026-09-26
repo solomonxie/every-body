@@ -56,7 +56,9 @@ Card fades in only after the target flash — the effect "lands" with the animat
 ## Hand, foot & ear charts
 
 Stack page — from Explore tiles, or Reflex Map › Foot/Hand/Ear filter › "Open … chart".
-Body on top, chart below, a draggable bar between them sets the split (15–80 %). Each half
+Layout button [▤] in the controls row (remembered): **Up/down** (default, drawn below),
+**Left/right** (chart left, body right), **Body + chart box** (full body, chart in a
+bottom-right box ≈ 46 %). Split layouts have a draggable bar (body 15–80 %). Each half
 pinch-zooms on its own and starts fitted. Zones carry no labels; names live in a list below,
 linked both ways.
 
