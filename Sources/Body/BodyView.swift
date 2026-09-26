@@ -23,6 +23,7 @@ struct BodyView: View {
             (settings.whiteBackground ? Color.white : Color(hex: "#DADCE2"))
             RealityView { content in
                 content.camera = .virtual
+                scene.root.removeFromParent()
                 content.add(scene.root)
                 scene.subscription = content.subscribe(to: SceneEvents.Update.self) { event in
                     MainActor.assumeIsolated { scene.update(dt: Float(event.deltaTime)) }
