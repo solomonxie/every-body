@@ -1,5 +1,39 @@
 import SwiftUI
 
+extension Casualty {
+    /// person picked by a topic scene's "kid" / "senior" / "pregnant" params
+    init(_ p: Params, adult h: Double, adultLook: Look = .man) {
+        let age: AgeGroup = p[v: "kid"] > 0.5 ? .child : p[v: "senior"] > 0.5 ? .senior : .adult
+        let pregnant = p[v: "pregnant"] > 0.5
+        self.init(Profile(age: age, female: pregnant, pregnant: pregnant), adult: h, adultLook: adultLook)
+    }
+}
+
+extension SideFigure {
+    init(_ c: Casualty, hip: CGPoint = .zero, facing: Double = 1, lean: Double = 0, face: Face = .calm) {
+        self.init(h: c.h, build: c.build, look: c.look, hip: hip, facing: facing, lean: lean, face: face, bump: c.bump)
+    }
+
+    /// ankle and toe tip of a leg, in scene coords
+    func foot(near isNear: Bool = true) -> (ankle: CGPoint, toe: CGPoint) {
+        let l = isNear ? nearLeg : farLeg, a1 = l.hip * .pi / 180, a2 = (l.hip - l.knee) * .pi / 180, p = l.point * .pi / 180
+        let T = build.thigh * h, S = build.shin * h, F = build.foot * h
+        let an = CGPoint(x: sin(a1) * T + sin(a2) * S, y: cos(a1) * T + cos(a2) * S)
+        return (scene(an), scene(CGPoint(x: an.x + cos(a2 - p) * F, y: an.y - sin(a2 - p) * F)))
+    }
+
+    func ankle(near isNear: Bool = true) -> CGPoint { foot(near: isNear).ankle }
+
+    /// hip height that puts the lower foot on `floor` (upright body)
+    func hipY(onFloor floor: Double) -> Double {
+        var v = self
+        v.hip = .zero
+        let lw = build.legW * h
+        let low = [true, false].map { v.foot(near: $0) }.map { max($0.ankle.y + lw * 0.3, $0.toe.y + lw * 0.2) }.max() ?? 0
+        return floor - low
+    }
+}
+
 /// Everyday objects, rooms and close-up insets shared by the first-aid scenes.
 extension Sketch {
     /// plain wall, skirting board and wooden floor
