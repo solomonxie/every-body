@@ -10,7 +10,7 @@ import {
   type SceneBus,
   type SceneBusRef,
 } from '@/components/canvas/scene-bus';
-import type { Picker } from '@/components/canvas/tap-picker';
+import type { Pick, Picker } from '@/components/canvas/tap-picker';
 
 const ROTATE_PER_PX = 0.008;
 const MAX_PITCH = 0.9;
@@ -24,7 +24,7 @@ export function resetView(bus: SceneBus) {
 type Refs = {
   busRef: SceneBusRef;
   pickerRef: RefObject<Picker | null>;
-  onPickRef: RefObject<((pointId: string) => void) | undefined>;
+  onPickRef: RefObject<((pick: Pick) => void) | undefined>;
   onFirstTouch: () => void;
 };
 
@@ -60,8 +60,8 @@ export function createOrbitGesture({ busRef, pickerRef, onPickRef, onFirstTouch 
     .onEnd((e, success) => {
       firstTouch();
       if (!success) return;
-      const pointId = pickerRef.current?.(e.x, e.y);
-      if (pointId) onPickRef.current?.(pointId);
+      const pick = pickerRef.current?.(e.x, e.y);
+      if (pick) onPickRef.current?.(pick);
     });
 
   const doubleTap = Gesture.Tap()

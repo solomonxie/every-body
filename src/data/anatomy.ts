@@ -70,6 +70,21 @@ export interface Organ {
   region?: boolean;
 }
 
+export const ORGAN_NAMES: Partial<Record<OrganId, [string, string]>> = {
+  brain: ['Brain', '脑'],
+  heart: ['Heart', '心脏'],
+  'lung-l': ['Left lung', '左肺'],
+  'lung-r': ['Right lung', '右肺'],
+  liver: ['Liver', '肝'],
+  stomach: ['Stomach', '胃'],
+  'kidney-l': ['Left kidney', '左肾'],
+  'kidney-r': ['Right kidney', '右肾'],
+  intestines: ['Intestines', '肠'],
+  uterus: ['Uterus / prostate', '子宫 / 前列腺'],
+  bladder: ['Bladder', '膀胱'],
+  pancreas: ['Pancreas', '胰腺'],
+};
+
 export const ORGANS: Record<OrganId, Organ> = {
   brain: { position: [0, 1.47, 0], radius: 0.14, scale: [1, 0.8, 1.1], color: '#E8A0B4' },
   heart: { position: [0.06, 0.92, 0.1], radius: 0.075, color: '#C8323C' },

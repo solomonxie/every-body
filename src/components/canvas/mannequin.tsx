@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import type { Mesh, MeshStandardMaterial } from 'three';
 
 import { REFLEX_RESPONSE_MS } from '@/constants/reflex';
-import { BODY_PARTS, ORGANS, type BodyPart, type OrganId } from '@/data/anatomy';
+import { BODY_PARTS, ORGAN_NAMES, ORGANS, type BodyPart, type OrganId } from '@/data/anatomy';
 
 import type { SceneBusRef } from './scene-bus';
 
@@ -20,7 +20,7 @@ function PartGeometry({ shape }: Pick<BodyPart, 'shape'>) {
   }
 }
 
-function OrganMesh({ id, busRef }: { id: OrganId; busRef: SceneBusRef }) {
+function OrganMesh({ id, busRef, selected }: { id: OrganId; busRef: SceneBusRef; selected: boolean }) {
   const ref = useRef<Mesh>(null);
   const organ = ORGANS[id];
   const base = organ.scale ?? [1, 1, 1];
@@ -43,16 +43,16 @@ function OrganMesh({ id, busRef }: { id: OrganId; busRef: SceneBusRef }) {
       pulse += Math.max(0, Math.sin(beat * Math.PI * 2)) ** 4 * 0.18;
     }
     mesh.scale.set(base[0] * (1 + pulse), base[1] * (1 + pulse), base[2] * (1 + pulse));
-    material.emissiveIntensity = lit ? 0.55 + pulse : 0;
+    material.emissiveIntensity = lit ? 0.55 + pulse : selected ? 0.5 : 0;
     mesh.visible = !organ.region || lit;
   });
 
   return (
-    <mesh ref={ref} position={organ.position} scale={base}>
+    <mesh ref={ref} position={organ.position} scale={base} userData={ORGAN_NAMES[id] ? { partId: id } : {}}>
       <sphereGeometry args={[organ.radius, 20, 20]} />
       <meshStandardMaterial
         color={organ.color}
-        emissive={organ.region ? organ.color : '#4ECB71'}
+        emissive={organ.region ? organ.color : selected ? '#FFD166' : '#4ECB71'}
         emissiveIntensity={0}
         transparent={organ.region}
         opacity={organ.region ? 0.45 : 1}
@@ -63,18 +63,22 @@ function OrganMesh({ id, busRef }: { id: OrganId; busRef: SceneBusRef }) {
 }
 
 /** Translucent primitive figure with the organs visible inside. */
-export function Mannequin({ skinColor, busRef }: { skinColor: string; busRef: SceneBusRef }) {
+type Props = { skinColor: string; busRef: SceneBusRef; skinOpacity?: number; showOrgans?: boolean; selectedId?: string };
+
+export function Mannequin({ skinColor, busRef, skinOpacity = 0.32, showOrgans = true, selectedId }: Props) {
   return (
     <group>
-      {BODY_PARTS.map((part) => (
+      {skinOpacity > 0 && BODY_PARTS.map((part) => (
         <mesh key={part.id} position={part.position} rotation={[0, 0, part.rotationZ ?? 0]} scale={part.scale ?? [1, 1, 1]} renderOrder={1}>
           <PartGeometry shape={part.shape} />
-          <meshStandardMaterial color={skinColor} transparent opacity={0.32} depthWrite={false} roughness={0.6} />
+          <meshStandardMaterial color={skinColor} transparent opacity={skinOpacity} depthWrite={false} roughness={0.6} />
         </mesh>
       ))}
-      {(Object.keys(ORGANS) as OrganId[]).map((id) => (
-        <OrganMesh key={id} id={id} busRef={busRef} />
-      ))}
+      {(Object.keys(ORGANS) as OrganId[])
+        .filter((id) => showOrgans || ORGANS[id].region)
+        .map((id) => (
+          <OrganMesh key={id} id={id} busRef={busRef} selected={id === selectedId} />
+        ))}
     </group>
   );
 }

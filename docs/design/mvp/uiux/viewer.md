@@ -70,6 +70,9 @@ Try kinds on parts: joint range of motion (drag), muscle contract (drag), heart 
 
 ## Layers sheet
 
+Built first as a pill bar at the top of the panel (`皮肤 Skin · 肌肉 Muscles · 骨骼 Bones · 血管 Vessels · 神经 Nerves · 器官 Organs`,
+multi-select, + `Show all (n hidden)`); the sheet below adds opacity sliders later.
+
 ```
 ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
  LAYERS                                      Show all
