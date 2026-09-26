@@ -10,6 +10,9 @@ struct Build: Sendable {
                              upperArm: 0.18, foreArm: 0.155, hand: 0.1, armW: 0.05, thigh: 0.245, shin: 0.24, foot: 0.12, legW: 0.075)
     static let child = Build(headR: 0.085, neck: 0.03, torso: 0.29, depth: 0.13, shoulderW: 0.1,
                              upperArm: 0.165, foreArm: 0.14, hand: 0.1, armW: 0.055, thigh: 0.22, shin: 0.2, foot: 0.12, legW: 0.08)
+    /// ~2 years: big head, short legs
+    static let toddler = Build(headR: 0.105, neck: 0.02, torso: 0.3, depth: 0.15, shoulderW: 0.115,
+                               upperArm: 0.15, foreArm: 0.13, hand: 0.09, armW: 0.068, thigh: 0.19, shin: 0.165, foot: 0.12, legW: 0.095)
     static let infant = Build(headR: 0.125, neck: 0.015, torso: 0.32, depth: 0.17, shoulderW: 0.13,
                               upperArm: 0.13, foreArm: 0.12, hand: 0.085, armW: 0.075, thigh: 0.16, shin: 0.14, foot: 0.11, legW: 0.1)
 }
@@ -36,6 +39,7 @@ struct Look: Sendable {
     static let senior = Look(skin: hex("#EDC4A2"), hair: hex("#D4D4D4"), style: .thin, top: hex("#B89F80"), topLine: hex("#8D7658"),
                              bottom: hex("#5E5E66"))
     static let kid = Look(hair: hex("#6B4A2F"), top: hex("#F2C14E"), topLine: hex("#C99A2E"), bottom: hex("#4E7FB8"), longSleeves: false)
+    static let toddler = Look(hair: hex("#8A6240"), top: hex("#F29E7E"), topLine: hex("#C9785A"), bottom: hex("#6FA3C8"), longSleeves: false)
     static let baby = Look(hair: hex("#A7825F"), style: .baby, top: hex("#BFE3D0"), topLine: hex("#7FB89A"), bottom: hex("#BFE3D0"),
                            shoes: hex("#F2C9A5"), onePiece: true)
 
@@ -52,7 +56,7 @@ struct Casualty {
         switch p.age {
         case .infant: (look, build, self.h) = (.baby, .infant, h * 0.4)
         case .child: (look, build, self.h) = (.kid, .child, h * 0.68)
-        case .toddler: (look, build, self.h) = (.kid, .child, h * 0.5)
+        case .toddler: (look, build, self.h) = (.toddler, .toddler, h * 0.5)
         case .senior: (look, build, self.h) = (.senior, .adult, h * 0.97)
         case .adult: (look, build, self.h) = (p.isPregnant || p.female ? .woman : adultLook, .adult, h)
         }
@@ -121,6 +125,14 @@ struct SideFigure {
     func palm(near isNear: Bool = true) -> CGPoint { scene(armPoints(isNear ? near : far).palm) }
     func elbow(near isNear: Bool = true) -> CGPoint { scene(armPoints(isNear ? near : far).e) }
     var shoulderPoint: CGPoint { scene(bodyShoulder) }
+    /// along the leg: 0 hip, 1 knee, 2 ankle
+    func legPoint(near isNear: Bool = true, _ f: Double) -> CGPoint {
+        let l = isNear ? nearLeg : farLeg
+        let a1 = l.hip * .pi / 180, a2 = (l.hip - l.knee) * .pi / 180
+        let k = CGPoint(x: sin(a1) * build.thigh * h, y: cos(a1) * build.thigh * h)
+        let an = CGPoint(x: k.x + sin(a2) * build.shin * h, y: k.y + cos(a2) * build.shin * h)
+        return scene(f <= 1 ? lerp(.zero, k, f) : lerp(k, an, f - 1))
+    }
 
     func draw(_ s: inout Sketch) {
         drawBack(&s)
