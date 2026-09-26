@@ -72,168 +72,298 @@ extension Illustrations {
     }
 
     private static func drawCPR(_ s: inout Sketch, _ p: Params, _ t: Double, _ who: Profile) {
-        let infant = who.age == .infant, child = who.age.isChild
+        if who.age == .infant { drawBabyCPR(&s, p, t); return }
+        let child = who.age.isChild
         let st = Int(p[v: "stage"].rounded()), press = p[v: "press"], taps = p[v: "taps"], rate = p[v: "rate"]
-        // a baby goes on a table: closer view, the rescuer stands behind it
-        let floor = infant ? 244.0 : 266
-        s.room(floor: infant ? 300 : floor)
-        let rh = infant ? 400.0 : who.age == .toddler ? 260 : child ? 210 : 192
-        let ground = infant ? floor + 0.45 * rh : floor
-        let c = Casualty(who, adult: rh * 0.95)
+        let floor = 262.0
+        s.room(floor: floor)
+        let rh = 330.0
+        let c = Casualty(who, adult: rh * (who.age == .toddler ? 1.3 : child ? 1.12 : 0.95))
 
-        // casualty on the back, head left, arms by the sides
+        // casualty on the back, head left, legs running off the right edge; breastbone at x ≈ 180
         var pt = SideFigure(h: c.h, build: c.build, look: c.look, hip: .zero, rotation: -90, face: .closed, bump: c.bump)
-        pt.hip = CGPoint(x: infant ? 212 : child ? 226 : 236, y: floor - c.build.depth * c.h * 0.5)
         pt.near = .init(shoulder: 6, elbow: 8)
         pt.far = .init(shoulder: 3, elbow: 8)
         pt.nearLeg = .init(hip: 3, knee: 4, point: 25)
         pt.farLeg = .init(hip: 1, knee: 2, point: 25)
-        let sternum = pt.front(infant ? 0.64 : 0.68)
-        let sink = press * (infant ? 4 : 6)
+        if st == 4 { pt.headTilt = -24 }
+        pt.hip = CGPoint(x: 0, y: floor - c.build.depth * c.h * 0.5)
+        pt.hip.x = 180 - pt.front(0.68).x
+        let sternum = pt.front(0.68)
+        let sink = press * (child ? 5 : 6)
 
         // rescuer kneels on the far side, facing us
-        var r = FrontFigure(h: rh, neck: CGPoint(x: sternum.x + 6, y: floor - (infant ? 0.37 : 0.56) * rh), left: .zero, right: .zero, floor: infant ? nil : floor)
-        let pushing = [2, 3, 6].contains(st)
-        if pushing {
-            let hands = CGPoint(x: sternum.x, y: sternum.y + sink)
-            if infant {
-                r.hands = .thumbs
-                r.bow = 0.2
-                r.neck = CGPoint(x: hands.x, y: hands.y - 0.29 * rh)
-                r.left = CGPoint(x: hands.x - 7, y: hands.y + 4)
-                r.right = CGPoint(x: hands.x + 7, y: hands.y + 4)
-            } else if child {
+        var r = FrontFigure(h: rh, neck: CGPoint(x: sternum.x + 10, y: floor - 0.56 * rh), left: .zero, right: .zero, floor: floor)
+        let hands = CGPoint(x: sternum.x, y: sternum.y + sink)
+        switch st {
+        case 0:
+            // tap both shoulders
+            r.bow = 0.1
+            let sh = pt.front(0.95)
+            r.neck.x = sh.x + 26
+            r.left = CGPoint(x: sh.x - 3, y: sh.y - 3 + sin(t * 9) * 1.5)
+            r.right = CGPoint(x: sh.x + 10, y: sh.y + 1)
+        case 2, 3, 6:
+            if child {
+                // one hand, arm straight; the other keeps the head tilted
                 let L = (r.build.upperArm + r.build.foreArm + r.build.hand * 0.3) * rh
                 r.neck = CGPoint(x: hands.x - r.build.shoulderW * 0.85 * rh, y: hands.y - L - 0.035 * rh)
                 r.right = hands
-                r.left = pt.headPoint(0.5, -0.75)
+                r.left = pt.headPoint(0.3, -0.8)
             } else {
                 r.hands = .interlocked
                 r.neck = FrontFigure.neckAbove(hands, h: rh)
-                r.left = hands
-                r.right = hands
+                r.left = CGPoint(x: hands.x - 1, y: hands.y)
+                r.right = CGPoint(x: hands.x + 1, y: hands.y - 2)
             }
-        } else if st == 0 {
-            let target = infant ? CGPoint(x: pt.hip.x + c.build.thigh * c.h + c.build.shin * c.h, y: floor - 12) : pt.front(0.95)
-            r.neck.x = target.x + (infant ? -10 : 10)
-            r.left = CGPoint(x: target.x - 5, y: target.y + 2)
-            r.right = CGPoint(x: target.x + 9, y: target.y + 4)
-        } else if st == 4 {
-            // at the head: one hand on the forehead, fingers under the chin
-            // leaning down over the face
-            r.bow = 0.42
+        case 4:
+            // at the head: hand on the forehead, fingers under the chin, leaning down over the face
+            r.bow = 0.45
             let head = pt.headCentre
-            r.neck = CGPoint(x: head.x + 8, y: floor - (infant ? 0.27 : 0.44) * rh)
-            r.left = infant ? pt.headPoint(-0.2, -1.0) : pt.headPoint(0.45, -0.9)
-            r.right = infant ? pt.front(0.45) : pt.headPoint(0.6, 1.15)
-            r.hands = infant ? .open : .twoFingers
-        } else if st == 5 {
-            r.hands = .open
-            r.left = CGPoint(x: r.neck.x - 0.14 * rh, y: r.neck.y - 0.04 * rh)
-            r.right = CGPoint(x: r.neck.x + 0.14 * rh, y: r.neck.y - 0.04 * rh)
-        } else {
-            let y = infant ? floor - 4 : floor - 0.22 * rh
-            r.left = CGPoint(x: r.neck.x - 0.1 * rh, y: y)
-            r.right = CGPoint(x: r.neck.x + 0.1 * rh, y: y)
+            r.neck = CGPoint(x: head.x + 14, y: floor - 0.44 * rh)
+            r.left = pt.headPoint(0.3, -0.9)
+            r.right = pt.headPoint(0.55, 1.2)
+            r.hands = .twoFingers
+        case 5:
+            r.neck.x = sternum.x - 12
+            r.left = CGPoint(x: r.neck.x - 0.13 * rh, y: r.neck.y - 0.13 * rh)
+            r.right = CGPoint(x: r.neck.x + 0.13 * rh, y: r.neck.y - 0.13 * rh)
+        default:
+            r.left = CGPoint(x: r.neck.x - 0.09 * rh, y: floor - 0.2 * rh)
+            r.right = CGPoint(x: r.neck.x + 0.09 * rh, y: floor - 0.2 * rh)
         }
 
-        let number = s.t("911", "120")
         if st == 1 {
             // helper hurries off for the AED
-            let hh = infant ? rh * 0.95 : 184
-            var helper = SideFigure(h: hh, look: .helper, hip: CGPoint(x: infant ? 40 : 52, y: ground - 0.51 * hh), facing: -1, lean: 8)
-            helper.near = .init(shoulder: 18, elbow: 30)
-            helper.far = .init(shoulder: -18, elbow: 20)
-            helper.nearLeg = .init(hip: 24, knee: 10, point: -10)
-            helper.farLeg = .init(hip: -16, knee: 22, point: 20)
+            let hh = 196.0
+            var helper = SideFigure(h: hh, look: .helper, hip: CGPoint(x: 300, y: floor - 6 - 0.51 * hh), lean: 8)
+            helper.near = .init(shoulder: 24, elbow: 40)
+            helper.far = .init(shoulder: -22, elbow: 30)
+            helper.nearLeg = .init(hip: 26, knee: 12, point: -6)
+            helper.farLeg = .init(hip: -18, knee: 24, point: 16)
             helper.draw(&s)
         }
         r.draw(&s)
-        if infant {
-            s.rect(0, floor, 360, 300 - floor, fill: hex("#C9A77F"))
-            s.rect(0, floor, 360, 5, fill: hex("#DDBE96"))
-            s.line(0, floor + 5, 360, floor + 5, stroke: hex("#A8865F"), lw: 1)
-        }
         pt.draw(&s)
+        if st == 5 { bareChest(&s, pt) }
+        if who.isPregnant && (st == 6 || st == 3) { pushBump(&s, pt) }
         if st == 5 {
-            // AED on the floor by the head, pads on the bare chest
-            let box = CGPoint(x: infant ? 96 : 104, y: floor - 16)
+            // AED by the head, pads on the bare chest
+            let box = CGPoint(x: 34, y: floor - 14)
             s.aed(box.x, box.y, open: true)
-            if infant || child {
-                s.pad(pt.front(0.7), to: CGPoint(x: box.x + 18, y: box.y + 6), w: 10, h: 7)
+            if child {
+                s.pad(pt.front(0.62), to: CGPoint(x: box.x + 20, y: box.y + 4), w: 11, h: 5)
             } else {
-                s.pad(pt.front(0.9), to: CGPoint(x: box.x + 18, y: box.y + 4))
-                s.pad(pt.front(0.52), to: CGPoint(x: box.x + 18, y: box.y + 8))
+                s.pad(pt.front(0.9), to: CGPoint(x: box.x + 20, y: box.y + 2), w: 14, h: 5)
+                s.pad(pt.front(0.5), to: CGPoint(x: box.x + 20, y: box.y + 8), w: 14, h: 5)
             }
         }
-        if who.isPregnant && (st == 6 || st == 3) { pushBump(&s, pt) }
         r.drawArms(&s)
 
-        let red = hex("#D8434B")
+        let red = hex("#D8434B"), blue = hex("#3F95D6")
         let rhead = r.headCentre, rr = r.build.headR * rh
         switch st {
         case 0:
-            s.bubble(infant ? "Baby? Baby!" : "Are you OK?", infant ? "宝宝？宝宝！" : "你还好吗？", rhead.x - rr - 62, rhead.y - rr - 8,
-                     tip: CGPoint(x: rhead.x - rr * 0.8, y: rhead.y + rr * 0.3))
-            s.tag("Breathing normally?", "有无正常呼吸？", 76, 188, size: 11, color: hex("#333333"), bold: true)
-            s.tag("look ≤ 10 s", "观察 ≤ 10 秒", 76, 206, size: 10)
-            s.arrow(CGPoint(x: 100, y: 216), CGPoint(x: pt.headPoint(0.9, 1.6).x, y: pt.headPoint(0.9, 1.6).y - 6), color: hex("#999999"), lw: 1.4)
+            s.bubble("Are you OK?", "你还好吗？", rhead.x - rr - 58, rhead.y - rr - 14, tip: CGPoint(x: rhead.x - rr * 0.9, y: rhead.y))
+            s.callout("Normal breathing? ≤ 10 s", "有无正常呼吸？≤ 10 秒", 60, 150, to: pt.mouth, color: hex("#333333"))
         case 1:
-            s.phone(infant ? 98 : 118, floor - 26, number: number, t: t)
-            s.bubble("Get an AED!", "快去拿 AED！", 150, 62, tip: CGPoint(x: rhead.x - rr * 0.8, y: rhead.y + rr * 0.2))
-            if infant || child {
-                s.tag("Alone? 2 min CPR first, then call", "独自一人：先做 2 分钟再呼救", infant ? 180 : 250, infant ? 272 : 26, size: 10, color: red, bold: true)
+            s.phone(30, floor - 30, number: s.t("911", "120"), t: t)
+            s.bubble("Get an AED!", "快去拿 AED！", 250, 50, tip: CGPoint(x: rhead.x + rr * 0.9, y: rhead.y + rr * 0.1))
+            s.tag("phone on speaker", "手机开免提", 44, floor + 18, size: 9, bold: true)
+            if child {
+                s.tag("Alone, no phone? 2 min CPR, then call", "独自一人且无手机：先做 2 分钟再去呼救", 226, floor + 22, size: 10, color: red, bold: true, width: 220)
             }
         case 2, 6:
             if st == 2 {
-                s.chestMap(238, 8, 114, 112, mark: infant ? .thumbs : child ? .oneHand : .twoHands, baby: infant, title: Bilingual("Where to push", "按压位置"))
+                s.chestMap(238, 8, 114, 112, mark: child ? .oneHand : .twoHands, baby: false, title: Bilingual("Where to push", "按压位置"))
             } else {
                 bumpInset(&s, 222, 8)
             }
-            if !infant {
-                let sh = CGPoint(x: child ? r.right.x : r.neck.x, y: r.neck.y + 0.035 * rh)
-                s.line(sh.x - 30, sh.y, sh.x - 30, sternum.y, stroke: hex("#999999"), lw: 1, dash: [3, 3])
-                s.tag("shoulders over hands", "肩在手正上方", sh.x - 36, sh.y + 8, size: 9, anchor: .end)
-                s.tag("arms straight", "手臂伸直", sh.x - 36, (sh.y + sternum.y) / 2 + 6, size: 9, anchor: .end)
-            }
+            let top = CGPoint(x: child ? r.neck.x + r.build.shoulderW * 0.85 * rh : r.neck.x, y: r.neck.y + 0.035 * rh)
+            s.line(top.x, top.y, hands.x, hands.y - 4, stroke: red, lw: 1.2, dash: [3, 3])
+            s.callout("shoulders over hands", "肩在手正上方", 58, top.y - 6, to: CGPoint(x: top.x - (child ? 0 : r.build.shoulderW * 0.85 * rh), y: top.y), color: red)
+            s.callout("arms straight", "手臂伸直", 58, (top.y + hands.y) / 2 + 8, to: child ? lerp(top, r.right, 0.55) : lerp(CGPoint(x: r.neck.x - r.build.shoulderW * 0.85 * rh, y: top.y), r.left, 0.5),
+                      color: red)
+            if st == 2 { s.callout(child ? "heel of one hand" : "heel of hand, fingers laced", child ? "单手掌根" : "掌根按压，十指相扣", 250, 150,
+                                   to: CGPoint(x: hands.x + 6, y: hands.y - 2), color: red, width: 120) }
         case 3:
             let perfusion = taps > 0 ? min(1, rate / 110) * (rate > 130 ? 0.8 : 1) : 0
             let rateColor = rate == 0 ? hex("#777777") : rate < 100 ? hex("#E39B4B") : rate > 120 ? red : hex("#2E9E5B")
-            s.rect(8, 8, 150, 62, r: 9, fill: .white, stroke: rateColor, lw: 2)
-            s.label("Compressions \(Int(taps.rounded()))/30", "按压 \(Int(taps.rounded()))/30", 18, 26, size: 12, color: hex("#333333"), bold: true)
+            s.rect(8, 8, 134, 62, r: 9, fill: .white, stroke: rateColor, lw: 2)
+            s.label("Compressions \(Int(taps.rounded()))/30", "按压 \(Int(taps.rounded()))/30", 18, 26, size: 11, color: hex("#333333"), bold: true)
             s.label(rate > 0 ? "\(Int(rate.rounded())) /min" : "aim 100–120 /min", rate > 0 ? "\(Int(rate.rounded())) 次/分" : "目标 100–120 次/分",
                     18, 43, size: 12, color: rateColor, bold: true)
             s.label("Blood to brain", "大脑供血", 18, 58, size: 8)
-            s.rect(78, 55, 70, 6, r: 3, fill: hex("#EEEEEE"))
-            s.rect(78, 55, 70 * perfusion, 6, r: 3, fill: hex("#C8323C"))
-            s.compressionSection(236, 8, press: press, depth: infant ? "≈ 4 cm" : child ? "≈ 5 cm" : "5–6 cm", baby: infant)
+            s.rect(78, 55, 48, 6, r: 3, fill: hex("#EEEEEE"))
+            s.rect(78, 55, 48 * perfusion, 6, r: 3, fill: hex("#C8323C"))
+            s.compressionSection(236, 8, press: press, depth: child ? "≈ 5 cm" : "5–6 cm")
+            depthMark(&s, x: hands.x + 30, top: sternum.y - 10, depth: 12, text: child ? "≈ 5 cm" : "5–6 cm")
             if who.age == .senior { s.tag("ribs may crack — keep going", "肋骨可能骨折——继续按", 84, 90, size: 10, color: red, bold: true) }
         case 4:
-            breathInset(&s, 212, 8, baby: infant, t: t)
+            breathInset(&s, 204, 8, baby: false, t: t)
             let rise = max(0, sin(t * 2.2))
-            s.arrow(CGPoint(x: sternum.x + 20, y: sternum.y - 6), CGPoint(x: sternum.x + 20, y: sternum.y - 14 - rise * 6), color: hex("#3F95D6"), lw: 2)
-            s.tag("chest rises", "胸廓抬起", sternum.x + 22, sternum.y - 30, size: 9, color: hex("#3F95D6"), anchor: .start)
+            s.arrow(CGPoint(x: sternum.x + 18, y: sternum.y - 6), CGPoint(x: sternum.x + 18, y: sternum.y - 14 - rise * 6), color: blue, lw: 2)
+            s.tag("watch the chest rise", "看胸廓抬起", sternum.x + 22, sternum.y - 30, size: 9, color: blue, anchor: .start, bold: true)
         case 5:
-            s.chestMap(238, 8, 114, 112, mark: infant || child ? .padsFrontBack : .pads, baby: infant, title: Bilingual("Pads on bare skin", "电极片贴在裸露皮肤上"))
-            s.bubble("Stand clear!", "都别碰！", rhead.x - rr - 60, rhead.y - rr, tip: CGPoint(x: rhead.x - rr * 0.8, y: rhead.y + rr * 0.3),
-                     color: red, border: red)
-            s.tag("then 30:2 until help takes over", "之后继续 30:2，直到急救人员接手", 110, infant ? 272 : 30, size: 10, bold: true)
+            s.chestMap(238, 8, 114, 112, mark: child ? .padsFrontBack : .pads, baby: false, title: Bilingual("Pads on bare skin", "电极片贴裸露皮肤"))
+            s.bubble("Stand clear!", "都别碰！", rhead.x - rr - 58, rhead.y - rr - 10, tip: CGPoint(x: rhead.x - rr * 0.9, y: rhead.y), color: red, border: red)
+            s.tag("then 30:2 until help takes over", "之后继续 30:2，直到急救人员接手", 200, floor + 20, size: 10, bold: true)
         default: break
         }
     }
 
+    // MARK: baby
+
+    /// close-up of a baby on a table; the rescuer's hands and head come in from above
+    private static func drawBabyCPR(_ s: inout Sketch, _ p: Params, _ t: Double) {
+        let st = Int(p[v: "stage"].rounded()), press = p[v: "press"], taps = p[v: "taps"], rate = p[v: "rate"]
+        let top = 252.0, bh = 290.0
+        s.rect(0, 0, 360, 300, fill: hex("#F5F2ED"))
+        s.rect(0, 150, 360, 2, fill: hex("#EAE3D8"))
+        var b = SideFigure(h: bh, build: .infant, look: .baby, hip: .zero, rotation: -90, face: .closed)
+        b.near = .init(shoulder: 14, elbow: 50)
+        b.far = .init(shoulder: -6, elbow: 40)
+        b.nearLeg = .init(hip: 16, knee: 28, point: 20)
+        b.farLeg = .init(hip: 26, knee: 40, point: 20)
+        b.hip = CGPoint(x: 0, y: top - Build.infant.depth * bh * 0.5 - 1)
+        b.hip.x = 158 - b.front(0.64).x
+        let sink = st == 3 ? press * 7 : 0
+        let sternum = b.front(0.64), L = 58.0
+        let push = CGPoint(x: sternum.x, y: sternum.y + sink)
+        let red = hex("#D8434B"), blue = hex("#3F95D6")
+
+        // far hand behind the chest (only its forearm shows), then the table and the baby
+        if st == 2 || st == 3 { reachIn(&s, from: CGPoint(x: push.x + 110, y: -10), palm: CGPoint(x: push.x + 6, y: push.y + L * 0.4), dir: unit(CGPoint(x: -0.35, y: 1)), len: L, shape: .encircle, thumb: -1) }
+        s.rect(0, top, 360, 300 - top, fill: hex("#C9A77F"))
+        s.rect(0, top, 360, 6, fill: hex("#DDBE96"))
+        s.line(0, top + 6, 360, top + 6, stroke: hex("#A8865F"), lw: 1)
+        s.ellipse(b.hip.x - 30, top + 1, 110, 4, fill: .black.opacity(0.08))
+        if st == 5 {
+            // onesie off, nappy on
+            (b.look.top, b.look.topLine, b.look.bottom) = (b.look.skin, b.look.skinLine, b.look.skin)
+            b.draw(&s)
+            let nappy = [(0.5, 0.18), (0.54, 0.02), (0.3, -0.12), (-0.2, -0.14), (-0.56, -0.02), (-0.54, 0.18)].map { b.torso($0.0, $0.1) }
+            s.shape(smoothPath(nappy), fill: .white, stroke: hex("#C9C2B8"), lw: 1.2)
+        } else {
+            b.draw(&s)
+        }
+
+        switch st {
+        case 0:
+            // tap the sole of the foot
+            let toe = b.foot(near: true).toe, tap = sin(t * 9) * 2
+            reachIn(&s, from: CGPoint(x: 400, y: 150), palm: CGPoint(x: toe.x + 26 + tap, y: toe.y + 6), dir: unit(CGPoint(x: -1, y: 0.05)), len: L,
+                    shape: .twoFingers, thumb: -1)
+            s.bubble("Baby? Baby!", "宝宝？宝宝！", 250, 40, tip: CGPoint(x: 290, y: -2))
+            s.callout("tap the sole — don’t shake", "轻拍足底——不要摇晃", 280, 120, to: CGPoint(x: toe.x + 4, y: toe.y - 6), color: red)
+            s.callout("Normal breathing? ≤ 10 s", "有无正常呼吸？≤ 10 秒", 110, 110, to: b.front(0.55), color: hex("#333333"))
+        case 1:
+            s.phone(40, top - 24, number: s.t("911", "120"), t: t)
+            s.bubble("Call 120 — get an AED!", "打 120，拿 AED！", 170, 50, tip: CGPoint(x: 200, y: -2))
+            s.tag("phone on speaker", "手机开免提", 44, top + 20, size: 9, bold: true)
+            s.tag("Alone, no phone? 2 min CPR first, then call", "独自一人且无手机：先做 2 分钟再去呼救", 200, 112, size: 10, color: red, bold: true, width: 240)
+        case 2, 3:
+            // near hand wrapped round the chest, thumbs on the breastbone; forearm rises straight up
+            var g = s
+            g.ctx.clip(to: Path(CGRect(x: 0, y: 0, width: 360, height: top)))
+            reachIn(&g, from: CGPoint(x: push.x + 80, y: -10), palm: CGPoint(x: push.x - 2, y: push.y + L * 0.42), dir: unit(CGPoint(x: -0.25, y: 1)), len: L, shape: .encircle, thumb: 1)
+            if st == 2 {
+                s.chestMap(238, 8, 114, 112, mark: .thumbs, baby: true, title: Bilingual("Where to push", "按压位置"))
+                s.callout("both thumbs on the breastbone", "双拇指并排按胸骨", 84, 150, to: CGPoint(x: push.x - 2, y: push.y + 2), color: red, width: 120)
+                s.callout("fingers round the back", "其余手指环抱背部", 84, 196, to: CGPoint(x: push.x - 14, y: push.y + 34), color: hex("#555555"), width: 120)
+            } else {
+                let rateColor = rate == 0 ? hex("#777777") : rate < 100 ? hex("#E39B4B") : rate > 120 ? red : hex("#2E9E5B")
+                s.rect(8, 8, 138, 46, r: 9, fill: .white, stroke: rateColor, lw: 2)
+                s.label("Compressions \(Int(taps.rounded()))/30", "按压 \(Int(taps.rounded()))/30", 18, 26, size: 11, color: hex("#333333"), bold: true)
+                s.label(rate > 0 ? "\(Int(rate.rounded())) /min" : "aim 100–120 /min", rate > 0 ? "\(Int(rate.rounded())) 次/分" : "目标 100–120 次/分",
+                        18, 43, size: 12, color: rateColor, bold: true)
+                s.compressionSection(236, 8, press: press, depth: "≈ 4 cm", baby: true)
+                depthMark(&s, x: push.x + 34, top: sternum.y, depth: 16, text: "≈ 4 cm")
+            }
+        case 4:
+            babyBreath(&s, b, t)
+        case 5:
+            s.aed(50, top - 22, scale: 0.9, open: true)
+            s.pad(b.front(0.66), to: CGPoint(x: 68, y: top - 18), w: 16, h: 5)
+            let back = b.back(0.66)
+            s.shape(Path(roundedRect: CGRect(x: back.x - 8, y: back.y - 2, width: 16, height: 5), cornerRadius: 1.5), stroke: hex("#2E9E5B"), lw: 1.2, dash: [2, 2])
+            s.chestMap(238, 8, 114, 112, mark: .padsFrontBack, baby: true, title: Bilingual("Pads on bare skin", "电极片贴裸露皮肤"))
+            s.bubble("Stand clear!", "都别碰！", 130, 50, tip: CGPoint(x: 160, y: -2), color: red, border: red)
+            s.tag("then 30:2 until help takes over", "之后继续 30:2，直到急救人员接手", 180, top + 22, size: 10, bold: true)
+        default: break
+        }
+        if st == 2 { s.tag("firm, flat surface", "坚硬平面", 180, top + 22, size: 10, bold: true) }
+    }
+
+    /// rescuer's head comes down over the baby's face: mouth over mouth and nose, head kept level
+    private static func babyBreath(_ s: inout Sketch, _ b: SideFigure, _ t: Double) {
+        let blue = hex("#3F95D6")
+        let target = b.headPoint(1.02, 0.44)
+        let ru = unit(CGPoint(x: 1, y: -0.75)), rr = 0.064 * 700
+        let off = headSpot(.zero, up: ru, r: rr, 0.95, 0.6)
+        let rc = CGPoint(x: target.x - off.x, y: target.y - off.y - 3)
+        let rn = headSpot(rc, up: ru, r: rr, -0.2, 0.85)
+        let look = Look.rescuer
+        // neck and a shoulder leaving the frame at the top left
+        let sh = CGPoint(x: rn.x - 34, y: rn.y - 46)
+        s.taper([rn, sh], [rr * 0.8, rr * 0.9], fill: look.skin, line: look.skinLine)
+        s.shape(smoothPath([CGPoint(x: sh.x + 26, y: sh.y - 8), CGPoint(x: sh.x - 8, y: sh.y + 22), CGPoint(x: -30, y: sh.y + 40),
+                            CGPoint(x: -30, y: -30), CGPoint(x: sh.x + 30, y: -30)]), fill: look.top, stroke: look.topLine, lw: 1.3)
+        drawSideHead(&s, at: rc, up: ru, r: rr, look: look, face: .closed)
+        let rise = max(0, sin(t * 2.2)), c = b.front(0.58)
+        s.arrow(CGPoint(x: c.x + 10, y: c.y - 4), CGPoint(x: c.x + 10, y: c.y - 14 - rise * 6), color: blue, lw: 2)
+        s.tag("chest just rises", "胸廓刚好抬起", c.x + 14, c.y - 28, size: 10, color: blue, anchor: .start, bold: true)
+        s.callout("mouth over mouth AND nose", "嘴包住口和鼻", 290, 150, to: CGPoint(x: target.x + 4, y: target.y - 2), color: blue, width: 110)
+        s.tag("head level — not tilted", "头保持水平，不后仰", 110, 272, size: 10, bold: true)
+        s.tag("2 gentle puffs", "轻吹 2 口", 280, 272, size: 10, color: blue, bold: true)
+    }
+
+    /// an adult forearm (sleeve pushed up) reaching in from off-frame to a hand at `palm`
+    static func reachIn(_ s: inout Sketch, from: CGPoint, palm: CGPoint, dir: CGPoint, len L: Double, shape: SideFigure.Hand, thumb: Double,
+                        gloves: Color? = nil) {
+        var look = Look.rescuer
+        look.gloves = gloves
+        let aw = L * 0.5
+        let wrist = CGPoint(x: palm.x - dir.x * L * 0.45, y: palm.y - dir.y * L * 0.45)
+        // bare forearm about 1.2 hand-lengths long, then the pushed-up sleeve runs off the frame
+        let u = unit(CGPoint(x: from.x - wrist.x, y: from.y - wrist.y))
+        let dist = hypot(from.x - wrist.x, from.y - wrist.y), bare = min(dist * 0.65, L * 1.2)
+        let cuff = CGPoint(x: wrist.x + u.x * bare, y: wrist.y + u.y * bare)
+        s.taper([CGPoint(x: cuff.x + u.x * 4, y: cuff.y + u.y * 4), wrist], [aw * 0.95, aw * 0.6], fill: look.skin, line: look.skinLine)
+        s.taper([CGPoint(x: from.x + u.x * 20, y: from.y + u.y * 20), cuff], [aw * 1.25, aw * 1.12], fill: look.top, line: look.topLine)
+        s.line(cuff.x - u.y * aw * 0.5, cuff.y + u.x * aw * 0.5, cuff.x + u.y * aw * 0.5, cuff.y - u.x * aw * 0.5, stroke: look.topLine, lw: 1, opacity: 0.8)
+        drawHand(&s, at: palm, dir: dir, len: L, shape: shape, look: look, thumb: thumb)
+    }
+
+    /// shirt opened: bare skin over the front of the chest
+    private static func bareChest(_ s: inout Sketch, _ pt: SideFigure) {
+        let fs = [0.94, 0.84, 0.72, 0.6, 0.5, 0.42]
+        let outer = fs.map { pt.front($0) }
+        let inner = fs.reversed().map { pt.torso(0.12, $0) }
+        s.shape(smoothPath(outer + inner), fill: pt.look.skin)
+        s.shape(openPath(inner), stroke: pt.look.topLine, lw: 1.6)
+    }
+
+    /// double-headed depth arrow beside the hands
+    private static func depthMark(_ s: inout Sketch, x: Double, top: Double, depth: Double, text: String) {
+        let red = hex("#D8434B")
+        s.line(x - 5, top, x + 5, top, stroke: red, lw: 1.2)
+        s.line(x - 5, top + depth, x + 5, top + depth, stroke: red, lw: 1.2)
+        s.arrow(CGPoint(x: x, y: top + 1), CGPoint(x: x, y: top + depth - 1), color: red, lw: 1.4)
+        s.tag(text, text, x + 8, top + depth / 2, size: 9, color: red, anchor: .start, bold: true)
+    }
+
     /// helper kneeling on our side pushes the bump away from us — to her left
     private static func pushBump(_ s: inout Sketch, _ pt: SideFigure) {
-        let bump = pt.front(0.28), look = Look.helper, lw = 0.05 * 184
-        for (i, dx) in [-12.0, 10].enumerated() {
-            let palm = CGPoint(x: bump.x + dx + 4, y: bump.y + 22 + Double(i) * 2)
-            let elbow = CGPoint(x: palm.x + dx * 1.2 + 10, y: 300)
-            s.limb([CGPoint(x: elbow.x - 8, y: 320), elbow, palm], w: lw * 0.8, fill: look.skin, line: look.skinLine)
-            s.limb([CGPoint(x: elbow.x - 8, y: 320), lerp(elbow, palm, 0.4)], w: lw, fill: look.top, line: look.topLine)
-            drawHand(&s, at: palm, dir: unit(CGPoint(x: palm.x - elbow.x, y: palm.y - elbow.y)), len: 16, shape: .open, look: look)
+        let bump = pt.front(0.28), look = Look.helper, aw = 0.05 * 200
+        for (i, dx) in [-14.0, 10].enumerated() {
+            let palm = CGPoint(x: bump.x + dx + 4, y: bump.y + 20 + Double(i) * 2)
+            let elbow = CGPoint(x: palm.x + dx * 1.2 + 12, y: 300)
+            dressedArm(&s, CGPoint(x: elbow.x - 8, y: 330), elbow, lerp(elbow, palm, 0.8), aw: aw, look: look)
+            drawHand(&s, at: palm, dir: unit(CGPoint(x: palm.x - elbow.x, y: palm.y - elbow.y)), len: 20, shape: .open, look: look, thumb: dx < 0 ? 1 : -1)
         }
-        s.tag("helper pushes the bump to her left", "旁人把子宫推向她的左侧", bump.x + 30, bump.y - 16, size: 9, color: hex("#B06C84"),
-              anchor: .start, bold: true, width: 100)
+        s.callout("helper pushes the bump to her left", "旁人把子宫推向她的左侧", 290, 150, to: CGPoint(x: bump.x + 4, y: bump.y + 2),
+                  color: hex("#B06C84"), width: 110)
     }
 
     /// seen from her feet: the womb lies on the big vein until it is pushed to her left
@@ -252,39 +382,53 @@ extension Illustrations {
         s.label("her L", "她的左侧", x + 124, y + 26, size: 8, color: hex("#8A8378"), anchor: .end)
     }
 
-    /// close-up of opening the airway and giving a breath
+    /// close-up: open the airway (and for a baby, how the mouth covers mouth and nose)
     private static func breathInset(_ s: inout Sketch, _ x: Double, _ y: Double, baby: Bool, t: Double) {
-        s.inset(x, y, 140, 116, baby ? "Head level, cover mouth + nose" : "Tilt head, lift chin", baby ? "头保持水平，包住口鼻" : "仰头抬颏")
-        var s = s.clipped(x, y + 18, 140, 98)
-        let pr = baby ? 26.0 : 22
-        let up = baby ? CGPoint(x: -1, y: 0) : unit(CGPoint(x: -0.9, y: 0.42))
-        let pc = CGPoint(x: x + 50, y: y + 84)
+        let w = 148.0, h = 118.0
+        s.inset(x, y, w, h, baby ? "Head level, cover mouth + nose" : "Tilt head back, lift chin", baby ? "头保持水平，包住口鼻" : "仰头抬颏")
+        var g = s.clipped(x, y + 18, w, h - 18)
+        let pr = baby ? 29.0 : 28
+        let a = (baby ? 0 : 18.0) * .pi / 180
+        let up = CGPoint(x: -cos(a), y: sin(a)), f = CGPoint(x: -up.y, y: up.x)
+        let ground = y + h - 5
+        let pc = CGPoint(x: x + 60, y: ground - pr * (baby ? 1.0 : 1.06))
         let look: Look = baby ? .baby : .man
-        // neck and shoulder of the casualty running off to the right
-        let neck = headSpot(pc, up: up, r: pr, -0.05, 0.85)
-        s.limb([neck, CGPoint(x: neck.x + 60, y: neck.y + (baby ? 0 : -6))], w: pr * 0.8, fill: look.skin, line: look.skinLine)
-        s.limb([CGPoint(x: neck.x + 24, y: neck.y + 2), CGPoint(x: x + 136, y: neck.y)], w: pr * 1.3, fill: look.top, line: look.topLine)
-        drawSideHead(&s, at: pc, up: up, r: pr, look: look, face: .closed, baby: baby)
-        // rescuer's head comes down on top, face down
-        let target = baby ? lerp(headSpot(pc, up: up, r: pr, 0.97, 0.58), headSpot(pc, up: up, r: pr, 1.04, 0.3), 0.5)
-            : headSpot(pc, up: up, r: pr, 0.97, 0.58)
-        let ru = unit(CGPoint(x: -1, y: -0.2)), rr = 20.0
-        let off = headSpot(.zero, up: ru, r: rr, 0.9, 0.58, side: -1)
-        let rc = CGPoint(x: target.x - off.x, y: target.y - off.y)
-        let rn = headSpot(rc, up: ru, r: rr, -0.1, 0.9, side: -1)
-        s.limb([rn, CGPoint(x: rn.x + 30, y: rn.y - 12)], w: rr * 0.8, fill: Look.rescuer.skin, line: Look.rescuer.skinLine)
-        s.limb([CGPoint(x: rn.x + 22, y: rn.y - 10), CGPoint(x: rn.x + 90, y: rn.y - 30)], w: rr * 1.6, fill: Look.rescuer.top, line: Look.rescuer.topLine)
-        drawSideHead(&s, at: rc, up: ru, side: -1, r: rr, look: .rescuer, face: .closed)
-        let hand = Look.rescuer
-        if !baby {
-            drawHand(&s, at: headSpot(pc, up: up, r: pr, 0.35, -0.95), dir: unit(CGPoint(x: -up.y, y: up.x)), len: 22, shape: .open, look: hand)
-            drawHand(&s, at: headSpot(pc, up: up, r: pr, 0.6, 1.15), dir: unit(CGPoint(x: -up.y, y: up.x)), len: 22, shape: .twoFingers, look: hand)
-            s.arrow(headSpot(pc, up: up, r: pr, 0.7, 1.7), headSpot(pc, up: up, r: pr, 1.2, 1.5), color: hex("#D8434B"), lw: 1.6)
+        g.rect(x, ground, w, 8, fill: hex("#E4D6C3"))
+        let neck = headSpot(pc, up: up, r: pr, -0.05, 0.8)
+        g.taper([neck, CGPoint(x: neck.x + 34, y: neck.y + 2)], [pr * 0.8, pr * 0.9], fill: look.skin, line: look.skinLine)
+        g.shape(smoothPath([CGPoint(x: neck.x + 24, y: neck.y - pr * 0.55), CGPoint(x: x + w + 10, y: neck.y - pr * 0.7),
+                            CGPoint(x: x + w + 10, y: ground + 4), CGPoint(x: neck.x + 18, y: ground + 4)]), fill: look.top, stroke: look.topLine, lw: 1.2)
+        drawSideHead(&g, at: pc, up: up, r: pr, look: look, face: .closed, baby: baby)
+        let red = hex("#D8434B"), blue = hex("#3F95D6")
+        // palm on the forehead, fingers toward the crown; forearm rises from the wrist
+        let d1 = unit(CGPoint(x: up.x + f.x * 0.2, y: up.y + f.y * 0.2))
+        let fh = headSpot(pc, up: up, r: pr, 0.66, -0.78)
+        let p1 = CGPoint(x: fh.x + d1.x * 3, y: fh.y + d1.y * 3)
+        hand(&g, at: p1, dir: d1, from: CGPoint(x: p1.x + 14, y: y - 10), shape: .open, thumb: 1)
+        // fingertips under the bony chin, forearm off to the upper right
+        let chin = headSpot(pc, up: up, r: pr, 0.72, 1.16)
+        let d2 = unit(CGPoint(x: up.x * 0.9 + f.x * 0.45, y: up.y * 0.9 + f.y * 0.45))
+        let p2 = CGPoint(x: chin.x - d2.x * 9 - f.x * 1, y: chin.y - d2.y * 9 - f.y * 1)
+        hand(&g, at: p2, dir: d2, from: CGPoint(x: x + w + 10, y: y + 20), shape: .twoFingers, thumb: -1)
+        let mouth = headSpot(pc, up: up, r: pr, 1.02, baby ? 0.42 : 0.6)
+        if baby {
+            g.shape(Path(ellipseIn: CGRect(x: mouth.x - pr * 0.5, y: mouth.y - pr * 0.5, width: pr, height: pr)), stroke: blue, lw: 1.6, dash: [3, 2])
         } else {
-            drawHand(&s, at: headSpot(pc, up: up, r: pr, 0.2, -1.05), dir: unit(CGPoint(x: -up.y, y: up.x)), len: 20, shape: .open, look: hand)
+            // push the forehead back, lift the chin
+            g.arrow(headSpot(pc, up: up, r: pr, 1.45, -0.2), headSpot(pc, up: up, r: pr, 1.45, -0.95), color: red, lw: 1.8)
+            g.arrow(headSpot(pc, up: up, r: pr, 1.15, 1.75), headSpot(pc, up: up, r: pr, 1.75, 1.6), color: red, lw: 1.8)
         }
         let puff = (t * 0.8).wrap(1)
-        s.arrow(CGPoint(x: target.x + 16, y: target.y - 26 + puff * 8), CGPoint(x: target.x + 6, y: target.y - 10 + puff * 8), color: hex("#3F95D6"), lw: 1.8)
-        s.label(baby ? "gentle puff" : "1 s breath", baby ? "轻吹一口" : "吹气 1 秒", target.x + 20, target.y - 26, size: 8, color: hex("#3F95D6"))
+        let from = CGPoint(x: mouth.x + f.x * 24, y: mouth.y + f.y * 24), to = CGPoint(x: mouth.x + f.x * 6, y: mouth.y + f.y * 6)
+        g.arrow(lerp(from, to, puff * 0.3), lerp(from, to, 0.3 + puff * 0.7), color: blue, lw: 1.8)
+        s.tag(baby ? "puff × 2" : "breath 1 s × 2", baby ? "轻吹 2 口" : "吹气 1 秒 × 2", x + w - 8, y + h - 16, size: 8, color: blue, anchor: .end, bold: true)
+    }
+
+    /// the rescuer's forearm and hand reaching into a close-up from `from`
+    private static func hand(_ s: inout Sketch, at: CGPoint, dir: CGPoint, from: CGPoint, shape: SideFigure.Hand, thumb: Double = -1) {
+        let look = Look.rescuer, L = 19.0
+        let wrist = CGPoint(x: at.x - dir.x * L * 0.45, y: at.y - dir.y * L * 0.45)
+        dressedArm(&s, from, lerp(from, wrist, 0.5), wrist, aw: 10, look: look)
+        drawHand(&s, at: at, dir: dir, len: L, shape: shape, look: look, thumb: thumb)
     }
 }
