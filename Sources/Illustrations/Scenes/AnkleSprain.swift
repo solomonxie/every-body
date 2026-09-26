@@ -4,7 +4,7 @@ extension Illustrations {
     static func ankleSprain(for p: Profile) -> Scenario {
         var s: Scenario = ankleSprain
         s.profileNote = switch p.age {
-        case .infant, .child: Bilingual("Children: ligaments are stronger than the growth plate, so a “sprain” may be a growth-plate break — X-ray if the bone is tender or they won’t walk.",
+        case .infant, .toddler, .child: Bilingual("Children: ligaments are stronger than the growth plate, so a “sprain” may be a growth-plate break — X-ray if the bone is tender or they won’t walk.",
                                         "儿童：韧带比生长板结实，“扭伤”可能是生长板骨折——骨头压痛或不肯走路要拍 X 光。")
         case .senior: Bilingual("65+: a twisted ankle is more often a broken bone — get an X-ray, and use a stick while it heals to avoid another fall.",
                                 "65 岁以上：扭脚更容易骨折——应拍 X 光；恢复期拄拐杖，防止再次跌倒。")

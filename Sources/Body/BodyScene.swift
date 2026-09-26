@@ -52,6 +52,7 @@ final class BodyScene {
     private var skinEntities: [(entity: ModelEntity, color: UIColor)] = []
     private var organEntities: [String: Entity] = [:]
     private var jointOuter: [String: Entity] = [:]
+    private var jointInner: [String: Entity] = [:]
     private var pointEntities: [String: ModelEntity] = [:]
     private var pulseDots: [ModelEntity] = []
     private var pulseCurves: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)] = []
@@ -108,6 +109,7 @@ final class BodyScene {
             outer.addChild(offset)
             parent.addChild(outer)
             jointOuter[joint.id] = outer
+            jointInner[joint.id] = offset
             inner[joint.id] = offset
             return offset
         }
@@ -116,11 +118,13 @@ final class BodyScene {
             Catalog.body.joints.first { $0.parts.contains(id) }.map(container(for:)) ?? rig
         }
 
-        let sex = female ? "female" : "male"
+        // before puberty the body shape doesn't differ by sex
+        let sex = female && !(age == .infant || age.isChild) ? "female" : "male"
         for part in Catalog.body.parts where part.layer == .skin && (part.sex == nil || part.sex == sex) {
             let entity = Self.entity(for: part.shape)
             // eyes, lips and brows keep their own colour; everything else takes the skin tone
             let color = part.color == "#F2C9A5" ? skinColor : UIColor(hex: part.color)
+            entity.name = "skin:\(part.id)"
             entity.model?.materials = [Self.material(color, opacity: 0.3)]
             parent(of: part.id).addChild(entity)
             skinEntities.append((entity, color))
@@ -135,7 +139,7 @@ final class BodyScene {
                 let piece = Self.entity(for: shape)
                 piece.position -= variant.position.simd
                 piece.model?.materials = [Self.material(UIColor(hex: variant.color), opacity: organ.region == true ? 0.45 : 1,
-                                                        texture: organ.region == true ? nil : Textures.organ)]
+                                                        texture: organ.region == true ? nil : organ.id == "brain" ? Textures.brain : Textures.organ)]
                 piece.name = organ.names == nil ? "" : organ.id
                 if organ.names != nil { Self.makeTappable(piece, shape: shape) }
                 container.addChild(piece)
@@ -185,30 +189,93 @@ final class BodyScene {
         } else {
             flowDots = []
         }
-        headParts = rig.children.compactMap { e in
-            guard !jointOuter.values.contains(where: { $0 === e }) else { return nil }
-            let y = e is ModelEntity ? e.visualBounds(relativeTo: rig).center.y : e.position.y
-            return y > Self.chinY ? (e, e.position, e.scale) : nil
-        }
+        // remember every body piece at rest (adult pose, body coordinates) so age can reshape it
+        rest = []
+        func keep(_ e: Entity, centre: SIMD3<Float>) { rest.append((e, e.transform.matrix, centre)) }
+        for e in partEntities.values { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
+        for (e, _) in skinEntities { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
+        for e in organEntities.values { keep(e, centre: e.position) }
+        for e in pointEntities.values { keep(e, centre: e.position) }
         applyVisibility()
         applyAge()
     }
 
-    // MARK: age
+    // MARK: age — infants and toddlers are not small adults: big head, short chubby limbs, round belly
 
     /// scene y of the chin; everything above it is "head" for proportions
     private static let chinY: Float = 1.25
     private static let neckY: Float = 1.19
-    private var headParts: [(entity: Entity, position: SIMD3<Float>, scale: SIMD3<Float>)] = []
+    /// below this (scene y) a piece belongs to a leg; hips and shoulders are the limb pivots
+    private static let legTopY: Float = -0.04
+    private static let hip = SIMD3<Float>(0.167, 0.12, 0)
+    private static let shoulder = SIMD3<Float>(0.344, 1.004, -0.056)
+    private var rest: [(entity: Entity, matrix: float4x4, centre: SIMD3<Float>)] = []
+    private var organScale: [String: SIMD3<Float>] = [:]
     private var age: AgeGroup = .adult
 
-    /// Whole body scale and head-to-body ratio: an infant is ~0.4 of adult height with a head ~¼ of it.
-    private var ageShape: (body: Float, head: Float) {
+    private struct Proportions {
+        var body: Float = 1          // overall size vs adult
+        var head: Float = 1          // head enlargement on top of that
+        var legLength: Float = 1, legGirth: Float = 1
+        var armLength: Float = 1, armGirth: Float = 1
+        var trunkWidth: Float = 1, trunkDepth: Float = 1
+    }
+
+    private var proportions: Proportions {
         switch age {
-        case .infant: (0.4, 1.85)
-        case .child: (0.68, 1.3)
-        case .adult, .senior: (1, 1)
+        // ~70 cm, head a quarter of height, legs a third, round belly
+        case .infant: Proportions(body: 0.4, head: 1.85, legLength: 0.72, legGirth: 1.4, armLength: 0.85, armGirth: 1.3, trunkWidth: 1.12, trunkDepth: 1.3)
+        // ~88 cm, head a fifth of height, still chubby
+        case .toddler: Proportions(body: 0.5, head: 1.5, legLength: 0.82, legGirth: 1.25, armLength: 0.9, armGirth: 1.2, trunkWidth: 1.08, trunkDepth: 1.2)
+        // ~120 cm, head a sixth, limbs nearly adult proportion
+        case .child: Proportions(body: 0.68, head: 1.25, legLength: 0.95, legGirth: 1.05, armLength: 0.97, armGirth: 1.05, trunkWidth: 1.0, trunkDepth: 1.05)
+        case .adult, .senior: Proportions()
         }
+    }
+
+    /// Body-coordinate reshaping for whatever region `c` falls in.
+    /// the jaw hangs below the chin line but moves with the head
+    private static let jawParts = ["mandible", "chin", "lower-teeth", "masseter", "skin:chin", "skin:lip", "deep-head", "skin:head"]
+
+    private func reshape(_ c: SIMD3<Float>, name: String = "") -> float4x4 {
+        let p = proportions
+        func about(_ pivot: SIMD3<Float>, _ s: SIMD3<Float>) -> float4x4 {
+            var m = matrix_identity_float4x4
+            m.columns.0.x = s.x; m.columns.1.y = s.y; m.columns.2.z = s.z
+            m.columns.3 = SIMD4(pivot - s * pivot, 1)
+            return m
+        }
+        if c.y > Self.chinY || Self.jawParts.contains(where: { name.hasPrefix($0) }) {
+            return about(SIMD3(0, Self.neckY, 0), SIMD3(repeating: p.head))
+        }
+        let side: Float = c.x < 0 ? -1 : 1
+        // arms first: hands hang lower than the hips
+        if abs(c.x) > 0.316 {
+            return about(Self.shoulder * SIMD3(side, 1, 1), SIMD3(p.armGirth, p.armLength, p.armGirth))
+        }
+        if c.y < Self.legTopY {
+            return about(Self.hip * SIMD3(side, 1, 1), SIMD3(p.legGirth, p.legLength, p.legGirth))
+        }
+        return about(.zero, SIMD3(p.trunkWidth, 1, p.trunkDepth))
+    }
+
+    /// Baby faces: small nose, bigger eyes, faint brows, no Adam's apple or breasts before puberty.
+    private func feature(_ name: String) -> Float {
+        let id = name.hasPrefix("skin:") ? String(name.dropFirst(5)) : name
+        let young: Float = switch age { case .infant: 1; case .toddler: 0.75; case .child: 0.4; default: 0 }
+        guard young > 0 else { return 1 }
+        if id.hasPrefix("breast") || id == "adams-apple" { return 0.0001 }
+        if id == "nose" || id.hasPrefix("nostril") { return 1 - 0.35 * young }
+        if id.hasPrefix("eye-") || id.hasPrefix("iris") || id.hasPrefix("pupil") || id.hasPrefix("eyelid") { return 1 + 0.2 * young }
+        if id.hasPrefix("brow") { return 1 - 0.4 * young }
+        if id.hasPrefix("lip") { return 1 - 0.2 * young }
+        return 1
+    }
+
+    /// adult body point → where it sits on this age's body (rig space, before the overall scale)
+    private func agePoint(_ q: SIMD3<Float>) -> SIMD3<Float> {
+        let r = reshape(q) * SIMD4(q, 1)
+        return SIMD3(r.x, r.y, r.z)
     }
 
     func setAge(_ age: AgeGroup) {
@@ -217,20 +284,34 @@ final class BodyScene {
     }
 
     private func applyAge() {
-        let (body, head) = ageShape
-        rig.scale = SIMD3(repeating: body)
-        let neck = SIMD3<Float>(0, Self.neckY, 0)
-        for (entity, position, scale) in headParts {
-            entity.position = neck + (position - neck) * head
-            entity.scale = scale * head
+        rig.scale = SIMD3(repeating: proportions.body)
+        // eye parts grow together about their eyeball, so the iris stays on its surface
+        let eyeCentre = Dictionary(rest.filter { $0.entity.name.hasPrefix("skin:eye-") }.map { (String($0.entity.name.suffix(1)), $0.centre) }) { a, _ in a }
+        for (entity, matrix, centre) in rest {
+            // a feature's own size change happens about its centre, before the region reshape
+            let f = feature(entity.name)
+            var local = matrix_identity_float4x4
+            if f != 1 {
+                let isEye = ["skin:eye-", "skin:iris-", "skin:pupil-", "skin:eyelid-"].contains { entity.name.hasPrefix($0) }
+                let pivot = isEye ? eyeCentre[String(entity.name.suffix(1))] ?? centre : centre
+                local.columns.0.x = f; local.columns.1.y = f; local.columns.2.z = f
+                local.columns.3 = SIMD4(pivot - f * pivot, 1)
+            }
+            entity.transform.matrix = reshape(centre, name: entity.name) * local * matrix
         }
+        for joint in Catalog.body.joints {
+            guard let outer = jointOuter[joint.id], let inner = jointInner[joint.id] else { continue }
+            let pivot = agePoint(joint.pivot.simd)
+            outer.position = pivot
+            inner.position = -pivot
+        }
+        organScale = organEntities.mapValues(\.scale)
         focus(.all)
     }
 
-    /// adult scene y → where it sits on this age's body
-    private func ageY(_ y: Float) -> Float {
-        let (body, head) = ageShape
-        return (y > Self.chinY ? Self.neckY + (y - Self.neckY) * head : y) * body
+    /// adult scene y (on the body's midline, or a limb) → scene y for this age
+    private func ageY(_ y: Float, x: Float = 0) -> Float {
+        agePoint(SIMD3(x, y, 0)).y * proportions.body
     }
 
     // MARK: state
@@ -277,8 +358,7 @@ final class BodyScene {
         flashStart = -1
         pulseStart = clock
         // data positions are adult; a head point moves with the head's age scaling
-        let neck = SIMD3<Float>(0, Self.neckY, 0)
-        let start = start.y > Self.chinY ? neck + (start - neck) * ageShape.head : start
+        let start = agePoint(start)
         pulseCurves = organIds.compactMap { organEntities[$0]?.position }.map { end in
             var mid = (start + end) / 2
             mid.z += 0.35
@@ -356,7 +436,8 @@ final class BodyScene {
                 pulse = t < 0.8 ? sin(t / 0.8 * .pi) * 0.6 : 0
             }
             if id == "heart" { pulse += pow(max(0, sin(clock * bpm / 60 * 2 * .pi)), 4) * 0.18 }
-            if pulse != 0 || entity.scale.x != 1 { entity.scale = SIMD3(repeating: 1 + pulse) }
+            let base = organScale[id] ?? SIMD3(repeating: 1)
+            if pulse != 0 || entity.scale != base { entity.scale = base * (1 + pulse) }
             guard lit || id == selected || organGlow[id] != nil else { continue }
             let organ = Catalog.organ(id)
             if organ?.region == true { entity.isEnabled = lit }
@@ -397,10 +478,18 @@ final class BodyScene {
     }
 
     func focus(_ f: Focus) {
-        goalFocusY = ageY(f.y)
+        let body = proportions.body
+        switch f {
+        case .all:
+            // centre between the (raised) feet and the (enlarged) crown
+            goalFocusY = (ageY(-1.6, x: 0.17) + ageY(1.646)) / 2
+        case .foot: goalFocusY = ageY(f.y, x: 0.17)
+        case .hand: goalFocusY = ageY(f.y, x: 0.45)
+        case .ear: goalFocusY = ageY(f.y)
+        }
         panX = 0
         // smaller bodies bring the camera a little closer but still read as small
-        goalDistance = f.distance * (f == .all ? 0.55 + 0.45 * ageShape.body : ageShape.body.squareRoot())
+        goalDistance = f.distance * (f == .all ? 0.55 + 0.45 * body : body.squareRoot())
     }
 
     func resetView() {

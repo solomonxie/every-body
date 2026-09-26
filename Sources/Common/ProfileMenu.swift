@@ -18,7 +18,7 @@ struct ProfileMenu: View {
                 Toggle(settings.t("Pregnant", "怀孕"), isOn: $settings.pregnant)
             }
         } label: {
-            Label(label, systemImage: settings.age == .infant || settings.age == .child ? "figure.child" : "figure.stand")
+            Label(label, systemImage: settings.age == .infant || settings.age.isChild ? "figure.child" : "figure.stand")
                 .labelStyle(.titleAndIcon)
                 .font(.footnote.weight(.semibold))
         }
@@ -29,6 +29,7 @@ struct ProfileMenu: View {
         let sex = settings.female ? settings.t("F", "女") : settings.t("M", "男")
         let age: String = switch settings.age {
         case .infant: settings.t("Infant", "婴儿")
+        case .toddler: settings.t("Toddler", "幼儿")
         case .child: settings.t("Child", "儿童")
         case .adult: settings.t("Adult", "成人")
         case .senior: settings.t("65+", "老人")

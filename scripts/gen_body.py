@@ -232,27 +232,30 @@ def skeleton():
     # skull: rounded cranium; a separate mid-face (cheekbones, upper jaw) in front of it, so the face can be
     # narrower and flatter than the braincase
     part("skull", "Skull (cranium)", "颅骨", "skeletal", BONE,
-         loft([(0, 1.585, -0.03, 0.055, 0.07), (0, 1.61, -0.018, 0.066, 0.09), (0, 1.64, -0.013, 0.071, 0.097),
+         # skull base and mastoids reach lower at the back, behind the face
+         loft([(0, 1.56, -0.04, 0.04, 0.045), (0, 1.585, -0.028, 0.056, 0.07), (0, 1.61, -0.018, 0.066, 0.09), (0, 1.64, -0.013, 0.071, 0.097),
                (0, 1.68, -0.014, 0.071, 0.094), (0, 1.712, -0.017, 0.064, 0.085), (0, 1.732, -0.019, 0.05, 0.066),
                (0, 1.742, -0.02, 0.036, 0.048)]))
     part("face-bones", "Facial bones (maxilla & cheekbones)", "上颌骨与颧骨", "skeletal", BONE,
          loft([(0, 1.548, 0.05, 0.026, 0.028, 2.2), (0, 1.565, 0.048, 0.036, 0.036, 2.3), (0, 1.59, 0.046, 0.048, 0.04, 2.4),
                (0, 1.615, 0.042, 0.052, 0.04, 2.4), (0, 1.64, 0.03, 0.05, 0.048, 2.2)]))
     part("brow-ridge", "Brow ridge (frontal bone)", "眉弓（额骨）", "skeletal", BONE,
-         loft([(-0.05, 1.641, 0.068, 0.003, 0.004), (-0.03, 1.645, 0.08, 0.004, 0.005), (0.0, 1.642, 0.084, 0.0035, 0.0045),
-               (0.03, 1.645, 0.08, 0.004, 0.005), (0.05, 1.641, 0.068, 0.003, 0.004)]))
-    part("nasal-bone", "Nasal bone", "鼻骨", "skeletal", BONE, segment((0, 1.63, 0.083), (0, 1.612, 0.088), 0.004))
+         loft([(-0.05, 1.64, 0.064, 0.003, 0.003), (-0.03, 1.644, 0.077, 0.0035, 0.004), (0.0, 1.641, 0.081, 0.003, 0.0035),
+               (0.03, 1.644, 0.077, 0.0035, 0.004), (0.05, 1.64, 0.064, 0.003, 0.003)]))
+    part("nasal-bone", "Nasal bone", "鼻骨", "skeletal", BONE, loft([(0, 1.632, 0.08, 0.005, 0.004), (0, 1.615, 0.085, 0.007, 0.004)]))
+    pair("cheekbone", "Cheekbone (zygomatic)", "颧骨", "skeletal", BONE, sphere((0.04, 1.602, 0.056), 0.012, [1.0, 0.7, 0.75]))
     # eye sockets and nose opening: dark hollows set flush into the face
     pair("orbit", "Orbit (eye socket)", "眼眶", "skeletal", "#3E3A42", sphere((0.029, 1.623, 0.077), 0.0165, [1.05, 0.95, 0.4]))
-    part("nasal-aperture", "Nasal cavity", "鼻腔", "skeletal", "#3E3A42", sphere((0, 1.593, 0.084), 0.0105, [0.8, 1.25, 0.4]))
+    # nose opening: pear-shaped, narrow at the top
+    part("nasal-aperture", "Nasal cavity", "鼻腔", "skeletal", "#3E3A42", lathe((0, 1.612, 0.084), (0, 1.578, 0.086), [0.003, 0.006, 0.009, 0.011, 0.009], [1, 1, 0.35]))
     pair("zygomatic", "Cheekbone (zygomatic)", "颧骨", "skeletal", BONE,
-         tube([(0.05, 1.602, 0.05), (0.062, 1.598, 0.025), (0.065, 1.6, -0.002), (0.062, 1.603, -0.018)], 0.0035, [0.006, 0.0045, 0.0035, 0.0035]))
+         tube([(0.046, 1.601, 0.04), (0.054, 1.599, 0.02), (0.057, 1.6, 0.0), (0.055, 1.603, -0.015)], 0.0028, [0.004, 0.0035, 0.003, 0.0028]))
     # teeth: one small crown each around the upper and lower arches
     def arch(y0, y1, a, b, z0):
         return [[(a * math.sin(t), y0, z0 + b * math.cos(t)), (a * math.sin(t), y1, z0 + b * math.cos(t))]
                 for t in [(-1.35 + 2.7 * k / 13) for k in range(14)]]
-    part("upper-teeth", "Teeth", "牙齿", "skeletal", "#F7F4EA", tubes(arch(1.556, 1.546, 0.029, 0.036, 0.047), 0.0034))
-    part("lower-teeth", "Teeth", "牙齿", "skeletal", "#F7F4EA", tubes(arch(1.536, 1.545, 0.027, 0.034, 0.045), 0.0032))
+    part("upper-teeth", "Teeth", "牙齿", "skeletal", "#F7F4EA", tubes(arch(1.553, 1.546, 0.025, 0.033, 0.048), 0.0028))
+    part("lower-teeth", "Teeth", "牙齿", "skeletal", "#F7F4EA", tubes(arch(1.538, 1.545, 0.023, 0.031, 0.046), 0.0026))
     # lower jaw: a thick U from the chin back to the angles, rising into the rami
     part("mandible", "Mandible", "下颌骨", "skeletal", BONE,
          sheet([(0.046, 1.536, 0.004), (0.04, 1.535, 0.042), (0.022, 1.534, 0.068), (0, 1.534, 0.078), (-0.022, 1.534, 0.068), (-0.04, 1.535, 0.042), (-0.046, 1.536, 0.004)],
@@ -260,7 +263,7 @@ def skeleton():
                (0, 0, 0.002), 0.008))
     part("chin-bone", "Mandible", "下颌骨", "skeletal", BONE, sphere((0, 1.508, 0.078), 0.011, [1.4, 0.8, 0.7]))
     pair("mandible-ramus", "Mandible", "下颌骨", "skeletal", BONE,
-         sheet([(0.05, 1.513, -0.004), (0.047, 1.534, 0.01)], [(0.055, 1.585, -0.014), (0.053, 1.575, 0.0)], (0.001, 0, 0), 0.009))
+         sheet([(0.05, 1.513, -0.004), (0.047, 1.534, 0.01)], [(0.055, 1.585, -0.014), (0.053, 1.575, 0.0)], (0.004, 0, 0), 0.009))
 
     # spine: body centre follows the S-curve; sizes grow downwards
     curve = [(1.585, -0.012), (1.49, -0.022), (1.40, -0.055), (1.26, -0.075), (1.12, -0.058), (1.02, -0.035), (0.965, -0.03)]
@@ -610,18 +613,24 @@ def skin():
                     (0, 1.55, 0.022, 0.058, 0.078, 2.3), (0, 1.575, 0.012, 0.064, 0.087, 2.4), (0, 1.6, 0.004, 0.068, 0.095, 2.3),
                     (0, 1.63, -0.002, 0.071, 0.099, 2.25), (0, 1.66, -0.008, 0.074, 0.1, 2.15), (0, 1.69, -0.012, 0.073, 0.096, 2.1),
                     (0, 1.715, -0.016, 0.066, 0.086, 2.0), (0, 1.733, -0.018, 0.054, 0.07, 2.0), (0, 1.744, -0.02, 0.038, 0.05, 2.0)]))
-    # nose: bridge → tip, nostril wings either side of the tip
-    s("nose", loft([(0, 1.632, 0.094, 0.005, 0.004), (0, 1.615, 0.1, 0.007, 0.007), (0, 1.6, 0.107, 0.009, 0.009), (0, 1.59, 0.109, 0.0095, 0.008),
-                    (0, 1.584, 0.104, 0.008, 0.006)]))
-    sp("nostril", sphere((0.009, 1.587, 0.1), 0.006, [1.0, 0.8, 1.2]))
-    # eyes: white ball, dark iris, upper lid over it
+    # nose: narrow bridge between the eyes, widening to the tip and the nostril wings, sunk into the face
+    s("nose", loft([(0, 1.636, 0.084, 0.006, 0.006), (0, 1.622, 0.089, 0.007, 0.008), (0, 1.607, 0.093, 0.009, 0.011),
+                    (0, 1.594, 0.094, 0.013, 0.014), (0, 1.586, 0.093, 0.0165, 0.013), (0, 1.58, 0.092, 0.012, 0.009)], square=2.2))
+    # eyes: ball sits in the face, lids wrap it top and bottom so only an almond of white shows
     for sx, side in ((1, "l"), (-1, "r")):
-        part(f"eye-{side}", "Eye", "眼睛", "skin", "#F4F1EC", sphere((sx * 0.031, 1.627, 0.077), 0.0125))
-        part(f"iris-{side}", "Eye", "眼睛", "skin", "#4A3B2F", sphere((sx * 0.031, 1.627, 0.0885), 0.0055, [1, 1, 0.35]))
-        part(f"eyelid-{side}", "Skin", "皮肤", "skin", SKIN,
-             loft([(sx * 0.017, 1.629, 0.084, 0.002, 0.003), (sx * 0.031, 1.636, 0.089, 0.004, 0.005), (sx * 0.045, 1.63, 0.083, 0.002, 0.003)]))
+        cx, cy, cz, r = sx * 0.031, 1.627, 0.0765, 0.0125
+        part(f"eye-{side}", "Eye", "眼睛", "skin", "#F4F1EC", sphere((cx, cy, cz), r))
+        part(f"iris-{side}", "Eye", "眼睛", "skin", "#5A4636", sphere((cx, cy, cz + r * 0.93), 0.0052, [1, 1, 0.3]))
+        part(f"pupil-{side}", "Eye", "眼睛", "skin", "#1E1A18", sphere((cx, cy, cz + r * 0.99), 0.0022, [1, 1, 0.3]))
+        # lids: arcs hugging the ball; the upper one covers more
+        up = [(cx + sx * r * 1.05 * math.cos(a), cy + r * 0.62 * math.sin(a) + 0.0015, cz + r * 1.02 * math.sin(a) * 0.55 + r * 0.55)
+              for a in [math.pi * k / 6 for k in range(7)]]
+        low = [(cx + sx * r * 1.0 * math.cos(a), cy - r * 0.55 * math.sin(a) - 0.001, cz + r * 0.5 + r * 0.45 * math.sin(a))
+               for a in [math.pi * k / 6 for k in range(7)]]
+        part(f"eyelid-{side}", "Skin", "皮肤", "skin", SKIN, tube(up, 0.0042, [0.002, 0.0042, 0.0048, 0.005, 0.0048, 0.0042, 0.002]))
+        part(f"eyelid-lower-{side}", "Skin", "皮肤", "skin", SKIN, tube(low, 0.003, [0.0015, 0.003, 0.0035, 0.0035, 0.0035, 0.003, 0.0015]))
         part(f"brow-{side}", "Eyebrow", "眉毛", "skin", "#6B5344",
-             loft([(sx * 0.013, 1.646, 0.092, 0.002, 0.003), (sx * 0.031, 1.651, 0.092, 0.0035, 0.004), (sx * 0.05, 1.646, 0.082, 0.002, 0.003)]))
+             loft([(sx * 0.014, 1.647, 0.09, 0.002, 0.003), (sx * 0.031, 1.652, 0.09, 0.003, 0.0035), (sx * 0.05, 1.647, 0.08, 0.0018, 0.0025)]))
     # lips: upper and lower, a little redder than skin
     part("lip-upper", "Lips", "嘴唇", "skin", "#D9968A",
          loft([(-0.021, 1.556, 0.092, 0.002, 0.003), (-0.01, 1.558, 0.098, 0.004, 0.005), (0.0, 1.557, 0.1, 0.0045, 0.005),
@@ -695,19 +704,26 @@ def bean(top, bottom, width, depth, sx, hilum=0.35):
 
 
 def organs():
-    # brain: each hemisphere a front-to-back loft (rx = half-width, rz = half-height); temporal lobe below; cerebellum sideways
+    # brain: each hemisphere a front-to-back loft (rx = half-width, rz = half-height), sized to sit inside the skull;
+    # temporal lobe below; cerebellum across the back
     brain = []
+
+    def scaled(shape, k=0.88, c=(0, 1.655, -0.012)):
+        """shrink a loft about the brain's centre so it clears the inside of the skull"""
+        cu = U(*c)
+        shape["sections"] = [[cu[n] + (q[n] - cu[n]) * k for n in range(3)] + [q[3] * k, q[4] * k] + q[5:] for q in shape["sections"]]
+        return shape
     for sx in (1, -1):
         hemi = []
-        for z, y, rx, ry in ((0.078, 1.652, 0.012, 0.016), (0.065, 1.66, 0.028, 0.034), (0.04, 1.672, 0.036, 0.046), (0.005, 1.68, 0.039, 0.05),
-                             (-0.03, 1.678, 0.039, 0.05), (-0.06, 1.668, 0.035, 0.044), (-0.083, 1.652, 0.026, 0.032), (-0.095, 1.645, 0.01, 0.014)):
-            hemi.append((sx * (0.004 + rx), y, z, rx, ry))
-        brain.append(loft(hemi))
-        brain.append(loft([(sx * 0.05, 1.628, 0.045, 0.008, 0.008), (sx * 0.056, 1.622, 0.03, 0.017, 0.016), (sx * 0.058, 1.622, 0.0, 0.019, 0.018),
-                           (sx * 0.054, 1.628, -0.03, 0.017, 0.016), (sx * 0.046, 1.64, -0.055, 0.008, 0.008)]))
-    brain.append(loft([(0.055, 1.605, -0.06, 0.012, 0.015), (0.03, 1.6, -0.068, 0.024, 0.026), (0.0, 1.603, -0.066, 0.022, 0.022),
-                       (-0.03, 1.6, -0.068, 0.024, 0.026), (-0.055, 1.605, -0.06, 0.012, 0.015)]))
-    brain.append(tube([(0, 1.64, -0.018), (0, 1.605, -0.028), (0, 1.565, -0.034)], 0.011, [0.014, 0.011, 0.009]))
+        for z, y, rx, ry in ((0.066, 1.654, 0.017, 0.022), (0.056, 1.661, 0.026, 0.033), (0.035, 1.671, 0.031, 0.041), (0.005, 1.678, 0.033, 0.045),
+                             (-0.028, 1.676, 0.033, 0.045), (-0.055, 1.667, 0.03, 0.04), (-0.074, 1.654, 0.024, 0.031), (-0.083, 1.648, 0.016, 0.02)):
+            hemi.append((sx * (0.003 + rx), y, z, rx, ry))
+        brain.append(scaled(loft(hemi)))
+        brain.append(scaled(loft([(sx * 0.044, 1.628, 0.04, 0.007, 0.007), (sx * 0.049, 1.622, 0.026, 0.014, 0.014), (sx * 0.051, 1.622, 0.0, 0.016, 0.016),
+                           (sx * 0.048, 1.628, -0.026, 0.014, 0.014), (sx * 0.041, 1.638, -0.048, 0.007, 0.007)])))
+    brain.append(scaled(loft([(0.048, 1.605, -0.055, 0.01, 0.013), (0.026, 1.601, -0.062, 0.021, 0.022), (0.0, 1.603, -0.06, 0.019, 0.019),
+                       (-0.026, 1.601, -0.062, 0.021, 0.022), (-0.048, 1.605, -0.055, 0.01, 0.013)])))
+    brain.append(tube([(0, 1.64, -0.018), (0, 1.605, -0.028), (0, 1.565, -0.034)], 0.011, [0.013, 0.011, 0.009]))
     organ("brain", "#E8A0B4", (0, 1.665, -0.01), brain, ["Brain", "脑"])
 
     # heart: base (upper right, back) to apex (lower left, front); flattened front-to-back; ventricles bulge low

@@ -33,7 +33,7 @@ extension Illustrations {
             s.profileNote = Bilingual("Baby under 3 months with 38 °C or more: see a doctor now. Any baby: fast or hard breathing, not feeding, few wet nappies, very sleepy → urgent care.",
                                       "3 个月以下婴儿体温 ≥38 °C：立即就医。任何婴儿出现呼吸急促费力、拒奶、尿布很少湿、异常嗜睡 → 急诊。")
             return s.rebased(["kid": 1])
-        case .child:
+        case .toddler, .child:
             s.profileNote = Bilingual("Children: never give aspirin. Dose paracetamol or ibuprofen by weight. Flu vaccine every year from 6 months.",
                                       "儿童：禁用阿司匹林。对乙酰氨基酚或布洛芬按体重给药。6 月龄起每年接种流感疫苗。")
             return s.rebased(["kid": 1])
@@ -186,7 +186,7 @@ extension Illustrations {
             s.profileNote = Bilingual("Babies: wheeze under 1 is often bronchiolitis from a virus — see a doctor. Inhalers go through a spacer with a soft face mask.",
                                       "婴儿：1 岁内喘息多为病毒性毛细支气管炎——需就医。吸入药要用带软面罩的储雾罐。")
             return s.rebased(["kid": 1])
-        case .child:
+        case .toddler, .child:
             s.profileNote = Bilingual("Children: always use a spacer; under about 5, one with a face mask held on for 5–6 breaths per puff.",
                                       "儿童：一定要用储雾罐；约 5 岁以下用带面罩的，每喷扣紧面罩呼吸 5–6 次。")
             return s.rebased(["kid": 1])
@@ -311,7 +311,7 @@ extension Illustrations {
             s.profileNote = Bilingual("Pregnant: hormones relax the valve and the growing womb pushes on the stomach — heartburn is very common. Small meals; ask before antacids.",
                                       "孕妇：激素使括约肌松弛，增大的子宫挤压胃——烧心很常见。少食多餐；用抗酸药前先咨询医生。")
             return s.rebased(["pregnant": 1])
-        case .child, .adult: break
+        case .toddler, .child, .adult: break
         }
         return s
     }

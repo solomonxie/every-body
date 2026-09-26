@@ -13,7 +13,7 @@ extension Illustrations {
     static func bloodPressure(for p: Profile) -> Scenario {
         var s = bloodPressure
         s.profileNote = switch p.age {
-        case .infant, .child: Bilingual("Children use a small cuff and age-, sex- and height-based percentile charts, not the adult numbers below. A child's normal is lower.",
+        case .infant, .toddler, .child: Bilingual("Children use a small cuff and age-, sex- and height-based percentile charts, not the adult numbers below. A child's normal is lower.",
                                         "儿童用小号袖带，按年龄、性别、身高的百分位判断，不用下面的成人标准；儿童正常值更低。")
         case .senior: Bilingual("65+: stiffer arteries push the top number up. Stand up slowly — dizziness on standing (orthostatic drop) is common.",
                                 "65 岁以上：血管变硬使收缩压升高。起身要慢——站起时头晕（体位性低血压）很常见。")
