@@ -9,8 +9,11 @@ enum Catalog {
 
     static func system(_ id: String) -> BodySystem? { systems.first { $0.id == id } }
     static func chart(_ id: String) -> ReflexChart? { charts.charts.first { $0.id == id } }
-    static func part(_ id: String) -> SchematicPart? { body.parts.first { $0.id == id } }
-    static func organ(_ id: String) -> Organ? { body.organs.first { $0.id == id } }
+    private static let partsByID = Dictionary(body.parts.map { ($0.id, $0) }) { a, _ in a }
+    private static let organsByID = Dictionary(body.organs.map { ($0.id, $0) }) { a, _ in a }
+
+    static func part(_ id: String) -> SchematicPart? { partsByID[id] }
+    static func organ(_ id: String) -> Organ? { organsByID[id] }
     static func joint(_ id: String) -> Joint? { body.joints.first { $0.id == id } }
 
     private static func load<T: Decodable>(_ name: String) -> T {
