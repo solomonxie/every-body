@@ -18,3 +18,4 @@ venv/
 
 # local env files (team id, bundle id)
 .env*.local
+.claude/worktrees/

@@ -9,7 +9,6 @@ struct ChartScreen: View {
     @Environment(Settings.self) private var settings
     @State private var faceID = ""
     @State private var side: Side = .right
-    @State private var showLabels = true
     @State private var selected: ReflexZone?
     @State private var effectVisible = false
     @State private var zoom: CGFloat = 1
@@ -35,12 +34,14 @@ struct ChartScreen: View {
                     bodyPane
                 }
             }
+            zoneList
             card
         }
         .navigationTitle(settings.name(chart.title, chart.titleZh))
         .profileToolbar()
         .navigationBarTitleDisplayMode(.inline)
         .onAppear(perform: setUp)
+        .onChange(of: settings.age) { inset.setAge(settings.age) }
     }
 
     private var controls: some View {
@@ -56,12 +57,7 @@ struct ChartScreen: View {
                 }
                 .pickerStyle(.segmented)
             }
-            Button { showLabels.toggle() } label: {
-                Image(systemName: showLabels ? "textformat" : "textformat.alt")
-                    .frame(width: 32, height: 32)
-                    .background(showLabels ? Color.brand.opacity(0.25) : Color.secondary.opacity(0.12), in: .rect(cornerRadius: 8))
-            }
-            .accessibilityLabel(settings.t("Labels", "标注"))
+
         }
     }
 
@@ -70,7 +66,7 @@ struct ChartScreen: View {
             ZStack(alignment: .bottomTrailing) {
                 GeometryReader { geo in
                     ChartCanvas(chart: chart, face: face, side: side, zones: zones, selectedID: selected?.id,
-                                showLabels: showLabels, zh: settings.zh, flagged: Set(zones.filter { Cautions.avoid($0.id, for: settings.profile) }.map(\.id)), zoom: zoom, pan: pan)
+                                showLabels: false, zh: settings.zh, flagged: Set(zones.filter { Cautions.avoid($0.id, for: settings.profile) }.map(\.id)), zoom: zoom, pan: pan)
                         .contentShape(.rect)
                         .gesture(SpatialTapGesture().onEnded { value in
                             let hit = ChartCanvas.hitTest(value.location, size: geo.size, chart: chart, face: face, side: side,
@@ -93,8 +89,6 @@ struct ChartScreen: View {
                         .padding(8)
                 }
             }
-            legend
-                .padding(.bottom, 6)
         }
     }
 
@@ -120,19 +114,41 @@ struct ChartScreen: View {
         .padding(.vertical, 4)
     }
 
-    private var legend: some View {
+    /// Every zone by name; tapping one lights it on the chart, tapping the chart scrolls here.
+    private var zoneList: some View {
         let groups = Array(Set(zones.map(\.group))).sorted()
-        return FlowLayout(spacing: 8) {
-            ForEach(groups, id: \.self) { g in
-                if let info = Catalog.charts.groups[g] {
-                    HStack(spacing: 3) {
-                        Circle().fill(Color(hex: info.color)).frame(width: 8, height: 8)
-                        Text(settings.name(info.label, info.labelZh)).font(.caption2).foregroundStyle(.secondary)
+        return ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(groups, id: \.self) { g in
+                        let info = Catalog.charts.groups[g]
+                        let color = Color(hex: info?.color ?? "#999999")
+                        FlowLayout(spacing: 6) {
+                            ForEach(zones.filter { $0.group == g }) { zone in
+                                let on = zone.id == selected?.id
+                                Button { press(zone) } label: {
+                                    HStack(spacing: 4) {
+                                        if Cautions.avoid(zone.id, for: settings.profile) { Text("⚠").font(.caption2) }
+                                        Circle().fill(on ? .white : color).frame(width: 7, height: 7)
+                                        Text(settings.name(zone.name, zone.nameZh)).font(.caption)
+                                    }
+                                    .padding(.horizontal, 9).padding(.vertical, 5)
+                                    .background(on ? color : color.opacity(0.14), in: .capsule)
+                                    .foregroundStyle(on ? .white : .primary)
+                                }
+                                .buttonStyle(.plain)
+                                .id(zone.id)
+                            }
+                        }
                     }
                 }
+                .padding(.horizontal, 12).padding(.vertical, 8)
+            }
+            .frame(height: 130)
+            .onChange(of: selected?.id) { _, id in
+                if let id { withAnimation { proxy.scrollTo(id, anchor: .center) } }
             }
         }
-        .padding(.horizontal, 12)
     }
 
     private var card: some View {
@@ -166,6 +182,7 @@ struct ChartScreen: View {
         side = initialSide ?? .right
         Task {
             await BodyScene.prepare()
+            inset.setAge(settings.age)
             inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, points: [], flowStops: [])
             inset.setLayers([.skin, .organs])
             if let id = initialZone, let zone = face.zones.first(where: { $0.id == id }) { press(zone) }
@@ -238,10 +255,10 @@ struct ChartCanvas: View {
                                    style: StrokeStyle(lineWidth: isSelected ? 2.5 : warn ? 2 : 1.2, dash: warn && !isSelected ? [3, 2] : []))
                 }
             }
-            if showLabels {
+            do {
                 var labels = ctx
                 labels.transform = view
-                for zone in zones {
+                for zone in zones where showLabels || zone.id == selectedID {
                     guard let e = zone.shapes.first else { continue }
                     let below = zone.point == true || e.rx < 10
                     let x = side == face.drawnSide ? e.cx : chart.mirrorWidth - e.cx
@@ -249,7 +266,19 @@ struct ChartCanvas: View {
                     let text = Text(zh ? zone.label ?? String(zone.nameZh.split(separator: "·").first ?? "") : Self.shortName(zone.name))
                         .font(.system(size: chart.labelSize, weight: zone.id == selectedID ? .bold : .regular))
                         .foregroundStyle(Self.ink)
-                    labels.draw(text, at: CGPoint(x: x, y: y), anchor: .center)
+                    if zone.id == selectedID {
+                        // selected name sits on a white tag so it reads over the zones
+                        let resolved = labels.resolve(Text(zh ? zone.nameZh : zone.name)
+                            .font(.system(size: chart.labelSize * 1.15, weight: .bold)).foregroundStyle(Self.ink))
+                        let size = resolved.measure(in: CGSize(width: 400, height: 100))
+                        let at = CGPoint(x: x, y: e.cy - e.ry - size.height)
+                        labels.fill(Path(roundedRect: CGRect(x: at.x - size.width / 2 - 4, y: at.y - size.height / 2 - 2,
+                                                             width: size.width + 8, height: size.height + 4), cornerRadius: 4),
+                                    with: .color(.white.opacity(0.92)))
+                        labels.draw(resolved, at: at, anchor: .center)
+                    } else {
+                        labels.draw(text, at: CGPoint(x: x, y: y), anchor: .center)
+                    }
                 }
             }
         }
