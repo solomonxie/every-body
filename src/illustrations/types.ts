@@ -8,7 +8,10 @@ export type ScrubControl = { param: string; label: string; min: number; max: num
 
 export type TryControl =
   | { mode: 'scrub'; scrubs: ScrubControl[] }
-  | { mode: 'rhythm'; target: number; minRate: number; maxRate: number }
+  | { mode: 'rhythm'; target: number; minRate: number; maxRate: number; label?: string }
+  /** hold the button: `param` → 1 while held; `progress` fills over `seconds` of total hold */
+  | { mode: 'hold'; param: string; progress: string; seconds: number; label: string }
+  | { mode: 'compare'; param: string; options: { label: string; value: number }[] }
   | { mode: 'drag' };
 
 export interface Step {
@@ -28,7 +31,7 @@ export type SceneProps = { params: Params; t: number };
 
 export type DragHandler = (point: { x: number; y: number }, params: Params) => Params;
 
-export type IllustrationGroup = 'bones' | 'first-aid' | 'blood';
+export type IllustrationGroup = 'bones' | 'first-aid' | 'blood' | 'illness' | 'pregnancy';
 
 export interface Scenario {
   id: string;
@@ -41,6 +44,8 @@ export interface Scenario {
   Scene: ComponentType<SceneProps>;
   /** viewBox is 0 0 360 300; the point is in viewBox units */
   onDrag?: DragHandler;
+  /** extra param changes on each rhythm tap */
+  onTap?: (params: Params) => Params;
   sources: string[];
 }
 

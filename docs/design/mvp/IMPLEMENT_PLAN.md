@@ -77,7 +77,7 @@ One data-driven player for every Illustration; must exist before any topic is au
 ## Phase 8: Interactivity — Try
 The six primitives, shared by Illustrations and by parts/points/flow in the Viewer.
 
-- [ ] T8.1 `TryControl` modes: scrub, rhythm, hold, compare (+ feedback line) (in-progress: scrub + rhythm done) — see `uiux/components.md` → TryControl — depends: T7.2
+- [x] T8.1 `TryControl` modes: scrub, rhythm, hold, compare (+ feedback line) — see `uiux/components.md` → TryControl — depends: T7.2
 - [x] T8.2 In-scene drag-to-target (handle, ghost, snap, arc guide) — see `uiux/illustrations.md` → Watch ⇄ Try — depends: T7.2
 - [ ] T8.3 Compare split view (two model states side by side / drag split) — see `scenario-format.md` → Compare — depends: T7.2
 - [ ] T8.4 Follow camera (ride a particle) — see `src/components/canvas/` — depends: T5.4
@@ -89,6 +89,7 @@ Pure data + review per group; groups are independent — one agent each. Every t
 watch + try steps, EN/中 captions, cited sources, clinician sign-off.
 
 - [x] T9.0 First topics: shoulder dislocation (drag), CPR (rhythm), blood sugar / pressure / fats (scrub, math models) — see `src/illustrations/scenes/` — depends: T7.4
+- [x] T9.0b More topics: fracture setting & healing, choking, severe bleeding, burns, stroke, heart attack, cold vs flu, fetal growth, labour — see `src/illustrations/scenes/` — depends: T8.1
 - [ ] T9.1 Bones & setting: dislocations, fracture + casting, healing — see `uiux/illustrations.md` → Per-topic try — depends: T7.3, T8.2
 - [ ] T9.2 First aid ×7 (ILCOR-based) + emergency-number reminder — see `uiux/illustrations.md` — depends: T7.3, T8.1, T8.2
 - [ ] T9.3 Blood sugar / pressure / fats — see `uiux/illustrations.md` → Metric topic — depends: T7.3, T8.1

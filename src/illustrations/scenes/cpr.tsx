@@ -20,6 +20,12 @@ function CprScene({ params, t }: SceneProps) {
 
   return (
     <G>
+      {s >= 1 && s !== 3 && (
+        <G>
+          <Circle cx={160} cy={70} r={16} fill="#F2C9A5" stroke="#C9A58A" strokeWidth={2} />
+          <Path d={`M 160 86 L 172 130 L 196 ${FLOOR - 4}`} stroke="#6E6E80" strokeWidth={10} fill="none" strokeLinecap="round" />
+        </G>
+      )}
       <Line x1={0} y1={FLOOR} x2={360} y2={FLOOR} stroke="#BBB" strokeWidth={2} />
       <Circle cx={58} cy={224} r={20} fill="#F2C9A5" stroke="#C9A58A" strokeWidth={2} />
       <Path
@@ -40,8 +46,6 @@ function CprScene({ params, t }: SceneProps) {
 
       {s >= 1 && s !== 3 && (
         <G>
-          <Circle cx={160} cy={70} r={16} fill="#F2C9A5" stroke="#C9A58A" strokeWidth={2} />
-          <Path d={`M 160 86 L 172 130 L 196 ${FLOOR - 4}`} stroke="#6E6E80" strokeWidth={10} fill="none" strokeLinecap="round" />
           <Line x1={158} y1={100} x2={153} y2={150 + dip} stroke="#F2C9A5" strokeWidth={8} strokeLinecap="round" />
           <Rect x={138} y={150 + dip} width={30} height={14} rx={6} fill="#F2C9A5" stroke="#C9A58A" />
           <Rect x={140} y={160 + dip} width={28} height={12} rx={6} fill="#EBB98F" stroke="#C9A58A" />

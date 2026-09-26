@@ -8,11 +8,20 @@ import Svg from 'react-native-svg';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
-import { Rhythm, Scrubs } from '@/illustrations/controls';
+import { Compare, Hold, Rhythm, Scrubs } from '@/illustrations/controls';
 import { createDragGesture, type PointHandler } from '@/illustrations/drag-gesture';
 import { findIllustration, ILLUSTRATIONS } from '@/illustrations';
 import { SCENE_H, SCENE_W, type Scenario } from '@/illustrations/types';
 import { usePlayer } from '@/illustrations/use-player';
+
+/** stable function identity that always calls the latest closure */
+function useCallbackRef<A extends unknown[]>(fn: (...args: A) => void) {
+  const ref = useRef(fn);
+  useEffect(() => {
+    ref.current = fn;
+  });
+  return useMemo(() => (...args: A) => ref.current(...args), []);
+}
 
 export default function IllustrationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -42,8 +51,15 @@ function Player({ scenario }: { scenario: Scenario }) {
   // eslint-disable-next-line react-hooks/refs
   const gesture = useMemo(() => createDragGesture(dragRef), []);
 
+  const holdTry = step.try?.mode === 'hold' ? step.try : undefined;
+  const holdChange = useCallbackRef((holding: boolean, progress: number) => {
+    if (!holdTry) return;
+    easeParams({ [holdTry.param]: holding ? 1 : 0 });
+    setParams({ [holdTry.progress]: progress });
+  });
+
   const tapCompression = (rate: number) => {
-    setParams({ taps: (params.taps ?? 0) + 1, rate });
+    setParams({ taps: (params.taps ?? 0) + 1, rate, ...scenario.onTap?.(params) });
     pulse('press');
   };
 
@@ -88,7 +104,17 @@ function Player({ scenario }: { scenario: Scenario }) {
 
             {step.try?.mode === 'scrub' && <Scrubs scrubs={step.try.scrubs} params={params} onChange={easeParams} />}
             {step.try?.mode === 'rhythm' && (
-              <Rhythm minRate={step.try.minRate} maxRate={step.try.maxRate} onTap={tapCompression} />
+              <Rhythm minRate={step.try.minRate} maxRate={step.try.maxRate} label={step.try.label} onTap={tapCompression} />
+            )}
+            {step.try?.mode === 'hold' && (
+              <Hold key={stepIndex} label={step.try.label} seconds={step.try.seconds} onChange={holdChange} />
+            )}
+            {step.try?.mode === 'compare' && (
+              <Compare
+                options={step.try.options}
+                value={params[step.try.param] ?? 0}
+                onChange={(value) => easeParams({ [(step.try as { param: string }).param]: value })}
+              />
             )}
             {step.try?.mode === 'drag' && !solved && (
               <ThemedText type="small" themeColor="textSecondary">
