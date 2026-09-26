@@ -14,8 +14,8 @@ extension Illustrations {
         steps: [
             .watch("A healthy heart artery: smooth lining, blood flows freely. The blood test (lipid panel) is in range.",
                    "健康的冠状动脉：内壁光滑，血流通畅。血脂化验在正常范围。", set: ["ldl": 0.2, "years": 0, "rupture": 0]),
-            .watch("Too much LDL (“bad” cholesterol) in the blood seeps into the artery wall, gets stuck and inflames it.",
-                   "血液中低密度脂蛋白（“坏”胆固醇）过多，渗入动脉壁，滞留并引发炎症。", set: ["ldl": 0.9, "years": 8]),
+            .watch("Too much LDL (“bad” cholesterol) in the blood seeps under the artery lining, gets stuck and inflames it.",
+                   "血液中低密度脂蛋白（“坏”胆固醇）过多，渗入动脉内膜下，滞留并引发炎症。", set: ["ldl": 0.9, "years": 8]),
             .watch("Over decades it builds a fatty plaque under a thin cap. The channel narrows — usually with no symptoms.",
                    "几十年间形成粥样斑块，表面只有一层薄帽，管腔变窄——通常没有任何症状。", set: ["years": 28]),
             .tryIt("Drag the years. Halve the radius and flow drops to 1/16 — flow ∝ r⁴.", "拖动年数。半径减半，血流降为 1/16——血流与半径的四次方成正比。",
@@ -26,7 +26,7 @@ extension Illustrations {
                    TryStep(mode: .scrub([Scrub(param: "ldl", label: "LDL 低密度脂蛋白", min: 0, max: 1)]), success: { ldlLevel($0) < 3.4 },
                            ok: Bilingual("LDL in range — slower build-up.", "LDL 达标——斑块增长减慢。"), demo: ["ldl": 0.25])),
             .watch("If the cap cracks, a clot forms on it within minutes and can block the artery — a heart attack or stroke. Call 120/911.",
-                   "斑块帽破裂，几分钟内形成血栓，完全堵塞血管——心梗或中风。立即拨打 120。", set: ["ldl": 1, "years": 36, "rupture": 1]),
+                   "斑块帽破裂，几分钟内形成血栓，完全堵塞血管——心梗或中风。立即拨打 120。", set: ["ldl": 1, "years": 30, "rupture": 1]),
         ],
         draw: { s, p, t in drawBloodFats(&s, p, t) },
         sources: ["WHO cardiovascular diseases fact sheet; 2023 Chinese lipid management guideline (LDL-C < 3.4 mmol/L); Poiseuille’s law"]
@@ -52,106 +52,155 @@ extension Illustrations {
     }
 
     @MainActor private static func drawBloodFats(_ s: inout Sketch, _ p: Params, _ t: Double) {
-        let pl = plaque(p), flow = fatsFlow(p), ldl = ldlLevel(p), ruptured = p[v: "rupture"] > 0.5
-        let ink = hex("#555555"), fat = hex("#F2C94C"), lipo = hex("#E8A21B")
-        let mid = 184.0, r = 44.0, lumenTop = mid - r, lumenBottom = mid + r
-        /// top edge of the channel: an eccentric plaque grows down from the upper wall
-        func edge(_ x: Double) -> Double { let d = (x - 180) / 80; return lumenTop + 2 * r * pl * exp(-d * d * 2.2) }
+        let pl = plaque(p), flow = fatsFlow(p), ldl = ldlLevel(p), ruptured = p[v: "rupture"] > 0.5, ldlP = p[v: "ldl"]
+        let lipo = hex("#E8A21B")
 
-        // wall layers, top and bottom: intima · media · adventitia
-        for (y, dir) in [(lumenTop, -1.0), (lumenBottom, 1.0)] {
-            s.rect(0, dir < 0 ? y - 22 : y + 12, 360, 10, fill: hex("#F3DCC8"))
-            s.rect(0, dir < 0 ? y - 12 : y + 4, 360, 8, fill: hex("#D9707A"))
-            s.rect(0, dir < 0 ? y - 4 : y, 360, 4, fill: hex("#F2C4CC"))
+        // top left: the lab report
+        s.card(8, 6, 150, 100)
+        s.caption("Lipid panel · mmol/L", "血脂化验 · mmol/L", 16, 19)
+        let tg = 1.0 + 1.2 * ldlP, hdl = 1.3, tc = ldl + hdl + tg / 2.2
+        let rows: [(String, String, Double, String, Bool)] = [
+            ("LDL-C", "低密度脂蛋白", ldl, "< 3.4", ldl >= 3.4), ("Total", "总胆固醇", tc, "< 5.2", tc >= 5.2),
+            ("HDL-C", "高密度脂蛋白", hdl, "≥ 1.0", false), ("TG", "甘油三酯", tg, "< 1.7", tg >= 1.7),
+        ]
+        for (i, row) in rows.enumerated() {
+            let y = 36 + Double(i) * 17
+            if i > 0 { s.line(16, y - 12, 150, y - 12, stroke: Tone.rule, lw: 0.6) }
+            s.label(row.0, row.1, 16, y, size: 8, color: Tone.ink, bold: i == 0)
+            s.text(String(format: "%.1f", row.2), 112, y, size: 9.5, color: row.4 ? Tone.red : Tone.ink, anchor: .end, bold: true)
+            if row.4 { s.text("↑", 118, y, size: 8.5, color: Tone.red, bold: true) }
+            s.text(row.3, 150, y, size: 6.5, color: Tone.faint, anchor: .end)
         }
-        var channel = Path(), core = Path()
-        channel.move(to: CGPoint(x: 0, y: edge(0)))
-        core.move(to: CGPoint(x: 0, y: lumenTop))
-        for i in 0...36 {
-            let x = Double(i) * 10
-            channel.addLine(to: CGPoint(x: x, y: edge(x)))
-            core.addLine(to: CGPoint(x: x, y: edge(x)))
+
+        // top middle: age, narrowing, flow
+        s.card(164, 6, 88, 100)
+        let age = p[v: "age0"] + p[v: "years"]
+        s.caption("Age", "年龄", 172, 19)
+        s.text("\(Int(age.rounded()))", 172, 42, size: 20, color: Tone.ink, bold: true)
+        let narrowColor = pl > 0.5 ? Tone.red : pl > 0.2 ? Tone.amber : Tone.green
+        s.label("narrowed", "狭窄", 172, 60, size: 7.5, color: Tone.sub)
+        s.text("\(Int((pl * 100).rounded()))%", 244, 60, size: 8.5, color: narrowColor, anchor: .end, bold: true)
+        s.meterBar(172, 64, 72, pl, color: narrowColor, h: 5)
+        let flowColor = flow < 0.3 ? Tone.red : flow < 0.7 ? Tone.amber : Tone.green
+        s.label("blood flow", "血流", 172, 84, size: 7.5, color: Tone.sub)
+        s.text("\(Int((flow * 100).rounded()))%", 244, 84, size: 8.5, color: flowColor, anchor: .end, bold: true)
+        s.meterBar(172, 88, 72, flow, color: flowColor, h: 5)
+
+        // top right: the heart, and which artery we are looking into
+        let hk = 0.42, ho = CGPoint(x: 268, y: 10)
+        s.group(translate: ho, scale: hk) { g in
+            g.heartFront(zone: ruptured ? 1 : 0, dead: 0, clot: ruptured, t: t)
         }
-        channel.addLine(to: CGPoint(x: 360, y: lumenBottom)); channel.addLine(to: CGPoint(x: 0, y: lumenBottom)); channel.closeSubpath()
-        core.addLine(to: CGPoint(x: 360, y: lumenTop)); core.closeSubpath()
-        s.shape(channel, fill: hex("#F7DADA"))
+        let spot = CGPoint(x: ho.x + 124 * hk, y: ho.y + 130 * hk)
+        let mid = 184.0, r = 38.0, lumenTop = mid - r, lumenBottom = mid + r
+        s.circle(spot.x, spot.y, 6, stroke: Tone.ink, lw: 1.4)
+        s.circle(spot.x, spot.y, 6, stroke: .white, lw: 0.6)
+
+        // the artery, cut lengthwise: outer coat · muscle · lining; plaque grows under the lining of the upper wall
+        func edge(_ x: Double) -> Double { let d = (x - 180) / 78; return lumenTop + 2 * r * pl * exp(-d * d * 2.2) }
+        var sec = s.clipped(8, lumenTop - 28, 344, 2 * r + 56)
+        sec.rect(8, lumenTop - 28, 344, 2 * r + 56, fill: hex("#F3DCC8"))
+        for (y0, dir) in [(lumenTop, -1.0), (lumenBottom, 1.0)] {
+            let media = dir < 0 ? y0 - 16 : y0 + 4
+            sec.shade(Path(CGRect(x: 8, y: media, width: 344, height: 12)), hex("#D86A74"), hex("#B84B56"), vertical: true)
+            for k in 0..<30 { sec.path("M \(10 + Double(k) * 12) \(media + 3) q 5 3 10 0 M \(14 + Double(k) * 12) \(media + 8) q 5 3 10 0", stroke: hex("#E99AA2"), lw: 0.6) }
+            sec.rect(8, dir < 0 ? y0 - 4 : y0, 344, 4, fill: hex("#F6D0D5"))
+            for k in 0..<22 { sec.path("M \(12 + Double(k) * 16) \(dir < 0 ? y0 - 20 : y0 + 20) q 4 -2 8 0", stroke: hex("#E2BFA4"), lw: 0.7) }
+        }
+        var channel = Path(), core = Path(), cap = Path()
+        channel.move(to: CGPoint(x: 8, y: edge(8)))
+        core.move(to: CGPoint(x: 8, y: lumenTop))
+        for i in 0...86 {
+            let x = 8 + Double(i) * 4, pt = CGPoint(x: x, y: edge(x))
+            channel.addLine(to: pt); core.addLine(to: pt)
+            if i == 0 { cap.move(to: pt) } else { cap.addLine(to: pt) }
+        }
+        channel.addLine(to: CGPoint(x: 352, y: lumenBottom)); channel.addLine(to: CGPoint(x: 8, y: lumenBottom)); channel.closeSubpath()
+        core.addLine(to: CGPoint(x: 352, y: lumenTop)); core.closeSubpath()
+        sec.shade(channel, hex("#F8E0E0"), hex("#F0C8CA"), vertical: true)
         if pl > 0.01 {
-            s.shape(core, fill: fat)
-            // foam cells: immune cells stuffed with cholesterol
-            for i in 0..<Int((pl * 14).rounded()) {
-                let x = 180 + (Double(i) * 0.61).wrap(1) * 110 - 55, top = lumenTop + 3
-                let y = top + ((Double(i) * 0.37).wrap(1) * 0.8 + 0.1) * (edge(x) - top)
-                if edge(x) - top > 8 { s.circle(x, y, 3.5, fill: hex("#F7E3A1"), stroke: hex("#D9A441"), lw: 0.8) }
+            sec.shade(core, hex("#F6D77A"), hex("#E7B548"), vertical: true)
+            // cholesterol crystals and foam cells (immune cells stuffed with fat)
+            for i in 0..<Int((pl * 18).rounded()) {
+                let x = 180 + ((Double(i) * 0.618).wrap(1) - 0.5) * 120, top = lumenTop + 2
+                let room = edge(x) - top
+                guard room > 9 else { continue }
+                let y = top + 3 + (Double(i) * 0.37).wrap(1) * (room - 9)
+                if i % 3 == 0 {
+                    sec.path("M \(x - 4) \(y) L \(x + 4) \(y - 2) L \(x + 3) \(y + 1) Z", fill: hex("#FFF6D8"), stroke: hex("#D9B25A"), lw: 0.5)
+                } else {
+                    sec.circle(x, y, 3.4, fill: hex("#FBEBB5"), stroke: hex("#D9A441"), lw: 0.7)
+                    for k in 0..<3 { sec.circle(x - 1.2 + Double(k), y - 0.6 + Double(k % 2), 0.7, fill: hex("#E7B548")) }
+                }
             }
-            var cap = Path()
-            for i in 0...36 { let x = Double(i) * 10, pt = CGPoint(x: x, y: edge(x)); if i == 0 { cap.move(to: pt) } else { cap.addLine(to: pt) } }
-            s.shape(cap, stroke: hex("#F4EDE0"), lw: 3)
+            sec.shape(cap, stroke: hex("#F4E8E0"), lw: 3.2 - 1.2 * pl)
+            sec.shape(cap, stroke: hex("#E2C7BE"), lw: 0.6)
+        } else {
+            sec.shape(cap, stroke: hex("#F6D0D5"), lw: 1)
         }
-        // blood: red cells, and LDL particles — some slip into the wall
-        for i in 0..<20 {
-            let x = (Double(i) * 41 + t * 60 * (ruptured ? 0 : 0.15 + flow)).wrap(380) - 10
+        // blood: red cells, and LDL particles; some slip under the lining
+        let speed = ruptured ? 0 : 0.15 + flow
+        for i in 0..<18 {
+            let x = (Double(i) * 41 + t * 60 * speed).wrap(370) - 5
             let u = (Double(i) * 0.37).wrap(1) * 0.8 + 0.1
-            s.ellipse(x, edge(x) + u * (lumenBottom - edge(x)), 5.5, 3.2, fill: hex("#C8323C"))
+            let y = edge(x) + u * (lumenBottom - edge(x))
+            sec.ellipse(x, y, 5.5, 3.2, fill: hex("#C8323C"))
+            sec.ellipse(x, y, 2.4, 1.2, fill: hex("#A82834"))
         }
-        let n = Int((p[v: "ldl"] * 12).rounded())
+        let n = Int((ldlP * 12).rounded())
         for i in 0..<n {
-            let x = (Double(i) * 67 + t * 40 * (ruptured ? 0 : 0.15 + flow)).wrap(380) - 10
+            let x = (Double(i) * 67 + t * 40 * speed).wrap(370) - 5
             let u = (Double(i) * 0.53).wrap(1) * 0.8 + 0.1
-            s.circle(x, edge(x) + u * (lumenBottom - edge(x)), 2.6, fill: lipo)
+            sec.circle(x, edge(x) + u * (lumenBottom - edge(x)), 2.6, fill: lipo, stroke: .white, lw: 0.5)
         }
-        if p[v: "ldl"] > 0.5 && !ruptured {
+        if ldlP > 0.5 && !ruptured {
             for i in 0..<3 {
-                let u = (t * 0.35 + Double(i) / 3).wrap(1), x = 150 + Double(i) * 28
-                s.circle(x, edge(x) + 14 - u * 20, 2.6, fill: lipo, opacity: 1 - u * 0.5)
+                let u = (t * 0.35 + Double(i) / 3).wrap(1), x = 140 + Double(i) * 38
+                sec.circle(x, edge(x) + 14 - u * 22, 2.6, fill: lipo, stroke: .white, lw: 0.5, opacity: 1 - u * 0.5)
             }
         }
         if ruptured {
-            s.path("M 172 \(edge(172) - 2) L 178 \(edge(178) + 4) L 184 \(edge(184) - 3)", stroke: hex("#7A1F2B"), lw: 2)
-            let cy = (edge(180) + lumenBottom) / 2, ry = (lumenBottom - edge(180)) / 2 + 1
-            s.ellipse(184, cy, 44, ry, fill: hex("#7A1F2B"))
-            for k in 0..<5 { s.ellipse(154 + Double(k) * 15, cy + (k % 2 == 0 ? -2 : 3), 5, 3, fill: hex("#A8283A")) }
-            for k in 0..<4 { s.line(146 + Double(k) * 18, cy - ry + 2, 160 + Double(k) * 18, cy + ry - 2, stroke: hex("#E9D8C0"), lw: 0.8) }
-            s.label("clot", "血栓", 186, (edge(180) + lumenBottom) / 2 + 4, size: 10, color: .white, anchor: .middle, bold: true)
+            // cracked cap, clot (fibrin mesh, platelets, trapped red cells) filling the channel
+            let cy = lumenBottom - 8.0
+            sec.path("M 168 \(edge(168) - 2) L 175 \(edge(175) + 5) L 181 \(edge(181) - 3) L 187 \(edge(187) + 4)", stroke: hex("#7A1F2B"), lw: 2)
+            var clot = Path()
+            clot.move(to: CGPoint(x: 160, y: edge(160) + 1))
+            for i in 1...30 { let x = 160 + Double(i) * 3; clot.addLine(to: CGPoint(x: x, y: edge(x) + 1)) }
+            clot.addCurve(to: CGPoint(x: 246, y: lumenBottom), control1: CGPoint(x: 268, y: edge(250) + 10), control2: CGPoint(x: 266, y: lumenBottom - 2))
+            clot.addLine(to: CGPoint(x: 172, y: lumenBottom))
+            clot.addCurve(to: CGPoint(x: 160, y: edge(160) + 1), control1: CGPoint(x: 150, y: lumenBottom - 4), control2: CGPoint(x: 150, y: edge(160) + 12))
+            clot.closeSubpath()
+            sec.shade(clot, hex("#A42E3C"), hex("#6A1622"), vertical: true)
+            var mesh = sec.clipped(to: clot)
+            for k in 0..<8 { mesh.ellipse(166 + Double(k) * 11, lumenBottom - 8 - Double(k % 3) * 7, 5, 3, fill: hex("#C23A4A")) }
+            for k in 0..<9 { mesh.line(150 + Double(k) * 13, lumenBottom, 170 + Double(k) * 13, lumenTop, stroke: hex("#E9D8C0"), lw: 0.6) }
+            for k in 0..<9 { mesh.line(150 + Double(k) * 13, lumenTop, 170 + Double(k) * 13, lumenBottom, stroke: hex("#E9D8C0"), lw: 0.5) }
+            for k in 0..<5 { mesh.circle(172 + Double(k) * 15, lumenBottom - 6 - Double(k % 2) * 8, 1.6, fill: hex("#E6C8D8")) }
+            s.callout("clot blocks the artery", "血栓堵塞血管", at: CGPoint(x: 220, y: cy + 2), 262, lumenBottom + 40, color: hex("#7A1F2B"), size: 8)
         }
-        s.path("M 10 \(lumenBottom - 10) L 34 \(lumenBottom - 10) M 28 \(lumenBottom - 15) L 34 \(lumenBottom - 10) L 28 \(lumenBottom - 5)", stroke: hex("#8A3B45"), lw: 2)
-        s.label("wall: lining · muscle · outer coat", "管壁：内膜 · 中膜 · 外膜", 8, lumenTop - 26, size: 8, color: hex("#8A3B45"))
-        if pl > 0.15 { s.label("fatty plaque", "粥样斑块", 250, lumenTop + 12, size: 9, color: hex("#8A6A1B"), bold: true) }
-        if pl > 0.3 && !ruptured { s.label("thin cap", "纤维帽", 236, edge(236) + 12, size: 8, color: hex("#8A6A1B")) }
+        s.pointer(CGPoint(x: 18, y: lumenBottom - 12), CGPoint(x: 42, y: lumenBottom - 12), color: hex("#8A3B45"), lw: 1.6)
+        s.label("blood flow", "血流", 46, lumenBottom - 9, size: 7.5, color: hex("#8A3B45"))
 
-        // lipid panel
-        let flag: (Double, Double, Double) -> Color = { v, hi, veryHi in v >= veryHi ? hex("#D8434B") : v >= hi ? hex("#E39B4B") : hex("#2E9E5B") }
-        let tg = 1.0 + 1.2 * p[v: "ldl"], hdl = 1.3, tc = ldl + hdl + tg / 2.2
-        s.rect(8, 6, 150, 116 - 30, r: 6, fill: .white, stroke: hex("#BBBBBB"))
-        s.label("Lipid panel  mmol/L", "血脂化验  mmol/L", 16, 20, size: 9, color: ink, bold: true)
-        let rows: [(String, String, Double, Color)] = [
-            ("LDL-C", "低密度脂蛋白", ldl, flag(ldl, 3.4, 4.1)), ("TC", "总胆固醇", tc, flag(tc, 5.2, 6.2)),
-            ("HDL-C", "高密度脂蛋白", hdl, hex("#2E9E5B")), ("TG", "甘油三酯", tg, flag(tg, 1.7, 2.3)),
-        ]
-        for (i, row) in rows.enumerated() {
-            let y = 36 + Double(i) * 14
-            s.label(row.0, row.1, 16, y, size: 9, color: ink, bold: i == 0)
-            s.text(String(format: "%.1f", row.2), 150, y, size: 10, color: row.3, anchor: .end, bold: true)
+        s.caption("Heart artery, cut lengthwise", "冠状动脉纵切面", 16, lumenTop - 19, color: hex("#9A6A5A"))
+        // wall layer names under the lower wall, plaque parts beside it
+        let lb = lumenBottom
+        s.callout("lining", "内膜", at: CGPoint(x: 40, y: lb + 2), 14, lb + 40, color: Tone.label, size: 7.5)
+        s.callout("muscle layer", "中膜（平滑肌）", at: CGPoint(x: 80, y: lb + 10), 58, lb + 40, color: Tone.label, size: 7.5)
+        s.callout("outer coat", "外膜", at: CGPoint(x: 140, y: lb + 22), 148, lb + 40, color: Tone.label, size: 7.5)
+        if pl > 0.15 && !ruptured {
+            let py = (lumenTop + edge(180)) / 2
+            if edge(180) - lumenTop > 26 {
+                s.label("fatty core", "脂质核心", 180, py + 3, size: 8, color: hex("#7A5A12"), anchor: .middle, bold: true)
+                s.callout("thin cap", "薄纤维帽", at: CGPoint(x: 236, y: edge(236) - 1), 258, edge(236) + 14, color: hex("#8A6A1B"), size: 8)
+            } else {
+                s.callout("fatty plaque", "粥样斑块", at: CGPoint(x: 196, y: lumenTop + 3), 236, lumenTop + 16, color: hex("#8A6A1B"), size: 8)
+            }
         }
-
-        // age and where this artery is
-        let age = p[v: "age0"] + p[v: "years"]
-        s.label("Age \(Int(age.rounded()))", "\(Int(age.rounded())) 岁", 212, 34, size: 18, color: hex("#333333"), anchor: .middle, bold: true)
-        s.label("narrowed \(Int((pl * 100).rounded()))%", "狭窄 \(Int((pl * 100).rounded()))%", 212, 54, size: 10, color: hex("#8A6A1B"), anchor: .middle)
-        s.label("flow \(Int((flow * 100).rounded()))%", "血流 \(Int((flow * 100).rounded()))%", 212, 70, size: 11,
-                color: flow < 0.3 ? hex("#D8434B") : hex("#2E9E5B"), anchor: .middle, bold: true)
-        let hc = CGPoint(x: 312, y: 50)
-        s.path("M \(hc.x) \(hc.y + 38) C \(hc.x - 30) \(hc.y + 18) \(hc.x - 40) \(hc.y - 4) \(hc.x - 28) \(hc.y - 22) C \(hc.x - 18) \(hc.y - 34) \(hc.x - 4) \(hc.y - 30) \(hc.x) \(hc.y - 20) "
-               + "C \(hc.x + 4) \(hc.y - 32) \(hc.x + 24) \(hc.y - 36) \(hc.x + 32) \(hc.y - 20) C \(hc.x + 40) \(hc.y - 4) \(hc.x + 28) \(hc.y + 18) \(hc.x) \(hc.y + 38) Z",
-               fill: hex("#C8323C"), stroke: hex("#7A1F2B"), lw: 1.5)
-        s.path("M \(hc.x - 2) \(hc.y - 18) C \(hc.x + 4) \(hc.y) \(hc.x + 6) \(hc.y + 16) \(hc.x + 2) \(hc.y + 32)", stroke: hex("#F2D060"), lw: 2.5, cap: .round)
-        s.circle(hc.x + 5, hc.y + 6, 8, stroke: ink, lw: 1.2)
-        s.line(hc.x + 1, hc.y + 13, 290, lumenTop - 24, stroke: ink, lw: 0.8, dash: [3, 2])
-        s.label("heart artery", "冠状动脉", hc.x - 34, 98, size: 8, color: ink, anchor: .end)
 
         // legend
-        let ly = 282.0
-        s.circle(14, ly - 3, 2.6, fill: lipo); s.label("LDL", "低密度脂蛋白", 20, ly, size: 9, color: ink)
-        s.ellipse(122, ly - 3, 5.5, 3.2, fill: hex("#C8323C")); s.label("red cells", "红细胞", 130, ly, size: 9, color: ink)
-        s.rect(214, ly - 8, 10, 8, fill: fat); s.label("fatty plaque", "粥样斑块", 228, ly, size: 9, color: ink)
+        let lg = 292.0
+        s.circle(14, lg - 3, 2.6, fill: lipo, stroke: .white, lw: 0.5); s.label("LDL cholesterol", "低密度脂蛋白", 20, lg, size: 8, color: Tone.sub)
+        s.ellipse(104, lg - 3, 5, 3, fill: hex("#C8323C")); s.label("red cell", "红细胞", 112, lg, size: 8, color: Tone.sub)
+        s.circle(166, lg - 3, 3.4, fill: hex("#FBEBB5"), stroke: hex("#D9A441"), lw: 0.7); s.label("foam cell", "泡沫细胞", 173, lg, size: 8, color: Tone.sub)
     }
 }
