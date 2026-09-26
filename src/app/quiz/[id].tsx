@@ -8,6 +8,7 @@ import { SchematicBody } from '@/components/canvas/schematic-body';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ModelView } from '@/components/viewer/model-view';
+import { EMPTY_PART_STATE } from '@/components/viewer/part-state';
 import { Spacing } from '@/constants/theme';
 import { DEFAULT_LAYERS } from '@/data/body';
 import { makeQuestions, quizPool } from '@/quiz';
@@ -59,7 +60,7 @@ export default function QuizScreen() {
         showOrgans={layers.includes('organs')}
         selectedId={done ? undefined : q.answer.partId}
       >
-        <SchematicBody layers={layers} hidden={[]} selectedId={done ? undefined : q.answer.partId} />
+        <SchematicBody layers={layers} parts={EMPTY_PART_STATE} selectedId={done ? undefined : q.answer.partId} />
       </ModelView>
 
       <ThemedView type="backgroundElement" style={styles.panel}>

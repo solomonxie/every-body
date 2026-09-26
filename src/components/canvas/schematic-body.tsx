@@ -4,6 +4,8 @@ import { CatmullRomCurve3, Quaternion, Vector3 } from 'three';
 import { JOINTS, SCHEMATIC_PARTS, type LayerId, type SchematicPart } from '@/data/body';
 import type { Vec3 } from '@/types/BodyPoint';
 
+import { isVisible, type PartState } from '@/components/viewer/part-state';
+
 import { Articulated, type JointAngles } from './articulated';
 
 const UP = new Vector3(0, 1, 0);
@@ -91,7 +93,7 @@ function PartMesh({ part, selected, opacity, bulge = 1 }: { part: SchematicPart;
   }
 }
 
-type Props = { layers: LayerId[]; hidden: string[]; selectedId?: string; angles?: JointAngles };
+type Props = { layers: LayerId[]; parts: PartState; selectedId?: string; angles?: JointAngles };
 
 /** how much a muscle bulges: 1 at rest, up to 1.6 at the joint's full range */
 function bulgeOf(partId: string, angles: JointAngles) {
@@ -100,19 +102,19 @@ function bulgeOf(partId: string, angles: JointAngles) {
 }
 
 /** Bones, muscles, vessels and nerves as math-built primitives, filtered by visible layer. */
-export function SchematicBody({ layers, hidden, selectedId, angles = {} }: Props) {
+export function SchematicBody({ layers, parts, selectedId, angles = {} }: Props) {
   const muscleOpacity = layers.includes('skeletal') ? 0.55 : 0.95;
   return (
     <Articulated
       angles={angles}
-      items={SCHEMATIC_PARTS.filter((part) => layers.includes(part.layer) && !hidden.includes(part.id)).map((part) => ({
+      items={SCHEMATIC_PARTS.filter((part) => layers.includes(part.layer) && isVisible(parts, part.id)).map((part) => ({
         id: part.id,
         node: (
           <PartMesh
             key={part.id}
             part={part}
             selected={part.id === selectedId}
-            opacity={part.layer === 'muscular' ? muscleOpacity : 1}
+            opacity={parts.faded.includes(part.id) ? 0.18 : part.layer === 'muscular' ? muscleOpacity : 1}
             bulge={bulgeOf(part.id, angles)}
           />
         ),

@@ -5,12 +5,20 @@ import { LAYERS, type LayerId } from '@/data/body';
 
 import { Pill } from './pill';
 
-type Props = { layers: LayerId[]; onToggle: (layer: LayerId) => void; hiddenCount: number; onShowAll: () => void };
+type Props = {
+  layers: LayerId[];
+  onToggle: (layer: LayerId) => void;
+  changedCount: number;
+  onShowAll: () => void;
+  canUndo: boolean;
+  onUndo: () => void;
+};
 
-/** Peel the body: one pill per layer, plus "Show all" when parts are hidden. */
-export function LayerBar({ layers, onToggle, hiddenCount, onShowAll }: Props) {
+/** Peel the body: one pill per layer, plus Undo and "Show all" once parts are changed. */
+export function LayerBar({ layers, onToggle, changedCount, onShowAll, canUndo, onUndo }: Props) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+      {canUndo && <Pill label="↶ Undo" selected={false} onPress={onUndo} />}
       {LAYERS.map((layer) => (
         <Pill
           key={layer.id}
@@ -19,7 +27,7 @@ export function LayerBar({ layers, onToggle, hiddenCount, onShowAll }: Props) {
           onPress={() => onToggle(layer.id)}
         />
       ))}
-      {hiddenCount > 0 && <Pill label={`Show all (${hiddenCount} hidden)`} selected={false} onPress={onShowAll} />}
+      {changedCount > 0 && <Pill label={`Reset parts (${changedCount})`} selected={false} onPress={onShowAll} />}
     </ScrollView>
   );
 }

@@ -21,6 +21,7 @@ type Props = {
   showOrgans?: boolean;
   selectedId?: string;
   angles?: JointAngles;
+  organVisible?: (id: string) => boolean;
   /** small inset: no rails, no hint */
   compact?: boolean;
   /** extra scene content that rotates with the body */
@@ -28,7 +29,7 @@ type Props = {
 };
 
 /** Full-bleed 3D body: drag to spin, pinch to zoom, tap a point, double-tap to reset. */
-export function ModelView({ busRef, skinColor, onPick, skinOpacity, showOrgans, selectedId, angles, compact = false, children }: Props) {
+export function ModelView({ busRef, skinColor, onPick, skinOpacity, showOrgans, selectedId, angles, organVisible, compact = false, children }: Props) {
   const pickerRef = useRef<Picker | null>(null);
   const { settings, update } = useSettings();
   const background = settings.background;
@@ -67,6 +68,7 @@ export function ModelView({ busRef, skinColor, onPick, skinOpacity, showOrgans, 
                 showOrgans={showOrgans}
                 selectedId={selectedId}
                 angles={angles}
+                organVisible={organVisible}
                 pickerRef={pickerRef}
               >
                 {children}

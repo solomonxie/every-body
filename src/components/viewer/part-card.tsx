@@ -1,44 +1,83 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { ORGAN_NAMES, type OrganId } from '@/data/anatomy';
 import { LAYERS, SCHEMATIC_PARTS } from '@/data/body';
+import { zonesForOrgan } from '@/data/reflex-lookup';
 import { useName } from '@/state/settings';
+
+import type { PartAction } from './part-state';
 
 export function partLabel(partId: string) {
   const part = SCHEMATIC_PARTS.find((p) => p.id === partId);
   if (part) {
     const layer = LAYERS.find((l) => l.id === part.layer);
-    return { name: part.name, nameZh: part.nameZh, layer: layer ? `${layer.labelZh} ${layer.label}` : '' };
+    return {
+      name: part.name,
+      nameZh: part.nameZh,
+      layer: layer ? `${layer.labelZh} ${layer.label}` : '',
+    };
   }
   const organ = ORGAN_NAMES[partId as OrganId];
   return organ && { name: organ[0], nameZh: organ[1], layer: '器官 Organs' };
 }
 
-type Props = { partId: string; onHide: (partId: string) => void; onClose: () => void };
+type Props = {
+  partId: string;
+  onAction: (action: PartAction, partId: string) => void;
+  faded: boolean;
+  isolated: boolean;
+  onClose: () => void;
+};
 
-/** Name of the tapped part, with Hide. */
-export function PartCard({ partId, onHide, onClose }: Props) {
+/** Name of the tapped part, with Hide / Fade / Isolate. */
+export function PartCard({ partId, onAction, faded, isolated, onClose }: Props) {
   const label = partLabel(partId);
   const name = useName();
+  const zones = zonesForOrgan(partId);
   if (!label) return null;
   return (
-    <ThemedView style={styles.card}>
-      <View style={styles.text}>
-        <ThemedText type="smallBold">{name(label.name, label.nameZh)}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {label.layer}
-        </ThemedText>
-      </View>
-      <Pressable onPress={() => onHide(partId)} hitSlop={8}>
-        <ThemedText type="smallBold">Hide 隐藏</ThemedText>
-      </Pressable>
-      <Pressable onPress={onClose} hitSlop={8}>
-        <ThemedText type="smallBold">✕</ThemedText>
-      </Pressable>
-    </ThemedView>
+    <View>
+      <ThemedView style={styles.card}>
+        <View style={styles.text}>
+          <ThemedText type="smallBold">{name(label.name, label.nameZh)}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {label.layer}
+          </ThemedText>
+        </View>
+        <View style={styles.actions}>
+          <Pressable onPress={() => onAction('hide', partId)} hitSlop={6}>
+            <ThemedText type="smallBold">Hide 隐藏</ThemedText>
+          </Pressable>
+          <Pressable onPress={() => onAction('fade', partId)} hitSlop={6}>
+            <ThemedText type="smallBold">{faded ? 'Unfade' : 'Fade 淡化'}</ThemedText>
+          </Pressable>
+          <Pressable onPress={() => onAction('isolate', partId)} hitSlop={6}>
+            <ThemedText type="smallBold">{isolated ? 'Show rest' : 'Isolate 单独'}</ThemedText>
+          </Pressable>
+        </View>
+        <Pressable onPress={onClose} hitSlop={8}>
+          <ThemedText type="smallBold">✕</ThemedText>
+        </Pressable>
+      </ThemedView>
+      {zones.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.zones}>
+          <ThemedText type="small" themeColor="textSecondary">
+            Reflex zones 反射区 ({zones.length}):
+          </ThemedText>
+          {zones.map((zone) => (
+            <Pressable key={zone.key} onPress={() => router.push(zone.href)}>
+              <ThemedView style={styles.zone}>
+                <ThemedText type="small">{zone.label} ›</ThemedText>
+              </ThemedView>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+    </View>
   );
 }
 
@@ -54,5 +93,20 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
+  },
+  zones: {
+    gap: Spacing.two,
+    alignItems: 'center',
+    paddingHorizontal: Spacing.three,
+    paddingBottom: Spacing.two,
+  },
+  zone: {
+    borderRadius: 999,
+    paddingHorizontal: Spacing.two + 2,
+    paddingVertical: Spacing.one,
+  },
+  actions: {
+    gap: Spacing.one,
+    alignItems: 'flex-end',
   },
 });
