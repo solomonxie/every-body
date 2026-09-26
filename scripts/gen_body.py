@@ -288,7 +288,7 @@ def skeleton():
     part("sacrum", "Sacrum", "骶骨", "skeletal", BONE,
          sheet([(0.054, 0.992, -0.045), (0.0, 0.998, -0.038), (-0.054, 0.992, -0.045)], [(0.012, 0.835, -0.093), (-0.012, 0.835, -0.093)],
                (0, 0, -0.022), 0.012))
-    part("coccyx", "Coccyx", "尾骨", "skeletal", BONE, tube([(0, 0.83, -0.097), (0, 0.805, -0.09), (0, 0.79, -0.075)], 0.006))
+    part("coccyx", "Coccyx", "尾骨", "skeletal", BONE, tube([(0, 0.845, -0.093), (0, 0.82, -0.094), (0, 0.8, -0.086), (0, 0.788, -0.075)], 0.006, [0.008, 0.006, 0.005, 0.004]))
 
     # thorax: rib i leaves vertebra T_i, sweeps round an ellipse and descends to the front
     widths = [0.065, 0.09, 0.11, 0.125, 0.135, 0.142, 0.146, 0.145, 0.14, 0.132, 0.12, 0.1]
@@ -362,15 +362,20 @@ def skeleton():
          tube([(HIP[0] + 0.004 + 0.027 * math.cos(a) * 0.3, HIP[1] + 0.027 * math.sin(a), HIP[2] + 0.027 * math.cos(a)) for a in [k * math.pi / 6 for k in range(13)]], 0.006))
     pair("pubis-ischium", "Hip bone (pubis & ischium)", "耻骨与坐骨", "skeletal", BONE,
          tube([(0.1, 0.935, 0.02), (0.06, 0.9, 0.055), (0.012, 0.88, 0.065), (0.03, 0.85, 0.045), (0.06, 0.835, 0.0),
-               (0.07, 0.85, -0.035), (0.085, 0.9, -0.02), (0.1, 0.935, 0.02)], 0.011))
+               (0.07, 0.85, -0.035), (0.085, 0.9, -0.02), (0.1, 0.935, 0.02)], 0.011,
+              # thick at the pubic body and the sitting bone, thin around the obturator hole
+              [0.012, 0.008, 0.012, 0.008, 0.014, 0.011, 0.008, 0.012]))
+    part("pubic-symphysis", "Pubic symphysis", "耻骨联合", "skeletal", CARTILAGE, lathe((0, 0.892, 0.066), (0, 0.868, 0.062), [0.008, 0.009, 0.008], [1, 1, 0.6]))
 
     # lower limb
     pair("femoral-head", "Femoral head", "股骨头", "skeletal", BONE, sphere(HIP, 0.024))
     pair("femoral-neck", "Femoral neck", "股骨颈", "skeletal", BONE, segment(HIP, (0.13, 0.9, -0.005), 0.014))
     pair("femur", "Femur", "股骨", "skeletal", BONE,
          lathe((0.132, 0.915, -0.008), (0.098, 0.505, 0.0), [0.022, 0.016, 0.0135, 0.013, 0.0135, 0.017, 0.026], [1, 1, 0.95]))
-    pair("femoral-condyles", "Femur", "股骨", "skeletal", BONE, sphere((0.097, 0.492, -0.003), 0.03, [1.25, 0.72, 1.0]))
-    pair("patella", "Patella", "髌骨", "skeletal", BONE, sphere((0.098, 0.5, 0.042), 0.021, [0.95, 1.1, 0.5]))
+    # two rounded condyles side by side, the kneecap a flat shield in front of their groove
+    pair("femoral-condyles", "Femur", "股骨", "skeletal", BONE, sphere((0.115, 0.49, -0.006), 0.021, [0.8, 0.95, 1.25]))
+    pair("femoral-condyle-medial", "Femur", "股骨", "skeletal", BONE, sphere((0.08, 0.488, -0.006), 0.022, [0.8, 0.95, 1.25]))
+    pair("patella", "Patella", "髌骨", "skeletal", BONE, sphere((0.098, 0.505, 0.03), 0.02, [1.0, 1.15, 0.45]))
     pair("tibia", "Tibia", "胫骨", "skeletal", BONE,
          lathe((0.095, 0.475, 0.004), (0.083, 0.078, 0.008), [0.034, 0.02, 0.0145, 0.013, 0.0135, 0.017, 0.02], [1.2, 1, 0.9]))
     pair("fibula", "Fibula", "腓骨", "skeletal", BONE, lathe((0.128, 0.46, -0.012), (0.122, 0.07, -0.008), [0.009, 0.006, 0.0055, 0.0065, 0.01]))
