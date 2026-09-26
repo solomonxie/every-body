@@ -14,7 +14,7 @@ struct IllustrationsSection: View {
                         ForEach(items) { scenario in
                             NavigationLink(value: Route.illustration(id: scenario.id)) {
                                 HStack {
-                                    Text("\(scenario.title.zh) \(scenario.title.en)").foregroundStyle(.primary)
+                                    Text("\(scenario.title.zh) \(scenario.title.en)").foregroundStyle(.primary).multilineTextAlignment(.leading)
                                     Spacer()
                                     Text("\(scenario.steps.count) steps ›").foregroundStyle(.secondary)
                                 }
