@@ -24,19 +24,49 @@ struct ChartScreen: View {
     private var zones: [ReflexZone] { face.zones.filter { $0.side == nil || $0.side == side } }
 
     var body: some View {
-        VStack(spacing: 8) {
-            PillRow {
-                ForEach(Side.allCases, id: \.self) { s in
-                    Pill(label: s == .left ? "Left 左" : "Right 右", selected: side == s) { side = s; clear() }
+        VStack(spacing: 0) {
+            controls
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            GeometryReader { stage in
+                HStack(spacing: 0) {
+                    chartPane
+                        .frame(width: stage.size.width * 0.6)
+                    bodyPane
                 }
-                if chart.faces.count > 1 {
-                    ForEach(chart.faces) { f in
-                        Pill(label: "\(f.label) \(f.labelZh)", selected: f.id == face.id) { faceID = f.id; clear() }
-                    }
-                }
-                Pill(label: "Labels 标注", selected: showLabels) { showLabels.toggle() }
             }
-            ZStack(alignment: .topLeading) {
+            card
+        }
+        .navigationTitle("\(chart.titleZh) \(chart.title)")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear(perform: setUp)
+    }
+
+    private var controls: some View {
+        HStack(spacing: 8) {
+            Picker("Side", selection: Binding(get: { side }, set: { side = $0; clear() })) {
+                Text("Left 左").tag(Side.left)
+                Text("Right 右").tag(Side.right)
+            }
+            .pickerStyle(.segmented)
+            if chart.faces.count > 1 {
+                Picker("Face", selection: Binding(get: { face.id }, set: { faceID = $0; clear() })) {
+                    ForEach(chart.faces) { f in Text(f.labelZh + " " + f.label).tag(f.id) }
+                }
+                .pickerStyle(.segmented)
+            }
+            Button { showLabels.toggle() } label: {
+                Image(systemName: showLabels ? "textformat" : "textformat.alt")
+                    .frame(width: 32, height: 32)
+                    .background(showLabels ? Color.brand.opacity(0.25) : Color.secondary.opacity(0.12), in: .rect(cornerRadius: 8))
+            }
+            .accessibilityLabel("Labels 标注")
+        }
+    }
+
+    private var chartPane: some View {
+        VStack(spacing: 4) {
+            ZStack(alignment: .bottomTrailing) {
                 GeometryReader { geo in
                     ChartCanvas(chart: chart, face: face, side: side, zones: zones, selectedID: selected?.id,
                                 showLabels: showLabels, zoom: zoom, pan: pan)
@@ -53,41 +83,52 @@ struct ChartScreen: View {
                             .onChanged { pan = CGSize(width: panBase.width + $0.translation.width, height: panBase.height + $0.translation.height) }
                             .onEnded { _ in panBase = pan })
                 }
-                BodyView(scene: inset, compact: true)
-                    .frame(width: 84, height: 132)
-                    .clipShape(.rect(cornerRadius: 14))
-                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(.secondary.opacity(0.3)))
-                    .padding(.leading, 16)
-                Button("⟲ 1×") { withAnimation { zoom = 1; zoomBase = 1; pan = .zero; panBase = .zero } }
-                    .font(.caption).foregroundStyle(.white)
-                    .padding(.horizontal, 10).padding(.vertical, 4)
-                    .background(Color(hex: "#2B2250").opacity(0.7), in: .capsule)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                    .padding(8)
+                .clipped()
+                if zoom > 1.01 || pan != .zero {
+                    Button("⟲ 1×") { withAnimation { zoom = 1; zoomBase = 1; pan = .zero; panBase = .zero } }
+                        .font(.caption).foregroundStyle(.white)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(Color(hex: "#2B2250").opacity(0.7), in: .capsule)
+                        .padding(8)
+                }
             }
             legend
-            card
+                .padding(.bottom, 6)
         }
-        .navigationTitle("\(chart.titleZh) \(chart.title)")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear(perform: setUp)
+    }
+
+    /// Full-height body: a standing figure is tall and narrow, so a tall pane shows it large.
+    private var bodyPane: some View {
+        ZStack(alignment: .top) {
+            BodyView(scene: inset, compact: true)
+            Text(selected == nil ? "where it acts 作用部位" : "\(selected!.nameZh) → " + selected!.organIds.compactMap { Catalog.organ($0)?.names?[1] }.joined(separator: "、"))
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Color(hex: "#2B2250"))
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .background(.white.opacity(0.75), in: .capsule)
+                .padding(.top, 8)
+                .padding(.horizontal, 6)
+        }
+        .clipShape(.rect(cornerRadius: 16))
+        .padding(.trailing, 10)
+        .padding(.vertical, 4)
     }
 
     private var legend: some View {
         let groups = Array(Set(zones.map(\.group))).sorted()
-        return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(groups, id: \.self) { g in
-                    if let info = Catalog.charts.groups[g] {
-                        HStack(spacing: 4) {
-                            Circle().fill(Color(hex: info.color)).frame(width: 10, height: 10)
-                            Text(info.labelZh).font(.caption).foregroundStyle(.secondary)
-                        }
+        return FlowLayout(spacing: 8) {
+            ForEach(groups, id: \.self) { g in
+                if let info = Catalog.charts.groups[g] {
+                    HStack(spacing: 3) {
+                        Circle().fill(Color(hex: info.color)).frame(width: 8, height: 8)
+                        Text(info.labelZh).font(.caption2).foregroundStyle(.secondary)
                     }
                 }
             }
-            .padding(.horizontal, 16)
         }
+        .padding(.horizontal, 12)
     }
 
     private var card: some View {
@@ -109,7 +150,7 @@ struct ChartScreen: View {
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 104, maxHeight: 104, alignment: .topLeading)
         .padding(16)
         .background(Color(uiColor: .secondarySystemBackground))
     }

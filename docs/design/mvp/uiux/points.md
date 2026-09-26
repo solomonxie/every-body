@@ -53,38 +53,38 @@ t=0 tap ↓              t≈0.7 s                 t=1.4 s → 2.2 s
 ```
 Card fades in only after the target flash — the effect "lands" with the animation.
 
-## Hand & ear charts
+## Hand, foot & ear charts
 
-Stack page `reflex/[chart]` — from Explore tiles, or Reflex Map › Hand/Ear filter › "Open … chart".
+Stack page — from Explore tiles, or Reflex Map › Foot/Hand/Ear filter › "Open … chart".
+Chart and body side by side: a standing figure is tall and narrow, so a full-height pane
+shows it several times larger than an inset, and both stay visible while the pulse travels.
 
 ```
  ‹ Back        手部反射区 Hand reflex zones
- (( Left 左 )) ( Right 右 ) (( Palm 掌 )) ( Back 背 ) (( Labels 标注 ))
-┌──────────────────────────────────────────────────────┐
-│┌──────┐        ___  ___                              │
-││ 3D   │  ___  |鼻窦||鼻窦| ___                        │ ← inset: figure, pulse
-││ fig  │ |鼻窦|  |  ||  | |鼻窦|                       │   hand/ear → organ
-│└──────┘ | 眼 || 眼 || 耳 || 耳 |                       │
-│  /大脑\  (      肺·胸       )  肩                     │
-│ / 垂体 /  ( 胃 )   (肾)  ( 心 ) ← left palm: 心        │
-│/ 颈项 /     (胰)             right palm: 肝          │
-│      脊柱  ( 大肠 (小肠) 大肠 )                        │
-│       膀胱  (      大肠      )                         │
-│             (  生殖腺  )                               │
-└──────────────────────────────────────────────────────┘
- ● 头脑 ● 五官 ● 呼吸 ● 心 ● 消化 ● 泌尿 ● 生殖 ● 骨骼关节
-│▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁│
-│ Kidneys & adrenals · 肾·肾上腺                        │
-│ Center of the palm. For fatigue and lower-back ache. │
-│ 掌心正中。用于疲劳、腰酸。                              │
-│ Traditional claim — not medical advice.  ↻ Replay    │
-└──────────────────────────────────────────────────────┘
+ [ Left 左 | RIGHT 右 ]  [ 掌 PALM | 背 Back ]  [Aa]
+┌──────────────────────────────┬───────────────────┐
+│    ___ ___                   │ 肾 → 左肾、右肾    │ ← caption: zone → organs
+│   |鼻窦|鼻窦|  ___            │        ◯          │
+│   | 眼 | 耳 | |   |          │       /█\         │
+│   (    肺·支气管    ) 肩      │      / █ \        │
+│  /大脑\  (肾上腺)  (心)       │        █ ✦ ← lit  │
+│ / 颈项 /   (肾)   (脾)        │       ▐ ▌         │
+│        (   结肠   )           │  ·•·  ▐ ▌ pulse   │
+│  胃 胰   ( 小肠 )  │          │       ▐ ▌         │
+│        (  膀胱  )             │       ▀ ▀         │
+│ ● 头脑 ● 五官 ● 呼吸 ● 消化 …  │                   │
+│  chart ≈ 60% · pinch to zoom │  3D body ≈ 40%    │
+├──────────────────────────────┴───────────────────┤
+│ Kidneys · 肾                          ↻ Replay   │
+│ Middle of metacarpal 3, centre of the palm. …    │ ← fixed height: no jump on tap
+│ 第3掌骨中点，掌心。…                             │
+│ Traditional claim — not medical advice.          │
+└──────────────────────────────────────────────────┘
 ```
-- One drawing per face (right palm, back of left hand, right ear); the other side is mirrored.
-  Side-only zones (心 left / 肝 right) filter by side.
-- Back of hand + ear: acupoints as dots, label under the dot.
-- Tap zone → others dim, pulse leaves the inset figure's hand/ear → organs light → card.
-- Ear: one face (耳廓), ~23 points: 耳尖, 神门, 心, 肺, 胃, 肾, 肝, 眼 (lobe), 外鼻/咽喉 (tragus), spine (antihelix)…
+- One drawing per face (left palm, back of right hand, left sole/top, left ear); the other
+  side mirrors. Side-only zones (心 left / 肝 right) filter by side.
+- Tap zone → others dim, pulse leaves the body's hand/foot/ear → organs light → card.
+- ⟲ 1× appears only when the chart is zoomed or panned.
 
 ## Blood flow (Circulation)
 
