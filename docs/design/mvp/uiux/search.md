@@ -17,6 +17,9 @@ Full-height sheet. From Explore search field or Viewer 🔍. Matches EN, 中文,
 Opened from Viewer: current system's matches sort first. Sections with 0 hidden
 (drawn here only to show the count rule).
 
+Built: inline on Home (and `everybody://search`). Result sections are cards; each row
+has a coloured icon per kind (▶ illustration · ▦ system · ✋ zone · ◎ point · 🧍 part).
+
 ## States
 
 ```
@@ -24,7 +27,7 @@ empty query   RECENT
               Kidney Reflex Zone (Foot)                    ›
               Femur                                        ›
               ( Clear recent )
-no recents    Search 4,000+ parts and 10 reflex points.
+no recents    TRY SEARCHING  (CPR) (Choking) (Stroke) (Femur) …   ← also shown under recents
 no match      No matches for “femr”.
               Try the English or Chinese name.
 ```

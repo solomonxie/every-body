@@ -17,29 +17,39 @@ The app's only root page (no tab bar). Code: `Sources/Screens/ExploreView.swift`
  Reflex & acupressure
  ┌────────────────┬────────────────┬────────────────┐
  │  (3D points)   │  (hand chart)  │  (foot chart)  │
- │ Reflex Map     │ Hand chart     │ Foot chart     │
+ │ 3D point map   │ Hand chart     │ Foot chart     │
  ├────────────────┼────────────────┴────────────────┘
  │  (ear chart)   │
  │ Ear points     │
  └────────────────┘
- Illustrations — watch, then try
- ╭ First aid ───────────────────────────────────────╮
- │ CPR                                   5 steps ›  │
- │ Choking …                                        │
- ╰──────────────────────────────────────────────────╯
- ╭ Bones & setting … ╮  ╭ Blood … ╮  ╭ Illness … ╮  ╭ Pregnancy … ╮
- Settings
+ Illustrations
+ Watch each step, then try it yourself.
  ╭──────────────────────────────────────────────────╮
- │ Language  [ English | 中文 ]                      │
- │ Person    [ Infant | Child | Adult | 65+ ]        │
- │ Sex       [ Male | Female ]   ☐ Pregnant          │
- │ White 3D background ─○   Auto-rotate ─●           │
+ │ [✚] First aid                                  6 │
+ ├──────────────────────────────────────────────────┤
+ │ CPR                                            › │
+ │ 6 steps                                          │
+ │ … (4 shown)                                      │
+ │                 Show all 6 ⌄                     │  ← groups > 5 fold to 4
  ╰──────────────────────────────────────────────────╯
- disclaimer · sources · version
+ ╭ [🩹] Bones … ╮  ╭ [💧] Blood … ╮  ╭ [🌡] Illness … ╮  ╭ Pregnancy … ╮
+ Settings  (see settings.md)
+```
+
+Focused search, nothing typed:
+```
+ RECENT                                     Clear
+ ╭──────────────────────────────────────────────────╮
+ │ ⟲ femur                                       ↖  │  ← tap fills the field
+ ╰──────────────────────────────────────────────────╯
+ TRY SEARCHING
+ (🔍 CPR) (🔍 Choking) (🔍 Stroke) (🔍 Burn) (🔍 Femur) …
 ```
 
 - Two sections: Human body (anatomy systems; 2 rows, ▾ expands) and Reflex & acupressure (3D point map + charts).
-- Chart tiles draw the chart itself (no PNG); system tiles use rendered PNGs.
+- Tiles: card with a square thumbnail on a system-colour gradient + 2-line name.
+  Chart tiles draw the chart; the 3D point map is drawn in SwiftUI (icon motif);
+  system tiles are transparent PNGs from `scripts/render_body/tiles.sh`.
 - Order of illustration groups: First aid, Bones, Blood, Illness, Pregnancy.
 
 ## Copy
