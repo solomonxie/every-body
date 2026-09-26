@@ -31,19 +31,19 @@ Parts, points and scenarios anchor to the body's part ids, so the procedural bod
 cover every system before later phases. Schematic geometry only (DESIGN → Decision).
 
 - [x] T3.0 Primitive mannequin with main organs + regions — see `src/data/anatomy.ts` — depends: none
-- [ ] T3.1 Part schema: id, EN/中 names, system, region, parent, primitive params — see `src/data/anatomy.ts` — depends: T3.0
-- [ ] T3.2 Skeletal system as primitives (skull, spine segments, ribs, pelvis, limb bones, joints) — see `src/data/anatomy.ts` — depends: T3.1
-- [ ] T3.3 Muscular, nervous, digestive, circulatory as primitives/curves (tubes along splines) — see `src/data/anatomy.ts` — depends: T3.1
-- [ ] T3.4 `BodyModel`: layers by system, per-part visibility/opacity — see `src/components/canvas/` — depends: T3.2, T3.3
+- [x] T3.1 Part schema: id, EN/中 names, system, region, parent, primitive params — see `src/data/anatomy.ts` — depends: T3.0
+- [x] T3.2 Skeletal system as primitives (skull, spine segments, ribs, pelvis, limb bones, joints) — see `src/data/anatomy.ts` — depends: T3.1
+- [x] T3.3 Muscular, nervous, digestive, circulatory as primitives/curves (tubes along splines) — see `src/data/anatomy.ts` — depends: T3.1
+- [x] T3.4 `SchematicBody`: layers by system, per-part visibility — see `src/components/canvas/schematic-body.tsx` — depends: T3.2, T3.3
 - [ ] T3.5 Tile thumbnails rendered from the schematic body — see `scripts/` — depends: T3.4
 - Deferred: Z-Anatomy GLB pipeline (`asset-pipeline.md`) — only if schematic proves insufficient
 
 ## Phase 4: Part interaction
 Picking and per-part state; Search and Part info key on the same part ids.
 
-- [ ] T4.1 Raycast picking + highlight + Part card — see `uiux/viewer.md` → Part card — depends: T3.4, T2.4
-- [ ] T4.2 Viewer part state (hide / isolate / fade / layer opacity) + undo stack — see `src/state/viewer.ts` — depends: T3.4
-- [ ] T4.3 Layers sheet + Display sheet — see `uiux/viewer.md` → Layers / Display — depends: T4.2, T2.4
+- [x] T4.1 Raycast picking + highlight + Part card — see `uiux/viewer.md` → Part card — depends: T3.4, T2.4
+- [ ] T4.2 Viewer part state (hide / isolate / fade / layer opacity) + undo stack (in-progress: hide + show all done) — see `src/state/viewer.ts` — depends: T3.4
+- [ ] T4.3 Layers sheet + Display sheet (in-progress: layer pill bar done) — see `uiux/viewer.md` → Layers / Display — depends: T4.2, T2.4
 - [ ] T4.4 Part info page (part / point / system variants), Show on model — see `uiux/part-info.md` — depends: T3.1
 - [ ] T4.5 Search index (EN, 中文, pinyin) + Search sheet + recents — see `uiux/search.md` — depends: T3.1, T2.4
 

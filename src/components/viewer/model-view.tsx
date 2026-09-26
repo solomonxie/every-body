@@ -5,7 +5,7 @@ import { GestureDetector } from 'react-native-gesture-handler';
 
 import { BodyScene } from '@/components/canvas/body-scene';
 import { FOCUS, type SceneBusRef } from '@/components/canvas/scene-bus';
-import type { Picker } from '@/components/canvas/tap-picker';
+import type { Pick, Picker } from '@/components/canvas/tap-picker';
 
 import { createOrbitGesture, resetView } from './orbit-gesture';
 
@@ -14,7 +14,10 @@ const BACKGROUNDS = { gray: '#DADCE2', white: '#FFFFFF' } as const;
 type Props = {
   busRef: SceneBusRef;
   skinColor: string;
-  onPickPoint?: (pointId: string) => void;
+  onPick?: (pick: Pick) => void;
+  skinOpacity?: number;
+  showOrgans?: boolean;
+  selectedId?: string;
   /** small inset: no rails, no hint */
   compact?: boolean;
   /** extra scene content that rotates with the body */
@@ -22,15 +25,15 @@ type Props = {
 };
 
 /** Full-bleed 3D body: drag to spin, pinch to zoom, tap a point, double-tap to reset. */
-export function ModelView({ busRef, skinColor, onPickPoint, compact = false, children }: Props) {
+export function ModelView({ busRef, skinColor, onPick, skinOpacity, showOrgans, selectedId, compact = false, children }: Props) {
   const pickerRef = useRef<Picker | null>(null);
   const [background, setBackground] = useState<keyof typeof BACKGROUNDS>('gray');
   const [hintVisible, setHintVisible] = useState(!compact);
 
-  const onPickRef = useRef(onPickPoint);
+  const onPickRef = useRef(onPick);
   useEffect(() => {
-    onPickRef.current = onPickPoint;
-  }, [onPickPoint]);
+    onPickRef.current = onPick;
+  }, [onPick]);
 
   const reset = () => resetView(busRef.current);
 
@@ -47,7 +50,15 @@ export function ModelView({ busRef, skinColor, onPickPoint, compact = false, chi
         <View style={[styles.canvas, { backgroundColor: BACKGROUNDS[background] }]} collapsable={false}>
           <View style={styles.canvas} pointerEvents="none">
             <Canvas camera={{ position: [0, 0, FOCUS.all.distance], fov: 40 }}>
-              <BodyScene busRef={busRef} skinColor={skinColor} background={BACKGROUNDS[background]} pickerRef={pickerRef}>
+              <BodyScene
+                busRef={busRef}
+                skinColor={skinColor}
+                background={BACKGROUNDS[background]}
+                skinOpacity={skinOpacity}
+                showOrgans={showOrgans}
+                selectedId={selectedId}
+                pickerRef={pickerRef}
+              >
                 {children}
               </BodyScene>
             </Canvas>

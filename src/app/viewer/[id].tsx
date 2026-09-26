@@ -6,21 +6,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BloodFlow } from '@/components/canvas/blood-flow';
 import { PointMarkers } from '@/components/canvas/point-markers';
 import { ReflexPulse } from '@/components/canvas/reflex-pulse';
+import { SchematicBody } from '@/components/canvas/schematic-body';
+import type { Pick } from '@/components/canvas/tap-picker';
 import { createSceneBus, DEFAULT_BPM, faceFront, FOCUS, setFocus } from '@/components/canvas/scene-bus';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FlowPanel } from '@/components/viewer/flow-panel';
+import { LayerBar } from '@/components/viewer/layer-bar';
+import { PartCard } from '@/components/viewer/part-card';
 import { ModelView } from '@/components/viewer/model-view';
 import { ReflexPanel, type RegionFilter } from '@/components/viewer/reflex-panel';
 import { REFLEX_TRAVEL_MS } from '@/constants/reflex';
 import { Spacing } from '@/constants/theme';
+import { DEFAULT_LAYERS, type LayerId } from '@/data/body';
 import { POINTS_BY_SYSTEM } from '@/data/system-points';
 import type { BodyPoint } from '@/types/BodyPoint';
 import { BODY_SYSTEMS } from '@/types/BodySystem';
 
 const SKIN_TONE = '#F2C9A5';
 
-// TODO: swap the primitive Mannequin for the licensed anatomy model (IMPLEMENT_PLAN T3.6).
 export default function ViewerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const system = BODY_SYSTEMS.find((s) => s.id === id) ?? BODY_SYSTEMS[0];
@@ -37,6 +41,10 @@ export default function ViewerScreen() {
   const [filter, setFilter] = useState<RegionFilter>('all');
   const [bpm, setBpm] = useState(DEFAULT_BPM);
   const effectTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [layers, setLayers] = useState<LayerId[]>(DEFAULT_LAYERS[system.id] ?? ['skin', 'organs']);
+  const [hidden, setHidden] = useState<string[]>([]);
+  const [selectedPartId, setSelectedPartId] = useState<string | undefined>();
+  const innerLayers = layers.some((layer) => layer !== 'skin');
 
   const activePoint = systemPoints?.points.find((point) => point.id === activePointId);
 
@@ -54,9 +62,21 @@ export default function ViewerScreen() {
     effectTimer.current = setTimeout(() => setEffectVisible(true), REFLEX_TRAVEL_MS);
   };
 
-  const pickPoint = (pointId: string) => {
-    const point = systemPoints?.points.find((p) => p.id === pointId);
+  const pick = ({ kind, id: pickedId }: Pick) => {
+    if (kind === 'part') {
+      setSelectedPartId(pickedId === selectedPartId ? undefined : pickedId);
+      return;
+    }
+    const point = systemPoints?.points.find((p) => p.id === pickedId);
     if (point) pressPoint(point);
+  };
+
+  const toggleLayer = (layer: LayerId) =>
+    setLayers(layers.includes(layer) ? layers.filter((l) => l !== layer) : [...layers, layer]);
+
+  const hidePart = (partId: string) => {
+    setHidden([...hidden, partId]);
+    setSelectedPartId(undefined);
   };
 
   const changeFilter = (next: RegionFilter) => {
@@ -84,7 +104,15 @@ export default function ViewerScreen() {
           ),
         }}
       />
-      <ModelView busRef={busRef} skinColor={isReflex ? SKIN_TONE : system.color} onPickPoint={pickPoint}>
+      <ModelView
+        busRef={busRef}
+        skinColor={isReflex ? SKIN_TONE : system.color}
+        skinOpacity={layers.includes('skin') ? (innerLayers ? 0.12 : 0.32) : 0}
+        showOrgans={layers.includes('organs')}
+        selectedId={selectedPartId}
+        onPick={pick}
+      >
+        <SchematicBody layers={layers} hidden={hidden} selectedId={selectedPartId} />
         {systemPoints && <PointMarkers points={systemPoints.points} activeId={activePointId} />}
         {isReflex && <ReflexPulse point={activePoint} triggerKey={pressTrigger} busRef={busRef} />}
         {flowStops && <BloodFlow stops={flowStops} busRef={busRef} />}
@@ -93,6 +121,10 @@ export default function ViewerScreen() {
       <ThemedView type="backgroundElement" style={styles.panel}>
         <SafeAreaView edges={['bottom']}>
           <View style={styles.panelBody}>
+            <LayerBar layers={layers} onToggle={toggleLayer} hiddenCount={hidden.length} onShowAll={() => setHidden([])} />
+            {selectedPartId && (
+              <PartCard partId={selectedPartId} onHide={hidePart} onClose={() => setSelectedPartId(undefined)} />
+            )}
             {isReflex && systemPoints ? (
               <ReflexPanel
                 points={systemPoints.points}
@@ -106,8 +138,7 @@ export default function ViewerScreen() {
               <FlowPanel stops={flowStops} bpm={bpm} onBpm={changeBpm} activeStop={activePoint} onStop={pressPoint} />
             ) : (
               <ThemedText type="small" themeColor="textSecondary" style={styles.placeholder}>
-                Placeholder figure — real {system.name.toLowerCase()} anatomy arrives with the licensed model.
-                Try Reflex Map or Circulatory for the interactive demos.
+                Tap any part to name it — 点击任意部位查看名称. Toggle layers above to peel the body.
               </ThemedText>
             )}
           </View>
