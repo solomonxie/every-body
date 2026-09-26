@@ -36,7 +36,7 @@ extension Illustrations {
             s.profileNote = Bilingual("65+: risk doubles every decade after 55. An irregular pulse (atrial fibrillation) is a major cause — get it checked. Sudden loss of balance or vision counts too.",
                                       "65 岁以上：55 岁后每 10 年风险翻倍。心律不齐（房颤）是重要原因——要检查。突然失去平衡或视物不清也要警惕。")
             return s.rebased(["senior": 1])
-        case .infant, .child:
+        case .infant, .toddler, .child:
             s.profileNote = Bilingual("Rare in children, but real: sudden weakness on one side, a seizure, or the worst headache — call 120, don't wait.",
                                       "儿童少见但会发生：突然一侧无力、抽搐或剧烈头痛——立即拨打 120，不要等待。")
             return s.rebased(["kid": 1])

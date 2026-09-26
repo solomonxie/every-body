@@ -35,7 +35,7 @@ extension Illustrations {
     static func bloodFats(for p: Profile) -> Scenario {
         var s = bloodFats
         switch p.age {
-        case .infant, .child:
+        case .infant, .toddler, .child:
             s.profileNote = Bilingual("Children: check cholesterol once at 9–11, earlier if a parent has very high cholesterol or had an early heart attack (familial).",
                                       "儿童：9–11 岁查一次血脂；父母胆固醇很高或早发心梗（家族性）应更早检查。")
             return s.rebased(["age0": 10])

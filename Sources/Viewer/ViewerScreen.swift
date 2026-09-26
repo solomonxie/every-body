@@ -52,7 +52,7 @@ struct ViewerScreen: View {
         .onChange(of: parts) { scene.setParts(parts, selected: selectedPart) }
         .onChange(of: selectedPart) { scene.setParts(parts, selected: selectedPart) }
         .onChange(of: settings.female) { rebuild() }
-        .onChange(of: settings.age) { scene.setAge(settings.age) }
+        .onChange(of: settings.age) { rebuild() }
         .onChange(of: bpm) { scene.bpm = bpm }
     }
 
