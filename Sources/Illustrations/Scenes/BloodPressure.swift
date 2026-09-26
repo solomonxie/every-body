@@ -52,40 +52,42 @@ extension Illustrations {
         let cat: (String, String, Color) = sys >= 140 || dia >= 90 ? ("High · stage 2", "高血压 2 级", hex("#D8434B"))
             : sys >= 130 || dia >= 80 ? ("High · stage 1", "高血压 1 级", hex("#E0603C"))
             : sys >= 120 ? ("Elevated", "血压偏高", hex("#E39B4B")) : ("Normal", "正常", hex("#2E9E5B"))
-        let ink = hex("#555555"), kid = p[v: "kid"] > 0.5
+        let ink = hex("#555555")
 
-        // seated person, arm resting on the table, cuff on the upper arm
-        let h = kid ? 170.0 : 210.0, floor = 276.0
-        let hip = CGPoint(x: 62, y: floor - 0.245 * h * cos(32 * .pi / 180) - 5)
-        var person = Person(h: h, shirt: p[v: "pregnant"] > 0.5 ? hex("#E8B4C8") : hex("#8FB3E0"),
-                            shirtLine: p[v: "pregnant"] > 0.5 ? hex("#B77A95") : hex("#5F87B8"), hip: 90, knee: 58)
+        // seated person, back against the chair, forearm resting on the table, cuff on the bare upper arm
+        let floor = 276.0
+        var v = SideFigure(Casualty(p, adult: 210), lean: -3)
+        let h = v.h, b = v.build
+        v.look.longSleeves = false
+        v.nearLeg = .init(hip: 90, knee: 90)
+        v.farLeg = .init(hip: 86, knee: 84)
+        v.hip = CGPoint(x: 58, y: floor - b.shin * h - b.legW * h * 0.3)
+        let hip = v.hip, seat = hip.y + b.legW * h * 0.5
         let table = hip.y - 0.1 * h
-        person.aimHand(at: CGPoint(x: 0.24 * h, y: table - hip.y - 0.03 * h))
+        v.near = .init(reach: CGPoint(x: hip.x + 0.28 * h, y: table - b.hand * h * 0.22), hand: .open, handAngle: 0)
         s.line(0, floor, 360, floor, stroke: hex("#BBBBBB"), lw: 2)
         // chair
-        s.rect(hip.x - 22, hip.y + 0.035 * h, 60, 6, r: 2, fill: hex("#B08A64"))
-        s.rect(hip.x - 24, hip.y - 0.3 * h, 7, 0.3 * h + 10, r: 2, fill: hex("#B08A64"))
-        s.line(hip.x - 18, hip.y + 0.035 * h + 6, hip.x - 18, floor, stroke: hex("#9B7550"), lw: 4)
-        s.line(hip.x + 32, hip.y + 0.035 * h + 6, hip.x + 32, floor, stroke: hex("#9B7550"), lw: 4)
-        person.draw(&s, at: hip, farArm: false)
-        if p[v: "senior"] > 0.5 {
-            s.path("M \(hip.x - 0.045 * h) \(hip.y - 0.47 * h) C \(hip.x - 0.02 * h) \(hip.y - 0.5 * h) \(hip.x + 0.04 * h) \(hip.y - 0.5 * h) \(hip.x + 0.07 * h) \(hip.y - 0.465 * h)",
-                   stroke: hex("#BDBDBD"), lw: 0.02 * h, cap: .round)
-        }
-        if p[v: "pregnant"] > 0.5 { s.ellipse(hip.x + 0.06 * h, hip.y - 0.07 * h, 0.05 * h, 0.075 * h, fill: person.shirt, stroke: person.shirtLine, lw: 1.5) }
+        let back = v.back(0.4).x - 5
+        s.rect(back - 6, hip.y - 0.3 * h, 7, seat - hip.y + 0.3 * h + 6, r: 2, fill: hex("#B08A64"))
+        s.line(back - 2, seat + 6, back - 2, floor, stroke: hex("#9B7550"), lw: 4)
+        s.line(hip.x + 0.16 * h, seat + 6, hip.x + 0.16 * h, floor, stroke: hex("#9B7550"), lw: 4)
+        s.rect(back - 6, seat, hip.x + 0.2 * h - back + 6, 6, r: 2, fill: hex("#B08A64"))
+        v.drawBack(&s, farArm: false)
+        v.drawBody(&s)
+        // table
+        s.rect(hip.x + 0.2 * h, table, 218 - hip.x - 0.2 * h, 8, r: 2, fill: hex("#C9A27A"), stroke: hex("#9B7550"))
+        s.line(206, table + 8, 206, floor, stroke: hex("#9B7550"), lw: 5)
+        v.drawArm(&s, near: true)
         // upper arm cuff with its tube
-        let sa = person.shoulder * .pi / 180, sh = CGPoint(x: hip.x, y: hip.y - 0.29 * h)
-        let e = CGPoint(x: sh.x + sin(sa) * 0.17 * h, y: sh.y + cos(sa) * 0.17 * h)
-        let c0 = CGPoint(x: sh.x + (e.x - sh.x) * 0.25, y: sh.y + (e.y - sh.y) * 0.25), c1 = CGPoint(x: sh.x + (e.x - sh.x) * 0.8, y: sh.y + (e.y - sh.y) * 0.8)
-        let squeeze = 0.07 * h + 1.5 * stretch
+        let sh = v.shoulderPoint, e = v.elbow()
+        let c0 = lerp(sh, e, 0.28), c1 = lerp(sh, e, 0.78)
+        let squeeze = b.armW * h + 6 + 1.5 * stretch
         s.line(c0.x, c0.y, c1.x, c1.y, stroke: hex("#46546F"), lw: squeeze, cap: .round)
         s.line(c0.x, c0.y, c1.x, c1.y, stroke: hex("#5B6B8C"), lw: squeeze - 3, cap: .round)
-        let monitor = CGRect(x: 128, y: table - 50, width: 86, height: 50)
+        let monitor = CGRect(x: 134, y: table - 50, width: 80, height: 50)
         s.path("M \(c1.x + 2) \(c1.y) C \(c1.x + 30) \(c1.y + 30) \(monitor.minX - 20) \(monitor.midY + 20) \(monitor.minX) \(monitor.midY + 6)",
                stroke: hex("#46546F"), lw: 2)
-        // table and monitor
-        s.rect(100, table, 118, 8, r: 2, fill: hex("#C9A27A"), stroke: hex("#9B7550"))
-        s.line(206, table + 8, 206, floor, stroke: hex("#9B7550"), lw: 5)
+        // monitor
         s.rect(monitor.minX, monitor.minY, monitor.width, monitor.height, r: 8, fill: hex("#F2F4F7"), stroke: hex("#9AA3AE"), lw: 1.5)
         s.rect(monitor.minX + 6, monitor.minY + 5, monitor.width - 12, monitor.height - 10, r: 3, fill: hex("#DDE8DA"))
         let lx = monitor.minX + 10, rx = monitor.maxX - 10

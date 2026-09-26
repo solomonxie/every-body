@@ -156,9 +156,24 @@ extension Illustrations {
                 let up = rice > 0.8
                 let floor = 150.0
                 s.rect(box.minX + 6, floor, box.width - 12, 6, r: 2, fill: hex("#D9C9B0"))
-                if up { s.rect(box.maxX - 34, floor - 20, 28, 20, r: 6, fill: hex("#DCE6F2"), stroke: hex("#9FB3CC")) }
-                let body = Person(h: 66, shirt: hex("#DCE6F2"), shirtLine: hex("#9FB3CC"), shoulder: 0, elbow: 0, hip: up ? 22 : 0)
-                body.draw(&s, at: CGPoint(x: box.minX + 44, y: floor - 5), rotation: -90, farArm: false)
+                // on the back, head left; the hurt leg on pillows
+                var body = SideFigure(h: 68, look: .man, hip: .zero, rotation: -90)
+                body.near = .init(shoulder: 6, elbow: 8)
+                body.nearLeg = .init(hip: up ? 17 : 2, knee: up ? 3 : 2, point: 20)
+                body.farLeg = .init(hip: 1, knee: 2, point: 20)
+                body.hip = CGPoint(x: box.minX + 42, y: floor - body.build.depth * body.h * 0.5)
+                s.rect(box.minX + 8, floor - 6, 16, 6, r: 3, fill: .white, stroke: hex("#CCCCCC"))
+                if up {
+                    let a = body.ankle(), top = a.y + body.build.legW * body.h * 0.45
+                    s.rect(a.x - 22, top, 32, floor - top, r: 6, fill: hex("#DCE6F2"), stroke: hex("#9FB3CC"))
+                }
+                body.drawBack(&s, farArm: false)
+                body.drawBody(&s)
+                body.drawArm(&s, near: true)
+                if rice > 0.55 {
+                    let a = body.ankle()
+                    s.circle(a.x, a.y, body.build.legW * body.h * 0.6, fill: hex("#E8D5B0"), stroke: hex("#C9B48A"))
+                }
                 let now = rice > 0.8 ? s.t("foot above heart", "脚高于心脏") : rice > 0.55 ? s.t("elastic wrap", "弹力绷带") : rice > 0.3 ? s.t("ice in a cloth", "冰袋包布") : s.t("rest, no weight", "休息，别负重")
                 s.text(now, cx, box.maxY - 4, size: 8, color: blue, anchor: .middle)
             }
