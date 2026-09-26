@@ -34,5 +34,5 @@ export const VESSELS: SchematicPart[] = [
 
   tube('esophagus', 'Esophagus', '食管', 'organs', '#E0A080', [[0, 1.2, -0.02], [0.01, 0.95, -0.06], [0.06, 0.72, 0.0], [0.1, 0.65, 0.06]], 0.016),
   tube('trachea', 'Trachea & bronchi', '气管与支气管', 'organs', '#E8C4B0', [[0, 1.22, 0.05], [0, 1.02, 0.04], [0.12, 0.96, 0.02]], 0.019),
-  tube('bronchus-r', 'Right bronchus', '右支气管', 'organs', '#E8C4B0', [[0, 1.02, 0.04], [-0.12, 0.96, 0.02]], 0.016),
+  tube('bronchus-r', 'Bronchi', '支气管', 'organs', '#E8C4B0', [[0, 1.02, 0.04], [-0.12, 0.96, 0.02]], 0.016),
 ];
