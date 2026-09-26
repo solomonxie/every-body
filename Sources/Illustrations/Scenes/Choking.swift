@@ -95,7 +95,7 @@ extension Illustrations {
         func place(_ x: Double) {
             if kneel {
                 r.farLeg = .init(hip: 0, knee: 90, point: 90)
-                r.nearLeg = .init(hip: 80, knee: 82)
+                r.nearLeg = .init(hip: 6, knee: 92, point: 90)
                 r.hip = CGPoint(x: x, y: floor - r.build.thigh * rh - r.build.legW * rh * 0.5)
             } else {
                 r.nearLeg = .init(hip: 12, knee: 4)
@@ -106,7 +106,8 @@ extension Illustrations {
         switch st {
         case 1:
             // leaning well forward; rescuer beside and behind, one hand across the chest
-            v.lean = 48
+            v.hip.x -= 26
+            v.lean = 56
             v.headTilt = -25
             v.near = .init(shoulder: -40, elbow: 12)
             v.far = .init(shoulder: -36, elbow: 16)
@@ -120,8 +121,8 @@ extension Illustrations {
                            handAngle: atan2(alongY, along) * 180 / .pi)
         case 2:
             v.lean = 10
-            v.near = .init(shoulder: 8, elbow: 25)
-            v.far = .init(shoulder: 12, elbow: 30)
+            v.near = .init(reach: v.headPoint(0.35, 1.3), hand: .open, handAngle: -60)
+            v.far = .init(reach: v.headPoint(0.2, 1.4), hand: .open, handAngle: -70)
             place(v.hip.x - (kneel ? 30 : 32))
             r.lean = kneel ? 6 : 12
             let f = chestThrust ? 0.66 : 0.34
@@ -159,7 +160,7 @@ extension Illustrations {
             s.tag("can’t speak, cough or breathe", "说不出、咳不出、喘不上", 296, 150, size: 10, color: red, bold: true, width: 110)
         case 1:
             let b = v.back(0.8)
-            s.tag("heel of hand, between the shoulder blades", "掌根拍两肩胛骨之间", b.x - 40, b.y - 72, size: 10, color: red, bold: true, width: 120)
+            s.tag("heel of hand, between the shoulder blades", "掌根拍两肩胛骨之间", b.x - 40, min(b.y - 72, 96), size: 10, color: red, bold: true, width: 120)
             s.tag("head lower than chest", "头低于胸部", v.headPoint(0, 0).x + 44, v.headPoint(0, 0).y + 38, size: 9, width: 90)
         case 2:
             let f = v.front(chestThrust ? 0.66 : 0.34)
@@ -173,7 +174,7 @@ extension Illustrations {
         case 3:
             s.phone(318, floor - 26, number: s.t("911", "120"), t: t)
             s.tag("coughed out — see a doctor", "咳出了——仍需就医", 296, 144, size: 10, color: hex("#2E9E5B"), bold: true, width: 110)
-            s.tag("still stuck: call · goes limp: CPR", "仍梗阻：呼救 · 失去反应：心肺复苏", 272, 200, size: 10, color: red, bold: true, width: 120)
+            s.tag("still stuck: call · goes limp: CPR", "仍梗阻：呼救 · 失去反应：心肺复苏", 290, 204, size: 10, color: red, bold: true, width: 120)
         default: break
         }
     }
@@ -224,7 +225,7 @@ extension Illustrations {
         case 2:
             let chest = b.front(0.66), n = unit(CGPoint(x: chest.x - b.torso(0, 0.66).x, y: chest.y - b.torso(0, 0.66).y))
             let gap = 1 + (1 - press) * 10
-            r.far = .init(reach: CGPoint(x: chest.x + n.x * gap, y: chest.y + n.y * gap), hand: .twoFingers, handAngle: slope + 90)
+            r.far = .init(reach: CGPoint(x: chest.x + n.x * gap, y: chest.y + n.y * gap), hand: .twoFingers, handAngle: slope + 60)
         default:
             r.far = .init(reach: b.front(0.3), hand: .open, handAngle: slope)
         }
