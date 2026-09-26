@@ -287,9 +287,11 @@ final class BodyScene {
         }
     }
 
+    /// last emissive written per organ — materials are only rebuilt when it changes
+    private var organGlow: [String: Float] = [:]
+
     private func updateOrgans() {
         for (id, entity) in organEntities {
-            let organ = Catalog.organ(id)
             let lit = litOrgans.contains(id) && flashStart >= 0
             var pulse: Float = 0
             if lit {
@@ -297,12 +299,17 @@ final class BodyScene {
                 pulse = t < 0.8 ? sin(t / 0.8 * .pi) * 0.6 : 0
             }
             if id == "heart" { pulse += pow(max(0, sin(clock * bpm / 60 * 2 * .pi)), 4) * 0.18 }
-            entity.scale = SIMD3(repeating: 1 + pulse)
+            if pulse != 0 || entity.scale.x != 1 { entity.scale = SIMD3(repeating: 1 + pulse) }
+            guard lit || id == selected || organGlow[id] != nil else { continue }
+            let organ = Catalog.organ(id)
             if organ?.region == true { entity.isEnabled = lit }
+            let glow: Float = lit ? 0.6 + pulse : id == selected ? 0.6 : 0
+            guard organGlow[id] != glow else { continue }
+            organGlow[id] = glow == 0 ? nil : glow
             for case let piece as ModelEntity in entity.children {
                 guard var m = piece.model?.materials.first as? PhysicallyBasedMaterial else { continue }
                 m.emissiveColor = .init(color: organ?.region == true ? UIColor(hex: organ!.color) : UIColor(hex: id == selected ? "#FFD166" : "#4ECB71"))
-                m.emissiveIntensity = lit ? 0.6 + pulse : id == selected ? 0.6 : 0
+                m.emissiveIntensity = glow
                 piece.model?.materials = [m]
             }
         }
@@ -344,9 +351,9 @@ final class BodyScene {
         focus(.all)
     }
 
-    static func material(_ color: UIColor, opacity: Float) -> PhysicallyBasedMaterial {
+    static func material(_ color: UIColor, opacity: Float, texture: TextureResource? = nil) -> PhysicallyBasedMaterial {
         var m = PhysicallyBasedMaterial()
-        m.baseColor = .init(tint: color)
+        m.baseColor = .init(tint: color, texture: texture.map { .init($0) })
         m.roughness = .init(floatLiteral: 0.55)
         m.metallic = .init(floatLiteral: 0)
         m.faceCulling = .none
