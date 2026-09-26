@@ -8,5 +8,5 @@ mkdir -p build
 swiftc -O -parse-as-library -o "$BIN" \
   scripts/render_body/Shim.swift scripts/render_body/main.swift \
   Sources/Body/BodyScene.swift Sources/Body/Meshes.swift Sources/Body/Textures.swift \
-  Sources/Data/Models.swift Sources/Data/Catalog.swift Sources/Data/Profile.swift 2>&1 | grep -E "error" || true
+  Sources/Data/Models.swift Sources/Data/Catalog.swift Sources/Data/Profile.swift 2>&1 | grep -E "error" >&2 && rm -f "$BIN" || true
 BODY_ATLAS_DATA=Resources/Data "$BIN" "$@"

@@ -74,7 +74,12 @@ enum Meshes {
     /// Tube along a Catmull-Rom curve through the points; `radii` (one per point) taper it.
     static func tube(points: [SIMD3<Float>], radius: Float, radii: [Float]? = nil, samples: Int = 40, sides: Int = 8) -> RawMesh {
         let path = (0...samples).map { catmullRom(points, Float($0) / Float(samples)) }
+        // ends close to a rounded tip so an open tube never shows a hollow rim
         func r(_ i: Int) -> Float {
+            let end = Float(min(i, samples - i)) / Float(max(1, samples)) * 40
+            return body(i) * (end >= 1 ? 1 : max(0.05, sin(end * .pi / 2)))
+        }
+        func body(_ i: Int) -> Float {
             guard let radii, radii.count > 1 else { return radius }
             let f = Float(i) / Float(samples) * Float(radii.count - 1)
             let k = min(radii.count - 2, Int(f))
@@ -149,7 +154,20 @@ enum Meshes {
                 0.5 * (2 * b[k] + (-a[k] + c[k]) * t + (2 * a[k] - 5 * b[k] + 4 * c[k] - d[k]) * t2 + (-a[k] + 3 * b[k] - 3 * c[k] + d[k]) * t3)
             }
         }
-        let rows = (0...steps).map { at(Float($0) / Float(steps)) }
+        var rows = (0...steps).map { at(Float($0) / Float(steps)) }
+        // round both ends into domes instead of flat discs
+        func dome(_ end: [Float], _ inward: [Float]) -> [[Float]] {
+            var d = SIMD3(end[0] - inward[0], end[1] - inward[1], end[2] - inward[2])
+            d = simd_normalize(d + 1e-7)
+            let r = min(end[3], end[4])
+            return [(Float(0.34), Float(0.75)), (Float(0.5), Float(0.35))].map { k in
+                var row = end
+                row[0] += d.x * r * k.0; row[1] += d.y * r * k.0; row[2] += d.z * r * k.0
+                row[3] *= k.1; row[4] *= k.1
+                return row
+            }
+        }
+        rows = dome(rows[0], rows[1]).reversed() + rows + dome(rows[rows.count - 1], rows[rows.count - 2])
         var positions: [SIMD3<Float>] = []
         var normals: [SIMD3<Float>] = []
         var uvs: [SIMD2<Float>] = []
@@ -182,18 +200,79 @@ enum Meshes {
                 indices += [a, a + 1, b, b, a + 1, b + 1]
             }
         }
-        // caps
+        // caps: their own ring copies so the cap faces along the axis, not sideways
         for (row, flip) in [(0, true), (rows.count - 1, false)] {
             let r = rows[row]
+            let p = rows[max(0, row - 1)], q = rows[min(rows.count - 1, row + 1)]
+            let t = simd_normalize(SIMD3(q[0] - p[0], q[1] - p[1], q[2] - p[2]) + 1e-6)
+            let n = flip ? -t : t
             let centre = UInt32(positions.count)
             positions.append(SIMD3(r[0], r[1], r[2]))
+            normals.append(n)
             uvs.append(SIMD2(0.5, flip ? 0 : 1))
-            let t = simd_normalize(SIMD3(rows[min(rows.count - 1, row + 1)][0] - rows[max(0, row - 1)][0],
-                                         rows[min(rows.count - 1, row + 1)][1] - rows[max(0, row - 1)][1],
-                                         rows[min(rows.count - 1, row + 1)][2] - rows[max(0, row - 1)][2]) + 1e-6)
-            normals.append(flip ? -t : t)
-            let base = UInt32(row) * stride
-            for s in 0..<UInt32(sides) { indices += flip ? [centre, base + s + 1, base + s] : [centre, base + s, base + s + 1] }
+            let ring = UInt32(positions.count)
+            for s in 0...sides {
+                positions.append(positions[row * (sides + 1) + s])
+                normals.append(n)
+                uvs.append(uvs[row * (sides + 1) + s])
+            }
+            for s in 0..<UInt32(sides) { indices += [centre, ring + s, ring + s + 1] }
+        }
+        return build(positions, normals, indices, uvs)
+    }
+
+    /// Flat muscle as one closed slab: fibres run origin → insertion (u), side by side across the muscle (v).
+    static func sheet(origins: [SIMD3<Float>], insertions: [SIMD3<Float>], bulge: SIMD3<Float>, thickness: Float) -> RawMesh {
+        let nu = 14, nv = max(10, origins.count * 3)
+        func along(_ pts: [SIMD3<Float>], _ v: Float) -> SIMD3<Float> { pts.count == 1 ? pts[0] : catmullRom(pts, v) }
+        func centre(_ u: Float, _ v: Float) -> SIMD3<Float> {
+            let o = along(origins, v), i = along(insertions, v)
+            let m = (o + i) / 2 + bulge * sin(.pi * v * 0.9 + 0.05)
+            return (1 - u) * (1 - u) * o + 2 * u * (1 - u) * m + u * u * i
+        }
+        // thick in the belly, thin at the tendon ends and the free edges
+        func half(_ u: Float, _ v: Float) -> Float {
+            thickness * pow(sin(.pi * (0.06 + 0.88 * u)), 0.8) * pow(sin(.pi * (0.04 + 0.92 * v)), 0.35)
+        }
+        var positions: [SIMD3<Float>] = [], normals: [SIMD3<Float>] = [], uvs: [SIMD2<Float>] = [], indices: [UInt32] = []
+        let e: Float = 0.01
+        for side: Float in [1, -1] {
+            for i in 0...nu {
+                for j in 0...nv {
+                    let u = Float(i) / Float(nu), v = Float(j) / Float(nv)
+                    let c = centre(u, v)
+                    let du = centre(min(1, u + e), v) - centre(max(0, u - e), v)
+                    let dv = centre(u, min(1, v + e)) - centre(u, max(0, v - e))
+                    let n = simd_normalize(simd_cross(du, dv) + 1e-7) * side
+                    positions.append(c + n * half(u, v))
+                    normals.append(n)
+                    uvs.append(SIMD2(v * 3, u))
+                }
+            }
+        }
+        let stride = UInt32(nv + 1), layer = UInt32((nu + 1) * (nv + 1))
+        for l in 0..<UInt32(2) {
+            for i in 0..<UInt32(nu) {
+                for j in 0..<UInt32(nv) {
+                    let a = l * layer + i * stride + j, b = a + stride
+                    indices += [a, b, a + 1, a + 1, b, b + 1]
+                }
+            }
+        }
+        // stitch the two faces along the rim
+        var rim: [UInt32] = []
+        for j in 0...UInt32(nv) { rim.append(j) }
+        for i in 1...UInt32(nu) { rim.append(i * stride + UInt32(nv)) }
+        for j in (0..<UInt32(nv)).reversed() { rim.append(UInt32(nu) * stride + j) }
+        for i in (1..<UInt32(nu)).reversed() { rim.append(i * stride) }
+        for k in 0..<rim.count {
+            let a = rim[k], b = rim[(k + 1) % rim.count]
+            let outward = simd_normalize(positions[Int(a)] + positions[Int(b)] - 2 * centre(0.5, 0.5) + 1e-7)
+            let base = UInt32(positions.count)
+            positions += [positions[Int(a)], positions[Int(b)], positions[Int(a + layer)], positions[Int(b + layer)]]
+            normals += [outward, outward, outward, outward]
+            uvs += [uvs[Int(a)], uvs[Int(b)], uvs[Int(a)], uvs[Int(b)]]
+            indices += [base, base + 2, base + 1, base + 1, base + 2, base + 3]
         }
         return build(positions, normals, indices, uvs)
     }
@@ -228,9 +307,13 @@ enum Meshes {
         case .sphere, .box, .spindle: nil
         case let .segment(from, to, radius): capsule(radius: radius, length: max(0.001, simd_distance(from.simd, to.simd)))
         case let .lathe(from, to, radii, _): profile(radii: radii, length: max(0.001, simd_distance(from.simd, to.simd)))
-        case let .tube(points, radius, radii): tube(points: points.map(\.simd), radius: radius, radii: radii)
+        case let .tube(points, radius, radii):
+            // long winding paths (gut) need more samples than a bone
+            tube(points: points.map(\.simd), radius: radius, radii: radii, samples: max(40, points.count * 3), sides: points.count > 40 ? 10 : 8)
         case let .plate(points, thickness): plate(points: points.map(\.simd), thickness: thickness)
         case let .loft(sections): loft(sections: sections)
+        case let .sheet(origins, insertions, bulge, thickness):
+            sheet(origins: origins.map(\.simd), insertions: insertions.map(\.simd), bulge: bulge.simd, thickness: thickness)
         }
     }
 }

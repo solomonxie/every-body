@@ -67,9 +67,10 @@ def samples(s):
         rows = []
         for a, b in zip(secs, secs[1:]):
             for t in range(6):
-                rows.append([a[n] + (b[n] - a[n]) * t / 6 for n in range(5)])
+                rows.append([a[n] + (b[n] - a[n]) * t / 6 for n in range(len(a))])
         rows.append(secs[-1])
-        for i, (x, y, z, rx, rz) in enumerate(rows):
+        for i, row in enumerate(rows):
+            x, y, z, rx, rz = row[:5]
             p, q = rows[max(0, i - 1)], rows[min(len(rows) - 1, i + 1)]
             t = [q[n] - p[n] for n in range(3)]
             tl = math.sqrt(sum(c * c for c in t)) or 1e-6
@@ -84,6 +85,8 @@ def samples(s):
             for j in range(18):
                 ph = 2 * math.pi * j / 18
                 out.append([[x, y, z][n] + rx * math.cos(ph) * side[n] + rz * math.sin(ph) * depth[n] for n in range(3)])
+    elif k == "sheet":
+        out += s["origins"] + s["insertions"]
     elif k == "box":
         out.append(s["center"])
     return out

@@ -11,7 +11,7 @@ enum Textures {
         return 0.78 + 0.22 * stripe
     }
     static let bone = make { x, y in 0.9 + 0.1 * noise(x, y, 11) }
-    static let organ = make { x, y in 0.86 + 0.14 * noise(x / 2, y / 2, 7) }
+    static let organ = make { x, y in 0.9 + 0.1 * smooth(x, y, 8) }
 
     static func `for`(_ layer: LayerID) -> TextureResource? {
         switch layer {
@@ -25,6 +25,18 @@ enum Textures {
         var h = UInt32(truncatingIfNeeded: x &* 374761393 &+ y &* 668265263 &+ seed &* 2147483647)
         h = (h ^ (h >> 13)) &* 1274126177
         return Double(h & 0xFFFF) / 65535
+    }
+
+    /// value noise on an 8-px lattice, bilinear — soft mottling, tiles seamlessly at 64
+    private static func smooth(_ x: Int, _ y: Int, _ cell: Int) -> Double {
+        let n = 64 / cell
+        let gx = x / cell, gy = y / cell
+        let fx = Double(x % cell) / Double(cell), fy = Double(y % cell) / Double(cell)
+        func v(_ i: Int, _ j: Int) -> Double { noise(i % n, j % n, 3) }
+        let sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy)
+        let top = v(gx, gy) + (v(gx + 1, gy) - v(gx, gy)) * sx
+        let bottom = v(gx, gy + 1) + (v(gx + 1, gy + 1) - v(gx, gy + 1)) * sx
+        return top + (bottom - top) * sy
     }
 
     private static func make(_ value: (Int, Int) -> Double) -> TextureResource? {

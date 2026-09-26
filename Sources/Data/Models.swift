@@ -40,9 +40,11 @@ enum PartShape: Codable, Sendable, Hashable {
     case plate(points: [Vec3], thickness: Float)
     /// stacked ellipses along a path — each section is centre + half-width (sideways) + half-depth
     case loft(sections: [[Float]])
+    /// flat muscle: a curved slab from a line of origins to its insertions, bowed by `bulge`, thickest mid-belly
+    case sheet(origins: [Vec3], insertions: [Vec3], bulge: Vec3, thickness: Float)
 
     private enum Key: String, CodingKey {
-        case kind, center, radius, scale, size, rotation, from, to, points, radii, thickness, sections
+        case kind, center, radius, scale, size, rotation, from, to, points, radii, thickness, sections, origins, insertions, bulge
     }
 
     init(from decoder: Decoder) throws {
@@ -67,6 +69,9 @@ enum PartShape: Codable, Sendable, Hashable {
                          radii: try c.decodeIfPresent([Float].self, forKey: .radii))
         case "loft":
             self = .loft(sections: try c.decode([[Float]].self, forKey: .sections))
+        case "sheet":
+            self = .sheet(origins: try c.decode([Vec3].self, forKey: .origins), insertions: try c.decode([Vec3].self, forKey: .insertions),
+                          bulge: try v(.bulge), thickness: try f(.thickness))
         default:
             self = .plate(points: try c.decode([Vec3].self, forKey: .points), thickness: try f(.thickness))
         }
