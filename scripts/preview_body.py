@@ -4,6 +4,7 @@ Run: venv/bin/python scripts/preview_body.py /tmp/body.png [layers...]
 """
 
 import json
+import os
 import math
 import sys
 from pathlib import Path
@@ -63,13 +64,26 @@ def samples(s):
                 out.append([c[n] + (p[n] - c[n]) * t / 5 for n in range(3)])
     elif k == "loft":
         secs = s["sections"]
-        flat = abs(secs[-1][2] - secs[0][2]) > abs(secs[-1][1] - secs[0][1])  # runs along z (the foot)
+        rows = []
         for a, b in zip(secs, secs[1:]):
             for t in range(6):
-                x, y, z, rx, rz = [a[n] + (b[n] - a[n]) * t / 6 for n in range(5)]
-                for j in range(18):
-                    ph = 2 * math.pi * j / 18
-                    out.append([x + rx * math.cos(ph), y + rz * math.sin(ph), z] if flat else [x + rx * math.cos(ph), y, z + rz * math.sin(ph)])
+                rows.append([a[n] + (b[n] - a[n]) * t / 6 for n in range(5)])
+        rows.append(secs[-1])
+        for i, (x, y, z, rx, rz) in enumerate(rows):
+            p, q = rows[max(0, i - 1)], rows[min(len(rows) - 1, i + 1)]
+            t = [q[n] - p[n] for n in range(3)]
+            tl = math.sqrt(sum(c * c for c in t)) or 1e-6
+            t = [c / tl for c in t]
+            # same frame as Meshes.loft: sections measured against x, or y when the loft runs sideways
+            ref = [0, 1, 0] if abs(t[0]) > 0.8 else [1, 0, 0]
+            d = sum(ref[n] * t[n] for n in range(3))
+            side = [ref[n] - d * t[n] for n in range(3)]
+            sl = math.sqrt(sum(c * c for c in side)) or 1e-6
+            side = [c / sl for c in side]
+            depth = [side[1] * t[2] - side[2] * t[1], side[2] * t[0] - side[0] * t[2], side[0] * t[1] - side[1] * t[0]]
+            for j in range(18):
+                ph = 2 * math.pi * j / 18
+                out.append([[x, y, z][n] + rx * math.cos(ph) * side[n] + rz * math.sin(ph) * depth[n] for n in range(3)])
     elif k == "box":
         out.append(s["center"])
     return out
@@ -89,7 +103,10 @@ def main():
             ax.scatter([p[i] for p in pts], [p[1] for p in pts], s=0.4, c=color, alpha=0.5 if s["kind"] in ("tube", "loft") else 0.25)
         ax.set_aspect("equal")
         ax.set_title(title)
-        ax.set_ylim(-1.7, 1.8)
+        lo, hi = map(float, os.environ.get("YLIM", "-1.7,1.8").split(","))
+        ax.set_ylim(lo, hi)
+        if "XLIM" in os.environ:
+            ax.set_xlim(*map(float, os.environ["XLIM"].split(",")))
     fig.savefig(sys.argv[1], dpi=110, bbox_inches="tight")
 
 
