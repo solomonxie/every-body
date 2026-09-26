@@ -465,6 +465,15 @@ def muscles():
         pair(f"deep-{key}", "Deep muscles", "深层肌", "muscular", DEEP, loft([(x, y, z, rx * 0.86, rz * 0.86) for x, y, z, rx, rz in sec]))
 
     # head & neck
+    # face: forehead sheet, rings round the eyes and mouth, cheek muscles pulling the mouth corners up
+    on("frontalis", "Frontalis", "额肌", HEAD_CORE, ((1.715, 62), (1.715, 89)), ((1.648, 58), (1.648, 89)), 0.003, 1.0, nv=6)
+    ring = lambda cx, cy, cz, rx, ry, dz: [(cx + rx * math.cos(a), cy + ry * math.sin(a), cz - dz * (1 - math.sin(a) ** 2) * 0.5)
+                                           for a in [2 * math.pi * k / 16 for k in range(19)]]
+    pair("orbicularis-oculi", "Orbicularis oculi", "眼轮匝肌", "muscular", MUSCLE, tube(ring(0.03, 1.627, 0.081, 0.018, 0.014, 0.012), 0.003))
+    part("orbicularis-oris", "Orbicularis oris", "口轮匝肌", "muscular", MUSCLE, tube(ring(0, 1.553, 0.09, 0.02, 0.011, 0.018), 0.0038))
+    pair("zygomaticus", "Zygomaticus", "颧肌", "muscular", MUSCLE,
+         tube([(0.054, 1.603, 0.062), (0.04, 1.578, 0.078), (0.022, 1.556, 0.09)], 0.003, [0.004, 0.0035, 0.0028]))
+    pair("eyeball", "Eye", "眼睛", "muscular", "#F4F1EC", sphere((0.03, 1.627, 0.07), 0.012))
     # jaw muscles lie on the side of the head: temporalis fans over the temple to the jaw, masseter from cheekbone to jaw angle
     on("temporalis", "Temporalis", "颞肌", HEAD_CORE, ((1.69, -45), (1.69, 42)), ((1.595, 8), (1.595, 20)), 0.005, 1.0,
        converge=((0.056, 1.585, 0.028), 0.8))
