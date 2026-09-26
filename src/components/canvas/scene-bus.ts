@@ -36,7 +36,8 @@ export const FOCUS: Record<PointRegion | 'all', Focus> = {
 export const MIN_DISTANCE = 1.2;
 export const MAX_DISTANCE = 9;
 
-export function createSceneBus(): SceneBus {
+/** `litOrgans` pre-lights a pressed zone opened from search (the pulse then plays on mount) */
+export function createSceneBus(litOrgans: OrganId[] = []): SceneBus {
   return {
     yaw: 0,
     pitch: 0,
@@ -46,7 +47,7 @@ export function createSceneBus(): SceneBus {
     goalFocusY: FOCUS.all.y,
     goalYaw: null,
     touched: false,
-    litOrgans: [],
+    litOrgans,
     flashStart: -1,
     bpm: DEFAULT_BPM,
   };

@@ -18,7 +18,7 @@ import { ModelView } from '@/components/viewer/model-view';
 import { ReflexPanel, type RegionFilter } from '@/components/viewer/reflex-panel';
 import { REFLEX_TRAVEL_MS } from '@/constants/reflex';
 import { Spacing } from '@/constants/theme';
-import { DEFAULT_LAYERS, type LayerId } from '@/data/body';
+import { DEFAULT_LAYERS, SCHEMATIC_PARTS, type LayerId } from '@/data/body';
 import { POINTS_BY_SYSTEM } from '@/data/system-points';
 import type { BodyPoint } from '@/types/BodyPoint';
 import { BODY_SYSTEMS } from '@/types/BodySystem';
@@ -26,7 +26,7 @@ import { BODY_SYSTEMS } from '@/types/BodySystem';
 const SKIN_TONE = '#F2C9A5';
 
 export default function ViewerScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, point: pointParam, part: partParam } = useLocalSearchParams<{ id: string; point?: string; part?: string }>();
   const system = BODY_SYSTEMS.find((s) => s.id === id) ?? BODY_SYSTEMS[0];
   const systemPoints = POINTS_BY_SYSTEM[system.id];
   const isReflex = systemPoints?.points.some((point) => point.target) ?? false;
@@ -34,16 +34,21 @@ export default function ViewerScreen() {
     ? systemPoints.flow.pointIds.flatMap((pid) => systemPoints.points.find((p) => p.id === pid) ?? [])
     : undefined;
 
-  const busRef = useRef(createSceneBus());
-  const [activePointId, setActivePointId] = useState<string | undefined>();
-  const [pressTrigger, setPressTrigger] = useState(0);
-  const [effectVisible, setEffectVisible] = useState(false);
+  const initialPoint = systemPoints?.points.find((p) => p.id === pointParam);
+  const busRef = useRef(createSceneBus(initialPoint?.target?.organIds));
+  const [activePointId, setActivePointId] = useState<string | undefined>(initialPoint?.id);
+  const [pressTrigger, setPressTrigger] = useState(initialPoint?.target ? 1 : 0);
+  const [effectVisible, setEffectVisible] = useState(Boolean(initialPoint?.target));
   const [filter, setFilter] = useState<RegionFilter>('all');
   const [bpm, setBpm] = useState(DEFAULT_BPM);
   const effectTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const [layers, setLayers] = useState<LayerId[]>(DEFAULT_LAYERS[system.id] ?? ['skin', 'organs']);
+  const partLayer = SCHEMATIC_PARTS.find((p) => p.id === partParam)?.layer;
+  const [layers, setLayers] = useState<LayerId[]>(() => {
+    const base = DEFAULT_LAYERS[system.id] ?? ['skin', 'organs'];
+    return partLayer && !base.includes(partLayer) ? [...base, partLayer] : base;
+  });
   const [hidden, setHidden] = useState<string[]>([]);
-  const [selectedPartId, setSelectedPartId] = useState<string | undefined>();
+  const [selectedPartId, setSelectedPartId] = useState<string | undefined>(partParam);
   const innerLayers = layers.some((layer) => layer !== 'skin');
 
   const activePoint = systemPoints?.points.find((point) => point.id === activePointId);

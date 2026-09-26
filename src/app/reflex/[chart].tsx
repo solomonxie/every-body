@@ -13,6 +13,7 @@ import { Pill } from '@/components/viewer/pill';
 import { REFLEX_TRAVEL_MS } from '@/constants/reflex';
 import { Spacing } from '@/constants/theme';
 import { REFLEX_CHARTS, ZONE_GROUPS, type ReflexZone, type Side } from '@/data/reflex-charts';
+import { useBilingual, useName } from '@/state/settings';
 import type { BodyPoint } from '@/types/BodyPoint';
 
 const SKIN_TONE = '#F2C9A5';
@@ -23,19 +24,28 @@ const SIDES: { id: Side; label: string }[] = [
 
 /** Hand / ear reflex chart with a 3D inset showing where the pressed zone acts. */
 export default function ReflexChartScreen() {
-  const { chart: chartId } = useLocalSearchParams<{ chart: string }>();
+  const { chart: chartId, face: faceParam, zone: zoneParam, side: sideParam } = useLocalSearchParams<{
+    chart: string;
+    face?: string;
+    zone?: string;
+    side?: Side;
+  }>();
   const chart = REFLEX_CHARTS[chartId as keyof typeof REFLEX_CHARTS] ?? REFLEX_CHARTS.hand;
 
-  const busRef = useRef(createSceneBus());
-  const [faceId, setFaceId] = useState(chart.faces[0].id);
-  const [side, setSide] = useState<Side>('right');
+  const initialFace = chart.faces.find((f) => f.id === faceParam) ?? chart.faces[0];
+  const initialZone = initialFace.zones.find((z) => z.id === zoneParam);
+  const busRef = useRef(createSceneBus(initialZone?.organIds));
+  const [faceId, setFaceId] = useState(initialFace.id);
+  const [side, setSide] = useState<Side>(sideParam === 'left' ? 'left' : 'right');
   const [showLabels, setShowLabels] = useState(true);
-  const [selected, setSelected] = useState<ReflexZone | undefined>();
-  const [pressTrigger, setPressTrigger] = useState(0);
-  const [effectVisible, setEffectVisible] = useState(false);
+  const [selected, setSelected] = useState<ReflexZone | undefined>(initialZone);
+  const [pressTrigger, setPressTrigger] = useState(initialZone ? 1 : 0);
+  const [effectVisible, setEffectVisible] = useState(Boolean(initialZone));
   const effectTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const face = chart.faces.find((f) => f.id === faceId) ?? chart.faces[0];
+  const name = useName();
+  const { showEn, showZh } = useBilingual();
   const groups = [...new Set(zonesFor(face, side).map((zone) => zone.group))];
 
   const pulsePoint = useMemo<BodyPoint | undefined>(
@@ -129,12 +139,10 @@ export default function ReflexChartScreen() {
           <View style={styles.card}>
             {selected ? (
               <>
-                <ThemedText type="smallBold">
-                  {selected.name} · {selected.nameZh}
-                </ThemedText>
+                <ThemedText type="smallBold">{name(selected.name, selected.nameZh)}</ThemedText>
                 <View style={[styles.effect, !effectVisible && styles.pending]}>
-                  <ThemedText type="small">{selected.effect}</ThemedText>
-                  <ThemedText type="small">{selected.effectZh}</ThemedText>
+                  {showEn && <ThemedText type="small">{selected.effect}</ThemedText>}
+                  {showZh && <ThemedText type="small">{selected.effectZh}</ThemedText>}
                   <View style={styles.cardFooter}>
                     <ThemedText type="small" themeColor="textSecondary">
                       Traditional claim — not medical advice.

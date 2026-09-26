@@ -13,6 +13,7 @@ import { createDragGesture, type PointHandler } from '@/illustrations/drag-gestu
 import { findIllustration, ILLUSTRATIONS } from '@/illustrations';
 import { SCENE_H, SCENE_W, type Scenario } from '@/illustrations/types';
 import { usePlayer } from '@/illustrations/use-player';
+import { useBilingual } from '@/state/settings';
 
 /** stable function identity that always calls the latest closure */
 function useCallbackRef<A extends unknown[]>(fn: (...args: A) => void) {
@@ -34,6 +35,7 @@ function Player({ scenario }: { scenario: Scenario }) {
   const [size, setSize] = useState({ w: 1, h: 1 });
   const dragRef = useRef<PointHandler | null>(null);
   const { Scene } = scenario;
+  const { showEn, showZh } = useBilingual();
   const isLast = stepIndex === scenario.steps.length - 1;
   const dragging = step.try?.mode === 'drag' && scenario.onDrag;
 
@@ -99,8 +101,8 @@ function Player({ scenario }: { scenario: Scenario }) {
               </ThemedText>
             </View>
 
-            <ThemedText type="smallBold">{step.caption.en}</ThemedText>
-            <ThemedText type="small">{step.caption.zh}</ThemedText>
+            {showEn && <ThemedText type="smallBold">{step.caption.en}</ThemedText>}
+            {showZh && <ThemedText type={showEn ? 'small' : 'smallBold'}>{step.caption.zh}</ThemedText>}
 
             {step.try?.mode === 'scrub' && <Scrubs scrubs={step.try.scrubs} params={params} onChange={easeParams} />}
             {step.try?.mode === 'rhythm' && (

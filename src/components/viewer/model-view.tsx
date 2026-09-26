@@ -6,6 +6,7 @@ import { GestureDetector } from 'react-native-gesture-handler';
 import { BodyScene } from '@/components/canvas/body-scene';
 import { FOCUS, type SceneBusRef } from '@/components/canvas/scene-bus';
 import type { Pick, Picker } from '@/components/canvas/tap-picker';
+import { useSettings } from '@/state/settings';
 
 import { createOrbitGesture, resetView } from './orbit-gesture';
 
@@ -27,7 +28,13 @@ type Props = {
 /** Full-bleed 3D body: drag to spin, pinch to zoom, tap a point, double-tap to reset. */
 export function ModelView({ busRef, skinColor, onPick, skinOpacity, showOrgans, selectedId, compact = false, children }: Props) {
   const pickerRef = useRef<Picker | null>(null);
-  const [background, setBackground] = useState<keyof typeof BACKGROUNDS>('gray');
+  const { settings, update } = useSettings();
+  const background = settings.background;
+  const setBackground = (next: keyof typeof BACKGROUNDS) => update({ background: next });
+
+  useEffect(() => {
+    if (!settings.autoRotate) busRef.current.touched = true;
+  }, [settings.autoRotate, busRef]);
   const [hintVisible, setHintVisible] = useState(!compact);
 
   const onPickRef = useRef(onPick);

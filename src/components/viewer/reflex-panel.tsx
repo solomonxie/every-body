@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useBilingual, useName, useSettings } from '@/state/settings';
 import type { BodyPoint, PointRegion } from '@/types/BodyPoint';
 
 import { Pill } from './pill';
@@ -32,6 +33,9 @@ type Props = {
 /** Points list + effect card for the Reflex Map — see docs/design/mvp/uiux/points.md. */
 export function ReflexPanel({ points, filter, onFilter, activePoint, effectVisible, onPress }: Props) {
   const visible = filter === 'all' ? points : points.filter((point) => point.region === filter);
+  const name = useName();
+  const { showEn, showZh } = useBilingual();
+  const { names } = useSettings().settings;
 
   return (
     <View style={styles.container}>
@@ -42,7 +46,7 @@ export function ReflexPanel({ points, filter, onFilter, activePoint, effectVisib
       </ScrollView>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {visible.map((point) => (
-          <Pill key={point.id} label={point.nameZh} selected={point.id === activePoint?.id} onPress={() => onPress(point)} />
+          <Pill key={point.id} label={names === 'en' ? point.name : point.nameZh} selected={point.id === activePoint?.id} onPress={() => onPress(point)} />
         ))}
       </ScrollView>
 
@@ -54,19 +58,15 @@ export function ReflexPanel({ points, filter, onFilter, activePoint, effectVisib
 
       {activePoint ? (
         <ThemedView style={styles.card}>
-          <ThemedText type="smallBold">
-            {activePoint.name} · {activePoint.nameZh}
-          </ThemedText>
+          <ThemedText type="smallBold">{name(activePoint.name, activePoint.nameZh)}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {activePoint.description}
           </ThemedText>
           {activePoint.target && (
             <View style={[styles.effect, !effectVisible && styles.pending]}>
-              <ThemedText type="smallBold">
-                → {activePoint.target.name} · {activePoint.target.nameZh}
-              </ThemedText>
-              <ThemedText type="small">{activePoint.target.effect}</ThemedText>
-              <ThemedText type="small">{activePoint.target.effectZh}</ThemedText>
+              <ThemedText type="smallBold">→ {name(activePoint.target.name, activePoint.target.nameZh)}</ThemedText>
+              {showEn && <ThemedText type="small">{activePoint.target.effect}</ThemedText>}
+              {showZh && <ThemedText type="small">{activePoint.target.effectZh}</ThemedText>}
               <View style={styles.cardFooter}>
                 <ThemedText type="small" themeColor="textSecondary">
                   Traditional reflexology claim — not medical advice.
