@@ -11,5 +11,14 @@ extension UIColor {
 extension Color {
     init(hex: String) { self.init(uiColor: UIColor(hex: hex)) }
 
-    static let brand = Color(hex: "#6C4F9E")
+    /// follows light / dark mode
+    init(light: String, dark: String) {
+        let l = UIColor(hex: light), d = UIColor(hex: dark)
+        self.init(uiColor: UIColor { $0.userInterfaceStyle == .dark ? d : l })
+    }
+
+    /// text, tint, outlines
+    static let brand = Color(light: "#6C4F9E", dark: "#A98FE3")
+    /// solid fill under white text
+    static let brandFill = Color(light: "#6C4F9E", dark: "#7458B8")
 }
