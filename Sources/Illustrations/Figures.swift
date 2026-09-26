@@ -69,7 +69,7 @@ struct Casualty {
 /// Side-view person built from joints; scenes place the hip, pose the limbs and aim hands at scene points.
 /// Body frame: hip at the origin, facing +x, y down. `rotation` turns the whole body (−90 = lying on the back).
 struct SideFigure {
-    enum Hand: Sendable { case open, fist, twoFingers }
+    enum Hand: Sendable { case open, fist, twoFingers, laced, thumb, encircle }
     struct Arm {
         /// palm centre in scene coords; nil = pose by angles
         var reach: CGPoint? = nil
@@ -238,12 +238,12 @@ struct SideFigure {
     private func arm(_ g: inout Sketch, _ a: Arm, shade: Bool) {
         let (s, e, w, palm, d) = armPoints(a)
         let aw = build.armW * h
-        let cuff = look.longSleeves ? lerp(e, w, 0.85) : lerp(s, e, 0.75)
-        let skin = look.longSleeves ? [e, w] : [s, e, w]
-        g.limb(skin, w: aw * 0.8, fill: look.skin, line: look.skinLine)
-        g.limb(look.longSleeves ? [s, e, cuff] : [s, cuff], w: aw, fill: look.top, line: look.topLine)
+        dressedArm(&g, s, e, w, aw: aw, look: look)
         drawHand(&g, at: palm, dir: d, len: build.hand * h, shape: a.hand, look: look)
-        if shade { g.limb([s, e, w, palm], w: aw * 0.9, fill: .black.opacity(0.12), line: nil) }
+        if shade {
+            g.taper([s, e, w], [aw * 1.08, aw * 0.9, aw * 0.62], fill: .black.opacity(0.13), line: nil)
+            g.limb([w, palm], w: build.hand * h * 0.42, fill: .black.opacity(0.13), line: nil)
+        }
     }
 
     private func leg(_ g: inout Sketch, _ l: Leg, shade: Bool) {
@@ -252,26 +252,61 @@ struct SideFigure {
         let k = CGPoint(x: sin(a1) * T, y: cos(a1) * T)
         let an = CGPoint(x: k.x + sin(a2) * S, y: k.y + cos(a2) * S)
         let fd = CGPoint(x: cos(a2) * cos(p) + sin(a2) * sin(p), y: -sin(a2) * cos(p) + cos(a2) * sin(p))
-        let toe = CGPoint(x: an.x + fd.x * build.foot * h, y: an.y + fd.y * build.foot * h)
-        let heel = CGPoint(x: an.x - fd.x * lw * 0.15, y: an.y - fd.y * lw * 0.15)
-        g.limb([.zero, k, an], w: lw, fill: look.bottom, line: look.onePiece ? look.topLine : darker(look.bottom))
-        g.limb([heel, lerp(heel, toe, 0.55)], w: lw * 0.55, fill: look.shoes, line: look.bareFeet ? look.skinLine : hex("#1E1E24"))
-        g.limb([lerp(heel, toe, 0.4), toe], w: lw * 0.42, fill: look.shoes, line: look.bareFeet ? look.skinLine : hex("#1E1E24"))
-        if shade { g.limb([.zero, k, an, toe], w: lw * 0.9, fill: .black.opacity(0.12), line: nil) }
+        let shin = CGPoint(x: sin(a2), y: cos(a2))
+        let line = look.onePiece ? look.topLine : darker(look.bottom)
+        drawShoe(&g, ankle: an, dir: fd, shin: shin, len: build.foot * h, w: lw, look: look)
+        let ws = [lw * 1.12, lw * 0.84, lw * 0.64]
+        g.taper([.zero, k, an], ws, fill: look.bottom, line: line)
+        // knee crease on the back of a bent leg
+        if l.knee > 25 {
+            let bk = unit(CGPoint(x: -k.x / T + shin.x, y: -k.y / T + shin.y))
+            g.line(k.x + bk.x * lw * 0.08, k.y + bk.y * lw * 0.08, k.x + bk.x * lw * 0.36, k.y + bk.y * lw * 0.36, stroke: line, lw: 0.9,
+                   cap: .round, opacity: 0.8)
+        }
+        if shade {
+            g.taper([.zero, k, an], ws, fill: .black.opacity(0.13), line: nil)
+            let toe = CGPoint(x: an.x + fd.x * build.foot * h * 0.8, y: an.y + fd.y * build.foot * h * 0.8)
+            g.limb([an, toe], w: lw * 0.45, fill: .black.opacity(0.13), line: nil)
+        }
     }
 
     private func trunk(_ g: inout Sketch) {
         let back = [CGPoint(x: -0.5, y: -0.06), CGPoint(x: -0.55, y: 0.08), CGPoint(x: -0.42, y: 0.38),
                     CGPoint(x: -0.52, y: 0.74), CGPoint(x: -0.4, y: 0.97), CGPoint(x: -0.2, y: 1.03), CGPoint(x: 0.02, y: 1.05)]
         let outline = (back + frontPoints).map { bodyTorso($0.x, $0.y) }
-        // neck under the collar
+        // neck under the collar, shadowed under the jaw
         let nb = bodyTorso(0.0, 0.98), nt = bodyTorso(0.05, 1 + build.neck / build.torso + 0.08)
         g.limb([nb, nt], w: build.headR * h * 0.95, fill: look.skin, line: look.skinLine)
-        g.shape(smoothPath(outline), fill: look.top, stroke: look.topLine, lw: 1.3)
+        g.limb([nb, lerp(nb, nt, 0.7)], w: build.headR * h * 0.5, fill: .black.opacity(0.07), line: nil)
+        let body = smoothPath(outline)
+        g.shape(body, fill: look.top, stroke: look.topLine, lw: 1.3)
+        var sh = g
+        sh.ctx.clip(to: body)
+        // soft shade down the back, light from the front
+        sh.shape(openPath(back.map { bodyTorso($0.x, $0.y) }), stroke: .black.opacity(0.08), lw: build.depth * h * 0.45)
+        let d = build.depth * h
+        if d > 9 {
+            // shirt folds: under the arm and at the waist
+            let a1 = bodyTorso(-0.05, 0.78), a2 = bodyTorso(0.12, 0.62)
+            sh.path("M \(a1.x) \(a1.y) Q \(a2.x) \(a1.y) \(a2.x) \(a2.y)", stroke: look.topLine, lw: 0.9, opacity: 0.55, cap: .round)
+            let w1 = bodyTorso(0.3, 0.2), w2 = bodyTorso(0.05, 0.14), w3 = bodyTorso(0.28, 0.3), w4 = bodyTorso(0.1, 0.26)
+            sh.line(w1.x, w1.y, w2.x, w2.y, stroke: look.topLine, lw: 0.9, cap: .round, opacity: 0.5)
+            sh.line(w3.x, w3.y, w4.x, w4.y, stroke: look.topLine, lw: 0.8, cap: .round, opacity: 0.4)
+        }
         if !look.onePiece {
-            let pants = [CGPoint(x: 0.44 + 0.3 * bump, y: 0.14), CGPoint(x: 0.47, y: 0.0), CGPoint(x: 0.24, y: -0.13),
-                         CGPoint(x: -0.5, y: -0.07), CGPoint(x: -0.57, y: 0.06), CGPoint(x: -0.46, y: 0.16)].map { bodyTorso($0.x, $0.y) }
-            g.shape(smoothPath(pants), fill: look.bottom, stroke: darker(look.bottom), lw: 1.2)
+            let pants = [CGPoint(x: 0.44 + 0.3 * bump, y: 0.12), CGPoint(x: 0.47, y: 0.0), CGPoint(x: 0.3, y: -0.14),
+                         CGPoint(x: -0.1, y: -0.18), CGPoint(x: -0.5, y: -0.06), CGPoint(x: -0.54, y: 0.06), CGPoint(x: -0.47, y: 0.13)]
+                .map { bodyTorso($0.x, $0.y) }
+            let p = smoothPath(pants), line = darker(look.bottom)
+            g.shape(p, fill: look.bottom)
+            // outline only where cloth meets air: front and seat, not across the thighs
+            g.shape(curvePath(Array(pants[0...2])), stroke: line, lw: 1.2)
+            g.shape(curvePath(Array(pants[3...6]) + [pants[0]]), stroke: line, lw: 1.2)
+            var ps = g
+            ps.ctx.clip(to: p)
+            let b1 = bodyTorso(-0.6, 0.1), b2 = bodyTorso(0.6 + 0.3 * bump, 0.1)
+            ps.line(b1.x, b1.y, b2.x, b2.y, stroke: line, lw: max(0.8, d * 0.04), opacity: 0.7)
+            ps.shape(openPath([bodyTorso(-0.55, 0.1), bodyTorso(-0.52, -0.08)]), stroke: .black.opacity(0.08), lw: d * 0.4)
         }
         // collar
         let c1 = bodyTorso(0.25, 1.0), c2 = bodyTorso(0.05, 0.93), c3 = bodyTorso(-0.15, 1.02)
@@ -320,14 +355,40 @@ struct FrontFigure {
             s.rect(head.x - 0.95 * r, head.y - 0.6 * r, 1.9 * r, 2.1 * r, r: 0.8 * r, fill: look.hair)
         }
         if let floor, bow <= 0.5 {
-            s.rect(n.x - sw * 0.82, n.y + tl - 4, sw * 1.64, floor - n.y - tl + 4, r: 4, fill: look.bottom, stroke: darker(look.bottom))
+            // kneeling: hips and two thighs coming toward us, knees on the floor
+            let hy = n.y + tl - 6, line = look.onePiece ? look.topLine : darker(look.bottom)
+            for side in [-1.0, 1.0] {
+                s.taper([CGPoint(x: n.x + side * sw * 0.42, y: hy), CGPoint(x: n.x + side * sw * 0.52, y: floor - sw * 0.35)],
+                        [sw * 0.95, sw * 0.8], fill: look.bottom, line: line)
+            }
+            s.rect(n.x - sw * 0.84, hy - 4, sw * 1.68, sw * 0.5, r: sw * 0.2, fill: look.bottom, stroke: line)
+            s.line(n.x, hy + sw * 0.3, n.x, hy + sw * 0.9, stroke: line, lw: 1, opacity: 0.6)
         }
-        let body = [CGPoint(x: -0.3, y: -0.01), CGPoint(x: -0.9, y: 0.03), CGPoint(x: -1.04, y: 0.2), CGPoint(x: -0.9, y: 0.55),
-                    CGPoint(x: -0.82, y: 1.0), CGPoint(x: 0.82, y: 1.0), CGPoint(x: 0.9, y: 0.55), CGPoint(x: 1.04, y: 0.2),
-                    CGPoint(x: 0.9, y: 0.03), CGPoint(x: 0.3, y: -0.01)]
-            .map { CGPoint(x: n.x + $0.x * sw, y: n.y + ($0.y < 0.3 ? $0.y * 0.35 * build.torso * h : $0.y * tl) * (bow > 0.5 ? -0.9 : 1)) }
+        let flip = bow > 0.5 ? -0.9 : 1
+        let body = [CGPoint(x: -0.3, y: -0.01), CGPoint(x: -0.86, y: 0.02), CGPoint(x: -1.04, y: 0.18), CGPoint(x: -0.98, y: 0.42),
+                    CGPoint(x: -0.84, y: 0.7), CGPoint(x: -0.86, y: 1.0), CGPoint(x: 0.86, y: 1.0), CGPoint(x: 0.84, y: 0.7),
+                    CGPoint(x: 0.98, y: 0.42), CGPoint(x: 1.04, y: 0.18), CGPoint(x: 0.86, y: 0.02), CGPoint(x: 0.3, y: -0.01)]
+        func P(_ q: CGPoint) -> CGPoint { CGPoint(x: n.x + q.x * sw, y: n.y + (q.y < 0.3 ? q.y * 0.35 * build.torso * h : q.y * tl) * flip) }
         s.limb([CGPoint(x: n.x, y: n.y + 2), CGPoint(x: n.x, y: head.y + r * 0.6)], w: r * 0.85, fill: look.skin, line: look.skinLine)
-        s.shape(smoothPath(body), fill: look.top, stroke: look.topLine, lw: 1.3)
+        if bow < 0.5 { s.limb([CGPoint(x: n.x, y: n.y + 1), CGPoint(x: n.x, y: n.y - r * 0.25)], w: r * 0.6, fill: .black.opacity(0.08), line: nil) }
+        let torso = smoothPath(body.map(P))
+        s.shape(torso, fill: look.top, stroke: look.topLine, lw: 1.3)
+        var sh = s
+        sh.ctx.clip(to: torso)
+        // light from the upper left: shade the right flank, folds at the waist and armpits
+        sh.shape(openPath([CGPoint(x: 1.1, y: 0.1), CGPoint(x: 0.95, y: 0.5), CGPoint(x: 0.95, y: 1.05)].map(P)), stroke: .black.opacity(0.09), lw: sw * 0.55)
+        if sw > 12 {
+            for side in [-1.0, 1.0] {
+                let a = P(CGPoint(x: side * 0.72, y: 0.3)), b = P(CGPoint(x: side * 0.5, y: 0.52))
+                sh.path("M \(a.x) \(a.y) Q \(b.x + side * 2) \(a.y + 2) \(b.x) \(b.y)", stroke: look.topLine, lw: 0.9, opacity: 0.5, cap: .round)
+                let w1 = P(CGPoint(x: side * 0.7, y: 0.88)), w2 = P(CGPoint(x: side * 0.3, y: 0.8))
+                sh.line(w1.x, w1.y, w2.x, w2.y, stroke: look.topLine, lw: 0.9, cap: .round, opacity: 0.45)
+            }
+        }
+        if !look.onePiece && bow < 0.5 {
+            let a = P(CGPoint(x: -0.9, y: 0.97)), b = P(CGPoint(x: 0.9, y: 0.97))
+            sh.line(a.x, a.y, b.x, b.y, stroke: darker(look.top), lw: max(1.2, sw * 0.08), opacity: 0.5)
+        }
         s.shape(openPath([CGPoint(x: n.x - r * 0.45, y: n.y - 1), CGPoint(x: n.x, y: n.y + r * 0.55), CGPoint(x: n.x + r * 0.45, y: n.y - 1)]),
                 stroke: look.topLine, lw: 1.1)
         drawFrontHead(&s, at: head, r: r, look: look, face: face, bow: bow)
@@ -336,15 +397,10 @@ struct FrontFigure {
     /// arms and hands, drawn after whatever they rest on
     func drawArms(_ s: inout Sketch) {
         for side in [-1.0, 1.0] { arm(&s, side) }
-        if hands == .interlocked {
-            // top hand's fingers laced over the bottom hand
-            let c = lerp(left, right, 0.5), L = build.hand * h
-            for i in 0..<4 {
-                let x = c.x - L * 0.3 + Double(i) * L * 0.2
-                s.line(x, c.y - L * 0.05, x - L * 0.05, c.y + L * 0.28, stroke: look.skinLine, lw: 0.8)
-            }
-        }
     }
+
+    /// one arm: −1 = viewer's left, +1 = viewer's right (to layer an arm behind something)
+    func drawArm(_ s: inout Sketch, side: Double) { arm(&s, side) }
 
     private func arm(_ s: inout Sketch, _ side: Double) {
         let sw = build.shoulderW * h
@@ -355,16 +411,12 @@ struct FrontFigure {
         let e = (e1.x - neck.x) * side > (e2.x - neck.x) * side ? e1 : e2
         let d = unit(CGPoint(x: target.x - e.x, y: target.y - e.y))
         let w = CGPoint(x: target.x - d.x * half, y: target.y - d.y * half)
-        let aw = build.armW * h
-        if look.longSleeves {
-            s.limb([e, w], w: aw * 0.8, fill: look.skin, line: look.skinLine)
-            s.limb([sh, e, lerp(e, w, 0.85)], w: aw, fill: look.top, line: look.topLine)
-        } else {
-            s.limb([sh, e, w], w: aw * 0.8, fill: look.skin, line: look.skinLine)
-            s.limb([sh, lerp(sh, e, 0.75)], w: aw, fill: look.top, line: look.topLine)
-        }
+        dressedArm(&s, sh, e, w, aw: build.armW * h, look: look)
         var shape = SideFigure.Hand.open
         if hands == .twoFingers && side > 0 { shape = .twoFingers }
+        // interlocked: the right hand lies on top with its fingers laced down between the lower ones
+        if hands == .interlocked && side > 0 { shape = .laced }
+        if hands == .thumbs { shape = .encircle }
         drawHand(&s, at: target, dir: d, len: build.hand * h, shape: shape, look: look, thumb: -side)
     }
 }
@@ -427,29 +479,34 @@ func drawSideHead(_ s: inout Sketch, at c: CGPoint, up: CGPoint, side: Double = 
     // ear
     g.ellipse(-0.1, 0.1, 0.17, 0.25, fill: look.skin, stroke: look.skinLine, lw: lw)
     g.path("M -0.05 0 Q -0.16 0.1 -0.06 0.22", stroke: look.skinLine, lw: lw * 0.8)
-    // eye, brow, mouth
-    let ink = hex("#3A3038")
+    // eye, brow, nostril, mouth: line weights grow a little with the head
+    let ink = hex("#3A3038"), fl = max(1.2, r * 0.05) / r
+    g.circle(0.5, 0.36, 0.15, fill: hex("#F2A0A0"), opacity: baby ? 0.35 : 0.18)
     switch face {
     case .closed:
-        g.path("M 0.5 0.0 Q 0.6 0.08 0.72 0.0", stroke: ink, lw: lw * 1.1, cap: .round)
+        g.path("M 0.48 0.0 Q 0.6 0.09 0.73 0.0", stroke: ink, lw: fl * 1.2, cap: .round)
     default:
         g.ellipse(0.62, -0.02, 0.07, face == .distress ? 0.12 : 0.1, fill: ink)
+        if r > 14 { g.circle(0.64, -0.06, 0.025, fill: .white, opacity: 0.9) }
     }
     g.path(face == .distress ? "M 0.46 -0.22 L 0.78 -0.32" : "M 0.46 -0.24 Q 0.62 -0.3 0.8 -0.22",
-           stroke: look.style == .thin ? hex("#A0A0A0") : look.hair, lw: 0.07, cap: .round)
+           stroke: look.style == .thin ? hex("#A0A0A0") : look.hair, lw: baby ? 0.04 : 0.07, opacity: baby ? 0.6 : 1, cap: .round)
+    g.path("M 0.93 0.3 Q 0.86 0.33 0.9 0.37", stroke: look.skinLine, lw: fl * 0.9, cap: .round)
     if face == .distress || face == .open {
         g.ellipse(0.9, 0.6, 0.1, 0.12, fill: hex("#7A2E34"))
     } else {
-        g.path("M 0.95 0.57 L 0.83 0.6", stroke: look.skinLine, lw: lw, cap: .round)
+        g.path("M 0.96 0.58 Q 0.9 0.62 0.82 0.6", stroke: hex("#B5655E"), lw: fl * 1.1, cap: .round)
     }
-    if baby { g.circle(0.55, 0.35, 0.14, fill: hex("#F2A0A0"), opacity: 0.35) }
 }
 
 /// Face-on head; `bow` tips it toward us so we see more hair and the face drops.
 func drawFrontHead(_ s: inout Sketch, at c: CGPoint, r: Double, look: Look, face: Face, bow: Double = 0) {
     let ink = hex("#3A3038"), sh = bow * 0.35 * r
     for side in [-1.0, 1.0] { s.ellipse(c.x + side * 0.84 * r, c.y + 0.12 * r + sh * 0.5, 0.16 * r, 0.24 * r, fill: look.skin, stroke: look.skinLine) }
-    s.ellipse(c.x, c.y, 0.84 * r, r, fill: look.skin, stroke: look.skinLine, lw: 1.2)
+    // head: fuller cheeks, softer chin
+    let outline = [(0.0, -1.0), (0.62, -0.84), (0.86, -0.2), (0.8, 0.34), (0.56, 0.78), (0.2, 0.99), (-0.2, 0.99), (-0.56, 0.78), (-0.8, 0.34),
+                   (-0.86, -0.2), (-0.62, -0.84)].map { CGPoint(x: c.x + $0.0 * r, y: c.y + $0.1 * r) }
+    s.shape(smoothPath(outline), fill: look.skin, stroke: look.skinLine, lw: 1.2)
     let fr = c.y + (-0.42 + bow * 0.55) * r
     var hair = Path()
     hair.move(to: CGPoint(x: c.x - 0.88 * r, y: c.y + 0.05 * r))
@@ -457,25 +514,40 @@ func drawFrontHead(_ s: inout Sketch, at c: CGPoint, r: Double, look: Look, face
                   control2: CGPoint(x: c.x + 0.98 * r, y: c.y - 1.38 * r))
     hair.addCurve(to: CGPoint(x: c.x - 0.88 * r, y: c.y + 0.05 * r), control1: CGPoint(x: c.x + 0.6 * r, y: fr),
                   control2: CGPoint(x: c.x - 0.6 * r, y: fr))
-    if look.style != .baby { s.shape(hair, fill: look.hair, stroke: darker(look.hair), lw: 0.8) }
-    if look.style == .bun { s.circle(c.x, c.y - 1.05 * r, 0.3 * r, fill: look.hair) }
+    if look.style != .baby {
+        s.shape(hair, fill: look.hair, stroke: darker(look.hair), lw: 0.8)
+        if r > 10 && bow < 0.5 {
+            // parting and a sheen
+            s.path("M \(c.x - 0.25 * r) \(c.y - 0.95 * r) Q \(c.x - 0.1 * r) \(c.y - 0.6 * r) \(c.x - 0.3 * r) \(fr + 0.08 * r)", stroke: darker(look.hair),
+                   lw: 1, cap: .round)
+            s.path("M \(c.x + 0.25 * r) \(c.y - 0.85 * r) Q \(c.x + 0.55 * r) \(c.y - 0.75 * r) \(c.x + 0.66 * r) \(c.y - 0.45 * r)", stroke: .white,
+                   lw: max(1, r * 0.08), opacity: 0.18, cap: .round)
+        }
+    } else {
+        s.path("M \(c.x - 0.2 * r) \(c.y - 0.98 * r) Q \(c.x) \(c.y - 1.15 * r) \(c.x + 0.1 * r) \(c.y - 0.96 * r)", stroke: look.hair, lw: 1.2, cap: .round)
+    }
+    if look.style == .bun { s.circle(c.x, c.y - 1.05 * r, 0.3 * r, fill: look.hair, stroke: darker(look.hair), lw: 0.8) }
     guard bow < 0.85 else { return }
     let ey = c.y + 0.08 * r + sh
     for side in [-1.0, 1.0] {
         let ex = c.x + side * 0.32 * r
+        s.circle(c.x + side * 0.5 * r, ey + 0.3 * r, 0.14 * r, fill: hex("#F2A0A0"), opacity: look.style == .baby ? 0.4 : 0.2)
         if face == .closed || bow > 0.5 {
-            s.path("M \(ex - 0.1 * r) \(ey) Q \(ex) \(ey + 0.07 * r) \(ex + 0.1 * r) \(ey)", stroke: ink, lw: 1, cap: .round)
+            s.path("M \(ex - 0.11 * r) \(ey) Q \(ex) \(ey + 0.08 * r) \(ex + 0.11 * r) \(ey)", stroke: ink, lw: 1.1, cap: .round)
         } else {
             s.ellipse(ex, ey, 0.075 * r, 0.1 * r, fill: ink)
+            if r > 12 { s.circle(ex + 0.025 * r, ey - 0.035 * r, 0.025 * r, fill: .white, opacity: 0.9) }
         }
-        s.line(ex - side * 0.06 * r, ey - 0.2 * r, ex + side * 0.14 * r, ey - 0.23 * r, stroke: darker(look.hair), lw: 1.2, cap: .round)
+        // worried brows lift at the inner end
+        let inner = face == .distress ? -0.3 : -0.2, outer = face == .distress ? -0.19 : -0.23
+        s.line(ex - side * 0.08 * r, ey + inner * r, ex + side * 0.14 * r, ey + outer * r, stroke: darker(look.hair), lw: max(1.1, r * 0.06), cap: .round)
     }
     s.path("M \(c.x - 0.03 * r) \(ey + 0.12 * r) Q \(c.x - 0.1 * r) \(ey + 0.3 * r) \(c.x + 0.04 * r) \(ey + 0.33 * r)", stroke: look.skinLine, lw: 1)
     let my = ey + 0.52 * r - sh * 0.3
     if face == .open || face == .distress {
         s.ellipse(c.x, my, 0.14 * r, 0.1 * r, fill: hex("#7A2E34"))
     } else if bow < 0.4 {
-        s.path("M \(c.x - 0.16 * r) \(my) Q \(c.x) \(my + 0.07 * r) \(c.x + 0.16 * r) \(my)", stroke: hex("#B5655E"), lw: 1.1, cap: .round)
+        s.path("M \(c.x - 0.16 * r) \(my) Q \(c.x) \(my + 0.07 * r) \(c.x + 0.16 * r) \(my)", stroke: hex("#B5655E"), lw: max(1.1, r * 0.05), cap: .round)
     }
 }
 
@@ -485,32 +557,96 @@ func drawHand(_ s: inout Sketch, at c: CGPoint, dir: CGPoint, len L: Double, sha
     g.ctx.concatenate(CGAffineTransform(a: dir.x, b: dir.y, c: -dir.y, d: dir.x, tx: c.x, ty: c.y))
     var look = look
     if let gl = look.gloves { (look.skin, look.skinLine) = (gl, darker(gl)) }
-    let W = L * 0.44
-    if shape == .fist {
-        g.circle(-0.05 * L, 0, 0.3 * L, fill: look.skin, stroke: look.skinLine, lw: 1.2)
-        g.line(0.02 * L, thumb * 0.22 * L, 0.2 * L, thumb * 0.02 * L, stroke: look.skinLine, lw: 1, cap: .round)
+    let W = L * 0.46, t = thumb, lw = (L * 0.06).clamped(0.5, 1.2)
+    let skin = look.skin, line = look.skinLine
+    func P(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: x * L, y: y * W) }
+    func part(_ p: Path) { g.shape(p, fill: skin, stroke: line, lw: lw) }
+    /// finger from the knuckle forward by `len` (units of L), radius `r` (units of W)
+    func finger(_ y: Double, _ len: Double, _ r: Double = 0.13) {
+        part(capsulePath(P(-0.02, y), r * W, P(-0.02 + len, y), r * W * 0.9))
+    }
+    let palm = smoothPath([P(-0.56, 0), P(-0.46, -0.44), P(-0.12, -0.52), P(0.06, -0.44), P(0.1, 0), P(0.06, 0.44), P(-0.12, 0.52),
+                           P(-0.46, 0.44)])
+    let lanes = [t * 0.33, t * 0.11, -t * 0.11, -t * 0.33]
+    switch shape {
+    case .open:
+        for (y, len) in zip(lanes.reversed(), [0.36, 0.45, 0.5, 0.45]) { finger(y, len) }
+        part(capsulePath(P(-0.3, t * 0.3), 0.17 * W, P(0.02, t * 0.74), 0.13 * W))
+        g.shape(palm, fill: skin, stroke: line, lw: lw)
+        var inner = g
+        inner.ctx.clip(to: Path(CGRect(x: -0.7 * L, y: -W, width: 0.68 * L, height: 2 * W)))
+        inner.shape(palm, fill: skin)
+    case .laced:
+        // fingers curled down over the other hand: short, rounded, knuckles showing
+        for y in lanes.reversed() { finger(y, 0.24, 0.135) }
+        g.shape(palm, fill: skin, stroke: line, lw: lw)
+        for y in lanes { g.circle(0.1 * L, y * W, 0.05 * W, fill: line, opacity: 0.5) }
+        part(capsulePath(P(-0.3, t * 0.36), 0.16 * W, P(-0.02, t * 0.62), 0.13 * W))
+    case .fist:
+        let body = Path(roundedRect: CGRect(x: -0.42 * L, y: -0.5 * W, width: 0.56 * L, height: W), cornerRadius: 0.42 * W)
+        g.shape(body, fill: skin, stroke: line, lw: lw)
+        for y in lanes { g.circle(0.12 * L, y * W, 0.12 * W, fill: skin, stroke: line, lw: lw * 0.8) }
+        g.rect(-0.02 * L, -0.46 * W, 0.12 * L, 0.92 * W, fill: skin)
+        for y in [-0.22, 0.0, 0.22] { g.line(0.02 * L, y * W, 0.16 * L, y * W, stroke: line, lw: lw * 0.7, opacity: 0.7) }
+        part(capsulePath(P(-0.3, t * 0.46), 0.15 * W, P(0.08, t * 0.2), 0.12 * W))
+    case .twoFingers:
+        for y in [-t * 0.12, -t * 0.34] { g.circle(0.08 * L, y * W, 0.15 * W, fill: skin, stroke: line, lw: lw) }
+        g.shape(palm, fill: skin, stroke: line, lw: lw)
+        finger(t * 0.3, 0.5)
+        finger(t * 0.08, 0.56)
+        part(capsulePath(P(-0.28, t * 0.4), 0.15 * W, P(-0.02, t * 0.62), 0.12 * W))
+    case .encircle:
+        // hand wrapped round a small chest: fingers curl away round the side, thumb tip on the breastbone by the wrist
+        for (y, len) in zip(lanes.reversed(), [0.3, 0.38, 0.42, 0.38]) { finger(y, len, 0.14) }
+        g.shape(palm, fill: skin, stroke: line, lw: lw)
+        part(capsulePath(P(-0.34, t * 0.1), 0.2 * W, P(-0.56, -t * 0.02), 0.17 * W))
+        g.path("M \(-0.5 * L) \(-0.12 * W) Q \(-0.62 * L) \(0) \(-0.5 * L) \(0.12 * W)", stroke: line, lw: lw * 0.7)
+    case .thumb:
+        // thumb pointing forward and pressing, fingers wrapped round out of sight
+        g.shape(palm, fill: skin, stroke: line, lw: lw)
+        for y in lanes { g.line(-0.05 * L, y * W, 0.08 * L, y * W * 0.9, stroke: line, lw: lw * 0.7, opacity: 0.6) }
+        part(capsulePath(P(-0.2, t * 0.2), 0.2 * W, P(0.42, t * 0.12), 0.17 * W))
+        g.path("M \(0.3 * L) \(t * 0.02 * W) Q \(0.38 * L) \(t * 0.12 * W) \(0.3 * L) \(t * 0.24 * W)", stroke: line, lw: lw * 0.7)
+    }
+}
+
+/// Sleeve (long or short) and bare skin from shoulder `s` via elbow `e` to wrist `w`, tapered.
+func dressedArm(_ g: inout Sketch, _ s: CGPoint, _ e: CGPoint, _ w: CGPoint, aw: Double, look: Look) {
+    if look.longSleeves {
+        let cuff = lerp(e, w, 0.8)
+        g.taper([e, w], [aw * 0.78, aw * 0.58], fill: look.skin, line: look.skinLine)
+        g.taper([s, e, cuff], [aw * 1.1, aw * 0.9, aw * 0.84], fill: look.top, line: look.topLine)
+        // cuff seam and elbow crease
+        let d = unit(CGPoint(x: w.x - e.x, y: w.y - e.y)), n = CGPoint(x: -d.y, y: d.x), c = lerp(e, w, 0.72)
+        g.line(c.x - n.x * aw * 0.4, c.y - n.y * aw * 0.4, c.x + n.x * aw * 0.4, c.y + n.y * aw * 0.4, stroke: look.topLine, lw: 0.8, opacity: 0.7)
+        let u = unit(CGPoint(x: e.x - s.x, y: e.y - s.y)), bend = u.x * d.y - u.y * d.x
+        if abs(bend) > 0.25 && aw > 5 {
+            let m = unit(CGPoint(x: d.x - u.x, y: d.y - u.y))
+            let p = CGPoint(x: e.x + m.x * aw * 0.12, y: e.y + m.y * aw * 0.12)
+            g.line(p.x, p.y, p.x + m.x * aw * 0.36, p.y + m.y * aw * 0.36, stroke: look.topLine, lw: 0.9, cap: .round, opacity: 0.7)
+        }
+    } else {
+        g.taper([s, e, w], [aw * 0.92, aw * 0.76, aw * 0.58], fill: look.skin, line: look.skinLine)
+        g.taper([s, lerp(s, e, 0.6)], [aw * 1.14, aw * 1.04], fill: look.top, line: look.topLine)
+    }
+}
+
+/// Side-view shoe (or bare foot) from the ankle along `dir`; `shin` points down the lower leg.
+func drawShoe(_ g: inout Sketch, ankle a: CGPoint, dir fd: CGPoint, shin: CGPoint, len F: Double, w: Double, look: Look) {
+    var n = CGPoint(x: -fd.y, y: fd.x)
+    if n.x * shin.x + n.y * shin.y < 0 { n = CGPoint(x: -n.x, y: -n.y) }
+    func P(_ along: Double, _ down: Double) -> CGPoint { CGPoint(x: a.x + fd.x * along + n.x * down, y: a.y + fd.y * along + n.y * down) }
+    if look.bareFeet {
+        g.shape(smoothPath([P(-w * 0.3, -w * 0.1), P(F * 0.4, -w * 0.12), P(F * 0.9, w * 0.02), P(F * 0.85, w * 0.3), P(F * 0.2, w * 0.34),
+                            P(-w * 0.32, w * 0.26)]), fill: look.skin, stroke: look.skinLine, lw: 1)
         return
     }
-    let palm = Path(roundedRect: CGRect(x: -0.5 * L, y: -W / 2, width: 0.6 * L, height: W), cornerRadius: W * 0.45)
-    let fingers: Path
-    if shape == .twoFingers {
-        fingers = Path(roundedRect: CGRect(x: 0, y: -thumb * W * 0.05 - W * 0.22, width: 0.55 * L, height: W * 0.44), cornerRadius: W * 0.2)
-    } else {
-        fingers = Path(roundedRect: CGRect(x: 0, y: -W * 0.42, width: 0.5 * L, height: W * 0.84), cornerRadius: W * 0.38)
-    }
-    var th = Path()
-    th.move(to: CGPoint(x: -0.25 * L, y: thumb * 0.3 * W))
-    th.addLine(to: CGPoint(x: 0.08 * L, y: thumb * 0.62 * W))
-    let tw = W * 0.34
-    g.ctx.stroke(palm, with: .color(look.skinLine), lineWidth: 2)
-    g.ctx.stroke(fingers, with: .color(look.skinLine), lineWidth: 2)
-    g.ctx.stroke(th, with: .color(look.skinLine), style: StrokeStyle(lineWidth: tw + 2, lineCap: .round))
-    g.ctx.fill(palm, with: .color(look.skin))
-    g.ctx.fill(fingers, with: .color(look.skin))
-    g.ctx.stroke(th, with: .color(look.skin), style: StrokeStyle(lineWidth: tw, lineCap: .round))
-    let splits: [Double] = shape == .twoFingers ? [-thumb * W * 0.05] : [-0.2, 0.02, 0.22].map { $0 * W }
-    for y in splits { g.line(0.12 * L, y, 0.44 * L, y, stroke: look.skinLine, lw: 0.6) }
-    if shape == .twoFingers { g.circle(0.02 * L, thumb * W * 0.3, W * 0.22, fill: look.skin, stroke: look.skinLine, lw: 0.8) }
+    let shoe = smoothPath([P(-w * 0.34, -w * 0.18), P(F * 0.2, -w * 0.3), P(F * 0.62, -w * 0.08), P(F * 0.98, w * 0.1), P(F * 0.96, w * 0.34),
+                           P(F * 0.3, w * 0.38), P(-w * 0.36, w * 0.34)])
+    g.shape(shoe, fill: look.shoes, stroke: hex("#1E1E24"), lw: 1)
+    let s0 = P(-w * 0.3, w * 0.3), s1 = P(F * 0.94, w * 0.3), hi = P(F * 0.5, -w * 0.06)
+    g.line(s0.x, s0.y, s1.x, s1.y, stroke: hex("#8A8F99"), lw: max(0.8, w * 0.1), cap: .round, opacity: 0.6)
+    g.circle(hi.x, hi.y, max(0.6, w * 0.06), fill: .white, opacity: 0.25)
 }
 
 // MARK: - Helpers
@@ -522,6 +658,16 @@ func headSpot(_ c: CGPoint, up: CGPoint, r: Double, _ x: Double, _ y: Double, si
 }
 
 extension Sketch {
+    /// limb whose width changes joint to joint (`ws` per point), outlined
+    mutating func taper(_ pts: [CGPoint], _ ws: [Double], fill: Color, line: Color?, lw: Double = 1.1) {
+        guard pts.count > 1 else { return }
+        let caps = (1..<pts.count).map { capsulePath(pts[$0 - 1], ws[$0 - 1] / 2, pts[$0], ws[$0] / 2) }
+        if let line { for c in caps { ctx.stroke(c, with: .color(line), lineWidth: 2 * lw) } }
+        var all = Path()
+        for c in caps { all.addPath(c) }
+        ctx.fill(all, with: .color(fill))
+    }
+
     /// round-capped polyline with an outline, for limbs
     mutating func limb(_ pts: [CGPoint], w: Double, fill: Color, line: Color?) {
         guard pts.count > 1 else { return }
@@ -531,10 +677,43 @@ extension Sketch {
     }
 }
 
+/// convex hull of two circles: a limb segment that tapers from `ra` to `rb`
+func capsulePath(_ a: CGPoint, _ ra: Double, _ b: CGPoint, _ rb: Double) -> Path {
+    let dx = b.x - a.x, dy = b.y - a.y, L = max(1e-6, (dx * dx + dy * dy).squareRoot())
+    let base = atan2(dy, dx), al = acos(((ra - rb) / L).clamped(-1, 1))
+    var p = Path()
+    let n = 10
+    for i in 0...n {
+        let t = base + al + (2 * .pi - 2 * al) * Double(i) / Double(n)
+        let q = CGPoint(x: a.x + ra * cos(t), y: a.y + ra * sin(t))
+        if i == 0 { p.move(to: q) } else { p.addLine(to: q) }
+    }
+    for i in 0...n {
+        let t = base - al + 2 * al * Double(i) / Double(n)
+        p.addLine(to: CGPoint(x: b.x + rb * cos(t), y: b.y + rb * sin(t)))
+    }
+    p.closeSubpath()
+    return p
+}
+
 func openPath(_ pts: [CGPoint]) -> Path {
     var p = Path()
     p.addLines(pts)
     return p
+}
+
+/// open Catmull-Rom curve through the points
+func curvePath(_ p: [CGPoint]) -> Path {
+    var path = Path()
+    let n = p.count
+    guard n > 2 else { return openPath(p) }
+    path.move(to: p[0])
+    for i in 0..<(n - 1) {
+        let p0 = p[max(0, i - 1)], p1 = p[i], p2 = p[i + 1], p3 = p[min(n - 1, i + 2)]
+        path.addCurve(to: p2, control1: CGPoint(x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6),
+                      control2: CGPoint(x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6))
+    }
+    return path
 }
 
 /// closed Catmull-Rom curve through the points
