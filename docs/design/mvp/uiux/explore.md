@@ -1,67 +1,45 @@
-# Explore
+# Home
 
-Category grid. First tab, app home. Code: `Sources/Screens/ExploreView.swift`.
+The app's only root page (no tab bar). Code: `Sources/Screens/ExploreView.swift`.
 
 ```
- Explore
- ──────────────────────────────────────────────────────
+ Body Atlas                                 [👤 Adult M ▾]
  ┌────────────────────────────────────────────────────┐
- │ 🔍 Search parts, points, systems                   │  ← tap → Search sheet
+ │ 🔍 Body parts, illnesses, procedures               │  ← typing swaps sections for results
  └────────────────────────────────────────────────────┘
+ Reflex maps & body
  ┌────────────────┬────────────────┬────────────────┐
- │   (skull img)  │  (muscle img)  │  (brain img)   │
- │                │                │                │
- │ Skeleton       │ Muscles        │ Brain          │
+ │  (3D points)   │  (hand chart)  │  (foot chart)  │
+ │ Reflex Map     │ Hand chart     │ Foot chart     │
  ├────────────────┼────────────────┼────────────────┤
- │ Heart          │ Organs         │ Circulation    │
- ├────────────────┼────────────────┼────────────────┤
- │ Nerves         │ Digestion      │ Reflex Map     │  ← 穴位反射图
- ├────────────────┼────────────────┼────────────────┤
- │ Hand           │ Foot           │ Ear            │
+ │  (ear chart)   │  (skeleton)    │  (muscles)     │
+ │ Ear points     │ Skeletal       │ Muscular       │
  └────────────────┴────────────────┴────────────────┘
- ──────────────────────────────────────────────────────
-     ◉ Explore                    ⚙ Settings
+              ▾ Show more (4)
+ Illustrations — watch, then try
+ ╭ First aid ───────────────────────────────────────╮
+ │ CPR                                   5 steps ›  │
+ │ Choking …                                        │
+ ╰──────────────────────────────────────────────────╯
+ ╭ Bones & setting … ╮  ╭ Blood … ╮  ╭ Illness … ╮  ╭ Pregnancy … ╮
+ Settings
+ ╭──────────────────────────────────────────────────╮
+ │ Language  [ English | 中文 ]                      │
+ │ Person    [ Infant | Child | Adult | 65+ ]        │
+ │ Sex       [ Male | Female ]   ☐ Pregnant          │
+ │ White 3D background ─○   Auto-rotate ─●           │
+ ╰──────────────────────────────────────────────────╯
+ disclaimer · sources · version
 ```
-Scrolls: below the grid sits the ILLUSTRATIONS · 图解 section → `illustrations.md`.
 
-Tile = thumbnail (rendered from the model, static PNG) + label. Square, 3 columns at
-every phone width. Label under names setting "Both": `Skeleton` / `骨骼` on two lines.
-
-Tile → Viewer preset:
-
-| Tile | Systems shown | Focus |
-|---|---|---|
-| Skeleton / Muscles / Organs / Nerves / Digestion / Circulation | that system | full body |
-| Brain / Heart | nervous / circulatory + organs | head / chest |
-| Hand / Foot / Ear | skeletal + muscular | region |
-| Reflex Map | skin + reflex points | full body, Points sheet open |
-
-Reached from: launch · tab bar.
-
-## States
-
-```
-first-run   same grid; no onboarding here (hint lives in Viewer)
-longest     │ Circulation    │   ← labels fit; 中文 ≤ 5 chars
-            │ 循环系统       │
-```
-Only one state otherwise — all data is bundled.
-
-## Interactions
-
-| Target | Action | Result |
-|---|---|---|
-| search field | tap | Search sheet, keyboard up |
-| tile | tap | → Viewer with preset |
+- Maps: reflex charts first, then body systems; 2 rows by default, ▾ expands.
+- Chart tiles draw the chart itself (no PNG); system tiles use rendered PNGs.
+- Order of illustration groups: First aid, Bones, Blood, Illness, Pregnancy.
 
 ## Copy
 
-| Key | String |
-|---|---|
-| `explore.title` | Explore |
-| `explore.search` | Search parts, points, systems |
-
-## Notes
-
-Male / Female tiles hidden until the schematic female variant (T10.2) exists — no "coming soon"
-tiles.
+| Key | EN | 中文 |
+|---|---|---|
+| search | Body parts, illnesses, procedures | 身体部位、疾病、操作 |
+| maps | Reflex maps & body | 反射图与人体 |
+| more | Show more (n) / Show less | 显示更多（n）/ 收起 |

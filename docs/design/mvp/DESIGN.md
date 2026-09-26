@@ -24,7 +24,10 @@ peel layers, and see what a point connects to — on a phone, free, offline.
 - Systems: skeletal, muscular, circulatory, nervous, organs, digestive.
 - Acupoint Reflex Map (穴位反射图): press a point → pulse travels to the target → effect shown.
 - Circulation: animated blood-flow loop.
-- Bilingual names: English / 中文 / both.
+- One language at a time: English **or** 中文 (default = device language), never mixed on screen.
+- Person profile on every page — age group (infant / child / adult / 65+), sex, pregnancy.
+  Topics that differ adapt (CPR, choking, blood pressure, heart attack…); massage points and
+  zones warn who should skip or go gently (e.g. pregnant: Hegu 合谷 / 虎口, Sanyinjiao 三阴交).
 - Browse by category tile (system or region) → Viewer focused there.
 - **Illustrations (图解)** — step-by-step animated scenarios on the model, v1.1+:
   - Bones: dislocation & fracture, reduction / setting (骨头错位、接骨).

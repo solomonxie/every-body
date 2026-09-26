@@ -72,3 +72,20 @@ follow     ⊙ Follow …   /  ⊗ Stop following
 feedback   ✓ Back in place.   ⚠ Too fast — aim for 100–120.
 ```
 Props: `mode`, `param`, `range | target | rate | duration`, `successWhen`, `copy`.
+
+## ProfileMenu
+
+Toolbar chip on every page. Code: `Sources/Common/ProfileMenu.swift`.
+
+```
+ [👤 Adult M ▾]        [🧒 Child F ▾]        [👤 Pregnant ▾]
+   ╭──────────────────────────╮
+   │ Age  ✓ Adult             │  Infant <1 · Toddler/child 1–12 · Adult · 65+
+   │ Sex  ✓ Male              │
+   │ ☐ Pregnant               │  ← Female + Adult only
+   ╰──────────────────────────╯
+```
+
+Changing it rebuilds the open illustration for that person type and re-evaluates point
+cautions: flagged points get ⚠ in lists and a dashed red outline on charts; the effect card
+shows a red caution box.

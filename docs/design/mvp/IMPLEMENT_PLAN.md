@@ -19,6 +19,13 @@ Remove the Expo/React Native app and rebuild every feature natively, data first,
 - [x] T0.6 Reflex charts in `Canvas` (hand, foot, ear), zoom, 3D inset — see `Sources/Charts/` — depends: T0.3
 - [x] T0.7 Illustration player + 18 scenes in `Canvas` — see `Sources/Illustrations/` — depends: T0.1
 - [x] T0.8 Explore, search, info, settings — see `Sources/Screens/` — depends: T0.4, T0.6, T0.7
+- [x] T0.10 One-page Home (search inline, maps 2 rows ▾, illustrations with First aid first, settings section) — see `uiux/explore.md` — depends: T0.8
+- [x] T0.11 One language at a time, all screens and in-picture labels (`Settings.t`, `Sketch.label`) — see `Sources/Common/Settings.swift` — depends: T0.8
+- [x] T0.12 Person profile + point cautions (pregnancy, infant, child, 65+) + per-profile illustration builders — see `Sources/Data/Profile.swift`, `Sources/Data/Cautions.swift` — depends: T0.10
+- [x] T0.13 Fast 3D open: meshes built off-main once and cached, collision shapes cached, per-frame material churn removed — see `Sources/Body/` — depends: T0.3
+- [x] T0.14 Gestures: 1 finger spin, 2 fingers pan, pinch zoom — see `Sources/Body/BodyView.swift` — depends: T0.4
+- [x] T0.15 Organ lofts (brain, heart, lungs, liver, kidneys, spleen…), tendon-belly muscles, procedural textures — see `scripts/gen_body.py`, `Sources/Body/Textures.swift` — depends: T0.9
+- [ ] T0.16 Illustrations redrawn as real-life scenes; first-aid workflows per age (in-progress) — see `Sources/Illustrations/Scenes/` — depends: T0.12
 - [x] T0.9 Anatomical accuracy: landmark-based generator (bones with processes/discs/cartilage, hand & foot bones, ~30 muscles origin→insertion, shaped organs, proportioned skin) — see `scripts/gen_body.py`, `scripts/preview_body.py` — depends: T0.3
 
 ## Phase 1: Foundations
