@@ -3,7 +3,7 @@ import Foundation
 enum Illustrations {
     /// Each topic is built for a person type; most ignore it, first aid and pregnancy don't.
     static let builders: [@Sendable (Profile) -> Scenario] = [
-        cpr(for:), choking(for:), { _ in bleeding }, { _ in burns }, { _ in ankleSprain },
+        cpr(for:), choking(for:), bleeding(for:), burns(for:), { _ in ankleSprain },
         { _ in shoulder }, { _ in fracture },
         { _ in bloodSugar }, bloodPressure(for:), { _ in bloodFats },
         { _ in stroke }, heartAttack(for:), { _ in coldFlu }, { _ in asthma }, { _ in acidReflux }, { _ in kidneyStones },
