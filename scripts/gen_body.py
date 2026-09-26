@@ -683,6 +683,21 @@ def vessels():
     vp("facial-nerve", "Facial nerve", "面神经", "nervous", NERVE, [(0.06, 1.595, -0.02), (0.065, 1.585, 0.02), (0.055, 1.6, 0.06)], 0.002)
     vp("pulmonary-veins", "Pulmonary veins", "肺静脉", "circulatory", ARTERY, [(0.07, 1.31, -0.01), (0.04, 1.3, 0.02), (0.02, 1.295, 0.035)], 0.005)
 
+    # urinary tract: each ureter from the kidney's hilum down over the pelvic brim into the back of the bladder
+    for sx, side in ((1, "l"), (-1, "r")):
+        drop = 0.015 if side == "r" else 0
+        part(f"ureter-{side}", "Ureter", "输尿管", "organs", "#E0C35A",
+             tube([(sx * 0.045, 1.068 - drop, -0.052), (sx * 0.05, 1.0, -0.045), (sx * 0.052, 0.94, -0.03), (sx * 0.035, 0.9, 0.0), (sx * 0.012, 0.895, 0.03)],
+                  0.0028))
+    # female: ovaries beside the uterus, fallopian tubes arching out to them; male: testes below the pelvis
+    for sx, side in ((1, "l"), (-1, "r")):
+        part(f"ovary-{side}", "Ovary", "卵巢", "organs", "#E4A1BE", sphere((sx * 0.055, 0.93, 0.01), 0.011, [1.4, 0.8, 0.8]), "female")
+        part(f"fallopian-{side}", "Fallopian tube", "输卵管", "organs", "#D98BAE",
+             tube([(sx * 0.02, 0.965, 0.028), (sx * 0.045, 0.962, 0.025), (sx * 0.065, 0.945, 0.015), (sx * 0.062, 0.93, 0.0)], 0.0028), "female")
+        part(f"testis-{side}", "Testis", "睾丸", "organs", "#D9A0B0", sphere((sx * 0.014, 0.8, 0.045), 0.012, [0.8, 1.2, 0.9]), "male")
+        # spermatic cord: up from the testis through the groin, over the bladder to the prostate
+        part(f"spermatic-cord-{side}", "Spermatic cord", "精索", "organs", "#C9A0B0",
+             tube([(sx * 0.014, 0.812, 0.045), (sx * 0.03, 0.85, 0.06), (sx * 0.045, 0.9, 0.055), (sx * 0.035, 0.92, 0.02), (sx * 0.01, 0.88, 0.01)], 0.0022), "male")
     v("esophagus", "Esophagus", "食管", "organs", "#E0A080", [(0, 1.52, -0.015), (0.0, 1.4, -0.03), (0.01, 1.27, -0.035), (0.03, 1.21, 0.0)], 0.0075)
     v("trachea", "Trachea & bronchi", "气管与支气管", "organs", "#E8C4B0",
       [(0, 1.52, 0.02), (0, 1.43, 0.012), (0, 1.36, 0.0), (0.045, 1.33, -0.005)], 0.009)
@@ -964,14 +979,16 @@ def organs():
             small.append((x0 + (x1 - x0) * t + 0.007 * wob * math.sin(a), y + 0.009 * wob * math.cos(a), 0.062 + 0.014 * math.sin(a * 0.8 + row)))
     # colon: ascending → transverse → descending → sigmoid, pouched every few cm (haustra)
     frame = [(-0.075, 0.93, 0.05), (-0.1, 1.0, 0.045), (-0.095, 1.08, 0.04), (-0.03, 1.095, 0.07), (0.05, 1.1, 0.07),
-             (0.1, 1.08, 0.04), (0.105, 0.99, 0.03), (0.085, 0.925, 0.03), (0.03, 0.9, 0.045), (0.005, 0.87, -0.02)]
+             (0.1, 1.08, 0.04), (0.105, 0.99, 0.03), (0.085, 0.925, 0.03), (0.03, 0.9, 0.045), (0.005, 0.875, -0.03), (0.0, 0.85, -0.05), (0.0, 0.83, -0.055)]
     colon, radii = [], []
     for k in range(len(frame) - 1):
         for j in range(6):
             t = j / 6
             colon.append(tuple(frame[k][n] + (frame[k + 1][n] - frame[k][n]) * t for n in range(3)))
-            radii.append(0.0195 + 0.0025 * math.cos((k * 6 + j) * 2 * math.pi / 3))
-    colon.append(frame[-1]); radii.append(0.016)
+            # pouched colon; the last stretch is the smooth, narrower rectum
+            rectum = k >= len(frame) - 3
+            radii.append(0.014 if rectum else 0.0195 + 0.0025 * math.cos((k * 6 + j) * 2 * math.pi / 3))
+    colon.append(frame[-1]); radii.append(0.009)
     organ("intestines", "#D9A77A", (0.0, 0.99, 0.06), [
         tube(small, 0.0125),
         tube(colon, 0.02, radii),
