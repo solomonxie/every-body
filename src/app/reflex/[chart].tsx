@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ReflexPulse } from '@/components/canvas/reflex-pulse';
 import { createSceneBus, faceFront } from '@/components/canvas/scene-bus';
 import { ChartView, zonesFor } from '@/components/reflex/chart-view';
+import { ZoomView } from '@/components/reflex/zoom-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ModelView } from '@/components/viewer/model-view';
@@ -108,14 +109,16 @@ export default function ReflexChartScreen() {
       </ScrollView>
 
       <View style={styles.stage}>
-        <ChartView
-          chart={chart}
-          face={face}
-          side={side}
-          selectedId={selected?.id}
-          showLabels={showLabels}
-          onSelect={press}
-        />
+        <ZoomView>
+          <ChartView
+            chart={chart}
+            face={face}
+            side={side}
+            selectedId={selected?.id}
+            showLabels={showLabels}
+            onSelect={press}
+          />
+        </ZoomView>
         <View style={styles.inset}>
           <ModelView busRef={busRef} skinColor={SKIN_TONE} compact>
             <ReflexPulse point={pulsePoint} triggerKey={pressTrigger} busRef={busRef} />
