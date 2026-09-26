@@ -25,7 +25,8 @@ peel layers, and see what a point connects to — on a phone, free, offline.
 - Acupoint Reflex Map (穴位反射图): press a point → pulse travels to the target → effect shown.
 - Circulation: animated blood-flow loop.
 - One language at a time: English **or** 中文 (default = device language), never mixed on screen.
-- Person profile on every page — age group (infant / child / adult / 65+), sex, pregnancy.
+- Person profile on every page — age group (infant / toddler / child / adult / 65+), sex, pregnancy;
+  the 3D body takes each age's proportions (head, limb length and girth, belly), not a shrunken adult.
   Topics that differ adapt (CPR, choking, blood pressure, heart attack…); massage points and
   zones warn who should skip or go gently (e.g. pregnant: Hegu 合谷 / 虎口, Sanyinjiao 三阴交).
 - Browse by category tile (system or region) → Viewer focused there.
