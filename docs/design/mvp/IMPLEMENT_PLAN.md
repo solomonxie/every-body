@@ -20,7 +20,7 @@ Build every v1 screen against the existing sphere so UI work doesn't wait on ass
 
 - [x] T2.1 Explore: search field, 3-col `CategoryTile` grid — see `uiux/explore.md` — depends: T1.4, T1.6
 - [x] T2.2 Viewer frame: full-bleed canvas, `RailButton` rails, ◐ background, ⌂ reset — see `uiux/viewer.md` — depends: T1.5
-- [ ] T2.3 Camera controls: orbit / pinch / pan / double-tap, auto-rotate until first touch (in-progress: all but 2-finger pan) — see `src/components/canvas/` — depends: T2.2
+- [x] T2.3 Camera controls: orbit / pinch / pan / double-tap, auto-rotate until first touch — see `src/components/canvas/` — depends: T2.2
 - [ ] T2.4 `Sheet` component (peek/half/full, one-at-a-time) + Toast — see `uiux/components.md` — depends: none
 - [x] T2.5 Settings screen + disclaimer + sources (one page) — see `uiux/settings.md` — depends: T1.5, T1.6
 - [ ] T2.6 Viewer states: loading, error, no-GL, first-run hint — see `uiux/viewer.md` → States — depends: T2.2
@@ -42,7 +42,7 @@ cover every system before later phases. Schematic geometry only (DESIGN → Deci
 Picking and per-part state; Search and Part info key on the same part ids.
 
 - [x] T4.1 Raycast picking + highlight + Part card — see `uiux/viewer.md` → Part card — depends: T3.4, T2.4
-- [ ] T4.2 Viewer part state (hide / isolate / fade / layer opacity) + undo stack (in-progress: hide + show all done) — see `src/state/viewer.ts` — depends: T3.4
+- [x] T4.2 Viewer part state (hide / isolate / fade) + undo stack — see `src/state/viewer.ts` — depends: T3.4
 - [ ] T4.3 Layers sheet + Display sheet (in-progress: layer pill bar done) — see `uiux/viewer.md` → Layers / Display — depends: T4.2, T2.4
 - [ ] T4.4 Part info page (part / point / system variants), Show on model (in-progress: system pages with facts, links, tappable parts) — see `uiux/part-info.md` — depends: T3.1
 - [x] T4.5 Search index (EN, 中文) over systems, illustrations, zones, points, parts — pinyin and recents not yet — see `uiux/search.md` — depends: T3.1, T2.4
@@ -55,12 +55,12 @@ reused by Phase 7 overlays.
 - [ ] T5.2 Surface-path reflex pulse + target flash + camera framing — see `uiux/points.md` → Press sequence — depends: T5.1
 - [ ] T5.3 Points sheet: filter, chips, effect card, claim ⓘ — see `uiux/points.md` — depends: T5.1, T2.4
 - [ ] T5.4 Blood-flow particle engine along vessel path, pause/speed, stops — see `uiux/points.md` → Blood flow — depends: T5.1
-- [x] T5.5 Hand + ear reflex charts (geometric SVG, zones per standard maps, L/R mirror, palm/back, 3D inset pulse) — see `uiux/points.md` → Hand & ear charts, `src/data/reflex-charts.ts` — depends: T5.1
+- [x] T5.5 Hand, foot + ear reflex charts (pinch-zoom; organ → zones reverse lookup) (geometric SVG, zones per standard maps, L/R mirror, palm/back, 3D inset pulse) — see `uiux/points.md` → Hand & ear charts, `src/data/reflex-charts.ts` — depends: T5.1
 
 ## Phase 6: v1 release
 Ship core atlas before Illustrations; store review, size, and perf gate everything after.
 
-- [ ] T6.1 Reduce-motion variants (pulse, flow, camera) — see `uiux/points.md` → States — depends: T5.2, T5.4
+- [ ] T6.1 Reduce-motion variants (pulse, flow, camera) (in-progress: auto-rotate off, illustration steps jump) — see `uiux/points.md` → States — depends: T5.2, T5.4
 - [ ] T6.2 Perf pass on a low-end Android + Low quality auto-detect — see `src/components/canvas/` — depends: T3.4, T5.4
 - [ ] T6.3 Install-size budget check (≤ 30 MB) — see `app.json` — depends: T3.4
 - [ ] T6.4 Store listing, age rating 12+, health-claim wording review — see `DESIGN.md` → Risks — depends: T5.3, T2.5
@@ -100,4 +100,4 @@ watch + try steps, EN/中 captions, cited sources, clinician sign-off.
 
 ## Phase 10: Later
 - [x] T10.1 Quiz mode: name the glowing part, 10 rounds, per system — see `src/app/quiz/[id].tsx` — depends: T4.4
-- [ ] T10.2 Schematic female variant (pelvis, reproductive organs) — see `src/data/anatomy.ts` — depends: T3.2
+- [x] T10.2 Schematic female variant (pelvis, reproductive organs) — see `src/data/anatomy.ts` — depends: T3.2
