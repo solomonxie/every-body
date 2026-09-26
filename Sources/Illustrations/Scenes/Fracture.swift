@@ -81,10 +81,10 @@ extension Illustrations {
         let aligned = o < 0.08
 
         // skin: one outline whose hand side follows the wrist piece, so the “dinner fork” bump forms by itself
-        let dorsal: [CGPoint] = [pt(-30, 128), pt(60, 131), pt(130, 138), pt(172, 145), pt(200, 148), pt(226, 150), pt(254, 150),
+        let dorsal: [CGPoint] = [pt(-30, 134), pt(60, 137), pt(130, 141), pt(172, 145), pt(200, 148), pt(226, 150), pt(254, 150),
                                  pt(282, 152), pt(306, 157), pt(330, 164), pt(348, 172)]
         let volar: [CGPoint] = [pt(356, 180), pt(346, 188), pt(322, 188), pt(298, 192), pt(272, 202), pt(248, 206), pt(226, 204),
-                                pt(204, 199), pt(180, 199), pt(130, 206), pt(60, 214), pt(-30, 218)]
+                                pt(204, 199), pt(180, 199), pt(130, 202), pt(60, 208), pt(-30, 211)]
         func moved(_ q: CGPoint) -> CGPoint { lerp(q, apply(q, m), Anat.ease((q.x - 168) / 34)) }
         let outline = (dorsal + volar).map(moved)
         let swell = aligned ? h.hematoma * 0.6 * (1 - cast) : 1
@@ -96,8 +96,8 @@ extension Illustrations {
 
         // cast from below the elbow to the knuckles
         if cast > 0.02 {
-            let top = [pt(60, 124), pt(130, 131), pt(172, 138), pt(200, 141), pt(226, 143), pt(254, 143), pt(290, 146)]
-            let bottom = [pt(290, 202), pt(272, 209), pt(248, 213), pt(226, 211), pt(204, 206), pt(180, 206), pt(130, 213), pt(60, 221)]
+            let top = [pt(60, 130), pt(130, 134), pt(172, 138), pt(200, 141), pt(226, 143), pt(254, 143), pt(290, 146)]
+            let bottom = [pt(290, 202), pt(272, 209), pt(248, 213), pt(226, 211), pt(204, 206), pt(180, 206), pt(130, 209), pt(60, 215)]
             var shell = Path()
             shell.move(to: top[0])
             for q in top.dropFirst() { shell.addLine(to: q) }
@@ -109,7 +109,7 @@ extension Illustrations {
             for x in stride(from: 50.0, through: 300, by: 12) {
                 weave.line(x, 120, x - 14, 224, stroke: hex("#C9D0D8"), lw: 0.8, opacity: 0.8 * cast)
             }
-            s.rect(56, 122, 8, 100, r: 3, fill: hex("#DCD3C4"), opacity: cast)
+            s.rect(56, 128, 8, 89, r: 3, fill: hex("#DCD3C4"), opacity: cast)
             s.leader("cast", "石膏", at: pt(100, 214), 92, 240, color: Anat.muted)
         }
 
@@ -181,7 +181,7 @@ extension Illustrations {
             gbone("M 224 184 C 230 180, 240 182, 242 190 C 242 196, 236 199, 229 197 C 224 195, 222 189, 224 184 Z", pt(226, 182), pt(240, 198))
             // metacarpals and slightly curled fingers
             for (k, dy) in [(0, -3.0), (1, 3), (2, 9)] {
-                let y0 = 169 + dy, y1 = 172 + dy * 1.1
+                let y0 = 171 + dy, y1 = 176 + dy
                 let w = xray ? 5.5 : 6.5
                 g.limb([pt(254, y0), pt(302, y1)], w: w, fill: fill, line: edge)
                 g.circle(304, y1, w * 0.62, fill: fill, stroke: edge, lw: 0.8)
