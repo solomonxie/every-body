@@ -1,6 +1,10 @@
 import RealityKit
-import UIKit
 import simd
+#if canImport(UIKit)
+import UIKit
+#else
+import AppKit
+#endif
 
 /// What the user has done to individual parts; every change is one undo step.
 struct PartState: Equatable {
@@ -282,7 +286,8 @@ final class BodyScene {
 
     private func applyVisibility() {
         let inner = layers.contains { $0 != .skin }
-        let skinOpacity: Float = layers.contains(.skin) ? (inner ? 0.12 : 0.3) : 0
+        // skin alone is solid; over inner layers it's a faint glass
+        let skinOpacity: Float = layers.contains(.skin) ? (inner ? 0.12 : 1) : 0
         for skin in skinEntities {
             skin.isEnabled = skinOpacity > 0
             skin.model?.materials = [Self.material(skinColor, opacity: skinOpacity)]
@@ -405,7 +410,7 @@ final class BodyScene {
         m.baseColor = .init(tint: color, texture: texture.map { .init($0) })
         m.roughness = .init(floatLiteral: 0.55)
         m.metallic = .init(floatLiteral: 0)
-        m.faceCulling = .none
+        m.faceCulling = .back
         if opacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: opacity)) }
         return m
     }
