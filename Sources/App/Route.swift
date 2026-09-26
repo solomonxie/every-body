@@ -21,4 +21,15 @@ enum Route: Hashable {
         default: return nil
         }
     }
+
+    /// Display name for links.
+    @MainActor var title: Bilingual {
+        switch self {
+        case let .viewer(system, _, _): Catalog.system(system).map { Bilingual($0.name, $0.nameZh) } ?? Bilingual(system, system)
+        case let .chart(id, _, _, _): Catalog.chart(id).map { Bilingual($0.title, $0.titleZh) } ?? Bilingual(id, id)
+        case let .illustration(id): Illustrations.find(id)?.title ?? Bilingual(id, id)
+        case let .info(system): Catalog.system(system).map { Bilingual($0.name, $0.nameZh) } ?? Bilingual(system, system)
+        case .search: Bilingual("Search", "搜索")
+        }
+    }
 }

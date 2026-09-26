@@ -37,7 +37,8 @@ struct ChartScreen: View {
             }
             card
         }
-        .navigationTitle("\(chart.titleZh) \(chart.title)")
+        .navigationTitle(settings.name(chart.title, chart.titleZh))
+        .profileToolbar()
         .navigationBarTitleDisplayMode(.inline)
         .onAppear(perform: setUp)
     }
@@ -45,13 +46,13 @@ struct ChartScreen: View {
     private var controls: some View {
         HStack(spacing: 8) {
             Picker("Side", selection: Binding(get: { side }, set: { side = $0; clear() })) {
-                Text("Left 左").tag(Side.left)
-                Text("Right 右").tag(Side.right)
+                Text(settings.t("Left", "左")).tag(Side.left)
+                Text(settings.t("Right", "右")).tag(Side.right)
             }
             .pickerStyle(.segmented)
             if chart.faces.count > 1 {
                 Picker("Face", selection: Binding(get: { face.id }, set: { faceID = $0; clear() })) {
-                    ForEach(chart.faces) { f in Text(f.labelZh + " " + f.label).tag(f.id) }
+                    ForEach(chart.faces) { f in Text(settings.name(f.label, f.labelZh)).tag(f.id) }
                 }
                 .pickerStyle(.segmented)
             }
@@ -60,7 +61,7 @@ struct ChartScreen: View {
                     .frame(width: 32, height: 32)
                     .background(showLabels ? Color.brand.opacity(0.25) : Color.secondary.opacity(0.12), in: .rect(cornerRadius: 8))
             }
-            .accessibilityLabel("Labels 标注")
+            .accessibilityLabel(settings.t("Labels", "标注"))
         }
     }
 
@@ -69,7 +70,7 @@ struct ChartScreen: View {
             ZStack(alignment: .bottomTrailing) {
                 GeometryReader { geo in
                     ChartCanvas(chart: chart, face: face, side: side, zones: zones, selectedID: selected?.id,
-                                showLabels: showLabels, zoom: zoom, pan: pan)
+                                showLabels: showLabels, zh: settings.zh, flagged: Set(zones.filter { Cautions.avoid($0.id, for: settings.profile) }.map(\.id)), zoom: zoom, pan: pan)
                         .contentShape(.rect)
                         .gesture(SpatialTapGesture().onEnded { value in
                             let hit = ChartCanvas.hitTest(value.location, size: geo.size, chart: chart, face: face, side: side,
@@ -101,7 +102,10 @@ struct ChartScreen: View {
     private var bodyPane: some View {
         ZStack(alignment: .top) {
             BodyView(scene: inset, compact: true)
-            Text(selected == nil ? "where it acts 作用部位" : "\(selected!.nameZh) → " + selected!.organIds.compactMap { Catalog.organ($0)?.names?[1] }.joined(separator: "、"))
+            Text(selected.map { z in
+                settings.name(z.name, z.nameZh) + " → " + z.organIds.compactMap { Catalog.organ($0)?.names }.map { settings.name($0[0], $0[1]) }
+                    .joined(separator: settings.zh ? "、" : ", ")
+            } ?? settings.t("where it acts", "作用部位"))
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(Color(hex: "#2B2250"))
                 .lineLimit(2)
@@ -123,7 +127,7 @@ struct ChartScreen: View {
                 if let info = Catalog.charts.groups[g] {
                     HStack(spacing: 3) {
                         Circle().fill(Color(hex: info.color)).frame(width: 8, height: 8)
-                        Text(info.labelZh).font(.caption2).foregroundStyle(.secondary)
+                        Text(settings.name(info.label, info.labelZh)).font(.caption2).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -135,22 +139,22 @@ struct ChartScreen: View {
         VStack(alignment: .leading, spacing: 4) {
             if let zone = selected {
                 Text(settings.name(zone.name, zone.nameZh)).font(.subheadline.weight(.semibold))
+                CautionList(warnings: Array(Cautions.warnings(zone.id, for: settings.profile).prefix(1)))
                 Group {
-                    if settings.showEn { Text(zone.effect).font(.caption) }
-                    if settings.showZh { Text(zone.effectZh).font(.caption) }
+                    Text(settings.name(zone.effect, zone.effectZh)).font(.caption)
                     HStack {
-                        Text("Traditional claim — not medical advice.").font(.caption2).foregroundStyle(.secondary)
+                        Text(settings.t("Traditional claim — not medical advice.", "传统说法，非医疗建议。")).font(.caption2).foregroundStyle(.secondary)
                         Spacer()
-                        Button("↻ Replay") { press(zone) }.font(.caption.weight(.semibold))
+                        Button(settings.t("↻ Replay", "↻ 重播")) { press(zone) }.font(.caption.weight(.semibold))
                     }
                 }
                 .opacity(effectVisible ? 1 : 0)
             } else {
-                Text("Tap a zone — the pulse on the little figure shows where it acts. 点按区域，查看对应器官。")
+                Text(settings.t("Tap a zone — the pulse on the figure shows where it acts.", "点按区域，右侧人体会显示对应器官。"))
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 104, maxHeight: 104, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 104, maxHeight: 170, alignment: .topLeading)
         .padding(16)
         .background(Color(uiColor: .secondarySystemBackground))
     }
@@ -160,9 +164,12 @@ struct ChartScreen: View {
         ready = true
         faceID = initialFace ?? chart.faces[0].id
         side = initialSide ?? .right
-        inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, points: [], flowStops: [])
-        inset.setLayers([.skin, .organs])
-        if let id = initialZone, let zone = face.zones.first(where: { $0.id == id }) { press(zone) }
+        Task {
+            await BodyScene.prepare()
+            inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, points: [], flowStops: [])
+            inset.setLayers([.skin, .organs])
+            if let id = initialZone, let zone = face.zones.first(where: { $0.id == id }) { press(zone) }
+        }
     }
 
     private func clear() {
@@ -191,6 +198,8 @@ struct ChartCanvas: View {
     let zones: [ReflexZone]
     let selectedID: String?
     let showLabels: Bool
+    var zh = true
+    var flagged: Set<String> = []
     let zoom: CGFloat
     let pan: CGSize
 
@@ -224,7 +233,9 @@ struct ChartCanvas: View {
                 for e in zone.shapes {
                     let p = Self.ellipse(e)
                     drawing.fill(p, with: .color(color.opacity(isSelected ? 0.95 : dimmed ? 0.3 : 0.65)))
-                    drawing.stroke(p, with: .color(isSelected ? Self.ink : .white), lineWidth: isSelected ? 2.5 : 1.2)
+                    let warn = flagged.contains(zone.id)
+                    drawing.stroke(p, with: .color(isSelected ? Self.ink : warn ? Color(hex: "#D8434B") : .white),
+                                   style: StrokeStyle(lineWidth: isSelected ? 2.5 : warn ? 2 : 1.2, dash: warn && !isSelected ? [3, 2] : []))
                 }
             }
             if showLabels {
@@ -235,13 +246,19 @@ struct ChartCanvas: View {
                     let below = zone.point == true || e.rx < 10
                     let x = side == face.drawnSide ? e.cx : chart.mirrorWidth - e.cx
                     let y = e.cy + (below ? e.ry + chart.labelSize : 0)
-                    let text = Text(zone.label ?? String(zone.nameZh.split(separator: "·").first ?? ""))
+                    let text = Text(zh ? zone.label ?? String(zone.nameZh.split(separator: "·").first ?? "") : Self.shortName(zone.name))
                         .font(.system(size: chart.labelSize, weight: zone.id == selectedID ? .bold : .regular))
                         .foregroundStyle(Self.ink)
                     labels.draw(text, at: CGPoint(x: x, y: y), anchor: .center)
                 }
             }
         }
+    }
+
+    /// "Lung & bronchi" → "Lung"; keeps chart labels as short as the Chinese ones
+    static func shortName(_ name: String) -> String {
+        let first = name.components(separatedBy: CharacterSet(charactersIn: "&/(,·")).first ?? name
+        return first.trimmingCharacters(in: .whitespaces)
     }
 
     static func viewTransform(size: CGSize, chart: ReflexChart, zoom: CGFloat, pan: CGSize) -> CGAffineTransform {

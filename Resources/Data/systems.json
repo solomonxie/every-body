@@ -1,7 +1,7 @@
 [
  {
   "id": "acupoint-reflex-map",
-  "name": "Reflex Map 穴位反射图",
+  "name": "Reflex Map",
   "color": "#6C4F9E",
   "info": {
    "summary": "Reflexology maps the body onto the feet, hands and ears; acupuncture points lie along meridians. Pressing a point is traditionally said to act on a distant organ.",
@@ -34,7 +34,8 @@
      "route": "/reflex/ear"
     }
    ]
-  }
+  },
+  "nameZh": "穴位反射图"
  },
  {
   "id": "skeletal",
@@ -67,7 +68,8 @@
      "route": "/illustration/fracture-healing"
     }
    ]
-  }
+  },
+  "nameZh": "骨骼系统"
  },
  {
   "id": "muscular",
@@ -91,7 +93,8 @@
     ]
    ],
    "links": []
-  }
+  },
+  "nameZh": "肌肉系统"
  },
  {
   "id": "circulatory",
@@ -128,7 +131,8 @@
      "route": "/illustration/heart-attack"
     }
    ]
-  }
+  },
+  "nameZh": "循环系统"
  },
  {
   "id": "nervous",
@@ -157,7 +161,8 @@
      "route": "/illustration/stroke"
     }
    ]
-  }
+  },
+  "nameZh": "神经系统"
  },
  {
   "id": "organs",
@@ -186,7 +191,8 @@
      "route": "/illustration/blood-sugar"
     }
    ]
-  }
+  },
+  "nameZh": "内脏器官"
  },
  {
   "id": "digestive",
@@ -215,6 +221,7 @@
      "route": "/illustration/blood-sugar"
     }
    ]
-  }
+  },
+  "nameZh": "消化系统"
  }
 ]

@@ -1,6 +1,8 @@
 import SwiftUI
 
 extension Illustrations {
+    static func choking(for p: Profile) -> Scenario { choking }
+
     static let choking = Scenario(
         id: "choking", group: .firstAid, title: Bilingual("Choking (adult)", "气道异物梗阻"),
         params: ["stage": 0, "taps": 0, "rate": 0, "press": 0, "dislodge": 0],
