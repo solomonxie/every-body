@@ -29,7 +29,7 @@ func renderAll() {
     let out = URL(fileURLWithPath: args.first ?? "/tmp/scenes")
     let only = Set(args.dropFirst())
     try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-    // PROFILE=infant|child|adult|senior|pregnant renders that person type's version
+    // PROFILE=infant|toddler|child|adult|senior|pregnant renders that person type's version
     let env = ProcessInfo.processInfo.environment["PROFILE"] ?? "adult"
     let profile = env == "pregnant" ? Profile(age: .adult, female: true, pregnant: true) : Profile(age: AgeGroup(rawValue: env) ?? .adult)
     for scenario in Illustrations.builders.map({ $0(profile) }) where only.isEmpty || only.contains(scenario.id) {
