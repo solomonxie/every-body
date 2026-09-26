@@ -15,25 +15,39 @@ extension Illustrations {
         ],
         draw: { s, p, t in
             let f = p[v: "flu"]
-            s.circle(80, 60, 36, fill: hex("#F2C9A5"), stroke: hex("#C9A58A"), lw: 2)
-            s.path("M 84 70 L 90 110 L 90 150 M 90 150 L 60 200 M 90 150 L 120 200", stroke: hex("#E8C4B0"), lw: 10, cap: .round)
-            s.text("nose & throat 鼻咽 · airways · lungs 肺", 20, 228)
-            for i in 0..<10 {
-                let inLungs = Double(i) / 10 < f * 0.7
-                let x = inLungs ? 70 + Double(i % 2) * 40 + sin(t * 2 + Double(i)) * 6 : 88 + sin(t * 2 + Double(i)) * 8
-                let y = inLungs ? 170 + Double(i % 3) * 10 : 70 + (Double(i) * 13).wrap(40)
-                s.circle(x, y, 4, fill: hex("#7A3FA0"), opacity: 0.85)
+            // side view of the head and neck, with the airway tree below
+            let air = hex("#E8B4A0"), label = hex("#8A6A5A")
+            s.path("M 40 60 C 40 20, 120 10, 138 50 C 146 64, 150 76, 144 86 C 140 96, 132 102, 118 104 L 112 120 L 64 120 C 58 104, 40 90, 40 60 Z",
+                   fill: hex("#F7E6DA"), stroke: hex("#C9A58A"), lw: 1.5)
+            s.path("M 132 70 C 116 66, 100 70, 92 80", stroke: air, lw: 6, cap: .round)                          // nasal cavity
+            s.path("M 92 80 C 86 92, 86 106, 88 118", stroke: air, lw: 7, cap: .round)                           // pharynx
+            s.path("M 88 118 L 90 170", stroke: air, lw: 7, cap: .round)                                          // larynx + trachea
+            s.path("M 90 170 L 62 196 M 90 170 L 118 196", stroke: air, lw: 5, cap: .round)
+            for (x, sx) in [(62.0, -1.0), (118, 1.0)] {
+                s.ellipse(x + sx * 4, 214, 30, 40, fill: hex("#F2C4CC"), opacity: 0.8)
+                for k in 0..<3 { s.path("M \(x) 196 L \(x + sx * Double(k - 1) * 12) \(222 + Double(k) * 6)", stroke: air, lw: 2) }
+            }
+            s.text("nose 鼻腔", 132, 62, size: 8, color: label)
+            s.text("throat 咽", 100, 100, size: 8, color: label)
+            s.text("windpipe 气管", 96, 150, size: 8, color: label)
+            s.text("lungs 肺", 40, 262, size: 8, color: label)
+            // viruses: the nose and throat for a cold; the flu also reaches the airways and lungs
+            let spots: [(Double, Double, Double)] = [(118, 68, 0), (104, 72, 0), (90, 92, 0), (88, 108, 0), (90, 140, 0.4), (90, 160, 0.5),
+                                                     (72, 190, 0.7), (108, 190, 0.7), (58, 214, 0.9), (122, 216, 0.9)]
+            for (i, spot) in spots.enumerated() where f >= spot.2 || spot.2 == 0 {
+                s.circle(spot.0 + sin(t * 2 + Double(i)) * 3, spot.1, 3.5, fill: hex("#7A3FA0"), opacity: spot.2 == 0 ? 0.85 : min(1, (f - spot.2 + 0.2) * 3))
             }
             let symptoms: [(String, Double, Double)] = [("Fever 发热", 0.1, 0.9), ("Aches 肌肉酸痛", 0.2, 0.9), ("Exhaustion 乏力", 0.3, 0.95),
                                                         ("Cough 咳嗽", 0.4, 0.7), ("Runny nose 流涕", 0.9, 0.3), ("Sore throat 咽痛", 0.7, 0.4)]
             for (i, sym) in symptoms.enumerated() {
                 let v = sym.1 + (sym.2 - sym.1) * f, y = 30 + Double(i) * 34
-                s.text(sym.0, 170, y)
-                s.rect(170, y + 5, 170, 10, r: 5, fill: hex("#EEEEEE"))
-                s.rect(170, y + 5, 170 * v, 10, r: 5, fill: v > 0.6 ? hex("#D8434B") : hex("#E39B4B"))
+                s.text(sym.0, 180, y)
+                s.rect(180, y + 5, 160, 10, r: 5, fill: hex("#EEEEEE"))
+                s.rect(180, y + 5, 160 * v, 10, r: 5, fill: v > 0.6 ? hex("#D8434B") : hex("#E39B4B"))
             }
-            s.text(f > 0.5 ? "Flu 流感 — sudden, whole body 起病急、全身症状" : "Cold 感冒 — gradual, nose & throat 起病缓、鼻咽症状", 20, 256, size: 12, color: hex("#6C4F9E"), bold: true)
-            s.text("virus 病毒 ● — antibiotics don’t kill viruses 抗生素对病毒无效", 20, 280)
+            s.text(f > 0.5 ? "Flu 流感 — sudden, can reach lungs" : "Cold 感冒 — gradual, nose & throat", 180, 244, size: 10, color: hex("#6C4F9E"), bold: true)
+            s.text(f > 0.5 ? "起病急、全身症状，可累及肺" : "起病缓、局限于鼻咽", 180, 258, size: 10, color: hex("#6C4F9E"))
+            s.text("virus 病毒 ● — antibiotics don’t kill viruses 抗生素对病毒无效", 20, 290, size: 9)
         },
         sources: ["CDC “Cold versus flu”; WHO influenza fact sheet"]
     )
@@ -96,28 +110,42 @@ extension Illustrations {
             .watch("See a doctor if it’s weekly, food sticks, you lose weight or vomit blood.", "每周发作、吞咽梗阻、体重下降或呕血时应就医。"),
         ],
         draw: { s, p, t in
-            let rf = reflux(p), slosh = sin(t * 2) * 3
+            let rf = reflux(p), slosh = sin(t * 2) * 2
+            let lying = p[v: "lying"] > 0.5
             let wall = hex("#F4D3C4"), edge = hex("#C98A7A"), acid = hex("#E3C23A"), label = hex("#8A6A5A")
-            s.rect(170, 20, 20, 150, r: 8, fill: wall, stroke: edge, lw: 2)
-            s.path("M 170 170 C 110 170, 100 260, 170 270 C 250 280, 270 200, 190 170 Z", fill: wall, stroke: edge, lw: 2)
-            s.path("M 118 \(240 + slosh) C 140 \(230 - slosh), 210 \(230 + slosh), 250 \(238 - slosh) L 240 262 C 210 280, 140 280, 118 250 Z", fill: acid, opacity: 0.85)
-            s.rect(172, 166, 16, 8, fill: p[v: "valveWeak"] > 0.5 ? hex("#E39B4B") : hex("#8A3B45"))
-            if rf > 0.02 { s.rect(173, 170 - rf * 140, 14, rf * 140, fill: acid, opacity: 0.85) }
-            s.text("oesophagus 食管", 196, 60, color: label)
-            s.text("valve 贲门括约肌", 196, 176, color: label)
-            s.text("stomach acid 胃酸 pH 1.5–3.5", 150, 292, color: label)
-            let lying = p[v: "lying"] > 0.5, purple = hex("#6C4F9E")
-            s.group(translate: CGPoint(x: 300, y: 70)) { g in
-                if lying {
-                    g.circle(-30, 20, 8, fill: purple)
-                    g.path("M -20 20 L 30 20 M -5 20 L -10 32 M 15 20 L 20 32", stroke: purple, lw: 5, cap: .round)
-                } else {
-                    g.circle(0, -20, 8, fill: purple)
-                    g.path("M 0 -10 L 0 25 M 0 25 L -10 45 M 0 25 L 10 45 M 0 0 L -12 12 M 0 0 L 12 12", stroke: purple, lw: 5, cap: .round)
-                }
-                g.text(lying ? "lying flat 平躺" : "upright 直立", 0, 62, color: purple, anchor: .middle)
+            // diaphragm with the oesophagus passing through its hiatus
+            s.path("M 20 120 C 80 96, 150 92, 172 104 M 196 104 C 230 92, 300 96, 350 120", stroke: hex("#B8544C"), lw: 5, cap: .round)
+            s.text("diaphragm 膈肌", 270, 96, size: 8, color: hex("#B8544C"))
+            s.rect(172, 10, 22, 118, r: 8, fill: wall, stroke: edge, lw: 2)
+            // J-shaped stomach: fundus up by the junction, body, antrum, pylorus to the duodenum
+            let stomach = "M 172 124 C 140 112, 120 130, 126 160 C 132 214, 172 262, 230 256 C 262 252, 284 232, 290 210 L 306 208 L 306 196 L 286 196 "
+                + "C 278 216, 262 228, 236 226 C 208 224, 196 196, 196 160 C 196 146, 196 134, 194 126 Z"
+            s.path(stomach, fill: wall, stroke: edge, lw: 2)
+            if lying {
+                // lying flat: acid runs back to the fundus, against the valve
+                s.path("M 130 150 C 140 140, 176 132, 194 132 L 196 160 C 180 168, 150 170, 128 166 Z", fill: acid, opacity: 0.85)
+            } else {
+                s.path("M 142 \(214 + slosh) C 170 \(208 - slosh), 230 \(212 + slosh), 262 \(226 - slosh) C 250 250, 200 258, 170 246 C 156 238, 146 228, 142 \(214 + slosh) Z",
+                       fill: acid, opacity: 0.85)
             }
-            for i in 0..<Int((rf * 6).rounded()) { s.circle(60 + Double(i) * 8, 40 + (t * 30 + Double(i) * 9).wrap(20), 3, fill: hex("#E0503C")) }
+            s.rect(173, 118, 20, 8, fill: p[v: "valveWeak"] > 0.5 ? hex("#E39B4B") : hex("#8A3B45"))
+            if rf > 0.02 { s.rect(175, 124 - rf * 110, 16, rf * 110, fill: acid, opacity: 0.85) }
+            s.text("oesophagus 食管", 200, 40, size: 8, color: label)
+            s.text("valve (LES) 贲门括约肌", 40, 136, size: 8, color: label)
+            s.text("fundus 胃底", 96, 150, size: 8, color: label)
+            s.text("pylorus 幽门", 290, 190, size: 8, color: label)
+            s.text("stomach acid 胃酸 pH 1.5–3.5", 150, 290, size: 8, color: label)
+            let purple = hex("#6C4F9E")
+            s.group(translate: CGPoint(x: 310, y: 30)) { g in
+                if lying {
+                    g.circle(-24, 10, 7, fill: purple)
+                    g.path("M -16 10 L 30 10 M -2 10 L -6 20 M 16 10 L 20 20", stroke: purple, lw: 4, cap: .round)
+                } else {
+                    g.circle(0, -6, 7, fill: purple)
+                    g.path("M 0 2 L 0 30 M 0 30 L -8 46 M 0 30 L 8 46 M 0 10 L -10 20 M 0 10 L 10 20", stroke: purple, lw: 4, cap: .round)
+                }
+                g.text(lying ? "lying flat 平躺" : "upright 直立", 0, 62, size: 8, color: purple, anchor: .middle)
+            }
             let status = rf > 0.3 ? hex("#D8434B") : hex("#2E9E5B")
             s.rect(8, 6, 150, 44, r: 8, fill: .white, stroke: status, lw: 2)
             s.text("Reflux 反流 \(Int((rf * 100).rounded()))%", 20, 26, size: 12, color: status, bold: true)
