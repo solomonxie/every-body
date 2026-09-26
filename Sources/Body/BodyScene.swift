@@ -87,6 +87,11 @@ final class BodyScene {
         fill.light.intensity = 1200
         fill.look(at: .zero, from: SIMD3(-3, 2, -4), relativeTo: nil)
         root.addChild(fill)
+        // from behind and above, so the back's relief reads when the body is turned
+        let rim = DirectionalLight()
+        rim.light.intensity = 1600
+        rim.look(at: .zero, from: SIMD3(1.5, 3, -5), relativeTo: nil)
+        root.addChild(rim)
     }
 
     // MARK: build
