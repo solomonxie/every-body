@@ -1,4 +1,4 @@
-# Body Atlas v1 — UI/UX
+# Every Body v1 — UI/UX
 
 Why/scope: [DESIGN.md](DESIGN.md). Mockups: [`uiux/`](uiux/). Glyphs per the `uiux`
 skill's `notation.md`; mobile mocks 60 cols.

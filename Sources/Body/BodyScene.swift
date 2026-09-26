@@ -26,7 +26,7 @@ enum Focus {
 /// The schematic body as RealityKit entities, plus everything animated on it.
 @MainActor
 final class BodyScene {
-    /// set from a bodyatlas://…?yaw= link: start at this angle, no auto-rotate
+    /// set from a everybody://…?yaw= link: start at this angle, no auto-rotate
     static var pinnedYaw: Float?
 
     let root = Entity()

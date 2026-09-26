@@ -1,4 +1,4 @@
-# Body Atlas v1 — Design
+# Every Body v1 — Design
 
 UI: [UIUX_DESIGN.md](UIUX_DESIGN.md) · Build: [IMPLEMENT_PLAN.md](IMPLEMENT_PLAN.md)
 

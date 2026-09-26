@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct BodyAtlasApp: App {
+struct EveryBodyApp: App {
     @State private var settings = Settings()
 
     var body: some Scene {

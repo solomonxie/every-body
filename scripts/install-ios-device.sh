@@ -17,10 +17,10 @@ UDID=${1:-$(xcrun devicectl list devices 2>/dev/null | grep physical \
 CONFIG=${CONFIG:-Release}
 
 xcodegen generate --quiet
-xcodebuild -project BodyAtlas.xcodeproj -scheme BodyAtlas \
+xcodebuild -project EveryBody.xcodeproj -scheme EveryBody \
   -configuration "$CONFIG" -destination "id=$UDID" -allowProvisioningUpdates \
   DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID" \
   -derivedDataPath build/dd build | grep -E "error:|warning: .*Sources|BUILD" || true
 
 xcrun devicectl device install app --device "$UDID" \
-  "build/dd/Build/Products/$CONFIG-iphoneos/BodyAtlas.app"
+  "build/dd/Build/Products/$CONFIG-iphoneos/EveryBody.app"
