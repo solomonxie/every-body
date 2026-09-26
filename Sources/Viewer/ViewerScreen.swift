@@ -52,6 +52,7 @@ struct ViewerScreen: View {
         .onChange(of: parts) { scene.setParts(parts, selected: selectedPart) }
         .onChange(of: selectedPart) { scene.setParts(parts, selected: selectedPart) }
         .onChange(of: settings.female) { rebuild() }
+        .onChange(of: settings.age) { scene.setAge(settings.age) }
         .onChange(of: bpm) { scene.bpm = bpm }
     }
 
@@ -67,6 +68,7 @@ struct ViewerScreen: View {
     }
 
     private func rebuild() {
+        scene.setAge(settings.age)
         scene.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female,
                     points: systemPoints?.points ?? [], flowStops: flowStops)
         scene.setLayers(layers)

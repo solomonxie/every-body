@@ -179,7 +179,52 @@ final class BodyScene {
         } else {
             flowDots = []
         }
+        headParts = rig.children.compactMap { e in
+            guard !jointOuter.values.contains(where: { $0 === e }) else { return nil }
+            let y = e is ModelEntity ? e.visualBounds(relativeTo: rig).center.y : e.position.y
+            return y > Self.chinY ? (e, e.position, e.scale) : nil
+        }
         applyVisibility()
+        applyAge()
+    }
+
+    // MARK: age
+
+    /// scene y of the chin; everything above it is "head" for proportions
+    private static let chinY: Float = 1.25
+    private static let neckY: Float = 1.19
+    private var headParts: [(entity: Entity, position: SIMD3<Float>, scale: SIMD3<Float>)] = []
+    private var age: AgeGroup = .adult
+
+    /// Whole body scale and head-to-body ratio: an infant is ~0.4 of adult height with a head ~¼ of it.
+    private var ageShape: (body: Float, head: Float) {
+        switch age {
+        case .infant: (0.4, 1.85)
+        case .child: (0.68, 1.3)
+        case .adult, .senior: (1, 1)
+        }
+    }
+
+    func setAge(_ age: AgeGroup) {
+        self.age = age
+        applyAge()
+    }
+
+    private func applyAge() {
+        let (body, head) = ageShape
+        rig.scale = SIMD3(repeating: body)
+        let neck = SIMD3<Float>(0, Self.neckY, 0)
+        for (entity, position, scale) in headParts {
+            entity.position = neck + (position - neck) * head
+            entity.scale = scale * head
+        }
+        focus(.all)
+    }
+
+    /// adult scene y → where it sits on this age's body
+    private func ageY(_ y: Float) -> Float {
+        let (body, head) = ageShape
+        return (y > Self.chinY ? Self.neckY + (y - Self.neckY) * head : y) * body
     }
 
     // MARK: state
@@ -225,6 +270,9 @@ final class BodyScene {
         litOrgans = Set(organIds)
         flashStart = -1
         pulseStart = clock
+        // data positions are adult; a head point moves with the head's age scaling
+        let neck = SIMD3<Float>(0, Self.neckY, 0)
+        let start = start.y > Self.chinY ? neck + (start - neck) * ageShape.head : start
         pulseCurves = organIds.compactMap { organEntities[$0]?.position }.map { end in
             var mid = (start + end) / 2
             mid.z += 0.35
@@ -340,9 +388,10 @@ final class BodyScene {
     }
 
     func focus(_ f: Focus) {
-        goalFocusY = f.y
+        goalFocusY = ageY(f.y)
         panX = 0
-        goalDistance = f.distance
+        // smaller bodies bring the camera a little closer but still read as small
+        goalDistance = f.distance * (f == .all ? 0.55 + 0.45 * ageShape.body : ageShape.body.squareRoot())
     }
 
     func resetView() {
