@@ -10,6 +10,10 @@ peel layers, and see what a point connects to — on a phone, free, offline.
 
 ## Goals
 
+- **Schematic, not lifelike** — every visual is built from simple geometry and math
+  (primitives, curves, parametric layouts), not realistic art or scanned models. The bar
+  is *understandable*: right positions, relationships and cause → effect. Effort goes to
+  accuracy of placement and clarity, never to photorealism.
 - **Watch, then try** — every feature shows how it works (animation) *and* lets the
   user poke it to see cause → effect (interactive). Passive-only content is out.
 - Free, no account, fully offline after install.
@@ -32,8 +36,6 @@ peel layers, and see what a point connects to — on a phone, free, offline.
 - Medical advice, diagnosis, treatment plans.
 - Accounts, sync, social, ads, IAP.
 - AR, VR, dissection-grade detail (individual vessels/nerves beyond what the source model has).
-- Full female model — until a licensed asset exists (see Risks). Pregnancy uses a
-  dedicated pelvis/uterus sub-model instead.
 - Self-treatment instructions: bone-setting illustrations show what a clinician does,
   never "do this at home". First aid is the one exception, and only per current guidelines.
 - Quiz mode — post-v1; the Viewer reserves its rail slot.
@@ -54,7 +56,8 @@ peel layers, and see what a point connects to — on a phone, free, offline.
 
 | Option | Deciding factor |
 |---|---|
-| Z-Anatomy (CC BY-SA 4.0, from BodyParts3D) ✓ | Free, full body, named parts, Blender source → glTF |
+| Procedural schematic body (primitives + math) ✓ | Matches "schematic, not lifelike"; tiny, no licence/size risk, every part addressable by id |
+| Z-Anatomy (CC BY-SA 4.0, from BodyParts3D) | Realistic and free, but share-alike, 60 MB+ assets and a Blender pipeline — effort spent on looks; deferred |
 | BodyParts3D raw (CC BY-SA 2.1 JP) | Same data, less cleanup, no organized collections |
 | Commercial (Zygote etc.) | Best quality, licence cost + no-redistribution terms conflict with free |
 | Build our own | Not feasible |
@@ -85,8 +88,11 @@ peel layers, and see what a point connects to — on a phone, free, offline.
 ## Decision
 
 - R3F + expo-gl — keeps the working pipeline; swap only the geometry.
-- Z-Anatomy → one compressed GLB per system, bundled, loaded lazily. Stable part ids
-  from node names so data (info, points, search) keys on them.
+- Procedural schematic body: parts are parametric primitives (capsules, ellipsoids,
+  curves) defined in data with stable ids, so info, points, search and scenarios key on
+  them. Refine proportions and part coverage, not realism. Z-Anatomy stays a later option.
+- 2D charts (hand, ear, foot) follow the same rule: geometric outlines, zone positions
+  from the standard maps, placed relative to bone/landmark geometry.
 - Points anchored to mesh-surface coordinates, replacing placeholder-sphere lat/lon.
 - Reflex effects framed as traditional claims, with a disclaimer — not as medical fact.
 - Illustrations = `Scenario` data (ordered steps: camera, layers, part transforms/tints,
@@ -110,19 +116,16 @@ peel layers, and see what a point connects to — on a phone, free, offline.
 
 ## Risks / open questions
 
-- **Share-alike**: CC BY-SA applies to the converted models — publish them (or the
+- **Share-alike** (only if Z-Anatomy is adopted later): CC BY-SA applies to the converted models — publish them (or the
   conversion script + source link). App code licence unaffected; confirm before release.
-- **Install size**: full body can exceed 100 MB raw; target ≤ 60 MB total after
-  compression + decimation. May force download-on-demand for detailed systems.
 - **Low-end Android GL**: expo-gl perf on 3 GB devices; needs a Low quality tier.
 - **Health claims / store review**: reflex effects must read as tradition, not efficacy
   (Apple 1.4.1). Sources: WHO Standard Acupuncture Point Locations (2008) for placement.
-- **Female model**: no free, licensed equivalent known — Male/Female tiles stay hidden.
-  Pregnancy/labor needs a pelvis + uterus + fetus-by-stage sub-model: source (CC model)
-  or commission — the single biggest unknown for that topic.
+- **Female model**: schematic, so a female variant (pelvis, reproductive organs) is just more primitives — no licensing blocker.
+  Pregnancy/labor uses a schematic pelvis + uterus + fetus-by-week built from primitives.
 - **Medical accuracy of Illustrations**: first aid must track current ILCOR / Red Cross
   guidance (updated every ~5 y); illness and metric content needs a clinician review and
   cited sources per scenario. Store review scrutiny higher (Apple 1.4.1).
-- **Graphic content**: fractures, labor — keep stylized (no gore), age rating 12+.
+- **Graphic content**: fractures, labor — schematic by design (no gore), age rating 12+.
 - Reflex zones on feet/hands/ears need detailed local geometry; body-scale model may be
   too coarse → possible dedicated foot/hand/ear sub-models.

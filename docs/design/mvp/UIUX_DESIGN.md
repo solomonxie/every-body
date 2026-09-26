@@ -20,6 +20,17 @@ skill's `notation.md`; mobile mocks 60 cols.
   └───────────────┘
 ```
 
+## Principle: schematic, not lifelike
+
+Draw with geometry — capsules, ellipses, lines, arcs, colour-coded zones. A shape only has
+to be recognisable; what must be exact is *where* things are and *what connects to what*.
+No textures, no realistic outlines, no image assets for anatomy.
+
+```
+✓ ( )  capsule finger, zone at the right joint      ✗ traced photo-real hand
+✓ ellipse organ, labelled, lights up                ✗ textured organ model
+```
+
 ## Principle: watch, then try
 
 Every feature has an animation and an interactive control (6 shared primitives:

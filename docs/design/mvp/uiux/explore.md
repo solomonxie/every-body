@@ -63,5 +63,5 @@ Only one state otherwise — all data is bundled.
 
 ## Notes
 
-Male / Female tiles hidden until a female model exists (DESIGN Risks) — no "coming soon"
+Male / Female tiles hidden until the schematic female variant (T10.2) exists — no "coming soon"
 tiles.

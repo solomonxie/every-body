@@ -1,4 +1,4 @@
-# Asset pipeline (T3.2–T3.4, T6.3)
+# Asset pipeline — deferred (see DESIGN → Decision)
 
 ```
 Z-Anatomy .blend ──▶ scripts/assets/export.py (Blender headless)

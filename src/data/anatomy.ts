@@ -51,7 +51,15 @@ export type OrganId =
   | 'kidney-r'
   | 'intestines'
   | 'uterus'
-  | 'shoulders';
+  | 'bladder'
+  | 'pancreas'
+  | 'shoulders'
+  | 'eyes'
+  | 'face'
+  | 'ears'
+  | 'sinuses'
+  | 'throat'
+  | 'spine';
 
 export interface Organ {
   position: Vec3;
@@ -73,5 +81,13 @@ export const ORGANS: Record<OrganId, Organ> = {
   'kidney-r': { position: [-0.12, 0.45, -0.1], radius: 0.055, scale: [0.8, 1.3, 0.7], color: '#7E2130' },
   intestines: { position: [0, 0.3, 0.07], radius: 0.16, scale: [1.1, 0.8, 0.7], color: '#D9A77A' },
   uterus: { position: [0, 0.1, 0.06], radius: 0.06, color: '#C77DA0' },
+  bladder: { position: [0, 0.0, 0.1], radius: 0.05, color: '#E0C35A' },
+  pancreas: { position: [0.04, 0.55, 0.0], radius: 0.05, scale: [2, 0.6, 0.7], color: '#E8C07A' },
+  eyes: { position: [0, 1.46, 0.17], radius: 0.05, scale: [2.4, 0.8, 0.8], color: '#4FA3E0', region: true },
+  face: { position: [0, 1.36, 0.17], radius: 0.1, scale: [1.5, 1.2, 0.5], color: '#4FA3E0', region: true },
+  ears: { position: [0, 1.42, 0], radius: 0.06, scale: [4.2, 1.1, 1], color: '#4FA3E0', region: true },
+  sinuses: { position: [0, 1.4, 0.18], radius: 0.06, scale: [1.6, 1, 0.6], color: '#4FA3E0', region: true },
+  throat: { position: [0, 1.16, 0.06], radius: 0.06, color: '#E07A9A', region: true },
+  spine: { position: [0, 0.6, -0.17], radius: 0.05, scale: [0.7, 13, 0.7], color: '#B8A58A', region: true },
   shoulders: { position: [0, 1.12, 0], radius: 0.2, scale: [2.6, 0.5, 0.9], color: '#FFD166', region: true },
 };
