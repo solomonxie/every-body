@@ -32,6 +32,10 @@ anatomy geometry is sourced (matching how `RotatingMesh` will be swapped out).
   Skeleton, Muscles, Brain, Heart, Organs, Male, Female, Hand, Ear, Foot.
   Tapping a tile jumps the Viewer straight to that system.
 
+## Design docs
+
+[`docs/design/mvp/`](docs/design/mvp/DESIGN.md) — design, UI/UX mockups, implementation plan.
+
 ## Setup
 
 ```bash
