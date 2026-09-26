@@ -13,7 +13,7 @@ func render(_ scenario: Scenario, step: Int, t: Double) -> NSImage? {
         if case let .hold(param, progress, _, _) = t.mode { params.merge([param: 1, progress: 0.5]) { _, n in n } }
     }
     let view = Canvas { ctx, _ in
-        var sketch = Sketch(ctx: ctx)
+        var sketch = Sketch(ctx: ctx, zh: ProcessInfo.processInfo.environment["ZH"] == "1")
         scenario.draw(&sketch, params, t)
     }
     .frame(width: 360, height: 300)
@@ -29,7 +29,10 @@ func renderAll() {
     let out = URL(fileURLWithPath: args.first ?? "/tmp/scenes")
     let only = Set(args.dropFirst())
     try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-    for scenario in Illustrations.all where only.isEmpty || only.contains(scenario.id) {
+    // PROFILE=infant|child|adult|senior|pregnant renders that person type's version
+    let env = ProcessInfo.processInfo.environment["PROFILE"] ?? "adult"
+    let profile = env == "pregnant" ? Profile(age: .adult, female: true, pregnant: true) : Profile(age: AgeGroup(rawValue: env) ?? .adult)
+    for scenario in Illustrations.builders.map({ $0(profile) }) where only.isEmpty || only.contains(scenario.id) {
         let images = scenario.steps.indices.compactMap { render(scenario, step: $0, t: 1.3) }
         let sheet = NSImage(size: NSSize(width: 360 * images.count, height: 300))
         sheet.lockFocus()

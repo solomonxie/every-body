@@ -3,6 +3,11 @@ import SwiftUI
 /// SVG-like drawing on a GraphicsContext, so scenes read like the shapes they draw.
 struct Sketch {
     var ctx: GraphicsContext
+    /// language for in-picture labels — one at a time, like the rest of the app
+    var zh = false
+
+    /// pick the label for the current language
+    func t(_ en: String, _ zh: String) -> String { self.zh ? zh : en }
 
     mutating func rect(_ x: Double, _ y: Double, _ w: Double, _ h: Double, r: Double = 0, fill: Color? = nil,
                        stroke: Color? = nil, lw: Double = 1, opacity: Double = 1) {
@@ -33,10 +38,16 @@ struct Sketch {
 
     enum Anchor { case start, middle, end }
 
+    /// Text in the chosen language.
+    mutating func label(_ en: String, _ zh: String, _ x: Double, _ y: Double, size: Double = 10, color: Color = Color(hex: "#555555"),
+                        anchor: Anchor = .start, bold: Bool = false) {
+        text(self.zh ? zh : en, x, y, size: size, color: color, anchor: anchor, bold: bold)
+    }
+
     /// `y` is the baseline, like SVG text.
     mutating func text(_ s: String, _ x: Double, _ y: Double, size: Double = 10, color: Color = Color(hex: "#555555"),
                        anchor: Anchor = .start, bold: Bool = false) {
-        let t = Text(s).font(.system(size: size, weight: bold ? .bold : .regular)).foregroundStyle(color)
+        let t = Text(Bilingual.pick(mixed: s, zh: zh)).font(.system(size: size, weight: bold ? .bold : .regular)).foregroundStyle(color)
         let unit: UnitPoint = switch anchor { case .start: .bottomLeading; case .middle: .bottom; case .end: .bottomTrailing }
         ctx.draw(t, at: CGPoint(x: x, y: y + size * 0.25), anchor: unit)
     }
@@ -44,7 +55,7 @@ struct Sketch {
     /// Draw inside a transformed frame (translate / rotate / scale).
     mutating func group(translate: CGPoint = .zero, rotate: Double = 0, about: CGPoint? = nil, scale: Double = 1,
                         opacity: Double = 1, _ body: (inout Sketch) -> Void) {
-        var inner = Sketch(ctx: ctx)
+        var inner = Sketch(ctx: ctx, zh: zh)
         inner.ctx.opacity *= opacity
         inner.ctx.translateBy(x: translate.x, y: translate.y)
         if rotate != 0 {
