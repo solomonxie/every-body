@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { CatmullRomCurve3, Quaternion, Vector3 } from 'three';
 
-import { SCHEMATIC_PARTS, type LayerId, type SchematicPart } from '@/data/body';
+import { JOINTS, SCHEMATIC_PARTS, type LayerId, type SchematicPart } from '@/data/body';
 import type { Vec3 } from '@/types/BodyPoint';
+
+import { Articulated, type JointAngles } from './articulated';
 
 const UP = new Vector3(0, 1, 0);
 
@@ -19,7 +21,7 @@ function span(from: Vec3, to: Vec3) {
   };
 }
 
-function PartMesh({ part, selected, opacity }: { part: SchematicPart; selected: boolean; opacity: number }) {
+function PartMesh({ part, selected, opacity, bulge = 1 }: { part: SchematicPart; selected: boolean; opacity: number; bulge?: number }) {
   const s = part.shape;
   const geometry = useMemo(() => {
     if (s.kind === 'segment' || s.kind === 'spindle') return span(s.from, s.to);
@@ -66,7 +68,7 @@ function PartMesh({ part, selected, opacity }: { part: SchematicPart; selected: 
     case 'spindle': {
       const g = geometry as ReturnType<typeof span>;
       return (
-        <mesh position={g.position} quaternion={g.quaternion} scale={[s.radius, g.length / 2, s.radius * 0.8]} userData={userData}>
+        <mesh position={g.position} quaternion={g.quaternion} scale={[s.radius * bulge, (g.length / 2) * (2 - bulge) ** 0.5, s.radius * 0.8 * bulge]} userData={userData}>
           <sphereGeometry args={[1, 16, 12]} />
           {material}
         </mesh>
@@ -89,21 +91,32 @@ function PartMesh({ part, selected, opacity }: { part: SchematicPart; selected: 
   }
 }
 
-type Props = { layers: LayerId[]; hidden: string[]; selectedId?: string };
+type Props = { layers: LayerId[]; hidden: string[]; selectedId?: string; angles?: JointAngles };
+
+/** how much a muscle bulges: 1 at rest, up to 1.6 at the joint's full range */
+function bulgeOf(partId: string, angles: JointAngles) {
+  const joint = JOINTS.find((j) => j.movers.includes(partId));
+  return joint ? 1 + 0.6 * Math.min(1, (angles[joint.id] ?? 0) / joint.maxDeg) : 1;
+}
 
 /** Bones, muscles, vessels and nerves as math-built primitives, filtered by visible layer. */
-export function SchematicBody({ layers, hidden, selectedId }: Props) {
+export function SchematicBody({ layers, hidden, selectedId, angles = {} }: Props) {
   const muscleOpacity = layers.includes('skeletal') ? 0.55 : 0.95;
   return (
-    <group>
-      {SCHEMATIC_PARTS.filter((part) => layers.includes(part.layer) && !hidden.includes(part.id)).map((part) => (
-        <PartMesh
-          key={part.id}
-          part={part}
-          selected={part.id === selectedId}
-          opacity={part.layer === 'muscular' ? muscleOpacity : 1}
-        />
-      ))}
-    </group>
+    <Articulated
+      angles={angles}
+      items={SCHEMATIC_PARTS.filter((part) => layers.includes(part.layer) && !hidden.includes(part.id)).map((part) => ({
+        id: part.id,
+        node: (
+          <PartMesh
+            key={part.id}
+            part={part}
+            selected={part.id === selectedId}
+            opacity={part.layer === 'muscular' ? muscleOpacity : 1}
+            bulge={bulgeOf(part.id, angles)}
+          />
+        ),
+      }))}
+    />
   );
 }

@@ -5,6 +5,7 @@ import { GestureDetector } from 'react-native-gesture-handler';
 
 import { BodyScene } from '@/components/canvas/body-scene';
 import { FOCUS, type SceneBusRef } from '@/components/canvas/scene-bus';
+import type { JointAngles } from '@/components/canvas/articulated';
 import type { Pick, Picker } from '@/components/canvas/tap-picker';
 import { useSettings } from '@/state/settings';
 
@@ -19,6 +20,7 @@ type Props = {
   skinOpacity?: number;
   showOrgans?: boolean;
   selectedId?: string;
+  angles?: JointAngles;
   /** small inset: no rails, no hint */
   compact?: boolean;
   /** extra scene content that rotates with the body */
@@ -26,7 +28,7 @@ type Props = {
 };
 
 /** Full-bleed 3D body: drag to spin, pinch to zoom, tap a point, double-tap to reset. */
-export function ModelView({ busRef, skinColor, onPick, skinOpacity, showOrgans, selectedId, compact = false, children }: Props) {
+export function ModelView({ busRef, skinColor, onPick, skinOpacity, showOrgans, selectedId, angles, compact = false, children }: Props) {
   const pickerRef = useRef<Picker | null>(null);
   const { settings, update } = useSettings();
   const background = settings.background;
@@ -64,6 +66,7 @@ export function ModelView({ busRef, skinColor, onPick, skinOpacity, showOrgans, 
                 skinOpacity={skinOpacity}
                 showOrgans={showOrgans}
                 selectedId={selectedId}
+                angles={angles}
                 pickerRef={pickerRef}
               >
                 {children}
