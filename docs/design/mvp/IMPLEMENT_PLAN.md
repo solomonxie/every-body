@@ -20,10 +20,11 @@ Build every v1 screen against the existing sphere so UI work doesn't wait on ass
 
 - [ ] T2.1 Explore: search field, 3-col `CategoryTile` grid — see `uiux/explore.md` — depends: T1.4, T1.6
 - [ ] T2.2 Viewer frame: full-bleed canvas, `RailButton` rails, ◐ background, ⌂ reset — see `uiux/viewer.md` — depends: T1.5
-- [ ] T2.3 Camera controls: orbit / pinch / pan / double-tap, auto-rotate until first touch — see `src/components/canvas/` — depends: T2.2
+- [ ] T2.3 Camera controls: orbit / pinch / pan / double-tap, auto-rotate until first touch (in-progress: all but 2-finger pan) — see `src/components/canvas/` — depends: T2.2
 - [ ] T2.4 `Sheet` component (peek/half/full, one-at-a-time) + Toast — see `uiux/components.md` — depends: none
 - [ ] T2.5 Settings screen + Licenses + Disclaimer pages — see `uiux/settings.md` — depends: T1.5, T1.6
 - [ ] T2.6 Viewer states: loading, error, no-GL, first-run hint — see `uiux/viewer.md` → States — depends: T2.2
+- [x] T2.7 Review build: primitive mannequin with organs, Reflex Map press → pulse → organ, blood flow + heart-rate try, app icon, device install script — see `src/components/canvas`, `scripts/` — depends: none
 
 ## Phase 3: Anatomy asset pipeline
 Real geometry is what parts, points and scenarios all anchor to; nothing past Phase 3

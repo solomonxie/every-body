@@ -1,26 +1,21 @@
 # Body Atlas
 
-> 🚧 Work in progress — skeleton only, not yet functional.
+> 🚧 Work in progress — first demo: Reflex Map and blood flow on a placeholder figure.
 
 A free way to explore the human body in 3D, layer by layer and system by system — skeletal, muscular, circulatory, nervous, organs, digestive, and more. Spin the model, peel back a layer, and see what's underneath, all from your phone, with no purchase required.
 
-Real, licensed anatomy models are a future addition. This build uses placeholder geometry (simple rotating primitives standing in for each body system) to prove out the 3D viewer pipeline — React Native + Expo, rendering through `@react-three/fiber` and `three` via `expo-gl`/`expo-three` — before real assets are sourced.
+Real, licensed anatomy models are a future addition. This build uses a placeholder figure (primitive shapes with the main organs inside, `src/data/anatomy.ts`) to prove out the 3D viewer pipeline — React Native + Expo, rendering through `@react-three/fiber` and `three` via `expo-gl`/`expo-three` — before real assets are sourced.
 
-## Points, reflex targets & flow animation
+## Try it
 
-`src/types/BodyPoint.ts` + `src/data/system-points.ts` define **points** that can attach to
-any system/layer, shown in the Viewer as a tappable chip list (name + description):
+- **Reflex Map (穴位反射图)** — press a foot / hand / ear / body point (dot or name) → a
+  pulse travels to the organ it's said to act on, the organ lights up, the effect card shows.
+  Filter by region to zoom there.
+- **Circulatory** — red/blue blood cells loop heart → arteries → capillaries → veins → lungs;
+  drag the heart rate and the flow and heartbeat follow.
+- Drag to spin, pinch to zoom, double-tap to reset; ⌂ reset, ◐ gray/white background.
 
-- **Acupoint Reflex Map (穴位反射图)** — whole-body acupoints/reflex zones (foot, hand, ear,
-  body), each with a `target`: the related body part it affects plus the pressure effect.
-  Pressing a point animates a pulse on the model traveling from the point to its target,
-  then flashes the target to show the effect landing — implemented in
-  `src/components/canvas/reflex-pulse.tsx`, positioned symbolically on the placeholder sphere.
-- **Circulatory** — `flow.kind: 'blood'`, a looping flow through
-  heart → arteries → capillaries → veins → lungs (stub — not yet animated on the model).
-
-Future work: swap the symbolic placeholder-sphere placement for real positions once licensed
-anatomy geometry is sourced (matching how `RotatingMesh` will be swapped out).
+Points: `src/data/system-points.ts` (positions on the figure, target organs).
 
 ## Screen design
 

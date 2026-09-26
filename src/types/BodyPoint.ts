@@ -1,12 +1,17 @@
+import type { OrganId } from '@/data/anatomy';
+
+export type Vec3 = [number, number, number];
+
+export type PointRegion = 'foot' | 'hand' | 'ear' | 'body';
+
 export interface ReflexTarget {
   name: string;
   nameZh: string;
   /** what applying pressure at the point does here */
   effect: string;
   effectZh: string;
-  /** symbolic placement on the placeholder sphere, in radians */
-  lat: number;
-  lon: number;
+  /** organs the pulse travels to and lights up */
+  organIds: OrganId[];
 }
 
 export interface BodyPoint {
@@ -14,9 +19,9 @@ export interface BodyPoint {
   name: string;
   nameZh: string;
   description: string;
-  /** placement on the placeholder sphere, in radians */
-  lat: number;
-  lon: number;
+  region?: PointRegion;
+  /** mannequin space: y up, figure faces +z, its right side is -x */
+  position: Vec3;
   /** the related body part this point reflexively affects, for acupoint/reflex maps */
   target?: ReflexTarget;
 }
