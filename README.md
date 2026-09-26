@@ -51,3 +51,5 @@ Data lives in `Resources/Data/*.json` (body parts, organs, joints, points, chart
 App icon: `venv/bin/python scripts/make_icons.py` (needs Pillow in `venv/`).
 Body: `venv/bin/python scripts/gen_body.py` regenerates `body.json`; `scripts/preview_body.py` plots it.
 Illustrations: `scripts/render_scenes/render.sh /tmp/scenes` renders every step to PNG on the Mac.
+Reflex charts: `venv/bin/python scripts/render_charts/gen_charts.py` regenerates `charts.json` (needs shapely);
+`scripts/render_charts/render.sh` renders every face to `build/charts/` with the app's `ChartCanvas`.
