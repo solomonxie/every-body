@@ -53,8 +53,6 @@ struct RouteView: View {
             IllustrationScreen(id: id)
         case let .info(system):
             InfoScreen(systemID: system)
-        case let .quiz(system):
-            QuizScreen(systemID: system)
         case .search:
             SearchScreen()
         }

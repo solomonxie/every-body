@@ -1,7 +1,7 @@
 # Part info
 
 Stack page. From Part card Details › / drag ▲, or Viewer ⓘ (system-level).
-Code: `Sources/Screens/InfoAndQuiz.swift`.
+Code: `Sources/Screens/InfoScreen.swift`.
 
 ```
  ‹ Skeleton             Femur

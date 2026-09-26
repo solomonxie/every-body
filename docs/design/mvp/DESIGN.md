@@ -41,7 +41,7 @@ peel layers, and see what a point connects to — on a phone, free, offline.
 - AR, VR, dissection-grade detail (individual vessels/nerves beyond what the source model has).
 - Self-treatment instructions: bone-setting illustrations show what a clinician does,
   never "do this at home". First aid is the one exception, and only per current guidelines.
-- Quiz mode — post-v1; the Viewer reserves its rail slot.
+- Quiz mode — removed; the app teaches by watch-then-try, not testing.
 - Web and Android — iOS only (native Swift).
 
 ## Options considered

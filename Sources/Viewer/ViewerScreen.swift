@@ -43,9 +43,6 @@ struct ViewerScreen: View {
         .navigationTitle(system.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if !isReflex {
-                ToolbarItem { NavigationLink("Quiz 测验", value: Route.quiz(system: systemID)) }
-            }
             ToolbarItem { NavigationLink(value: Route.info(system: systemID)) { Image(systemName: "info.circle") } }
         }
         .onAppear(perform: setUp)
