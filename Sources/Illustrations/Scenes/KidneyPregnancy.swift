@@ -201,9 +201,27 @@ extension Illustrations {
             let (w0, y0) = marks[i], (w1, y1) = marks[min(marks.count - 1, i + 1)]
             let fundus = w1 == w0 ? y0 : y0 + (y1 - y0) * ((week - w0) / (w1 - w0)).clamped(0, 1)
             let grow = ((236 - fundus) / 104).clamped(0, 1)
-            let bx = 150 + grow * 52, by = 206 - grow * 20
-            s.path("M 132 58 C 134 64, 140 70, 150 78 C 164 88, 166 110, 152 120 C 148 124, 148 130, 150 134 "
-                   + "C \(150 + grow * 10) 150, \(bx) \(by - 40 - grow * 10), \(bx) \(by) C \(bx) \(by + 20 + grow * 4), \(154 + grow * 10) 228, 148 236 "
+            // womb: pear from the cervix up to the fundus
+            let cervix = CGPoint(x: 124, y: 240)
+            let height = max(26, cervix.y - fundus + 6)
+            let width = 14 + height * 0.66
+            let cx = cervix.x + 8 + grow * 18
+            let top = cervix.y - height
+            // belly front = womb front plus the abdominal wall, never inside the resting profile
+            var front: [CGPoint] = []
+            for k in 0...24 {
+                let u = Double(k) / 24, a = (1 - u) * (1 - u) * (1 - u), b = 3 * u * (1 - u) * (1 - u), c = 3 * u * u * (1 - u), d = u * u * u
+                let x = a * cx + (b + c) * (cx + width / 2) + d * (cervix.x + 5)
+                let y = a * top + b * (top + 4) + c * (cervix.y - height * 0.2) + d * cervix.y
+                guard y > 124, y < 232 else { continue }
+                let rest = y < 150 ? 150 - (y - 134) * 0.05 : 148
+                front.append(CGPoint(x: max(rest, x + 5 + 3 * grow * sin(.pi * u)), y: y))
+            }
+            let bx = front.map(\.x).max() ?? 150
+            let navelX = front.min { abs($0.y - 176) < abs($1.y - 176) }?.x ?? 148
+            let belly = front.map { "L \($0.x) \($0.y) " }.joined()
+            s.path("M 132 58 C 134 64, 140 70, 150 78 C 164 88, 166 110, 152 120 C 148 124, 148 128, 150 132 "
+                   + belly + "L 148 236 "
                    + "C 146 242, 142 246, 138 248 C 140 270, 142 290, 142 300 L 92 300 C 90 280, 86 256, 84 232 C 80 210, 90 186, 94 160 "
                    + "C 96 130, 88 100, 96 78 C 100 70, 106 62, 110 56 Z", fill: skin, stroke: line, lw: 2)
             s.rect(112, 44, 20, 20, fill: skin)
@@ -214,12 +232,6 @@ extension Illustrations {
             s.circle(98, 30, 7, fill: hex("#6B5344"))
             s.path("M 100 70 C 94 110, 100 150, 108 190 C 112 210, 106 226, 104 240", stroke: hex("#EADFCB"), lw: 5, cap: .round)
             s.ellipse(144, pubis, 5, 9, fill: hex("#E9E2CF"), stroke: hex("#B8A58A"))
-            // womb: pear from the cervix up to the fundus, filling the belly
-            let cervix = CGPoint(x: 124, y: 240)
-            let height = max(26, cervix.y - fundus + 6)
-            let width = 14 + height * 0.66
-            let cx = cervix.x + 8 + grow * 18
-            let top = cervix.y - height
             s.path("M \(cervix.x - 5) \(cervix.y) C \(cx - width / 2) \(cervix.y - height * 0.2), \(cx - width / 2) \(top + 4), \(cx) \(top) "
                    + "C \(cx + width / 2) \(top + 4), \(cx + width / 2) \(cervix.y - height * 0.2), \(cervix.x + 5) \(cervix.y) Z",
                    fill: hex("#F2B8C0"), stroke: hex("#C9788A"), lw: 2)
@@ -232,7 +244,7 @@ extension Illustrations {
             let centre = CGPoint(x: cx + 2, y: cervix.y - height * 0.5)
             if week >= 10 { s.path("M \(centre.x) \(centre.y + length * 0.1) Q \(cx - 10) \(top + height * 0.5) \(cx - width * 0.3) \(top + height * 0.3)", stroke: hex("#C9788A"), lw: 1.2) }
             drawFetus(&s, at: centre, length: length, headFrac: headFrac, rotate: -turn, kick: kick)
-            s.circle(bx - 2, max(by - 30, 176), 2, fill: label)
+            s.circle(navelX - 2, 176, 2, fill: label)
             s.circle(150, 132, 2, fill: label)
             // tape measure from the pubic bone to the top of the womb
             if week >= 16 {
