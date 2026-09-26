@@ -463,7 +463,7 @@ final class BodyScene {
             orient(e, from: from.simd, to: to.simd)
             if let scale { e.scale = scale.simd }
             return e
-        case .tube, .plate, .loft, .sheet, .slab:
+        case .tube, .plate, .loft, .sheet, .slab, .tubes:
             return ModelEntity(mesh: mesh(for: shape))
         }
     }
