@@ -12,18 +12,6 @@ func twoBone(_ s: CGPoint, _ t: CGPoint, _ l1: Double, _ l2: Double, bend: CGPoi
     return (score(e1) >= score(e2) ? e1 : e2, hand)
 }
 
-extension Person {
-    /// Set shoulder / elbow so the hand lands on `target` (local frame, after lean), elbow below.
-    mutating func aimHand(at target: CGPoint) {
-        let a = lean * .pi / 180
-        let s = CGPoint(x: -shoulderPoint.y * sin(a), y: shoulderPoint.y * cos(a))
-        let (e, w) = twoBone(s, target, h * 0.17, h * 0.16, bend: CGPoint(x: 0, y: 1))
-        let up = atan2(e.x - s.x, e.y - s.y) * 180 / .pi, fore = atan2(w.x - e.x, w.y - e.y) * 180 / .pi
-        shoulder = up - lean
-        elbow = (fore - up + 540).truncatingRemainder(dividingBy: 360) - 180
-    }
-}
-
 /// Front-facing person, for faces and hands that must read. Local frame: base of the neck at the origin, y down; `h` = standing height.
 struct FacingPerson {
     var h: Double = 240
