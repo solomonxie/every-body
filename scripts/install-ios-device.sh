@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build a Release (JS bundled, no Metro needed) and install onto the paired iPhone — never a simulator.
+# Build and install onto the paired iPhone — never a simulator.
 # Usage: scripts/install-ios-device.sh [device-udid]   (defaults to the only paired device)
 # Needs DEVELOPMENT_TEAM and IOS_BUNDLE_ID in the gitignored .env.local.
 set -e
@@ -16,12 +16,11 @@ UDID=${1:-$(xcrun devicectl list devices 2>/dev/null | grep physical \
 
 CONFIG=${CONFIG:-Release}
 
-[ -d ios ] || CI=1 npx expo prebuild -p ios
-
-xcodebuild -workspace ios/BodyAtlas.xcworkspace -scheme BodyAtlas \
+xcodegen generate --quiet
+xcodebuild -project BodyAtlas.xcodeproj -scheme BodyAtlas \
   -configuration "$CONFIG" -destination "id=$UDID" -allowProvisioningUpdates \
-  DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" CODE_SIGN_STYLE=Automatic \
-  -derivedDataPath build/dd build | tail -20
+  DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID" \
+  -derivedDataPath build/dd build | grep -E "error:|warning: .*Sources|BUILD" || true
 
 xcrun devicectl device install app --device "$UDID" \
   "build/dd/Build/Products/$CONFIG-iphoneos/BodyAtlas.app"

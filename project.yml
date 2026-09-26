@@ -1,0 +1,41 @@
+name: BodyAtlas
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+
+targets:
+  BodyAtlas:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+        excludes:
+          - "**/README.md"
+      - path: Resources
+    info:
+      path: Sources/App/Info.plist
+      properties:
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleDisplayName: Body Atlas
+        CFBundleName: Body Atlas
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        ITSAppUsesNonExemptEncryption: false
+        # bodyatlas://viewer/skeletal — opens a screen directly (also used for device screenshots)
+        CFBundleURLTypes:
+          - CFBundleURLSchemes: [bodyatlas]
+    settings:
+      base:
+        # Real bundle id and team come from the gitignored .env.local via scripts/install-ios-device.sh.
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.bodyatlas
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
