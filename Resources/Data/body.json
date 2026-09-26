@@ -7,23 +7,150 @@
    "layer": "skeletal",
    "color": "#E9E2CF",
    "shape": {
-    "kind": "sphere",
-    "center": [0.0, 1.4783, -0.0223],
-    "radius": 0.186,
-    "scale": [0.78, 0.92, 0.98]
+    "kind": "loft",
+    "sections": [
+     [0.0, 1.3481, -0.0651, 0.093, 0.1116],
+     [0.0, 1.3853, -0.0372, 0.1228, 0.16],
+     [0.0, 1.4504, -0.0242, 0.1321, 0.1748],
+     [0.0, 1.5248, -0.026, 0.1283, 0.1693],
+     [0.0, 1.5899, -0.0335, 0.106, 0.1432],
+     [0.0, 1.6401, -0.0372, 0.0521, 0.0707]
+    ]
    }
   },
   {
    "id": "face-bones",
-   "name": "Facial bones",
-   "nameZh": "面颅骨",
+   "name": "Facial bones (maxilla)",
+   "nameZh": "上颌骨",
    "layer": "skeletal",
    "color": "#E9E2CF",
    "shape": {
     "kind": "sphere",
-    "center": [0.0, 1.3481, 0.093],
-    "radius": 0.1116,
-    "scale": [0.95, 0.8, 0.75]
+    "center": [0.0, 1.3388, 0.093],
+    "radius": 0.0837,
+    "scale": [0.95, 0.72, 0.75]
+   }
+  },
+  {
+   "id": "nasal-bone",
+   "name": "Nasal bone",
+   "nameZh": "鼻骨",
+   "layer": "skeletal",
+   "color": "#E9E2CF",
+   "shape": {
+    "kind": "segment",
+    "from": [0.0, 1.4225, 0.1581],
+    "to": [0.0, 1.3816, 0.1767],
+    "radius": 0.0112
+   }
+  },
+  {
+   "id": "orbit-l",
+   "name": "Orbit (eye socket) (L)",
+   "nameZh": "左眼眶",
+   "layer": "skeletal",
+   "color": "#4A4550",
+   "shape": {
+    "kind": "sphere",
+    "center": [0.0558, 1.4225, 0.1339],
+    "radius": 0.0316,
+    "scale": [1.05, 0.9, 0.55]
+   }
+  },
+  {
+   "id": "orbit-r",
+   "name": "Orbit (eye socket) (R)",
+   "nameZh": "右眼眶",
+   "layer": "skeletal",
+   "color": "#4A4550",
+   "shape": {
+    "kind": "sphere",
+    "center": [-0.0558, 1.4225, 0.1339],
+    "radius": 0.0316,
+    "scale": [1.05, 0.9, 0.55]
+   }
+  },
+  {
+   "id": "nasal-aperture",
+   "name": "Nasal cavity",
+   "nameZh": "鼻腔",
+   "layer": "skeletal",
+   "color": "#4A4550",
+   "shape": {
+    "kind": "sphere",
+    "center": [0.0, 1.363, 0.1544],
+    "radius": 0.0223,
+    "scale": [0.75, 1.1, 0.5]
+   }
+  },
+  {
+   "id": "zygomatic-l",
+   "name": "Cheekbone (zygomatic) (L)",
+   "nameZh": "左颧骨",
+   "layer": "skeletal",
+   "color": "#E9E2CF",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0837, 1.3909, 0.1228],
+     [0.1172, 1.376, 0.0744],
+     [0.1265, 1.3723, 0.0186],
+     [0.1228, 1.376, -0.0335]
+    ],
+    "radius": 0.0112
+   }
+  },
+  {
+   "id": "zygomatic-r",
+   "name": "Cheekbone (zygomatic) (R)",
+   "nameZh": "右颧骨",
+   "layer": "skeletal",
+   "color": "#E9E2CF",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0837, 1.3909, 0.1228],
+     [-0.1172, 1.376, 0.0744],
+     [-0.1265, 1.3723, 0.0186],
+     [-0.1228, 1.376, -0.0335]
+    ],
+    "radius": 0.0112
+   }
+  },
+  {
+   "id": "upper-teeth",
+   "name": "Teeth",
+   "nameZh": "牙齿",
+   "layer": "skeletal",
+   "color": "#F7F4EA",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0558, 1.2979, 0.0837],
+     [0.0446, 1.296, 0.1302],
+     [0.0, 1.2942, 0.1562],
+     [-0.0446, 1.296, 0.1302],
+     [-0.0558, 1.2979, 0.0837]
+    ],
+    "radius": 0.0102
+   }
+  },
+  {
+   "id": "lower-teeth",
+   "name": "Teeth",
+   "nameZh": "牙齿",
+   "layer": "skeletal",
+   "color": "#F7F4EA",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0521, 1.2756, 0.0837],
+     [0.0409, 1.2756, 0.1265],
+     [0.0, 1.2756, 0.1507],
+     [-0.0409, 1.2756, 0.1265],
+     [-0.0521, 1.2756, 0.0837]
+    ],
+    "radius": 0.0093
    }
   },
   {
@@ -35,15 +162,47 @@
    "shape": {
     "kind": "tube",
     "points": [
-     [0.0967, 1.3295, -0.0093],
-     [0.093, 1.2458, 0.0372],
-     [0.0651, 1.2086, 0.1209],
-     [0.0, 1.1993, 0.1581],
-     [-0.0651, 1.2086, 0.1209],
-     [-0.093, 1.2458, 0.0372],
-     [-0.0967, 1.3295, -0.0093]
+     [0.093, 1.2458, 0.0],
+     [0.0781, 1.2309, 0.0744],
+     [0.0409, 1.2123, 0.1339],
+     [0.0, 1.1993, 0.1562],
+     [-0.0409, 1.2123, 0.1339],
+     [-0.0781, 1.2309, 0.0744],
+     [-0.093, 1.2458, 0.0]
     ],
-    "radius": 0.0205
+    "radius": 0.0186
+   }
+  },
+  {
+   "id": "mandible-ramus-l",
+   "name": "Mandible (L)",
+   "nameZh": "左下颌骨",
+   "layer": "skeletal",
+   "color": "#E9E2CF",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.093, 1.2458, 0.0],
+     [0.0967, 1.3016, -0.0112],
+     [0.1004, 1.3481, -0.026]
+    ],
+    "radius": 0.0149
+   }
+  },
+  {
+   "id": "mandible-ramus-r",
+   "name": "Mandible (R)",
+   "nameZh": "右下颌骨",
+   "layer": "skeletal",
+   "color": "#E9E2CF",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.093, 1.2458, 0.0],
+     [-0.0967, 1.3016, -0.0112],
+     [-0.1004, 1.3481, -0.026]
+    ],
+    "radius": 0.0149
    }
   },
   {
@@ -3510,6 +3669,134 @@
    }
   },
   {
+   "id": "masseter-l",
+   "name": "Masseter (L)",
+   "nameZh": "左咬肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "spindle",
+    "from": [0.1079, 1.3667, 0.0558],
+    "to": [0.093, 1.2551, 0.0223],
+    "radius": 0.0242
+   }
+  },
+  {
+   "id": "masseter-r",
+   "name": "Masseter (R)",
+   "nameZh": "右咬肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "spindle",
+    "from": [-0.1079, 1.3667, 0.0558],
+    "to": [-0.093, 1.2551, 0.0223],
+    "radius": 0.0242
+   }
+  },
+  {
+   "id": "temporalis-1-l",
+   "name": "Temporalis (L)",
+   "nameZh": "左颞肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.1228, 1.5062, 0.0558],
+     [0.1302, 1.4364, 0.0391],
+     [0.1079, 1.3667, 0.0223]
+    ],
+    "radius": 0.0205,
+    "radii": [0.0092, 0.0205, 0.0082]
+   }
+  },
+  {
+   "id": "temporalis-1-r",
+   "name": "Temporalis (R)",
+   "nameZh": "右颞肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.1228, 1.5062, 0.0558],
+     [-0.1302, 1.4364, 0.0391],
+     [-0.1079, 1.3667, 0.0223]
+    ],
+    "radius": 0.0205,
+    "radii": [0.0092, 0.0205, 0.0082]
+   }
+  },
+  {
+   "id": "temporalis-2-l",
+   "name": "Temporalis (L)",
+   "nameZh": "左颞肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.1302, 1.5248, 0.0],
+     [0.1339, 1.4457, 0.0112],
+     [0.1079, 1.3667, 0.0223]
+    ],
+    "radius": 0.0205,
+    "radii": [0.0092, 0.0205, 0.0082]
+   }
+  },
+  {
+   "id": "temporalis-2-r",
+   "name": "Temporalis (R)",
+   "nameZh": "右颞肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.1302, 1.5248, 0.0],
+     [-0.1339, 1.4457, 0.0112],
+     [-0.1079, 1.3667, 0.0223]
+    ],
+    "radius": 0.0205,
+    "radii": [0.0092, 0.0205, 0.0082]
+   }
+  },
+  {
+   "id": "temporalis-3-l",
+   "name": "Temporalis (L)",
+   "nameZh": "左颞肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.1228, 1.4969, -0.0558],
+     [0.1302, 1.4318, -0.0167],
+     [0.1079, 1.3667, 0.0223]
+    ],
+    "radius": 0.0205,
+    "radii": [0.0092, 0.0205, 0.0082]
+   }
+  },
+  {
+   "id": "temporalis-3-r",
+   "name": "Temporalis (R)",
+   "nameZh": "右颞肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.1228, 1.4969, -0.0558],
+     [-0.1302, 1.4318, -0.0167],
+     [-0.1079, 1.3667, 0.0223]
+    ],
+    "radius": 0.0205,
+    "radii": [0.0092, 0.0205, 0.0082]
+   }
+  },
+  {
    "id": "sternocleidomastoid-l",
    "name": "Sternocleidomastoid (L)",
    "nameZh": "左胸锁乳突肌",
@@ -3517,7 +3804,7 @@
    "color": "#C1443C",
    "shape": {
     "kind": "spindle",
-    "from": [0.0967, 1.3481, -0.0372],
+    "from": [0.1042, 1.3481, -0.0409],
     "to": [0.0372, 1.0784, 0.1767],
     "radius": 0.0223
    }
@@ -3530,243 +3817,961 @@
    "color": "#C1443C",
    "shape": {
     "kind": "spindle",
-    "from": [-0.0967, 1.3481, -0.0372],
+    "from": [-0.1042, 1.3481, -0.0409],
     "to": [-0.0372, 1.0784, 0.1767],
     "radius": 0.0223
    }
   },
   {
-   "id": "trapezius-upper-l",
+   "id": "trapezius-1-l",
    "name": "Trapezius (L)",
    "nameZh": "左斜方肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.0372, 1.376, -0.1395],
-    "to": [0.3348, 1.097, -0.0651],
-    "radius": 0.0409
+    "kind": "tube",
+    "points": [
+     [0.0186, 1.3574, -0.1302],
+     [0.1488, 1.2439, -0.0986],
+     [0.279, 1.1119, -0.0223]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
    }
   },
   {
-   "id": "trapezius-upper-r",
+   "id": "trapezius-1-r",
    "name": "Trapezius (R)",
    "nameZh": "右斜方肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.0372, 1.376, -0.1395],
-    "to": [-0.3348, 1.097, -0.0651],
-    "radius": 0.0409
+    "kind": "tube",
+    "points": [
+     [-0.0186, 1.3574, -0.1302],
+     [-0.1488, 1.2439, -0.0986],
+     [-0.279, 1.1119, -0.0223]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
    }
   },
   {
-   "id": "trapezius-middle-l",
+   "id": "trapezius-2-l",
    "name": "Trapezius (L)",
    "nameZh": "左斜方肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.0186, 1.004, -0.1953],
-    "to": [0.2976, 1.0412, -0.1395],
-    "radius": 0.0372
+    "kind": "tube",
+    "points": [
+     [0.0186, 1.2458, -0.1023],
+     [0.1674, 1.1854, -0.1014],
+     [0.3162, 1.1063, -0.0558]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
    }
   },
   {
-   "id": "trapezius-middle-r",
+   "id": "trapezius-2-r",
    "name": "Trapezius (R)",
    "nameZh": "右斜方肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.0186, 1.004, -0.1953],
-    "to": [-0.2976, 1.0412, -0.1395],
-    "radius": 0.0372
+    "kind": "tube",
+    "points": [
+     [-0.0186, 1.2458, -0.1023],
+     [-0.1674, 1.1854, -0.1014],
+     [-0.3162, 1.1063, -0.0558]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
    }
   },
   {
-   "id": "trapezius-lower-l",
+   "id": "trapezius-3-l",
    "name": "Trapezius (L)",
    "nameZh": "左斜方肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.0186, 0.5204, -0.186],
-    "to": [0.186, 0.9854, -0.2046],
-    "radius": 0.0372
+    "kind": "tube",
+    "points": [
+     [0.0186, 1.1342, -0.1674],
+     [0.1814, 1.1156, -0.1525],
+     [0.3441, 1.0784, -0.093]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
    }
   },
   {
-   "id": "trapezius-lower-r",
+   "id": "trapezius-3-r",
    "name": "Trapezius (R)",
    "nameZh": "右斜方肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.0186, 0.5204, -0.186],
-    "to": [-0.186, 0.9854, -0.2046],
-    "radius": 0.0372
+    "kind": "tube",
+    "points": [
+     [-0.0186, 1.1342, -0.1674],
+     [-0.1814, 1.1156, -0.1525],
+     [-0.3441, 1.0784, -0.093]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
    }
   },
   {
-   "id": "deltoid-anterior-l",
+   "id": "trapezius-4-l",
+   "name": "Trapezius (L)",
+   "nameZh": "左斜方肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0186, 1.0412, -0.1953],
+     [0.1488, 1.0458, -0.2018],
+     [0.279, 1.0319, -0.1637]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
+   }
+  },
+  {
+   "id": "trapezius-4-r",
+   "name": "Trapezius (R)",
+   "nameZh": "右斜方肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0186, 1.0412, -0.1953],
+     [-0.1488, 1.0458, -0.2018],
+     [-0.279, 1.0319, -0.1637]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
+   }
+  },
+  {
+   "id": "trapezius-5-l",
+   "name": "Trapezius (L)",
+   "nameZh": "左斜方肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0186, 0.818, -0.2009],
+     [0.1116, 0.9203, -0.2232],
+     [0.2046, 1.004, -0.2009]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
+   }
+  },
+  {
+   "id": "trapezius-5-r",
+   "name": "Trapezius (R)",
+   "nameZh": "右斜方肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0186, 0.818, -0.2009],
+     [-0.1116, 0.9203, -0.2232],
+     [-0.2046, 1.004, -0.2009]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
+   }
+  },
+  {
+   "id": "trapezius-6-l",
+   "name": "Trapezius (L)",
+   "nameZh": "左斜方肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0186, 0.632, -0.1897],
+     [0.0977, 0.818, -0.2213],
+     [0.1767, 0.9854, -0.2083]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
+   }
+  },
+  {
+   "id": "trapezius-6-r",
+   "name": "Trapezius (R)",
+   "nameZh": "右斜方肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0186, 0.632, -0.1897],
+     [-0.0977, 0.818, -0.2213],
+     [-0.1767, 0.9854, -0.2083]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
+   }
+  },
+  {
+   "id": "trapezius-7-l",
+   "name": "Trapezius (L)",
+   "nameZh": "左斜方肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0186, 0.5018, -0.1786],
+     [0.093, 0.7482, -0.2158],
+     [0.1674, 0.9761, -0.2083]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
+   }
+  },
+  {
+   "id": "trapezius-7-r",
+   "name": "Trapezius (R)",
+   "nameZh": "右斜方肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0186, 0.5018, -0.1786],
+     [-0.093, 0.7482, -0.2158],
+     [-0.1674, 0.9761, -0.2083]
+    ],
+    "radius": 0.0298,
+    "radii": [0.0134, 0.0298, 0.0119]
+   }
+  },
+  {
+   "id": "deltoid-1-l",
    "name": "Deltoid (L)",
    "nameZh": "左三角肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.279, 1.1063, 0.0651],
-    "to": [0.398, 0.7901, -0.0093],
-    "radius": 0.0409
+    "kind": "tube",
+    "points": [
+     [0.2418, 1.1119, 0.0837],
+     [0.3627, 0.951, 0.0325],
+     [0.4018, 0.7901, -0.0186]
+    ],
+    "radius": 0.0372,
+    "radii": [0.0167, 0.0372, 0.0149]
    }
   },
   {
-   "id": "deltoid-anterior-r",
+   "id": "deltoid-1-r",
    "name": "Deltoid (R)",
    "nameZh": "右三角肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.279, 1.1063, 0.0651],
-    "to": [-0.398, 0.7901, -0.0093],
-    "radius": 0.0409
+    "kind": "tube",
+    "points": [
+     [-0.2418, 1.1119, 0.0837],
+     [-0.3627, 0.951, 0.0325],
+     [-0.4018, 0.7901, -0.0186]
+    ],
+    "radius": 0.0372,
+    "radii": [0.0167, 0.0372, 0.0149]
    }
   },
   {
-   "id": "deltoid-middle-l",
+   "id": "deltoid-2-l",
    "name": "Deltoid (L)",
    "nameZh": "左三角肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.372, 1.1156, -0.0372],
-    "to": [0.4055, 0.7901, -0.0223],
-    "radius": 0.0446
+    "kind": "tube",
+    "points": [
+     [0.3069, 1.1193, 0.0409],
+     [0.3952, 0.9547, 0.0112],
+     [0.4018, 0.7901, -0.0186]
+    ],
+    "radius": 0.0372,
+    "radii": [0.0167, 0.0372, 0.0149]
    }
   },
   {
-   "id": "deltoid-middle-r",
+   "id": "deltoid-2-r",
    "name": "Deltoid (R)",
    "nameZh": "右三角肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.372, 1.1156, -0.0372],
-    "to": [-0.4055, 0.7901, -0.0223],
-    "radius": 0.0446
+    "kind": "tube",
+    "points": [
+     [-0.3069, 1.1193, 0.0409],
+     [-0.3952, 0.9547, 0.0112],
+     [-0.4018, 0.7901, -0.0186]
+    ],
+    "radius": 0.0372,
+    "radii": [0.0167, 0.0372, 0.0149]
    }
   },
   {
-   "id": "deltoid-posterior-l",
+   "id": "deltoid-3-l",
    "name": "Deltoid (L)",
    "nameZh": "左三角肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.279, 1.0505, -0.1488],
-    "to": [0.398, 0.7901, -0.0372],
-    "radius": 0.0409
+    "kind": "tube",
+    "points": [
+     [0.372, 1.1119, -0.0223],
+     [0.4278, 0.951, -0.0205],
+     [0.4018, 0.7901, -0.0186]
+    ],
+    "radius": 0.0372,
+    "radii": [0.0167, 0.0372, 0.0149]
    }
   },
   {
-   "id": "deltoid-posterior-r",
+   "id": "deltoid-3-r",
    "name": "Deltoid (R)",
    "nameZh": "右三角肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.279, 1.0505, -0.1488],
-    "to": [-0.398, 0.7901, -0.0372],
-    "radius": 0.0409
+    "kind": "tube",
+    "points": [
+     [-0.372, 1.1119, -0.0223],
+     [-0.4278, 0.951, -0.0205],
+     [-0.4018, 0.7901, -0.0186]
+    ],
+    "radius": 0.0372,
+    "radii": [0.0167, 0.0372, 0.0149]
    }
   },
   {
-   "id": "pectoralis-clavicular-l",
+   "id": "deltoid-4-l",
+   "name": "Deltoid (L)",
+   "nameZh": "左三角肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.3348, 1.0877, -0.1116],
+     [0.4092, 0.9389, -0.0651],
+     [0.4018, 0.7901, -0.0186]
+    ],
+    "radius": 0.0372,
+    "radii": [0.0167, 0.0372, 0.0149]
+   }
+  },
+  {
+   "id": "deltoid-4-r",
+   "name": "Deltoid (R)",
+   "nameZh": "右三角肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.3348, 1.0877, -0.1116],
+     [-0.4092, 0.9389, -0.0651],
+     [-0.4018, 0.7901, -0.0186]
+    ],
+    "radius": 0.0372,
+    "radii": [0.0167, 0.0372, 0.0149]
+   }
+  },
+  {
+   "id": "deltoid-5-l",
+   "name": "Deltoid (L)",
+   "nameZh": "左三角肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.2604, 1.0412, -0.1581],
+     [0.372, 0.9157, -0.0884],
+     [0.4018, 0.7901, -0.0186]
+    ],
+    "radius": 0.0372,
+    "radii": [0.0167, 0.0372, 0.0149]
+   }
+  },
+  {
+   "id": "deltoid-5-r",
+   "name": "Deltoid (R)",
+   "nameZh": "右三角肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.2604, 1.0412, -0.1581],
+     [-0.372, 0.9157, -0.0884],
+     [-0.4018, 0.7901, -0.0186]
+    ],
+    "radius": 0.0372,
+    "radii": [0.0167, 0.0372, 0.0149]
+   }
+  },
+  {
+   "id": "pectoralis-1-l",
    "name": "Pectoralis major (L)",
    "nameZh": "左胸大肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.0744, 1.0784, 0.1953],
-    "to": [0.3534, 0.9482, 0.0],
-    "radius": 0.0409
+    "kind": "tube",
+    "points": [
+     [0.0558, 1.0784, 0.186],
+     [0.2046, 1.0087, 0.1395],
+     [0.3534, 0.9761, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
    }
   },
   {
-   "id": "pectoralis-clavicular-r",
+   "id": "pectoralis-1-r",
    "name": "Pectoralis major (R)",
    "nameZh": "右胸大肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.0744, 1.0784, 0.1953],
-    "to": [-0.3534, 0.9482, 0.0],
-    "radius": 0.0409
+    "kind": "tube",
+    "points": [
+     [-0.0558, 1.0784, 0.186],
+     [-0.2046, 1.0087, 0.1395],
+     [-0.3534, 0.9761, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
    }
   },
   {
-   "id": "pectoralis-sternal-l",
+   "id": "pectoralis-2-l",
    "name": "Pectoralis major (L)",
    "nameZh": "左胸大肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.0465, 0.8924, 0.2418],
-    "to": [0.3534, 0.9389, 0.0],
-    "radius": 0.0558
+    "kind": "tube",
+    "points": [
+     [0.1302, 1.0914, 0.1748],
+     [0.2418, 1.0152, 0.1339],
+     [0.3534, 0.9761, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
    }
   },
   {
-   "id": "pectoralis-sternal-r",
+   "id": "pectoralis-2-r",
    "name": "Pectoralis major (R)",
    "nameZh": "右胸大肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.0465, 0.8924, 0.2418],
-    "to": [-0.3534, 0.9389, 0.0],
-    "radius": 0.0558
+    "kind": "tube",
+    "points": [
+     [-0.1302, 1.0914, 0.1748],
+     [-0.2418, 1.0152, 0.1339],
+     [-0.3534, 0.9761, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
    }
   },
   {
-   "id": "pectoralis-lower-l",
+   "id": "pectoralis-3-l",
    "name": "Pectoralis major (L)",
    "nameZh": "左胸大肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.1116, 0.7436, 0.2325],
-    "to": [0.3441, 0.9296, 0.0],
-    "radius": 0.0446
+    "kind": "tube",
+    "points": [
+     [0.0372, 1.004, 0.2344],
+     [0.1953, 0.9575, 0.1637],
+     [0.3534, 0.9482, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
    }
   },
   {
-   "id": "pectoralis-lower-r",
+   "id": "pectoralis-3-r",
    "name": "Pectoralis major (R)",
    "nameZh": "右胸大肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.1116, 0.7436, 0.2325],
-    "to": [-0.3441, 0.9296, 0.0],
-    "radius": 0.0446
+    "kind": "tube",
+    "points": [
+     [-0.0372, 1.004, 0.2344],
+     [-0.1953, 0.9575, 0.1637],
+     [-0.3534, 0.9482, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
+   }
+  },
+  {
+   "id": "pectoralis-4-l",
+   "name": "Pectoralis major (L)",
+   "nameZh": "左胸大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0372, 0.911, 0.2455],
+     [0.1953, 0.911, 0.1693],
+     [0.3534, 0.9482, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
+   }
+  },
+  {
+   "id": "pectoralis-4-r",
+   "name": "Pectoralis major (R)",
+   "nameZh": "右胸大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0372, 0.911, 0.2455],
+     [-0.1953, 0.911, 0.1693],
+     [-0.3534, 0.9482, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
+   }
+  },
+  {
+   "id": "pectoralis-5-l",
+   "name": "Pectoralis major (L)",
+   "nameZh": "左胸大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0465, 0.818, 0.2474],
+     [0.2, 0.8506, 0.1702],
+     [0.3534, 0.9203, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
+   }
+  },
+  {
+   "id": "pectoralis-5-r",
+   "name": "Pectoralis major (R)",
+   "nameZh": "右胸大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0465, 0.818, 0.2474],
+     [-0.2, 0.8506, 0.1702],
+     [-0.3534, 0.9203, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
+   }
+  },
+  {
+   "id": "pectoralis-6-l",
+   "name": "Pectoralis major (L)",
+   "nameZh": "左胸大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.093, 0.7343, 0.2381],
+     [0.2232, 0.8087, 0.1655],
+     [0.3534, 0.9203, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
+   }
+  },
+  {
+   "id": "pectoralis-6-r",
+   "name": "Pectoralis major (R)",
+   "nameZh": "右胸大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.093, 0.7343, 0.2381],
+     [-0.2232, 0.8087, 0.1655],
+     [-0.3534, 0.9203, 0.0]
+    ],
+    "radius": 0.0316,
+    "radii": [0.0142, 0.0316, 0.0126]
+   }
+  },
+  {
+   "id": "serratus-1-l",
+   "name": "Serratus anterior (L)",
+   "nameZh": "左前锯肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.2604, 0.8738, 0.1023],
+     [0.2651, 0.9389, -0.0744],
+     [0.1581, 1.004, -0.1767]
+    ],
+    "radius": 0.0167,
+    "radii": [0.0075, 0.0167, 0.0067]
+   }
+  },
+  {
+   "id": "serratus-1-r",
+   "name": "Serratus anterior (R)",
+   "nameZh": "右前锯肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.2604, 0.8738, 0.1023],
+     [-0.2651, 0.9389, -0.0744],
+     [-0.1581, 1.004, -0.1767]
+    ],
+    "radius": 0.0167,
+    "radii": [0.0075, 0.0167, 0.0067]
+   }
+  },
+  {
+   "id": "serratus-2-l",
+   "name": "Serratus anterior (L)",
+   "nameZh": "左前锯肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.2753, 0.7994, 0.093],
+     [0.2725, 0.9017, -0.079],
+     [0.1581, 1.004, -0.1767]
+    ],
+    "radius": 0.0167,
+    "radii": [0.0075, 0.0167, 0.0067]
+   }
+  },
+  {
+   "id": "serratus-2-r",
+   "name": "Serratus anterior (R)",
+   "nameZh": "右前锯肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.2753, 0.7994, 0.093],
+     [-0.2725, 0.9017, -0.079],
+     [-0.1581, 1.004, -0.1767]
+    ],
+    "radius": 0.0167,
+    "radii": [0.0075, 0.0167, 0.0067]
+   }
+  },
+  {
+   "id": "serratus-3-l",
+   "name": "Serratus anterior (L)",
+   "nameZh": "左前锯肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.279, 0.725, 0.0837],
+     [0.279, 0.7994, -0.0865],
+     [0.1674, 0.8738, -0.1823]
+    ],
+    "radius": 0.0167,
+    "radii": [0.0075, 0.0167, 0.0067]
+   }
+  },
+  {
+   "id": "serratus-3-r",
+   "name": "Serratus anterior (R)",
+   "nameZh": "右前锯肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.279, 0.725, 0.0837],
+     [-0.279, 0.7994, -0.0865],
+     [-0.1674, 0.8738, -0.1823]
+    ],
+    "radius": 0.0167,
+    "radii": [0.0075, 0.0167, 0.0067]
+   }
+  },
+  {
+   "id": "serratus-4-l",
+   "name": "Serratus anterior (L)",
+   "nameZh": "左前锯肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.2697, 0.6506, 0.0744],
+     [0.2837, 0.6878, -0.093],
+     [0.186, 0.725, -0.186]
+    ],
+    "radius": 0.0167,
+    "radii": [0.0075, 0.0167, 0.0067]
+   }
+  },
+  {
+   "id": "serratus-4-r",
+   "name": "Serratus anterior (R)",
+   "nameZh": "右前锯肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.2697, 0.6506, 0.0744],
+     [-0.2837, 0.6878, -0.093],
+     [-0.186, 0.725, -0.186]
+    ],
+    "radius": 0.0167,
+    "radii": [0.0075, 0.0167, 0.0067]
+   }
+  },
+  {
+   "id": "latissimus-1-l",
+   "name": "Latissimus dorsi (L)",
+   "nameZh": "左背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0186, 0.725, -0.1953],
+     [0.2325, 0.818, -0.1739],
+     [0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
+   }
+  },
+  {
+   "id": "latissimus-1-r",
+   "name": "Latissimus dorsi (R)",
+   "nameZh": "右背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0186, 0.725, -0.1953],
+     [-0.2325, 0.818, -0.1739],
+     [-0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
+   }
+  },
+  {
+   "id": "latissimus-2-l",
+   "name": "Latissimus dorsi (L)",
+   "nameZh": "左背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0186, 0.5948, -0.186],
+     [0.2325, 0.7529, -0.1693],
+     [0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
+   }
+  },
+  {
+   "id": "latissimus-2-r",
+   "name": "Latissimus dorsi (R)",
+   "nameZh": "右背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0186, 0.5948, -0.186],
+     [-0.2325, 0.7529, -0.1693],
+     [-0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
+   }
+  },
+  {
+   "id": "latissimus-3-l",
+   "name": "Latissimus dorsi (L)",
+   "nameZh": "左背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0186, 0.446, -0.1767],
+     [0.2325, 0.6785, -0.1646],
+     [0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
+   }
+  },
+  {
+   "id": "latissimus-3-r",
+   "name": "Latissimus dorsi (R)",
+   "nameZh": "右背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0186, 0.446, -0.1767],
+     [-0.2325, 0.6785, -0.1646],
+     [-0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
+   }
+  },
+  {
+   "id": "latissimus-4-l",
+   "name": "Latissimus dorsi (L)",
+   "nameZh": "左背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0372, 0.2972, -0.16],
+     [0.2418, 0.6041, -0.1562],
+     [0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
+   }
+  },
+  {
+   "id": "latissimus-4-r",
+   "name": "Latissimus dorsi (R)",
+   "nameZh": "右背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0372, 0.2972, -0.16],
+     [-0.2418, 0.6041, -0.1562],
+     [-0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
+   }
+  },
+  {
+   "id": "latissimus-5-l",
+   "name": "Latissimus dorsi (L)",
+   "nameZh": "左背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.1488, 0.353, -0.1488],
+     [0.2976, 0.632, -0.1507],
+     [0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
+   }
+  },
+  {
+   "id": "latissimus-5-r",
+   "name": "Latissimus dorsi (R)",
+   "nameZh": "右背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.1488, 0.353, -0.1488],
+     [-0.2976, 0.632, -0.1507],
+     [-0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
+   }
+  },
+  {
+   "id": "latissimus-6-l",
+   "name": "Latissimus dorsi (L)",
+   "nameZh": "左背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.2325, 0.3902, -0.093],
+     [0.3395, 0.6506, -0.1228],
+     [0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
+   }
+  },
+  {
+   "id": "latissimus-6-r",
+   "name": "Latissimus dorsi (R)",
+   "nameZh": "右背阔肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.2325, 0.3902, -0.093],
+     [-0.3395, 0.6506, -0.1228],
+     [-0.3348, 0.911, -0.0409]
+    ],
+    "radius": 0.0279,
+    "radii": [0.0126, 0.0279, 0.0112]
    }
   },
   {
@@ -3793,6 +4798,32 @@
     "from": [-0.3534, 0.9482, 0.0223],
     "to": [-0.4129, 0.4181, 0.0186],
     "radius": 0.0391
+   }
+  },
+  {
+   "id": "brachialis-l",
+   "name": "Brachialis (L)",
+   "nameZh": "左肱肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "spindle",
+    "from": [0.3813, 0.7436, 0.0],
+    "to": [0.3943, 0.4274, 0.0],
+    "radius": 0.026
+   }
+  },
+  {
+   "id": "brachialis-r",
+   "name": "Brachialis (R)",
+   "nameZh": "右肱肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "spindle",
+    "from": [-0.3813, 0.7436, 0.0],
+    "to": [-0.3943, 0.4274, 0.0],
+    "radius": 0.026
    }
   },
   {
@@ -3857,7 +4888,7 @@
     "kind": "spindle",
     "from": [0.372, 0.4274, 0.0074],
     "to": [0.4315, 0.0368, 0.0372],
-    "radius": 0.0316
+    "radius": 0.0279
    }
   },
   {
@@ -3870,7 +4901,33 @@
     "kind": "spindle",
     "from": [-0.372, 0.4274, 0.0074],
     "to": [-0.4315, 0.0368, 0.0372],
-    "radius": 0.0316
+    "radius": 0.0279
+   }
+  },
+  {
+   "id": "flexor-carpi-ulnaris-l",
+   "name": "Flexor carpi ulnaris (L)",
+   "nameZh": "左尺侧腕屈肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "spindle",
+    "from": [0.3683, 0.4274, -0.0279],
+    "to": [0.4129, 0.0182, 0.0074],
+    "radius": 0.0205
+   }
+  },
+  {
+   "id": "flexor-carpi-ulnaris-r",
+   "name": "Flexor carpi ulnaris (R)",
+   "nameZh": "右尺侧腕屈肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "spindle",
+    "from": [-0.3683, 0.4274, -0.0279],
+    "to": [-0.4129, 0.0182, 0.0074],
+    "radius": 0.0205
    }
   },
   {
@@ -3883,7 +4940,7 @@
     "kind": "spindle",
     "from": [0.4315, 0.4274, -0.0558],
     "to": [0.4538, 0.0368, -0.0223],
-    "radius": 0.0279
+    "radius": 0.026
    }
   },
   {
@@ -3896,137 +4953,397 @@
     "kind": "spindle",
     "from": [-0.4315, 0.4274, -0.0558],
     "to": [-0.4538, 0.0368, -0.0223],
-    "radius": 0.0279
+    "radius": 0.026
    }
   },
   {
-   "id": "latissimus-l",
-   "name": "Latissimus dorsi (L)",
-   "nameZh": "左背阔肌",
-   "layer": "muscular",
-   "color": "#C1443C",
-   "shape": {
-    "kind": "spindle",
-    "from": [0.0558, 0.446, -0.2009],
-    "to": [0.3348, 0.8924, -0.0651],
-    "radius": 0.0632
-   }
-  },
-  {
-   "id": "latissimus-r",
-   "name": "Latissimus dorsi (R)",
-   "nameZh": "右背阔肌",
-   "layer": "muscular",
-   "color": "#C1443C",
-   "shape": {
-    "kind": "spindle",
-    "from": [-0.0558, 0.446, -0.2009],
-    "to": [-0.3348, 0.8924, -0.0651],
-    "radius": 0.0632
-   }
-  },
-  {
-   "id": "serratus-l",
-   "name": "Serratus anterior (L)",
-   "nameZh": "左前锯肌",
-   "layer": "muscular",
-   "color": "#C1443C",
-   "shape": {
-    "kind": "spindle",
-    "from": [0.2604, 0.7622, 0.0744],
-    "to": [0.1674, 0.8924, -0.1674],
-    "radius": 0.0298
-   }
-  },
-  {
-   "id": "serratus-r",
-   "name": "Serratus anterior (R)",
-   "nameZh": "右前锯肌",
-   "layer": "muscular",
-   "color": "#C1443C",
-   "shape": {
-    "kind": "spindle",
-    "from": [-0.2604, 0.7622, 0.0744],
-    "to": [-0.1674, 0.8924, -0.1674],
-    "radius": 0.0298
-   }
-  },
-  {
-   "id": "rectus-abdominis-l",
+   "id": "rectus-abdominis-1-l",
    "name": "Rectus abdominis (L)",
    "nameZh": "左腹直肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.0651, 0.725, 0.2418],
-    "to": [0.0335, 0.074, 0.1767],
-    "radius": 0.0446
+    "kind": "sphere",
+    "center": [0.0614, 0.6599, 0.1711],
+    "radius": 0.0428,
+    "scale": [1.0, 1.3043478260869577, 0.42]
    }
   },
   {
-   "id": "rectus-abdominis-r",
+   "id": "rectus-abdominis-1-r",
    "name": "Rectus abdominis (R)",
    "nameZh": "右腹直肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.0651, 0.725, 0.2418],
-    "to": [-0.0335, 0.074, 0.1767],
-    "radius": 0.0446
+    "kind": "sphere",
+    "center": [-0.0614, 0.6599, 0.1711],
+    "radius": 0.0428,
+    "scale": [1.0, 1.3043478260869577, 0.42]
    }
   },
   {
-   "id": "external-oblique-l",
+   "id": "rectus-abdominis-2-l",
+   "name": "Rectus abdominis (L)",
+   "nameZh": "左腹直肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "sphere",
+    "center": [0.0614, 0.5297, 0.1655],
+    "radius": 0.0428,
+    "scale": [1.0, 1.3043478260869577, 0.42]
+   }
+  },
+  {
+   "id": "rectus-abdominis-2-r",
+   "name": "Rectus abdominis (R)",
+   "nameZh": "右腹直肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "sphere",
+    "center": [-0.0614, 0.5297, 0.1655],
+    "radius": 0.0428,
+    "scale": [1.0, 1.3043478260869577, 0.42]
+   }
+  },
+  {
+   "id": "rectus-abdominis-3-l",
+   "name": "Rectus abdominis (L)",
+   "nameZh": "左腹直肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "sphere",
+    "center": [0.0614, 0.3995, 0.16],
+    "radius": 0.0428,
+    "scale": [1.0, 1.3043478260869577, 0.42]
+   }
+  },
+  {
+   "id": "rectus-abdominis-3-r",
+   "name": "Rectus abdominis (R)",
+   "nameZh": "右腹直肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "sphere",
+    "center": [-0.0614, 0.3995, 0.16],
+    "radius": 0.0428,
+    "scale": [1.0, 1.3043478260869577, 0.42]
+   }
+  },
+  {
+   "id": "rectus-abdominis-4-l",
+   "name": "Rectus abdominis (L)",
+   "nameZh": "左腹直肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "sphere",
+    "center": [0.0614, 0.1996, 0.1544],
+    "radius": 0.0428,
+    "scale": [1.0, 2.93478260869565, 0.42]
+   }
+  },
+  {
+   "id": "rectus-abdominis-4-r",
+   "name": "Rectus abdominis (R)",
+   "nameZh": "右腹直肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "sphere",
+    "center": [-0.0614, 0.1996, 0.1544],
+    "radius": 0.0428,
+    "scale": [1.0, 2.93478260869565, 0.42]
+   }
+  },
+  {
+   "id": "external-oblique-1-l",
    "name": "External oblique (L)",
    "nameZh": "左腹外斜肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.2604, 0.632, 0.1302],
-    "to": [0.1302, 0.2228, 0.1953],
-    "radius": 0.0558
+    "kind": "tube",
+    "points": [
+     [0.2641, 0.7064, 0.1302],
+     [0.2065, 0.5762, 0.1953],
+     [0.1116, 0.446, 0.2232]
+    ],
+    "radius": 0.0242,
+    "radii": [0.0109, 0.0242, 0.0097]
    }
   },
   {
-   "id": "external-oblique-r",
+   "id": "external-oblique-1-r",
    "name": "External oblique (R)",
    "nameZh": "右腹外斜肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.2604, 0.632, 0.1302],
-    "to": [-0.1302, 0.2228, 0.1953],
-    "radius": 0.0558
+    "kind": "tube",
+    "points": [
+     [-0.2641, 0.7064, 0.1302],
+     [-0.2065, 0.5762, 0.1953],
+     [-0.1116, 0.446, 0.2232]
+    ],
+    "radius": 0.0242,
+    "radii": [0.0109, 0.0242, 0.0097]
    }
   },
   {
-   "id": "gluteus-maximus-l",
+   "id": "external-oblique-2-l",
+   "name": "External oblique (L)",
+   "nameZh": "左腹外斜肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.279, 0.5948, 0.1116],
+     [0.2139, 0.446, 0.1813],
+     [0.1116, 0.2972, 0.2139]
+    ],
+    "radius": 0.0242,
+    "radii": [0.0109, 0.0242, 0.0097]
+   }
+  },
+  {
+   "id": "external-oblique-2-r",
+   "name": "External oblique (R)",
+   "nameZh": "右腹外斜肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.279, 0.5948, 0.1116],
+     [-0.2139, 0.446, 0.1813],
+     [-0.1116, 0.2972, 0.2139]
+    ],
+    "radius": 0.0242,
+    "radii": [0.0109, 0.0242, 0.0097]
+   }
+  },
+  {
+   "id": "external-oblique-3-l",
+   "name": "External oblique (L)",
+   "nameZh": "左腹外斜肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.2753, 0.4832, 0.093],
+     [0.2492, 0.353, 0.1488],
+     [0.186, 0.2228, 0.1674]
+    ],
+    "radius": 0.0242,
+    "radii": [0.0109, 0.0242, 0.0097]
+   }
+  },
+  {
+   "id": "external-oblique-3-r",
+   "name": "External oblique (R)",
+   "nameZh": "右腹外斜肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.2753, 0.4832, 0.093],
+     [-0.2492, 0.353, 0.1488],
+     [-0.186, 0.2228, 0.1674]
+    ],
+    "radius": 0.0242,
+    "radii": [0.0109, 0.0242, 0.0097]
+   }
+  },
+  {
+   "id": "external-oblique-4-l",
+   "name": "External oblique (L)",
+   "nameZh": "左腹外斜肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.2604, 0.3716, 0.0744],
+     [0.2651, 0.3344, 0.1116],
+     [0.2325, 0.2972, 0.1116]
+    ],
+    "radius": 0.0242,
+    "radii": [0.0109, 0.0242, 0.0097]
+   }
+  },
+  {
+   "id": "external-oblique-4-r",
+   "name": "External oblique (R)",
+   "nameZh": "右腹外斜肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.2604, 0.3716, 0.0744],
+     [-0.2651, 0.3344, 0.1116],
+     [-0.2325, 0.2972, 0.1116]
+    ],
+    "radius": 0.0242,
+    "radii": [0.0109, 0.0242, 0.0097]
+   }
+  },
+  {
+   "id": "diaphragm",
+   "name": "Diaphragm",
+   "nameZh": "膈肌",
+   "layer": "muscular",
+   "color": "#B8544C",
+   "shape": {
+    "kind": "lathe",
+    "from": [0.0, 0.5669, -0.0186],
+    "to": [0.0, 0.7343, -0.0186],
+    "radii": [0.2604, 0.2511, 0.2139, 0.1395, 0.0279],
+    "scale": [1, 1, 0.7]
+   }
+  },
+  {
+   "id": "gluteus-maximus-1-l",
    "name": "Gluteus maximus (L)",
    "nameZh": "左臀大肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [0.093, 0.2414, -0.186],
-    "to": [0.2604, -0.0562, -0.0651],
-    "radius": 0.0893
+    "kind": "tube",
+    "points": [
+     [0.093, 0.2972, -0.1674],
+     [0.1814, 0.1577, -0.1767],
+     [0.2697, 0.0182, -0.0558]
+    ],
+    "radius": 0.0446,
+    "radii": [0.0201, 0.0446, 0.0179]
    }
   },
   {
-   "id": "gluteus-maximus-r",
+   "id": "gluteus-maximus-1-r",
    "name": "Gluteus maximus (R)",
    "nameZh": "右臀大肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "spindle",
-    "from": [-0.093, 0.2414, -0.186],
-    "to": [-0.2604, -0.0562, -0.0651],
-    "radius": 0.0893
+    "kind": "tube",
+    "points": [
+     [-0.093, 0.2972, -0.1674],
+     [-0.1814, 0.1577, -0.1767],
+     [-0.2697, 0.0182, -0.0558]
+    ],
+    "radius": 0.0446,
+    "radii": [0.0201, 0.0446, 0.0179]
+   }
+  },
+  {
+   "id": "gluteus-maximus-2-l",
+   "name": "Gluteus maximus (L)",
+   "nameZh": "左臀大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0651, 0.2042, -0.1823],
+     [0.1674, 0.1112, -0.1841],
+     [0.2697, 0.0182, -0.0558]
+    ],
+    "radius": 0.0446,
+    "radii": [0.0201, 0.0446, 0.0179]
+   }
+  },
+  {
+   "id": "gluteus-maximus-2-r",
+   "name": "Gluteus maximus (R)",
+   "nameZh": "右臀大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0651, 0.2042, -0.1823],
+     [-0.1674, 0.1112, -0.1841],
+     [-0.2697, 0.0182, -0.0558]
+    ],
+    "radius": 0.0446,
+    "radii": [0.0201, 0.0446, 0.0179]
+   }
+  },
+  {
+   "id": "gluteus-maximus-3-l",
+   "name": "Gluteus maximus (L)",
+   "nameZh": "左臀大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0465, 0.0926, -0.186],
+     [0.1535, 0.0182, -0.1814],
+     [0.2604, -0.0562, -0.0465]
+    ],
+    "radius": 0.0446,
+    "radii": [0.0201, 0.0446, 0.0179]
+   }
+  },
+  {
+   "id": "gluteus-maximus-3-r",
+   "name": "Gluteus maximus (R)",
+   "nameZh": "右臀大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0465, 0.0926, -0.186],
+     [-0.1535, 0.0182, -0.1814],
+     [-0.2604, -0.0562, -0.0465]
+    ],
+    "radius": 0.0446,
+    "radii": [0.0201, 0.0446, 0.0179]
+   }
+  },
+  {
+   "id": "gluteus-maximus-4-l",
+   "name": "Gluteus maximus (L)",
+   "nameZh": "左臀大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0558, -0.0004, -0.1767],
+     [0.1581, -0.0283, -0.1767],
+     [0.2604, -0.0562, -0.0465]
+    ],
+    "radius": 0.0446,
+    "radii": [0.0201, 0.0446, 0.0179]
+   }
+  },
+  {
+   "id": "gluteus-maximus-4-r",
+   "name": "Gluteus maximus (R)",
+   "nameZh": "右臀大肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0558, -0.0004, -0.1767],
+     [-0.1581, -0.0283, -0.1767],
+     [-0.2604, -0.0562, -0.0465]
+    ],
+    "radius": 0.0446,
+    "radii": [0.0201, 0.0446, 0.0179]
    }
   },
   {
@@ -4053,6 +5370,64 @@
     "from": [-0.2325, 0.353, -0.0744],
     "to": [-0.2455, 0.0833, -0.0223],
     "radius": 0.0521
+   }
+  },
+  {
+   "id": "tensor-fasciae-latae-l",
+   "name": "Tensor fasciae latae (L)",
+   "nameZh": "左阔筋膜张肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "spindle",
+    "from": [0.2418, 0.3158, 0.0744],
+    "to": [0.2604, 0.074, 0.0372],
+    "radius": 0.026
+   }
+  },
+  {
+   "id": "tensor-fasciae-latae-r",
+   "name": "Tensor fasciae latae (R)",
+   "nameZh": "右阔筋膜张肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "spindle",
+    "from": [-0.2418, 0.3158, 0.0744],
+    "to": [-0.2604, 0.074, 0.0372],
+    "radius": 0.026
+   }
+  },
+  {
+   "id": "it-band-l",
+   "name": "Iliotibial band (L)",
+   "nameZh": "左髂胫束",
+   "layer": "muscular",
+   "color": "#E6D3C3",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.2604, 0.074, 0.0372],
+     [0.2697, -0.298, 0.0093],
+     [0.2381, -0.7072, 0.0]
+    ],
+    "radius": 0.0074
+   }
+  },
+  {
+   "id": "it-band-r",
+   "name": "Iliotibial band (R)",
+   "nameZh": "右髂胫束",
+   "layer": "muscular",
+   "color": "#E6D3C3",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.2604, 0.074, 0.0372],
+     [-0.2697, -0.298, 0.0093],
+     [-0.2381, -0.7072, 0.0]
+    ],
+    "radius": 0.0074
    }
   },
   {
@@ -4157,6 +5532,66 @@
     "from": [-0.0558, 0.0182, 0.0558],
     "to": [-0.1395, -0.484, 0.0],
     "radius": 0.0558
+   }
+  },
+  {
+   "id": "gracilis-l",
+   "name": "Gracilis (L)",
+   "nameZh": "左股薄肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "spindle",
+    "from": [0.0372, -0.0004, 0.0372],
+    "to": [0.1302, -0.7258, -0.0186],
+    "radius": 0.0186
+   }
+  },
+  {
+   "id": "gracilis-r",
+   "name": "Gracilis (R)",
+   "nameZh": "右股薄肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "spindle",
+    "from": [-0.0372, -0.0004, 0.0372],
+    "to": [-0.1302, -0.7258, -0.0186],
+    "radius": 0.0186
+   }
+  },
+  {
+   "id": "sartorius-l",
+   "name": "Sartorius (L)",
+   "nameZh": "左缝匠肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.2232, 0.353, 0.1209],
+     [0.1674, -0.019, 0.1116],
+     [0.1116, -0.391, 0.0558],
+     [0.1395, -0.7072, -0.0093]
+    ],
+    "radius": 0.0149
+   }
+  },
+  {
+   "id": "sartorius-r",
+   "name": "Sartorius (R)",
+   "nameZh": "右缝匠肌",
+   "layer": "muscular",
+   "color": "#C1443C",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.2232, 0.353, 0.1209],
+     [-0.1674, -0.019, 0.1116],
+     [-0.1116, -0.391, 0.0558],
+     [-0.1395, -0.7072, -0.0093]
+    ],
+    "radius": 0.0149
    }
   },
   {
@@ -4316,37 +5751,29 @@
    }
   },
   {
-   "id": "sartorius-l",
-   "name": "Sartorius (L)",
-   "nameZh": "左缝匠肌",
+   "id": "peroneus-l",
+   "name": "Peroneus longus (L)",
+   "nameZh": "左腓骨长肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "tube",
-    "points": [
-     [0.2232, 0.353, 0.1209],
-     [0.1674, -0.019, 0.1116],
-     [0.1116, -0.391, 0.0558],
-     [0.1395, -0.7072, -0.0093]
-    ],
-    "radius": 0.0149
+    "kind": "spindle",
+    "from": [0.2455, -0.7816, -0.0093],
+    "to": [0.2325, -1.3768, -0.0186],
+    "radius": 0.0205
    }
   },
   {
-   "id": "sartorius-r",
-   "name": "Sartorius (R)",
-   "nameZh": "右缝匠肌",
+   "id": "peroneus-r",
+   "name": "Peroneus longus (R)",
+   "nameZh": "右腓骨长肌",
    "layer": "muscular",
    "color": "#C1443C",
    "shape": {
-    "kind": "tube",
-    "points": [
-     [-0.2232, 0.353, 0.1209],
-     [-0.1674, -0.019, 0.1116],
-     [-0.1116, -0.391, 0.0558],
-     [-0.1395, -0.7072, -0.0093]
-    ],
-    "radius": 0.0149
+    "kind": "spindle",
+    "from": [-0.2455, -0.7816, -0.0093],
+    "to": [-0.2325, -1.3768, -0.0186],
+    "radius": 0.0205
    }
   },
   {
@@ -4829,6 +6256,343 @@
    }
   },
   {
+   "id": "renal-artery-l",
+   "name": "Renal artery (L)",
+   "nameZh": "左肾动脉",
+   "layer": "circulatory",
+   "color": "#D23A3A",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0223, 0.4181, -0.0651],
+     [0.0651, 0.4088, -0.093],
+     [0.0967, 0.3995, -0.1079]
+    ],
+    "radius": 0.0074
+   }
+  },
+  {
+   "id": "renal-artery-r",
+   "name": "Renal artery (R)",
+   "nameZh": "右肾动脉",
+   "layer": "circulatory",
+   "color": "#D23A3A",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0223, 0.4181, -0.0651],
+     [-0.0651, 0.4088, -0.093],
+     [-0.0967, 0.3995, -0.1079]
+    ],
+    "radius": 0.0074
+   }
+  },
+  {
+   "id": "renal-vein-l",
+   "name": "Renal vein (L)",
+   "nameZh": "左肾静脉",
+   "layer": "circulatory",
+   "color": "#3A5BD9",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0223, 0.3995, -0.0372],
+     [0.0372, 0.3902, -0.0837],
+     [0.093, 0.3865, -0.1042]
+    ],
+    "radius": 0.0078
+   }
+  },
+  {
+   "id": "renal-vein-r",
+   "name": "Renal vein (R)",
+   "nameZh": "右肾静脉",
+   "layer": "circulatory",
+   "color": "#3A5BD9",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0223, 0.3995, -0.0372],
+     [-0.0372, 0.3902, -0.0837],
+     [-0.093, 0.3865, -0.1042]
+    ],
+    "radius": 0.0078
+   }
+  },
+  {
+   "id": "celiac-trunk",
+   "name": "Celiac trunk",
+   "nameZh": "腹腔干",
+   "layer": "circulatory",
+   "color": "#D23A3A",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.026, 0.5204, -0.0744],
+     [0.0372, 0.5111, -0.0186],
+     [0.0558, 0.5204, 0.0372]
+    ],
+    "radius": 0.0074
+   }
+  },
+  {
+   "id": "mesenteric-artery",
+   "name": "Superior mesenteric artery",
+   "nameZh": "肠系膜上动脉",
+   "layer": "circulatory",
+   "color": "#D23A3A",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0242, 0.4646, -0.0651],
+     [0.0186, 0.3902, 0.0372],
+     [-0.0093, 0.26, 0.1023],
+     [-0.0558, 0.167, 0.1116]
+    ],
+    "radius": 0.0074
+   }
+  },
+  {
+   "id": "vertebral-artery-l",
+   "name": "Vertebral artery (L)",
+   "nameZh": "左椎动脉",
+   "layer": "circulatory",
+   "color": "#D23A3A",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0558, 1.004, 0.0093],
+     [0.0558, 1.1342, -0.0372],
+     [0.0409, 1.3016, -0.0558],
+     [0.0149, 1.376, -0.0558]
+    ],
+    "radius": 0.0056
+   }
+  },
+  {
+   "id": "vertebral-artery-r",
+   "name": "Vertebral artery (R)",
+   "nameZh": "右椎动脉",
+   "layer": "circulatory",
+   "color": "#D23A3A",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0558, 1.004, 0.0093],
+     [-0.0558, 1.1342, -0.0372],
+     [-0.0409, 1.3016, -0.0558],
+     [-0.0149, 1.376, -0.0558]
+    ],
+    "radius": 0.0056
+   }
+  },
+  {
+   "id": "internal-iliac-l",
+   "name": "Internal iliac artery (L)",
+   "nameZh": "左髂内动脉",
+   "layer": "circulatory",
+   "color": "#D23A3A",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0837, 0.1484, -0.0093],
+     [0.093, 0.074, -0.0744],
+     [0.0837, 0.0182, -0.093]
+    ],
+    "radius": 0.0074
+   }
+  },
+  {
+   "id": "internal-iliac-r",
+   "name": "Internal iliac artery (R)",
+   "nameZh": "右髂内动脉",
+   "layer": "circulatory",
+   "color": "#D23A3A",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0837, 0.1484, -0.0093],
+     [-0.093, 0.074, -0.0744],
+     [-0.0837, 0.0182, -0.093]
+    ],
+    "radius": 0.0074
+   }
+  },
+  {
+   "id": "coronary-l",
+   "name": "Coronary artery (L)",
+   "nameZh": "左冠状动脉",
+   "layer": "circulatory",
+   "color": "#F2D060",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0093, 0.8273, 0.1116],
+     [0.0558, 0.7622, 0.1581],
+     [0.093, 0.6878, 0.1674]
+    ],
+    "radius": 0.0047
+   }
+  },
+  {
+   "id": "coronary-r",
+   "name": "Coronary artery (R)",
+   "nameZh": "右冠状动脉",
+   "layer": "circulatory",
+   "color": "#F2D060",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0093, 0.8273, 0.1116],
+     [-0.0558, 0.7622, 0.1581],
+     [-0.093, 0.6878, 0.1674]
+    ],
+    "radius": 0.0047
+   }
+  },
+  {
+   "id": "ulnar-nerve-l",
+   "name": "Ulnar nerve (L)",
+   "nameZh": "左尺神经",
+   "layer": "nervous",
+   "color": "#E8B923",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.3162, 0.9296, -0.0372],
+     [0.3627, 0.632, -0.0558],
+     [0.372, 0.4646, -0.0744],
+     [0.3999, 0.167, -0.0186],
+     [0.4129, -0.0562, 0.0149]
+    ],
+    "radius": 0.0052
+   }
+  },
+  {
+   "id": "ulnar-nerve-r",
+   "name": "Ulnar nerve (R)",
+   "nameZh": "右尺神经",
+   "layer": "nervous",
+   "color": "#E8B923",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.3162, 0.9296, -0.0372],
+     [-0.3627, 0.632, -0.0558],
+     [-0.372, 0.4646, -0.0744],
+     [-0.3999, 0.167, -0.0186],
+     [-0.4129, -0.0562, 0.0149]
+    ],
+    "radius": 0.0052
+   }
+  },
+  {
+   "id": "radial-nerve-l",
+   "name": "Radial nerve (L)",
+   "nameZh": "左桡神经",
+   "layer": "nervous",
+   "color": "#E8B923",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.3162, 0.9482, -0.0558],
+     [0.3534, 0.7622, -0.0837],
+     [0.4129, 0.5948, -0.0372],
+     [0.4241, 0.4088, 0.0074],
+     [0.465, 0.074, 0.0]
+    ],
+    "radius": 0.0052
+   }
+  },
+  {
+   "id": "radial-nerve-r",
+   "name": "Radial nerve (R)",
+   "nameZh": "右桡神经",
+   "layer": "nervous",
+   "color": "#E8B923",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.3162, 0.9482, -0.0558],
+     [-0.3534, 0.7622, -0.0837],
+     [-0.4129, 0.5948, -0.0372],
+     [-0.4241, 0.4088, 0.0074],
+     [-0.465, 0.074, 0.0]
+    ],
+    "radius": 0.0052
+   }
+  },
+  {
+   "id": "common-peroneal-l",
+   "name": "Common peroneal nerve (L)",
+   "nameZh": "左腓总神经",
+   "layer": "nervous",
+   "color": "#E8B923",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.186, -0.6328, -0.0744],
+     [0.2418, -0.7444, -0.0372],
+     [0.2418, -0.856, 0.0372],
+     [0.186, -1.3768, 0.0651]
+    ],
+    "radius": 0.0056
+   }
+  },
+  {
+   "id": "common-peroneal-r",
+   "name": "Common peroneal nerve (R)",
+   "nameZh": "右腓总神经",
+   "layer": "nervous",
+   "color": "#E8B923",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.186, -0.6328, -0.0744],
+     [-0.2418, -0.7444, -0.0372],
+     [-0.2418, -0.856, 0.0372],
+     [-0.186, -1.3768, 0.0651]
+    ],
+    "radius": 0.0056
+   }
+  },
+  {
+   "id": "vagus-l",
+   "name": "Vagus nerve (L)",
+   "nameZh": "左迷走神经",
+   "layer": "nervous",
+   "color": "#E8B923",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.0372, 1.3295, -0.0186],
+     [0.0409, 1.1342, 0.0372],
+     [0.0335, 0.9668, 0.0],
+     [0.0223, 0.725, -0.0558],
+     [0.0372, 0.539, -0.0186]
+    ],
+    "radius": 0.0041
+   }
+  },
+  {
+   "id": "vagus-r",
+   "name": "Vagus nerve (R)",
+   "nameZh": "右迷走神经",
+   "layer": "nervous",
+   "color": "#E8B923",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.0372, 1.3295, -0.0186],
+     [-0.0409, 1.1342, 0.0372],
+     [-0.0335, 0.9668, 0.0],
+     [-0.0223, 0.725, -0.0558],
+     [-0.0372, 0.539, -0.0186]
+    ],
+    "radius": 0.0041
+   }
+  },
+  {
    "id": "esophagus",
    "name": "Esophagus",
    "nameZh": "食管",
@@ -4884,10 +6648,56 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
+    "kind": "loft",
+    "sections": [
+     [0.0, 1.1993, 0.1153, 0.0409, 0.0335],
+     [0.0, 1.2421, 0.0651, 0.1004, 0.1023],
+     [0.0, 1.3016, 0.0223, 0.1228, 0.1581],
+     [0.0, 1.376, 0.0037, 0.1339, 0.1786],
+     [0.0, 1.4411, -0.0074, 0.1414, 0.186],
+     [0.0, 1.5248, -0.0186, 0.1395, 0.1804],
+     [0.0, 1.5992, -0.0279, 0.119, 0.1581],
+     [0.0, 1.6513, -0.0316, 0.0651, 0.0837]
+    ]
+   }
+  },
+  {
+   "id": "nose",
+   "name": "Skin",
+   "nameZh": "皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
     "kind": "sphere",
-    "center": [0.0, 1.4411, 0.0],
-    "radius": 0.2046,
-    "scale": [0.72, 1.06, 0.94]
+    "center": [0.0, 1.376, 0.1804],
+    "radius": 0.0372,
+    "scale": [0.6, 1.1, 0.8]
+   }
+  },
+  {
+   "id": "ear-l",
+   "name": "Skin (L)",
+   "nameZh": "左皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "sphere",
+    "center": [0.1451, 1.4225, -0.0149],
+    "radius": 0.0558,
+    "scale": [0.35, 1, 0.62]
+   }
+  },
+  {
+   "id": "ear-r",
+   "name": "Skin (R)",
+   "nameZh": "右皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "sphere",
+    "center": [-0.1451, 1.4225, -0.0149],
+    "radius": 0.0558,
+    "scale": [0.35, 1, 0.62]
    }
   },
   {
@@ -4897,11 +6707,12 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [0.0, 1.2551, -0.0223],
-    "to": [0.0, 1.0598, -0.0223],
-    "radii": [0.093, 0.1004, 0.1116],
-    "scale": [1, 1, 0.92]
+    "kind": "loft",
+    "sections": [
+     [0.0, 1.1063, -0.0279, 0.1116, 0.1042],
+     [0.0, 1.19, -0.0186, 0.0967, 0.0967],
+     [0.0, 1.2737, -0.0093, 0.093, 0.093]
+    ]
    }
   },
   {
@@ -4911,11 +6722,21 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [0.0, -0.112, 0.0],
-    "to": [0.0, 1.1435, 0.0],
-    "radii": [0.1302, 0.3069, 0.2939, 0.2753, 0.266, 0.2827, 0.3125, 0.3441, 0.3534, 0.1116],
-    "scale": [1, 1, 0.64]
+    "kind": "loft",
+    "sections": [
+     [0.0, -0.0562, -0.0, 0.186, 0.1302],
+     [0.0, 0.0182, -0.0223, 0.3013, 0.186],
+     [0.0, 0.1298, -0.0223, 0.3088, 0.2009],
+     [0.0, 0.2414, 0.0, 0.2902, 0.186],
+     [0.0, 0.353, 0.0112, 0.2716, 0.1786],
+     [0.0, 0.4646, 0.0112, 0.2641, 0.1786],
+     [0.0, 0.6134, 0.0074, 0.279, 0.186],
+     [0.0, 0.7622, 0.0149, 0.305, 0.2009],
+     [0.0, 0.8924, 0.0037, 0.3274, 0.1953],
+     [0.0, 1.004, -0.0223, 0.346, 0.1748],
+     [0.0, 1.0877, -0.0335, 0.2883, 0.1376],
+     [0.0, 1.1342, -0.0335, 0.1265, 0.1042]
+    ]
    },
    "sex": "male"
   },
@@ -4926,11 +6747,21 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [0.0, -0.112, 0.0],
-    "to": [0.0, 1.1435, 0.0],
-    "radii": [0.1302, 0.3441, 0.3162, 0.2455, 0.2381, 0.2641, 0.2939, 0.3199, 0.3311, 0.1116],
-    "scale": [1, 1, 0.64]
+    "kind": "loft",
+    "sections": [
+     [0.0, -0.0562, -0.0, 0.1953, 0.1302],
+     [0.0, 0.0182, -0.0298, 0.3311, 0.1953],
+     [0.0, 0.1298, -0.0298, 0.3422, 0.2083],
+     [0.0, 0.2414, -0.0074, 0.305, 0.186],
+     [0.0, 0.353, 0.0074, 0.2418, 0.1674],
+     [0.0, 0.4646, 0.0074, 0.2362, 0.1674],
+     [0.0, 0.6134, 0.0037, 0.2567, 0.1748],
+     [0.0, 0.7622, 0.0112, 0.2827, 0.186],
+     [0.0, 0.8924, 0.0, 0.3013, 0.1823],
+     [0.0, 1.004, -0.0223, 0.3199, 0.1637],
+     [0.0, 1.0877, -0.0335, 0.2697, 0.1302],
+     [0.0, 1.1342, -0.0335, 0.119, 0.1004]
+    ]
    },
    "sex": "female"
   },
@@ -4942,9 +6773,9 @@
    "color": "#F2C9A5",
    "shape": {
     "kind": "sphere",
-    "center": [0.1581, 0.7901, 0.186],
+    "center": [0.1525, 0.7901, 0.1823],
     "radius": 0.1023,
-    "scale": [1, 0.95, 0.8]
+    "scale": [1, 0.92, 0.8]
    },
    "sex": "female"
   },
@@ -4956,37 +6787,11 @@
    "color": "#F2C9A5",
    "shape": {
     "kind": "sphere",
-    "center": [-0.1581, 0.7901, 0.186],
+    "center": [-0.1525, 0.7901, 0.1823],
     "radius": 0.1023,
-    "scale": [1, 0.95, 0.8]
+    "scale": [1, 0.92, 0.8]
    },
    "sex": "female"
-  },
-  {
-   "id": "ear-l",
-   "name": "Skin (L)",
-   "nameZh": "左皮肤",
-   "layer": "skin",
-   "color": "#F2C9A5",
-   "shape": {
-    "kind": "sphere",
-    "center": [0.1451, 1.4318, -0.0093],
-    "radius": 0.0558,
-    "scale": [0.35, 1, 0.65]
-   }
-  },
-  {
-   "id": "ear-r",
-   "name": "Skin (R)",
-   "nameZh": "右皮肤",
-   "layer": "skin",
-   "color": "#F2C9A5",
-   "shape": {
-    "kind": "sphere",
-    "center": [-0.1451, 1.4318, -0.0093],
-    "radius": 0.0558,
-    "scale": [0.35, 1, 0.65]
-   }
   },
   {
    "id": "upper-arm-l",
@@ -4995,11 +6800,14 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [0.3534, 1.0598, -0.0465],
-    "to": [0.398, 0.446, -0.0223],
-    "radii": [0.0893, 0.0874, 0.08, 0.0688, 0.0632],
-    "scale": [1, 1, 0.95]
+    "kind": "loft",
+    "sections": [
+     [0.3534, 1.0598, -0.0465, 0.093, 0.093],
+     [0.372, 0.9296, -0.0372, 0.093, 0.0967],
+     [0.3813, 0.725, -0.0335, 0.0781, 0.0856],
+     [0.3943, 0.539, -0.0279, 0.0688, 0.0744],
+     [0.3999, 0.446, -0.0223, 0.0651, 0.0651]
+    ]
    }
   },
   {
@@ -5009,11 +6817,14 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [-0.3534, 1.0598, -0.0465],
-    "to": [-0.398, 0.446, -0.0223],
-    "radii": [0.0893, 0.0874, 0.08, 0.0688, 0.0632],
-    "scale": [1, 1, 0.95]
+    "kind": "loft",
+    "sections": [
+     [-0.3534, 1.0598, -0.0465, 0.093, 0.093],
+     [-0.372, 0.9296, -0.0372, 0.093, 0.0967],
+     [-0.3813, 0.725, -0.0335, 0.0781, 0.0856],
+     [-0.3943, 0.539, -0.0279, 0.0688, 0.0744],
+     [-0.3999, 0.446, -0.0223, 0.0651, 0.0651]
+    ]
    }
   },
   {
@@ -5023,11 +6834,13 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [0.398, 0.446, -0.0223],
-    "to": [0.4501, -0.0097, 0.0112],
-    "radii": [0.0632, 0.0688, 0.0595, 0.0484, 0.0391],
-    "scale": [1, 1, 0.85]
+    "kind": "loft",
+    "sections": [
+     [0.3999, 0.446, -0.0223, 0.067, 0.0632],
+     [0.4185, 0.3158, -0.0149, 0.0725, 0.067],
+     [0.4371, 0.1484, 0.0, 0.0558, 0.0484],
+     [0.4501, -0.0004, 0.0112, 0.0484, 0.0335]
+    ]
    }
   },
   {
@@ -5037,11 +6850,13 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [-0.398, 0.446, -0.0223],
-    "to": [-0.4501, -0.0097, 0.0112],
-    "radii": [0.0632, 0.0688, 0.0595, 0.0484, 0.0391],
-    "scale": [1, 1, 0.85]
+    "kind": "loft",
+    "sections": [
+     [-0.3999, 0.446, -0.0223, 0.067, 0.0632],
+     [-0.4185, 0.3158, -0.0149, 0.0725, 0.067],
+     [-0.4371, 0.1484, 0.0, 0.0558, 0.0484],
+     [-0.4501, -0.0004, 0.0112, 0.0484, 0.0335]
+    ]
    }
   },
   {
@@ -5051,11 +6866,12 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [0.4464, -0.0097, 0.0112],
-    "to": [0.439, -0.3501, 0.0223],
-    "radii": [0.0409, 0.067, 0.0781, 0.0707, 0.0558, 0.0223],
-    "scale": [1, 1, 0.42]
+    "kind": "loft",
+    "sections": [
+     [0.4501, -0.0097, 0.0112, 0.0484, 0.0298],
+     [0.4483, -0.0934, 0.0149, 0.0725, 0.0316],
+     [0.4408, -0.1678, 0.0186, 0.0781, 0.026]
+    ]
    }
   },
   {
@@ -5065,11 +6881,156 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [-0.4464, -0.0097, 0.0112],
-    "to": [-0.439, -0.3501, 0.0223],
-    "radii": [0.0409, 0.067, 0.0781, 0.0707, 0.0558, 0.0223],
-    "scale": [1, 1, 0.42]
+    "kind": "loft",
+    "sections": [
+     [-0.4501, -0.0097, 0.0112, 0.0484, 0.0298],
+     [-0.4483, -0.0934, 0.0149, 0.0725, 0.0316],
+     [-0.4408, -0.1678, 0.0186, 0.0781, 0.026]
+    ]
+   }
+  },
+  {
+   "id": "finger-skin-index-l",
+   "name": "Skin (L)",
+   "nameZh": "左皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.4799, -0.1715, 0.0167],
+     [0.4808, -0.2385, 0.0242],
+     [0.4818, -0.2831, 0.0316],
+     [0.4828, -0.3203, 0.0391]
+    ],
+    "radius": 0.0158,
+    "radii": [0.0158, 0.015, 0.0134, 0.0111]
+   }
+  },
+  {
+   "id": "finger-skin-index-r",
+   "name": "Skin (R)",
+   "nameZh": "右皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.4799, -0.1715, 0.0167],
+     [-0.4808, -0.2385, 0.0242],
+     [-0.4818, -0.2831, 0.0316],
+     [-0.4828, -0.3203, 0.0391]
+    ],
+    "radius": 0.0158,
+    "radii": [0.0158, 0.015, 0.0134, 0.0111]
+   }
+  },
+  {
+   "id": "finger-skin-middle-l",
+   "name": "Skin (L)",
+   "nameZh": "左皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.4464, -0.1715, 0.0167],
+     [0.4467, -0.2452, 0.0242],
+     [0.447, -0.2943, 0.0316],
+     [0.4473, -0.3352, 0.0391]
+    ],
+    "radius": 0.0158,
+    "radii": [0.0158, 0.015, 0.0134, 0.0111]
+   }
+  },
+  {
+   "id": "finger-skin-middle-r",
+   "name": "Skin (R)",
+   "nameZh": "右皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.4464, -0.1715, 0.0167],
+     [-0.4467, -0.2452, 0.0242],
+     [-0.447, -0.2943, 0.0316],
+     [-0.4473, -0.3352, 0.0391]
+    ],
+    "radius": 0.0158,
+    "radii": [0.0158, 0.015, 0.0134, 0.0111]
+   }
+  },
+  {
+   "id": "finger-skin-ring-l",
+   "name": "Skin (L)",
+   "nameZh": "左皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.4148, -0.1715, 0.0167],
+     [0.4144, -0.2402, 0.0242],
+     [0.4141, -0.2859, 0.0316],
+     [0.4138, -0.324, 0.0391]
+    ],
+    "radius": 0.0158,
+    "radii": [0.0158, 0.015, 0.0134, 0.0111]
+   }
+  },
+  {
+   "id": "finger-skin-ring-r",
+   "name": "Skin (R)",
+   "nameZh": "右皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.4148, -0.1715, 0.0167],
+     [-0.4144, -0.2402, 0.0242],
+     [-0.4141, -0.2859, 0.0316],
+     [-0.4138, -0.324, 0.0391]
+    ],
+    "radius": 0.0158,
+    "radii": [0.0158, 0.015, 0.0134, 0.0111]
+   }
+  },
+  {
+   "id": "finger-skin-little-l",
+   "name": "Skin (L)",
+   "nameZh": "左皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.385, -0.1715, 0.0167],
+     [0.3841, -0.2251, 0.0242],
+     [0.3832, -0.2608, 0.0316],
+     [0.3822, -0.2906, 0.0391]
+    ],
+    "radius": 0.014,
+    "radii": [0.014, 0.0133, 0.0119, 0.0098]
+   }
+  },
+  {
+   "id": "finger-skin-little-r",
+   "name": "Skin (R)",
+   "nameZh": "右皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.385, -0.1715, 0.0167],
+     [-0.3841, -0.2251, 0.0242],
+     [-0.3832, -0.2608, 0.0316],
+     [-0.3822, -0.2906, 0.0391]
+    ],
+    "radius": 0.014,
+    "radii": [0.014, 0.0133, 0.0119, 0.0098]
    }
   },
   {
@@ -5079,10 +7040,15 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [0.4687, -0.0562, 0.0186],
-    "to": [0.5301, -0.2273, 0.093],
-    "radii": [0.026, 0.0223, 0.0205, 0.0149]
+    "kind": "tube",
+    "points": [
+     [0.465, -0.0469, 0.0186],
+     [0.4948, -0.112, 0.0484],
+     [0.5152, -0.1715, 0.0725],
+     [0.5301, -0.2199, 0.0893]
+    ],
+    "radius": 0.0223,
+    "radii": [0.026, 0.0223, 0.0186, 0.0149]
    }
   },
   {
@@ -5092,10 +7058,15 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [-0.4687, -0.0562, 0.0186],
-    "to": [-0.5301, -0.2273, 0.093],
-    "radii": [0.026, 0.0223, 0.0205, 0.0149]
+    "kind": "tube",
+    "points": [
+     [-0.465, -0.0469, 0.0186],
+     [-0.4948, -0.112, 0.0484],
+     [-0.5152, -0.1715, 0.0725],
+     [-0.5301, -0.2199, 0.0893]
+    ],
+    "radius": 0.0223,
+    "radii": [0.026, 0.0223, 0.0186, 0.0149]
    }
   },
   {
@@ -5105,10 +7076,15 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [0.186, 0.1856, 0.0],
-    "to": [0.1804, -0.6607, 0.0149],
-    "radii": [0.1395, 0.1581, 0.1451, 0.1265, 0.1079, 0.093]
+    "kind": "loft",
+    "sections": [
+     [0.1823, 0.167, -0.0093, 0.1525, 0.1637],
+     [0.1823, -0.0004, 0.0, 0.1469, 0.1562],
+     [0.1804, -0.1864, 0.0112, 0.1339, 0.1414],
+     [0.1804, -0.3724, 0.0186, 0.119, 0.1265],
+     [0.1804, -0.5398, 0.0186, 0.1023, 0.1116],
+     [0.1804, -0.67, 0.0186, 0.093, 0.1004]
+    ]
    }
   },
   {
@@ -5118,10 +7094,15 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [-0.186, 0.1856, 0.0],
-    "to": [-0.1804, -0.6607, 0.0149],
-    "radii": [0.1395, 0.1581, 0.1451, 0.1265, 0.1079, 0.093]
+    "kind": "loft",
+    "sections": [
+     [-0.1823, 0.167, -0.0093, 0.1525, 0.1637],
+     [-0.1823, -0.0004, 0.0, 0.1469, 0.1562],
+     [-0.1804, -0.1864, 0.0112, 0.1339, 0.1414],
+     [-0.1804, -0.3724, 0.0186, 0.119, 0.1265],
+     [-0.1804, -0.5398, 0.0186, 0.1023, 0.1116],
+     [-0.1804, -0.67, 0.0186, 0.093, 0.1004]
+    ]
    }
   },
   {
@@ -5131,11 +7112,15 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [0.1804, -0.6607, 0.0149],
-    "to": [0.16, -1.4605, 0.0],
-    "radii": [0.093, 0.1004, 0.093, 0.0744, 0.0595, 0.0539],
-    "scale": [1, 1, 1.05]
+    "kind": "loft",
+    "sections": [
+     [0.1804, -0.67, 0.0186, 0.093, 0.0967],
+     [0.1786, -0.8188, -0.0093, 0.093, 0.1079],
+     [0.1748, -0.9676, -0.0186, 0.0874, 0.1042],
+     [0.1674, -1.1536, -0.0093, 0.0688, 0.0781],
+     [0.1618, -1.3396, 0.0, 0.0558, 0.0595],
+     [0.16, -1.4419, 0.0, 0.0539, 0.0558]
+    ]
    }
   },
   {
@@ -5145,11 +7130,15 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [-0.1804, -0.6607, 0.0149],
-    "to": [-0.16, -1.4605, 0.0],
-    "radii": [0.093, 0.1004, 0.093, 0.0744, 0.0595, 0.0539],
-    "scale": [1, 1, 1.05]
+    "kind": "loft",
+    "sections": [
+     [-0.1804, -0.67, 0.0186, 0.093, 0.0967],
+     [-0.1786, -0.8188, -0.0093, 0.093, 0.1079],
+     [-0.1748, -0.9676, -0.0186, 0.0874, 0.1042],
+     [-0.1674, -1.1536, -0.0093, 0.0688, 0.0781],
+     [-0.1618, -1.3396, 0.0, 0.0558, 0.0595],
+     [-0.16, -1.4419, 0.0, 0.0539, 0.0558]
+    ]
    }
   },
   {
@@ -5159,11 +7148,14 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [0.1637, -1.5349, -0.1023],
-    "to": [0.186, -1.5591, 0.3813],
-    "radii": [0.0521, 0.067, 0.0744, 0.08, 0.0707, 0.0279],
-    "scale": [1, 1, 0.55]
+    "kind": "loft",
+    "sections": [
+     [0.1655, -1.5256, -0.1116, 0.0521, 0.0558],
+     [0.1693, -1.5163, -0.0279, 0.0632, 0.0781],
+     [0.1767, -1.533, 0.093, 0.0763, 0.0614],
+     [0.186, -1.5554, 0.2232, 0.0856, 0.0391],
+     [0.186, -1.5647, 0.2883, 0.0837, 0.0298]
+    ]
    }
   },
   {
@@ -5173,11 +7165,184 @@
    "layer": "skin",
    "color": "#F2C9A5",
    "shape": {
-    "kind": "lathe",
-    "from": [-0.1637, -1.5349, -0.1023],
-    "to": [-0.186, -1.5591, 0.3813],
-    "radii": [0.0521, 0.067, 0.0744, 0.08, 0.0707, 0.0279],
-    "scale": [1, 1, 0.55]
+    "kind": "loft",
+    "sections": [
+     [-0.1655, -1.5256, -0.1116, 0.0521, 0.0558],
+     [-0.1693, -1.5163, -0.0279, 0.0632, 0.0781],
+     [-0.1767, -1.533, 0.093, 0.0763, 0.0614],
+     [-0.186, -1.5554, 0.2232, 0.0856, 0.0391],
+     [-0.186, -1.5647, 0.2883, 0.0837, 0.0298]
+    ]
+   }
+  },
+  {
+   "id": "toe-skin-big-l",
+   "name": "Skin (L)",
+   "nameZh": "左皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.1302, -1.5665, 0.279],
+     [0.1265, -1.5702, 0.3441],
+     [0.1265, -1.574, 0.3813]
+    ],
+    "radius": 0.0223,
+    "radii": [0.0223, 0.0212, 0.0167]
+   }
+  },
+  {
+   "id": "toe-skin-big-r",
+   "name": "Skin (R)",
+   "nameZh": "右皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.1302, -1.5665, 0.279],
+     [-0.1265, -1.5702, 0.3441],
+     [-0.1265, -1.574, 0.3813]
+    ],
+    "radius": 0.0223,
+    "radii": [0.0223, 0.0212, 0.0167]
+   }
+  },
+  {
+   "id": "toe-skin-2nd-l",
+   "name": "Skin (L)",
+   "nameZh": "左皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.1637, -1.5665, 0.279],
+     [0.16, -1.5702, 0.3311],
+     [0.16, -1.574, 0.3683]
+    ],
+    "radius": 0.0158,
+    "radii": [0.0158, 0.015, 0.0119]
+   }
+  },
+  {
+   "id": "toe-skin-2nd-r",
+   "name": "Skin (R)",
+   "nameZh": "右皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.1637, -1.5665, 0.279],
+     [-0.16, -1.5702, 0.3311],
+     [-0.16, -1.574, 0.3683]
+    ],
+    "radius": 0.0158,
+    "radii": [0.0158, 0.015, 0.0119]
+   }
+  },
+  {
+   "id": "toe-skin-3rd-l",
+   "name": "Skin (L)",
+   "nameZh": "左皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.1897, -1.5665, 0.279],
+     [0.186, -1.5702, 0.3199],
+     [0.186, -1.574, 0.3571]
+    ],
+    "radius": 0.0149,
+    "radii": [0.0149, 0.0141, 0.0112]
+   }
+  },
+  {
+   "id": "toe-skin-3rd-r",
+   "name": "Skin (R)",
+   "nameZh": "右皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.1897, -1.5665, 0.279],
+     [-0.186, -1.5702, 0.3199],
+     [-0.186, -1.574, 0.3571]
+    ],
+    "radius": 0.0149,
+    "radii": [0.0149, 0.0141, 0.0112]
+   }
+  },
+  {
+   "id": "toe-skin-4th-l",
+   "name": "Skin (L)",
+   "nameZh": "左皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.212, -1.5665, 0.279],
+     [0.2083, -1.5702, 0.3032],
+     [0.2083, -1.574, 0.3404]
+    ],
+    "radius": 0.014,
+    "radii": [0.014, 0.0133, 0.0105]
+   }
+  },
+  {
+   "id": "toe-skin-4th-r",
+   "name": "Skin (R)",
+   "nameZh": "右皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.212, -1.5665, 0.279],
+     [-0.2083, -1.5702, 0.3032],
+     [-0.2083, -1.574, 0.3404]
+    ],
+    "radius": 0.014,
+    "radii": [0.014, 0.0133, 0.0105]
+   }
+  },
+  {
+   "id": "toe-skin-5th-l",
+   "name": "Skin (L)",
+   "nameZh": "左皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [0.2325, -1.5665, 0.279],
+     [0.2288, -1.5702, 0.2827],
+     [0.2288, -1.574, 0.3199]
+    ],
+    "radius": 0.013,
+    "radii": [0.013, 0.0124, 0.0098]
+   }
+  },
+  {
+   "id": "toe-skin-5th-r",
+   "name": "Skin (R)",
+   "nameZh": "右皮肤",
+   "layer": "skin",
+   "color": "#F2C9A5",
+   "shape": {
+    "kind": "tube",
+    "points": [
+     [-0.2325, -1.5665, 0.279],
+     [-0.2288, -1.5702, 0.2827],
+     [-0.2288, -1.574, 0.3199]
+    ],
+    "radius": 0.013,
+    "radii": [0.013, 0.0124, 0.0098]
    }
   }
  ],
@@ -5193,11 +7358,16 @@
     "humerus-l",
     "humeral-head-l",
     "biceps-l",
+    "brachialis-l",
     "triceps-l",
     "upper-arm-l"
    ],
    "movers": [
-    "deltoid-middle-l"
+    "deltoid-1-l",
+    "deltoid-2-l",
+    "deltoid-3-l",
+    "deltoid-4-l",
+    "deltoid-5-l"
    ]
   },
   {
@@ -5213,6 +7383,7 @@
     "ulna-l",
     "brachioradialis-l",
     "forearm-flexors-l",
+    "flexor-carpi-ulnaris-l",
     "forearm-extensors-l",
     "forearm-l",
     "hand-l",
@@ -5237,6 +7408,10 @@
     "thumb-1-l",
     "thumb-2-l",
     "thumb-3-l",
+    "finger-skin-index-l",
+    "finger-skin-middle-l",
+    "finger-skin-ring-l",
+    "finger-skin-little-l",
     "thumb-l"
    ],
    "movers": [
@@ -5257,6 +7432,7 @@
     "gastrocnemius-lateral-l",
     "soleus-l",
     "tibialis-l",
+    "peroneus-l",
     "achilles-l",
     "shin-l",
     "foot-l",
@@ -5270,7 +7446,12 @@
     "metatarsal-4th-l",
     "toe-4th-l",
     "metatarsal-5th-l",
-    "toe-5th-l"
+    "toe-5th-l",
+    "toe-skin-big-l",
+    "toe-skin-2nd-l",
+    "toe-skin-3rd-l",
+    "toe-skin-4th-l",
+    "toe-skin-5th-l"
    ],
    "movers": [
     "hamstrings-medial-l",
@@ -5288,11 +7469,16 @@
     "humerus-r",
     "humeral-head-r",
     "biceps-r",
+    "brachialis-r",
     "triceps-r",
     "upper-arm-r"
    ],
    "movers": [
-    "deltoid-middle-r"
+    "deltoid-1-r",
+    "deltoid-2-r",
+    "deltoid-3-r",
+    "deltoid-4-r",
+    "deltoid-5-r"
    ]
   },
   {
@@ -5308,6 +7494,7 @@
     "ulna-r",
     "brachioradialis-r",
     "forearm-flexors-r",
+    "flexor-carpi-ulnaris-r",
     "forearm-extensors-r",
     "forearm-r",
     "hand-r",
@@ -5332,6 +7519,10 @@
     "thumb-1-r",
     "thumb-2-r",
     "thumb-3-r",
+    "finger-skin-index-r",
+    "finger-skin-middle-r",
+    "finger-skin-ring-r",
+    "finger-skin-little-r",
     "thumb-r"
    ],
    "movers": [
@@ -5352,6 +7543,7 @@
     "gastrocnemius-lateral-r",
     "soleus-r",
     "tibialis-r",
+    "peroneus-r",
     "achilles-r",
     "shin-r",
     "foot-r",
@@ -5365,7 +7557,12 @@
     "metatarsal-4th-r",
     "toe-4th-r",
     "metatarsal-5th-r",
-    "toe-5th-r"
+    "toe-5th-r",
+    "toe-skin-big-r",
+    "toe-skin-2nd-r",
+    "toe-skin-3rd-r",
+    "toe-skin-4th-r",
+    "toe-skin-5th-r"
    ],
    "movers": [
     "hamstrings-medial-r",
@@ -5723,6 +7920,131 @@
      }
     ]
    }
+  },
+  {
+   "id": "spleen",
+   "color": "#7A2C4A",
+   "position": [0.1953, 0.5204, -0.093],
+   "shapes": [
+    {
+     "kind": "sphere",
+     "center": [0.1953, 0.5204, -0.093],
+     "radius": 0.0744,
+     "scale": [0.55, 1.0, 0.4],
+     "rotation": [0.3, 0, -0.35]
+    }
+   ],
+   "names": [
+    "Spleen",
+    "脾"
+   ]
+  },
+  {
+   "id": "gallbladder",
+   "color": "#5E8C3A",
+   "position": [-0.1116, 0.5018, 0.1302],
+   "shapes": [
+    {
+     "kind": "sphere",
+     "center": [-0.1116, 0.5018, 0.1302],
+     "radius": 0.0298,
+     "scale": [0.8, 1.5, 0.8],
+     "rotation": [0.4, 0, 0]
+    }
+   ],
+   "names": [
+    "Gallbladder",
+    "胆囊"
+   ]
+  },
+  {
+   "id": "adrenals",
+   "color": "#D9A13B",
+   "position": [0.0, 0.4739, -0.1079],
+   "shapes": [
+    {
+     "kind": "sphere",
+     "center": [0.1023, 0.4739, -0.1079],
+     "radius": 0.0223,
+     "scale": [1.2, 0.7, 0.6]
+    },
+    {
+     "kind": "sphere",
+     "center": [-0.1023, 0.4553, -0.1079],
+     "radius": 0.0223,
+     "scale": [1.2, 0.7, 0.6]
+    }
+   ],
+   "names": [
+    "Adrenal glands",
+    "肾上腺"
+   ]
+  },
+  {
+   "id": "thyroid",
+   "color": "#C0506A",
+   "position": [0.0, 1.1249, 0.0744],
+   "shapes": [
+    {
+     "kind": "sphere",
+     "center": [0.0316, 1.1249, 0.0707],
+     "radius": 0.0205,
+     "scale": [0.7, 1.5, 0.6]
+    },
+    {
+     "kind": "sphere",
+     "center": [-0.0316, 1.1249, 0.0707],
+     "radius": 0.0205,
+     "scale": [0.7, 1.5, 0.6]
+    },
+    {
+     "kind": "segment",
+     "from": [0.0223, 1.1156, 0.0837],
+     "to": [-0.0223, 1.1156, 0.0837],
+     "radius": 0.0074
+    }
+   ],
+   "names": [
+    "Thyroid",
+    "甲状腺"
+   ]
+  },
+  {
+   "id": "larynx",
+   "color": "#E8C4B0",
+   "position": [0.0, 1.1714, 0.0558],
+   "shapes": [
+    {
+     "kind": "lathe",
+     "from": [0.0, 1.2179, 0.0521],
+     "to": [0.0, 1.1342, 0.0409],
+     "radii": [0.0316, 0.0372, 0.0298, 0.0223]
+    }
+   ],
+   "names": [
+    "Larynx",
+    "喉"
+   ]
+  },
+  {
+   "id": "appendix",
+   "color": "#D9A77A",
+   "position": [-0.1265, 0.074, 0.0967],
+   "shapes": [
+    {
+     "kind": "tube",
+     "points": [
+      [-0.1395, 0.1205, 0.093],
+      [-0.1302, 0.074, 0.1023],
+      [-0.1116, 0.0461, 0.093]
+     ],
+     "radius": 0.0084
+    }
+   ],
+   "names": [
+    "Appendix",
+    "阑尾"
+   ]
   },
   {
    "id": "eyes",
