@@ -5,8 +5,8 @@ enum Illustrations {
     static let builders: [@Sendable (Profile) -> Scenario] = [
         cpr(for:), choking(for:), { _ in bleeding }, { _ in burns }, ankleSprain(for:),
         { _ in shoulder }, fracture(for:),
-        { _ in bloodSugar }, bloodPressure(for:), { _ in bloodFats },
-        { _ in stroke }, heartAttack(for:), { _ in coldFlu }, { _ in asthma }, { _ in acidReflux }, kidneyStones(for:),
+        bloodSugar(for:), bloodPressure(for:), bloodFats(for:),
+        stroke(for:), heartAttack(for:), coldFlu(for:), asthma(for:), acidReflux(for:), kidneyStones(for:),
         { _ in fetalGrowth }, { _ in labor },
     ]
 
