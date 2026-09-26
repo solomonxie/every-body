@@ -29,7 +29,9 @@ final class Renderer: NSObject, NSApplicationDelegate {
         Task { @MainActor in
             await BodyScene.prepare()
             scene.setAge(age)
-            scene.build(skinColor: NSColor(hex: "#F2C9A5"), female: female, points: [], flowStops: [])
+            // POINTS=acupoint-reflex-map shows that system's points
+            let pts = ProcessInfo.processInfo.environment["POINTS"].flatMap { Catalog.points[$0]?.points } ?? []
+            scene.build(skinColor: NSColor(hex: "#F2C9A5"), female: female, points: pts, flowStops: [])
             scene.setLayers(layers)
             scene.touched = true
             scene.yaw = yaw

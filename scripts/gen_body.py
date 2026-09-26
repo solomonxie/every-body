@@ -802,8 +802,8 @@ def skin():
               for a in [math.pi * k / 6 for k in range(7)]]
         low = [(cx + sx * r * 1.0 * math.cos(a), cy - r * 0.55 * math.sin(a) - 0.001, cz + r * 0.5 + r * 0.45 * math.sin(a))
                for a in [math.pi * k / 6 for k in range(7)]]
-        part(f"eyelid-{side}", "Skin", "皮肤", "skin", SKIN, tube(up, 0.0042, [0.002, 0.0042, 0.0048, 0.005, 0.0048, 0.0042, 0.002]))
-        part(f"eyelid-lower-{side}", "Skin", "皮肤", "skin", SKIN, tube(low, 0.003, [0.0015, 0.003, 0.0035, 0.0035, 0.0035, 0.003, 0.0015]))
+        part(f"eyelid-{side}", "Skin", "皮肤", "skin", SKIN, tube(up, 0.003, [0.0012, 0.0028, 0.0034, 0.0036, 0.0034, 0.0028, 0.0012]))
+        part(f"eyelid-lower-{side}", "Skin", "皮肤", "skin", SKIN, tube(low, 0.002, [0.001, 0.0018, 0.0022, 0.0022, 0.0022, 0.0018, 0.001]))
         part(f"brow-{side}", "Eyebrow", "眉毛", "skin", "#6B5344",
              loft([(sx * 0.014, 1.647, 0.09, 0.002, 0.003), (sx * 0.031, 1.652, 0.09, 0.003, 0.0035), (sx * 0.05, 1.647, 0.08, 0.0018, 0.0025)]))
     # lips: upper and lower, a little redder than skin
@@ -819,7 +819,7 @@ def skin():
                     (0.078, 1.656, -0.013, 0.006, 0.018), (0.075, 1.667, -0.013, 0.004, 0.008)]))
     sp("ear-rim", tube([(0.079, 1.6, -0.002), (0.083, 1.62, -0.024), (0.084, 1.648, -0.03), (0.081, 1.665, -0.018), (0.078, 1.662, -0.004)], 0.0028))
     s("neck", loft([(0, 1.425, -0.02, 0.07, 0.06), (0, 1.45, -0.016, 0.062, 0.057), (0, 1.48, -0.012, 0.054, 0.054), (0, 1.52, -0.008, 0.05, 0.05), (0, 1.555, -0.012, 0.048, 0.05)]))
-    s("adams-apple", sphere((0, 1.49, 0.043), 0.009, [1, 1.3, 0.8]), "male")
+    s("adams-apple", sphere((0, 1.492, 0.038), 0.007, [0.9, 1.2, 0.7]), "male")
     # torso: crotch → neck; z offsets carry the chest, belly, back and buttocks
     # torso: crotch → neck; rounded-box sections, z offsets carry chest, belly, back and buttocks; shoulders slope into the trapezius
     torso = TORSO

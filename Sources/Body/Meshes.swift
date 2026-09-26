@@ -144,7 +144,7 @@ enum Meshes {
     /// An optional 6th value squares the section off (superellipse exponent: 2 = ellipse, 3 ≈ rounded box).
     /// Any further values are radius multipliers sampled evenly around the section (relief: grooves, ridges, bulges);
     /// every section of such a loft carries the same number.
-    static func loft(sections: [[Float]], sides requested: Int = 20) -> RawMesh {
+    static func loft(sections: [[Float]], sides requested: Int = 32) -> RawMesh {
         let sides = (sections.first?.count ?? 0) > 6 ? 96 : requested
         let n = sections.count
         let steps = (n - 1) * 4
