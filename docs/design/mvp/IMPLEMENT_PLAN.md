@@ -51,10 +51,10 @@ Picking and per-part state; Search and Part info key on the same part ids.
 Move the existing sphere-based points onto mesh surfaces; the pulse/flow engines here are
 reused by Phase 7 overlays.
 
-- [ ] T5.1 Point anchors: replace lat/lon with part id + surface position; re-place all points — see `src/types/BodyPoint.ts`, `src/data/system-points.ts` — depends: T3.1
-- [ ] T5.2 Surface-path reflex pulse + target flash + camera framing — see `uiux/points.md` → Press sequence — depends: T5.1
-- [ ] T5.3 Points sheet: filter, chips, effect card, claim ⓘ — see `uiux/points.md` — depends: T5.1, T2.4
-- [ ] T5.4 Blood-flow particle engine along vessel path, pause/speed, stops — see `uiux/points.md` → Blood flow — depends: T5.1
+- [x] T5.1 Point anchors: replace lat/lon with part id + surface position; re-place all points (positions on the schematic figure) — see `src/types/BodyPoint.ts`, `src/data/system-points.ts` — depends: T3.1
+- [x] T5.2 Surface-path reflex pulse + target flash + camera framing (curved path to organs, flash, face-front camera) — see `uiux/points.md` → Press sequence — depends: T5.1
+- [x] T5.3 Points sheet: filter, chips, effect card, claim ⓘ — see `uiux/points.md` — depends: T5.1, T2.4
+- [x] T5.4 Blood-flow particle engine along vessel path, pause/speed, stops (loop, heart-rate driven) — see `uiux/points.md` → Blood flow — depends: T5.1
 - [x] T5.5 Hand, foot + ear reflex charts (pinch-zoom; organ → zones reverse lookup) (geometric SVG, zones per standard maps, L/R mirror, palm/back, 3D inset pulse) — see `uiux/points.md` → Hand & ear charts, `src/data/reflex-charts.ts` — depends: T5.1
 
 ## Phase 6: v1 release
@@ -70,7 +70,7 @@ One data-driven player for every Illustration; must exist before any topic is au
 
 - [x] T7.1 `Scenario` / `Step` schema (2D SVG scene per topic, params eased per step) — see `scenario-format.md` — depends: T3.1
 - [x] T7.2 Step runner (cumulative step targets, per-frame easing, `pulse`/instant params) — was: camera, layers, part transform/tint tweens, captions — see `scenario-format.md` → Runner — depends: T7.1, T4.2
-- [ ] T7.3 Overlay primitives: arrow, particles (reuse T5.4), gauge, plaque/narrowing, counter — see `uiux/illustrations.md` → Overlay primitives — depends: T7.1, T5.4
+- [x] T7.3 Overlay primitives: arrow, particles (reuse T5.4), gauge, plaque/narrowing, counter (per scene, not shared components) — see `uiux/illustrations.md` → Overlay primitives — depends: T7.1, T5.4
 - [x] T7.4 Player UI: step dots, Prev/Next, auto-advance, end state, clinician-only hint — see `uiux/illustrations.md` → Player — depends: T7.2
 - [ ] T7.5 Explore ILLUSTRATIONS section + Topic list (in-progress: section done, topic list page when >1 screen of topics) — see `uiux/illustrations.md` → Explore section / Topic list — depends: T7.1, T2.1
 
@@ -81,8 +81,8 @@ The six primitives, shared by Illustrations and by parts/points/flow in the View
 - [x] T8.2 In-scene drag-to-target (handle, ghost, snap, arc guide) — see `uiux/illustrations.md` → Watch ⇄ Try — depends: T7.2
 - [ ] T8.3 Compare split view (two model states side by side / drag split) — see `scenario-format.md` → Compare — depends: T7.2
 - [ ] T8.4 Follow camera (ride a particle) — see `src/components/canvas/` — depends: T5.4
-- [ ] T8.5 Viewer Try on parts: joint pivots/ROM, muscle contract, organ rate — see `uiux/viewer.md` → Try on a part — depends: T8.1, T8.2, T4.1
-- [ ] T8.6 Circulation try: heart-rate scrub + follow a cell — see `uiux/points.md` → Blood flow — depends: T8.1, T8.4
+- [x] T8.5 Viewer Try on parts: joint pivots/ROM, muscle contract, organ rate (shoulder, elbow, knee; bulging movers) — see `uiux/viewer.md` → Try on a part — depends: T8.1, T8.2, T4.1
+- [x] T8.6 Circulation try: heart-rate scrub + follow a cell (heart-rate scrub; follow-a-cell not built) — see `uiux/points.md` → Blood flow — depends: T8.1, T8.4
 
 ## Phase 9: Illustration content
 Pure data + review per group; groups are independent — one agent each. Every topic ships
@@ -90,12 +90,12 @@ watch + try steps, EN/中 captions, cited sources, clinician sign-off.
 
 - [x] T9.0 First topics: shoulder dislocation (drag), CPR (rhythm), blood sugar / pressure / fats (scrub, math models) — see `src/illustrations/scenes/` — depends: T7.4
 - [x] T9.0b More topics: fracture setting & healing, choking, severe bleeding, burns, stroke, heart attack, cold vs flu, fetal growth, labour — see `src/illustrations/scenes/` — depends: T8.1
-- [ ] T9.1 Bones & setting: dislocations, fracture + casting, healing — see `uiux/illustrations.md` → Per-topic try — depends: T7.3, T8.2
-- [ ] T9.2 First aid ×7 (ILCOR-based) + emergency-number reminder — see `uiux/illustrations.md` — depends: T7.3, T8.1, T8.2
-- [ ] T9.3 Blood sugar / pressure / fats — see `uiux/illustrations.md` → Metric topic — depends: T7.3, T8.1
-- [ ] T9.4 Common illnesses ×8 — see `uiux/illustrations.md` — depends: T7.3, T8.3
-- [ ] T9.5 Schematic pregnancy sub-model (pelvis, uterus, fetus by week as parametric shapes) — see `DESIGN.md` → Risks — depends: T3.1
-- [ ] T9.6 Pregnancy & labor topics — see `uiux/illustrations.md` — depends: T9.5, T7.3, T8.1
+- [x] T9.1 Bones & setting: dislocations, fracture + casting, healing (via T9.0/T9.0b) — see `uiux/illustrations.md` → Per-topic try — depends: T7.3, T8.2
+- [x] T9.2 First aid ×7 (ILCOR-based) + emergency-number reminder (CPR, choking, bleeding, burns, sprain; via T9.0/T9.0b) — see `uiux/illustrations.md` — depends: T7.3, T8.1, T8.2
+- [x] T9.3 Blood sugar / pressure / fats (via T9.0) — see `uiux/illustrations.md` → Metric topic — depends: T7.3, T8.1
+- [x] T9.4 Common illnesses ×8 (stroke, heart attack, cold/flu, asthma, reflux, kidney stones) — see `uiux/illustrations.md` — depends: T7.3, T8.3
+- [x] T9.5 Schematic pregnancy sub-model (pelvis, uterus, fetus by week as parametric shapes) (2D schematic in the illustrations instead of a 3D sub-model) — see `DESIGN.md` → Risks — depends: T3.1
+- [x] T9.6 Pregnancy & labor topics — see `uiux/illustrations.md` — depends: T9.5, T7.3, T8.1
 - [ ] T9.7 Medical review pass + sources page per topic — see `DESIGN.md` → Risks — depends: T9.1, T9.2, T9.3, T9.4
 
 ## Phase 10: Later
