@@ -536,9 +536,56 @@ def muscles():
 
 # ---------------------------------------------------------------- vessels, nerves, tubes
 
+def region(p):
+    """Which body region a point (metres) belongs to — must match BodyScene.reshape: arm, leg or trunk."""
+    if abs(p[0]) > 0.17:
+        return "arm"
+    if p[1] < 0.839:
+        return "leg"
+    return "trunk"
+
+
+def split_by_region(pts):
+    """Cut a path where it crosses from trunk into a limb, so each piece follows its own region when the body is
+    reshaped for age (a baby's arms are shorter; a vessel drawn as one piece would hang off the body)."""
+    dense = [catmull(pts, k / (8 * (len(pts) - 1))) for k in range(8 * (len(pts) - 1) + 1)]
+    cuts = [i for i in range(1, len(dense)) if region(dense[i - 1]) != region(dense[i])]
+    if not cuts:
+        return [pts]
+    # neighbouring pieces overlap a few samples so their tapered ends hide inside each other
+    bounds = [0] + cuts + [len(dense)]
+    return [dense[max(0, a - 3):min(len(dense), b + 3)] for a, b in zip(bounds, bounds[1:]) if b - a > 1]
+
+
+def catmull(p, u):
+    n = len(p) - 1
+    f = min(n - 1e-6, max(0, u * n))
+    i, t = int(f), f - int(f)
+    p0, p1, p2, p3 = p[max(0, i - 1)], p[i], p[min(n, i + 1)], p[min(n, i + 2)]
+    return tuple(0.5 * (2 * p1[k] + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t * t
+                        + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t ** 3) for k in range(3))
+
+
+def region_tubes(add, pid, name, zh, layer, color, pts, r, radii=None):
+    pieces = split_by_region(pts)
+    if len(pieces) == 1:
+        add(pid, name, zh, layer, color, tube(pts, r, radii))
+        return
+    total = sum(len(p) - 1 for p in pieces)
+    done = 0
+    for k, piece in enumerate(pieces):
+        rr = None
+        if radii:
+            # sample the taper over this piece's share of the path
+            f0, f1 = done / total, (done + len(piece) - 1) / total
+            rr = [radii[min(len(radii) - 1, int(f * (len(radii) - 1) + 0.5))] for f in (f0, (f0 + f1) / 2, f1)]
+        done += len(piece) - 1
+        add(pid if k == 0 else f"{pid}-{k + 1}", name, zh, layer, color, tube(piece[::3] + ([piece[-1]] if (len(piece) - 1) % 3 else []) if len(piece) > 8 else piece, r, rr))
+
+
 def vessels():
-    v = lambda pid, name, zh, layer, color, pts, r, radii=None: part(pid, name, zh, layer, color, tube(pts, r, radii))
-    vp = lambda pid, name, zh, layer, color, pts, r, radii=None: pair(pid, name, zh, layer, color, tube(pts, r, radii))
+    v = lambda pid, name, zh, layer, color, pts, r, radii=None: region_tubes(part, pid, name, zh, layer, color, pts, r, radii)
+    vp = lambda pid, name, zh, layer, color, pts, r, radii=None: region_tubes(pair, pid, name, zh, layer, color, pts, r, radii)
     v("aorta", "Aorta", "主动脉", "circulatory", ARTERY,
       [(0.012, 1.29, 0.04), (0.01, 1.34, 0.03), (0.0, 1.365, 0.0), (0.018, 1.34, -0.04), (0.02, 1.25, -0.05), (0.012, 1.1, -0.035), (0.005, 0.965, -0.012)],
       0.012, [0.014, 0.014, 0.013, 0.012, 0.011, 0.01, 0.009])
