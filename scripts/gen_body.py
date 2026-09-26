@@ -162,7 +162,7 @@ UPPER_ARM = [(0.182, 1.418, -0.025, 0.03, 0.034), (0.19, 1.4, -0.024, 0.048, 0.0
     (0.215, 1.09, -0.012, 0.035, 0.034)]
 FOREARM = [(0.214, 1.12, -0.013, 0.034, 0.033), (0.215, 1.1, -0.012, 0.036, 0.034), (0.225, 1.03, -0.008, 0.039, 0.036), (0.235, 0.94, 0.0, 0.03, 0.026),
     (0.242, 0.86, 0.006, 0.026, 0.018), (0.242, 0.845, 0.007, 0.024, 0.016)]
-THIGH = [(0.09, 0.93, -0.012, 0.075, 0.085), (0.097, 0.87, -0.004, 0.082, 0.088), (0.099, 0.78, 0.008, 0.072, 0.077),
+THIGH = [(0.07, 1.0, -0.015, 0.05, 0.06), (0.082, 0.965, -0.013, 0.066, 0.076), (0.09, 0.93, -0.012, 0.075, 0.085), (0.097, 0.87, -0.004, 0.082, 0.088), (0.099, 0.78, 0.008, 0.072, 0.077),
     (0.098, 0.68, 0.012, 0.062, 0.068), (0.097, 0.59, 0.012, 0.053, 0.058), (0.097, 0.52, 0.008, 0.048, 0.052),
     (0.097, 0.49, 0.008, 0.048, 0.05), (0.097, 0.465, 0.006, 0.045, 0.047)]
 SHIN = [(0.097, 0.515, 0.009, 0.044, 0.046), (0.097, 0.49, 0.008, 0.047, 0.05), (0.097, 0.44, -0.006, 0.048, 0.058), (0.096, 0.38, -0.012, 0.05, 0.062),
@@ -628,17 +628,37 @@ def vessels():
 
 # ---------------------------------------------------------------- skin (translucent figure)
 
+def bell(v, lo, hi):
+    return math.sin(math.pi * (v - lo) / (hi - lo)) if lo < v < hi else 0.0
+
+
+def near(theta, centre, width):
+    d = (theta - centre + 180) % 360 - 180
+    return math.exp(-(d / width) ** 2)
+
+
+def limb_skin(sections, relief, n_around=48, step=0.02):
+    """Downward limb loft resampled every `step`, each slice scaled around its angle by relief(y, theta).
+    Angles for the left limb: 0 = outer side, 90 = front, 180 = inner side, 270 = back."""
+    rows = sorted(sections, key=lambda r: -r[1])
+    out, y = [], rows[0][1]
+    while y >= rows[-1][1] - 1e-9:
+        for a, b in zip(rows, rows[1:]):
+            if b[1] <= y <= a[1]:
+                t = (a[1] - y) / ((a[1] - b[1]) or 1)
+                x, _, z, rx, rz = [a[n] + (b[n] - a[n]) * t for n in range(5)]
+                break
+        # a downward loft's angle a points along (cos a, sin a) in (x, z), so world angle = a
+        mults = [round(1 + relief(y, 360 * k / n_around), 4) for k in range(n_around)]
+        out.append(U(x, y, z) + [L(rx), L(rz), 2.0] + mults)
+        y = round(y - step, 4)
+    return {"kind": "loft", "sections": out}
+
+
 def torso_skin(rows, female):
     """Torso loft resampled every 2.5 cm, each slice pushed in or out around its angle: spine groove and the
     muscle ridges beside it, shoulder blades, a faint belly midline, buttocks with their cleft."""
     n_around = 72
-
-    def bell(v, lo, hi):
-        return math.sin(math.pi * (v - lo) / (hi - lo)) if lo < v < hi else 0.0
-
-    def near(theta, centre, width):
-        d = (theta - centre + 180) % 360 - 180
-        return math.exp(-(d / width) ** 2)
 
     def relief(y, theta):
         k = 0.0
@@ -650,6 +670,12 @@ def torso_skin(rows, female):
             k += 0.09 * near(theta, back + side * 30, 20) * bell(y, 0.84, 0.99)          # buttocks
         k -= 0.1 * near(theta, back, 4) * bell(y, 0.82, 0.965)                          # cleft between the buttocks
         k -= 0.02 * near(theta, 90, 4) * bell(y, 0.98, 1.26)                            # belly midline
+        for side in (-1, 1):
+            k += 0.03 * near(theta, 90 + side * 38, 22) * bell(y, 1.43, 1.462)          # collarbones
+        k -= 0.05 * near(theta, 90, 9) * bell(y, 1.43, 1.47)                            # notch at the base of the throat
+        # below the groin the trunk splits into the tops of the thighs: pinch front and back, fill the sides
+        low = bell(min(y, 0.88), 0.78, 0.98) if y < 0.88 else 0.0
+        k -= 0.12 * low * (near(theta, 90, 18) + near(theta, 270, 18))
         return 1 + k
 
     ys = [r[0] for r in rows]
@@ -719,8 +745,12 @@ def skin():
     # breast: a dome rising out of the chest wall, fuller low
     sp("breast", lathe((0.08, 1.29, 0.06), (0.086, 1.27, 0.145), [0.062, 0.061, 0.056, 0.047, 0.036, 0.024], [1, 1, 0.92]), "female")
     # upper arm starts as a rounded deltoid cap tucked under the shoulder slope
-    sp("upper-arm", loft(UPPER_ARM))
-    sp("forearm", loft(FOREARM))
+    sp("upper-arm", limb_skin(UPPER_ARM, lambda y, th:
+        0.04 * near(th, 90, 30) * bell(y, 1.13, 1.33)             # biceps
+        + 0.035 * near(th, 270, 35) * bell(y, 1.16, 1.36)))       # triceps
+    sp("forearm", limb_skin(FOREARM, lambda y, th:
+        0.08 * near(th, 275, 16) * bell(y, 1.07, 1.125)           # elbow point (olecranon)
+        + 0.04 * near(th, 40, 30) * bell(y, 0.97, 1.09)))         # forearm muscle bulge below the elbow
     # hand (palm forward): rounded palm, fleshy thumb base, fingers with knuckle bulges and round tips
     sp("hand", loft([(0.242, 0.856, 0.006, 0.025, 0.017), (0.241, 0.83, 0.008, 0.036, 0.018), (0.239, 0.8, 0.009, 0.041, 0.017),
                      (0.237, 0.776, 0.01, 0.042, 0.014), (0.236, 0.766, 0.01, 0.04, 0.011)], square=2.4))
@@ -736,8 +766,15 @@ def skin():
     sp("thumb", loft([(0.252, 0.832, 0.013, 0.012, 0.011), (0.265, 0.806, 0.024, 0.0115, 0.0105), (0.274, 0.782, 0.034, 0.0098, 0.009),
                       (0.28, 0.763, 0.041, 0.0095, 0.0085), (0.285, 0.746, 0.047, 0.0078, 0.007)]))
     # thigh tapers hip → knee; calf bulges at the back of the upper shin
-    sp("thigh", loft(THIGH))
-    sp("shin", loft(SHIN))
+    sp("thigh", limb_skin(THIGH, lambda y, th:
+        0.06 * near(th, 90, 28) * bell(y, 0.465, 0.54)            # kneecap
+        + 0.04 * near(th, 130, 22) * bell(y, 0.52, 0.64)          # vastus medialis bulge above the knee
+        + 0.03 * near(th, 60, 30) * bell(y, 0.6, 0.85)))          # front of the thigh
+    sp("shin", limb_skin(SHIN, lambda y, th:
+        0.05 * near(th, 95, 10) * bell(y, 0.13, 0.46)             # shin bone ridge
+        + 0.05 * near(th, 245, 25) * bell(y, 0.3, 0.47)           # inner calf head
+        + 0.04 * near(th, 295, 25) * bell(y, 0.32, 0.47)          # outer calf head
+        - 0.04 * near(th, 270, 12) * bell(y, 0.12, 0.26)))        # hollow either side of the Achilles
     # foot: heel, tall ankle, instep, broad ball; ankle bones show either side
     sp("foot", loft([(0.088, 0.032, -0.058, 0.018, 0.022), (0.089, 0.038, -0.038, 0.026, 0.031), (0.09, 0.046, -0.008, 0.03, 0.041),
                      (0.092, 0.04, 0.03, 0.034, 0.033), (0.096, 0.03, 0.08, 0.041, 0.024), (0.1, 0.021, 0.128, 0.045, 0.017),
