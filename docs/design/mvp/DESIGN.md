@@ -122,7 +122,7 @@ peel layers, and see what a point connects to — on a phone, free, offline.
 
 - **Share-alike** (only if Z-Anatomy is adopted later): CC BY-SA applies to the converted models — publish them (or the
   conversion script + source link). App code licence unaffected; confirm before release.
-- **Low-end Android GL**: expo-gl perf on 3 GB devices; needs a Low quality tier.
+- **Older iPhones**: RealityKit with ~150 generated meshes + transparency; check frame rate on an A13-class device.
 - **Health claims / store review**: reflex effects must read as tradition, not efficacy
   (Apple 1.4.1). Sources: WHO Standard Acupuncture Point Locations (2008) for placement.
 - **Female model**: schematic, so a female variant (pelvis, reproductive organs) is just more primitives — no licensing blocker.

@@ -1,6 +1,6 @@
 # Components
 
-Parts used on 2+ surfaces. Code target: `src/components/`.
+Parts used on 2+ surfaces. Code: `Sources/Common/`, `Sources/Viewer/ViewerPanels.swift`.
 
 ## RailButton
 

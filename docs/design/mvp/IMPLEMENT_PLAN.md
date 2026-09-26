@@ -11,7 +11,7 @@ Why: [DESIGN.md](DESIGN.md) · What it looks like: [UIUX_DESIGN.md](UIUX_DESIGN.
 Remove the Expo/React Native app and rebuild every feature natively, data first, then the
 3D core everything else overlays, then the 2D screens.
 
-- [x] T0.1 Remove Expo/RN code, scaffold xcodegen project, icon, signing via gitignored `Local.xcconfig`, device install script — see `project.yml`, `scripts/` — depends: none
+- [x] T0.1 Remove Expo/RN code, scaffold xcodegen project, icon, signing via gitignored `.env.local`, device install script — see `project.yml`, `scripts/` — depends: none
 - [x] T0.2 Port data: body parts, organs, joints, points, reflex charts, system info — see `Sources/Data/` — depends: T0.1
 - [x] T0.3 Mesh generators (capsule, ellipsoid, tube, torus arc) + `BodyEntity` with layers — see `Sources/Body/` — depends: T0.2
 - [x] T0.4 Viewer: orbit camera, tap-to-name, layers, hide/fade/isolate/undo, joints — see `Sources/Viewer/` — depends: T0.3
@@ -78,7 +78,7 @@ reused by Phase 7 overlays.
 Ship core atlas before Illustrations; store review, size, and perf gate everything after.
 
 - [ ] T6.1 Reduce-motion variants (pulse, flow, camera) (in-progress: auto-rotate off, illustration steps jump) — see `uiux/points.md` → States — depends: T5.2, T5.4
-- [ ] T6.2 Perf pass on a low-end Android + Low quality auto-detect — see `src/components/canvas/` — depends: T3.4, T5.4
+- [ ] T6.2 Perf pass on an older iPhone (A13) — see `Sources/Body/` — depends: T3.4, T5.4
 - [ ] T6.3 Install-size budget check (≤ 30 MB) — see `app.json` — depends: T3.4
 - [ ] T6.4 Store listing, age rating 12+, health-claim wording review — see `DESIGN.md` → Risks — depends: T5.3, T2.5
 
@@ -97,7 +97,7 @@ The six primitives, shared by Illustrations and by parts/points/flow in the View
 - [x] T8.1 `TryControl` modes: scrub, rhythm, hold, compare (+ feedback line) — see `uiux/components.md` → TryControl — depends: T7.2
 - [x] T8.2 In-scene drag-to-target (handle, ghost, snap, arc guide) — see `uiux/illustrations.md` → Watch ⇄ Try — depends: T7.2
 - [ ] T8.3 Compare split view (two model states side by side / drag split) — see `scenario-format.md` → Compare — depends: T7.2
-- [ ] T8.4 Follow camera (ride a particle) — see `src/components/canvas/` — depends: T5.4
+- [ ] T8.4 Follow camera (ride a particle) — see `Sources/Body/BodyScene.swift` — depends: T5.4
 - [x] T8.5 Viewer Try on parts: joint pivots/ROM, muscle contract, organ rate (shoulder, elbow, knee; bulging movers) — see `uiux/viewer.md` → Try on a part — depends: T8.1, T8.2, T4.1
 - [x] T8.6 Circulation try: heart-rate scrub + follow a cell (heart-rate scrub; follow-a-cell not built) — see `uiux/points.md` → Blood flow — depends: T8.1, T8.4
 

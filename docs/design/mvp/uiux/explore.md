@@ -1,6 +1,6 @@
 # Explore
 
-Category grid. First tab, app home. Code: `src/app/(tabs)/index.tsx`.
+Category grid. First tab, app home. Code: `Sources/Screens/ExploreView.swift`.
 
 ```
  Explore
