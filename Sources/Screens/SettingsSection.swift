@@ -77,6 +77,7 @@ struct SettingsSection: View {
                         .font(.footnote.weight(.semibold))
                         .frame(minHeight: minTap)
                 }
+                .buttonStyle(.borderless)
                 .popover(isPresented: $showSources) {
                     Text(settings.t("Reflex and acupoint effects describe traditional practice, not proven treatment.\n\nEar points: GB/T 13734-2008. Acupoints: WHO Standard Acupuncture Point Locations (2008). First aid: ILCOR / Red Cross. All drawings are schematic.",
                                     "穴位与反射区功效为传统说法，未经证实。\n\n耳穴：GB/T 13734-2008。穴位：WHO 标准针灸穴位定位（2008）。急救：ILCOR / 红十字会。所有图均为示意图。"))

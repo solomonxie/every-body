@@ -64,6 +64,25 @@ struct RenderUI {
                 PlayerView(player: p)
             }
         }
+        if want("panels") {
+            let reflex = Catalog.points["acupoint-reflex-map"]?.points ?? []
+            let flow = Catalog.points["circulatory"]?.points ?? []
+            sheet("panels", out: out) {
+                VStack(alignment: .leading, spacing: 12) {
+                    PartCard(partID: "heart", parts: PartState(faded: ["heart"]), female: false, onChange: { _ in }, onClose: {})
+                    if let j = Catalog.body.joints.first { JointControl(joint: j, angle: 45, onChange: { _ in }) }
+                    Divider()
+                    ReflexPanel(points: reflex, filter: .constant("foot"), activeID: reflex.first { $0.region == "foot" }?.id,
+                                effectVisible: true, onPress: { _ in }, onFocus: { _ in })
+                    Divider()
+                    FlowPanel(stops: flow, bpm: .constant(72), activeID: nil, onStop: { _ in })
+                    Hint(symbol: "hand.tap", text: "Tap any part to name it.")
+                    LoadingBadge(text: "Loading 3D body…")
+                }
+                .padding(.vertical, 12)
+                .background(Color.card, in: .rect(cornerRadius: 22))
+            }
+        }
         if want("player") { sheet("player", out: out, height: 760) { IllustrationScreen(id: "cpr") } }
     }
 }

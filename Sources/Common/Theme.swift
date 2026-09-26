@@ -165,3 +165,34 @@ struct AdaptivePickerStyle: ViewModifier {
 extension View {
     func adaptivePickerStyle() -> some View { modifier(AdaptivePickerStyle()) }
 }
+
+/// Spinner over the 3D view while it builds.
+struct LoadingBadge: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: Space.s) {
+            ProgressView()
+            Text(text).font(.subheadline.weight(.medium))
+        }
+        .padding(.horizontal, Space.l).padding(.vertical, Space.m)
+        .background(.regularMaterial, in: .capsule)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Icon + one line of guidance for an empty panel.
+struct Hint: View {
+    let symbol: String
+    let text: String
+
+    var body: some View {
+        Label {
+            Text(text).fixedSize(horizontal: false, vertical: true)
+        } icon: {
+            Image(systemName: symbol).foregroundStyle(Color.brand)
+        }
+        .font(.subheadline).foregroundStyle(.secondary)
+        .padding(.horizontal, Space.l)
+    }
+}

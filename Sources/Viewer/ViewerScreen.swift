@@ -38,13 +38,18 @@ struct ViewerScreen: View {
                 case let .part(id): selectedPart = selectedPart == id ? nil : id
                 }
             }
-            .overlay { if !built { ProgressView() } }
+            .overlay { if !built { LoadingBadge(text: settings.t("Loading 3D body…", "正在载入 3D 人体…")) } }
+            .padding(.bottom, -Radius.sheet)
             panel
         }
+        .background(Color.page)
         .navigationTitle(settings.name(system.name, system.nameZh))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem { NavigationLink(value: Route.info(system: systemID)) { Image(systemName: "info.circle") } }
+            ToolbarItem {
+                NavigationLink(value: Route.info(system: systemID)) { Image(systemName: "info.circle") }
+                    .accessibilityLabel(settings.t("About this system", "关于此系统"))
+            }
             ToolbarItem { ProfileMenu() }
         }
         .task { await BodyScene.prepare(); setUp() }
@@ -99,40 +104,72 @@ struct ViewerScreen: View {
     // MARK: panel
 
     private var panel: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: Space.m) {
             PillRow {
-                if !history.isEmpty { Pill(label: settings.t("↶ Undo", "↶ 撤销")) { parts = history.removeLast() } }
+                if !history.isEmpty {
+                    Button { parts = history.removeLast() } label: {
+                        Image(systemName: "arrow.uturn.backward").font(.subheadline.weight(.semibold))
+                            .frame(width: 36, height: 36)
+                            .background(Color.fill, in: .circle)
+                            .frame(width: minTap, height: minTap)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(PressableStyle())
+                    .accessibilityLabel(settings.t("Undo", "撤销"))
+                    .sensoryFeedback(.impact(weight: .light), trigger: history.count)
+                }
                 ForEach(Catalog.body.layers) { layer in
-                    Pill(label: settings.name(layer.label, layer.labelZh), selected: layers.contains(layer.id)) {
+                    Pill(label: settings.name(layer.label, layer.labelZh), selected: layers.contains(layer.id),
+                         dot: layerColor(layer.id)) {
                         if layers.contains(layer.id) { layers.remove(layer.id) } else { layers.insert(layer.id) }
                     }
                 }
-                if parts.changedCount > 0 { Pill(label: settings.t("Reset parts (\(parts.changedCount))", "还原部位（\(parts.changedCount)）")) { change(PartState()) } }
-            }
-            if let id = selectedPart {
-                PartCard(partID: id, parts: parts, female: settings.female, onChange: change) { selectedPart = nil }
-            }
-            if let joint = tryJoint {
-                JointControl(joint: joint, angle: angles[joint.id] ?? 0) { deg in
-                    angles[joint.id] = deg
-                    scene.setJoint(joint.id, degrees: deg)
+                if parts.changedCount > 0 {
+                    Pill(label: settings.t("Show all (\(parts.changedCount))", "全部显示（\(parts.changedCount)）"), symbol: "eye") { change(PartState()) }
                 }
             }
-            if isReflex, let sp = systemPoints {
-                ReflexPanel(points: sp.points, filter: $filter, activeID: activePoint, effectVisible: effectVisible, onPress: press) { f in
-                    scene.touched = true
-                    scene.faceFront()
-                    scene.focus(f)
+            .padding(.top, Space.xs)
+            Group {
+                if let id = selectedPart {
+                    PartCard(partID: id, parts: parts, female: settings.female, onChange: change) { selectedPart = nil }
                 }
-            } else if !flowStops.isEmpty {
-                FlowPanel(stops: flowStops, bpm: $bpm, activeID: activePoint, onStop: press)
-            } else if selectedPart == nil {
-                Text(settings.t("Tap any part to name it. Tap an arm or leg bone or muscle to move its joint.", "点击任意部位查看名称。点击手臂或腿部的骨骼、肌肉可活动关节。"))
-                    .font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 16)
+                if let joint = tryJoint {
+                    JointControl(joint: joint, angle: angles[joint.id] ?? 0) { deg in
+                        angles[joint.id] = deg
+                        scene.setJoint(joint.id, degrees: deg)
+                    }
+                }
+                if isReflex, let sp = systemPoints {
+                    ReflexPanel(points: sp.points, filter: $filter, activeID: activePoint, effectVisible: effectVisible, onPress: press) { f in
+                        scene.touched = true
+                        scene.faceFront()
+                        scene.focus(f)
+                    }
+                } else if !flowStops.isEmpty {
+                    FlowPanel(stops: flowStops, bpm: $bpm, activeID: activePoint, onStop: press)
+                } else if layers.isEmpty {
+                    Hint(symbol: "square.stack.3d.up.slash", text: settings.t("All layers are hidden. Turn one on above.", "所有图层都已隐藏，请在上方打开一个。"))
+                } else if selectedPart == nil {
+                    Hint(symbol: "hand.tap", text: settings.t("Tap any part to name it. Tap an arm or leg bone or muscle to move its joint.", "点击任意部位查看名称。点击手臂或腿部的骨骼、肌肉可活动关节。"))
+                }
             }
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
-        .padding(.vertical, 12)
+        .padding(.top, Space.s)
+        .padding(.bottom, Space.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(uiColor: .secondarySystemBackground))
+        .background {
+            UnevenRoundedRectangle(topLeadingRadius: Radius.sheet, topTrailingRadius: Radius.sheet, style: .continuous)
+                .fill(Color.card)
+                .shadow(color: .black.opacity(0.1), radius: 12, y: -2)
+                .ignoresSafeArea(edges: .bottom)
+        }
+        .animation(.snappy(duration: 0.25), value: selectedPart)
+        .animation(.snappy(duration: 0.25), value: activePoint)
+        .sensoryFeedback(.selection, trigger: selectedPart)
+    }
+
+    private func layerColor(_ id: LayerID) -> Color {
+        id == .skin ? Color(hex: "#F2C9A5") : Color(hex: Catalog.system(id.rawValue)?.color ?? "#999999")
     }
 }

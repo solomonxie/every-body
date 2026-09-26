@@ -206,8 +206,12 @@ struct PlayerView: View {
         .padding(.top, Space.l)
         .padding(.bottom, Space.s)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.card, in: UnevenRoundedRectangle(topLeadingRadius: Radius.sheet, topTrailingRadius: Radius.sheet, style: .continuous))
-        .shadow(color: .black.opacity(0.08), radius: 12, y: -2)
+        .background {
+            UnevenRoundedRectangle(topLeadingRadius: Radius.sheet, topTrailingRadius: Radius.sheet, style: .continuous)
+                .fill(Color.card)
+                .shadow(color: .black.opacity(0.08), radius: 12, y: -2)
+                .ignoresSafeArea(edges: .bottom)
+        }
         .animation(.snappy(duration: 0.25), value: player.solved)
         .animation(.snappy(duration: 0.25), value: player.stepIndex)
     }
