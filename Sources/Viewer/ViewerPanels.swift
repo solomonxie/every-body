@@ -36,44 +36,88 @@ struct PartCard: View {
 
     var body: some View {
         if let label = partLabel(partID, female: female) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading) {
-                        Text(settings.t(label.name)).font(.subheadline.weight(.semibold))
-                        Text(settings.t(label.layer)).font(.caption).foregroundStyle(.secondary)
+            let faded = parts.faded.contains(partID)
+            let isolated = parts.isolated == partID
+            VStack(alignment: .leading, spacing: Space.m) {
+                HStack(alignment: .top, spacing: Space.s) {
+                    VStack(alignment: .leading, spacing: Space.xxs) {
+                        Text(settings.t(label.name)).font(.title3.weight(.semibold))
+                            .lineLimit(2)
+                            .accessibilityAddTraits(.isHeader)
+                        Text(settings.t(label.layer)).font(.subheadline).foregroundStyle(.secondary)
                     }
-                    Spacer()
-                    Button(settings.t("Hide", "隐藏")) {
+                    Spacer(minLength: Space.s)
+                    Button(action: onClose) {
+                        Image(systemName: "xmark").font(.footnote.weight(.bold)).foregroundStyle(.secondary)
+                            .frame(width: 30, height: 30)
+                            .background(Color.fill, in: .circle)
+                            .frame(width: minTap, height: minTap)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(PressableStyle())
+                    .padding(.top, -Space.s).padding(.trailing, -Space.s)
+                    .accessibilityLabel(settings.t("Close", "关闭"))
+                }
+                HStack(spacing: Space.s) {
+                    action(settings.t("Hide", "隐藏"), "eye.slash", on: false) {
                         var p = parts; p.hidden.insert(partID); onChange(p); onClose()
                     }
-                    Button(parts.faded.contains(partID) ? settings.t("Unfade", "取消淡化") : settings.t("Fade", "淡化")) {
+                    action(settings.t("Fade", "淡化"), "circle.lefthalf.filled", on: faded) {
                         var p = parts
-                        if p.faded.contains(partID) { p.faded.remove(partID) } else { p.faded.insert(partID) }
+                        if faded { p.faded.remove(partID) } else { p.faded.insert(partID) }
                         onChange(p)
                     }
-                    Button(parts.isolated == partID ? settings.t("Show all", "显示全部") : settings.t("Isolate", "单独显示")) {
-                        var p = parts; p.isolated = p.isolated == partID ? nil : partID; onChange(p)
+                    action(settings.t("Isolate", "单独显示"), "scope", on: isolated) {
+                        var p = parts; p.isolated = isolated ? nil : partID; onChange(p)
                     }
-                    Button { onClose() } label: { Image(systemName: "xmark") }
                 }
-                .font(.caption.weight(.semibold))
-                .buttonStyle(.borderless)
                 let zones = zonesForOrgan(partID)
                 if !zones.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack {
-                            Text(settings.t("Reflex zones:", "反射区：")).font(.caption).foregroundStyle(.secondary)
-                            ForEach(zones, id: \.label.en) { zone in
-                                NavigationLink(value: zone.route) { Text("\(settings.t(zone.label)) ›").font(.caption) }
+                    VStack(alignment: .leading, spacing: Space.xs) {
+                        Eyebrow(settings.t("Reflex zones", "反射区"))
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: Space.s) {
+                                ForEach(zones, id: \.label.en) { zone in
+                                    NavigationLink(value: zone.route) {
+                                        HStack(spacing: Space.xs) {
+                                            Text(settings.t(zone.label))
+                                            Image(systemName: "chevron.right").imageScale(.small)
+                                        }
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(Color.brand)
+                                        .padding(.horizontal, Space.m)
+                                        .frame(minHeight: 34)
+                                        .background(Color.brand.opacity(0.12), in: .capsule)
+                                        .padding(.vertical, 5)
+                                        .contentShape(.rect)
+                                    }
+                                    .buttonStyle(PressableStyle())
+                                }
                             }
                         }
+                        .padding(.horizontal, -Space.l)
+                        .contentMargins(.horizontal, Space.l, for: .scrollContent)
                     }
                 }
             }
-            .padding(12)
-            .background(Color(uiColor: .systemBackground), in: .rect(cornerRadius: 14))
-            .padding(.horizontal, 16)
+            .padding(.horizontal, Space.l)
         }
+    }
+
+    /// equal-width icon-over-label action; `on` marks a toggled state
+    private func action(_ title: String, _ symbol: String, on: Bool, _ run: @escaping () -> Void) -> some View {
+        Button(action: run) {
+            VStack(spacing: Space.xxs) {
+                Image(systemName: symbol).font(.body.weight(.semibold))
+                Text(title).font(.caption.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
+            }
+            .foregroundStyle(on ? Color.white : Color.brand)
+            .frame(maxWidth: .infinity, minHeight: 52)
+            .background(on ? Color.brandFill : Color.brand.opacity(0.12), in: .rect(cornerRadius: Radius.tile, style: .continuous))
+        }
+        .buttonStyle(PressableStyle())
+        .accessibilityAddTraits(on ? .isSelected : [])
+        .sensoryFeedback(.impact(weight: .light), trigger: on)
     }
 }
 
@@ -84,19 +128,26 @@ struct JointControl: View {
     @Environment(Settings.self) private var settings
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Text("\(settings.t("Try", "试一试")) ▸ \(settings.name(joint.name, joint.nameZh))").font(.subheadline.weight(.semibold))
+        let name = settings.name(joint.name, joint.nameZh)
+        VStack(alignment: .leading, spacing: Space.xs) {
+            HStack(alignment: .firstTextBaseline) {
+                Label(name, systemImage: "hand.draw.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.brand)
                 Spacer()
-                Text("\(Int(angle))°").font(.subheadline.weight(.semibold))
+                Text("\(Int(angle))°").font(.subheadline.weight(.semibold).monospacedDigit())
             }
             Slider(value: Binding(get: { Double(angle) }, set: { onChange(Float($0)) }), in: 0...Double(joint.maxDeg))
+                .accessibilityLabel(name)
+                .accessibilityValue("\(Int(angle))°")
             let movers = joint.movers.compactMap(Catalog.part).map { settings.name($0.name, $0.nameZh) }
             Text(settings.t("Working muscle: \(movers.joined(separator: ", ")) · range 0–\(Int(joint.maxDeg))°",
                             "工作肌肉：\(movers.joined(separator: "、")) · 活动范围 0–\(Int(joint.maxDeg))°"))
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.footnote).foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 16)
+        .padding(Space.m)
+        .background(Color.brand.opacity(0.08), in: .rect(cornerRadius: Radius.tile, style: .continuous))
+        .padding(.horizontal, Space.l)
     }
 }
 
@@ -113,51 +164,70 @@ struct ReflexPanel: View {
         ("all", Bilingual("All", "全部"), .all), ("foot", Bilingual("Foot", "足"), .foot), ("hand", Bilingual("Hand", "手"), .hand),
         ("ear", Bilingual("Ear", "耳"), .ear), ("body", Bilingual("Body", "身体"), .all),
     ]
+    private let chartTitle = ["foot": Bilingual("Open the foot chart", "打开足部反射区图"), "hand": Bilingual("Open the hand chart", "打开手部反射区图"),
+                              "ear": Bilingual("Open the ear chart", "打开耳穴图")]
 
     var body: some View {
         let visible = filter == "all" ? points : points.filter { $0.region == filter }
         let active = points.first { $0.id == activeID }
-        VStack(alignment: .leading, spacing: 8) {
-            PillRow {
-                ForEach(filters, id: \.id) { f in
-                    Pill(label: settings.t(f.label), selected: filter == f.id) { filter = f.id; onFocus(f.focus) }
-                }
+        VStack(alignment: .leading, spacing: Space.s) {
+            Picker(settings.t("Region", "部位"), selection: Binding(get: { filter }, set: { id in
+                filter = id
+                if let f = filters.first(where: { $0.id == id }) { onFocus(f.focus) }
+            })) {
+                ForEach(filters, id: \.id) { Text(settings.t($0.label)).tag($0.id) }
             }
+            .adaptivePickerStyle()
+            .padding(.horizontal, Space.l)
             PillRow {
                 ForEach(visible) { p in
-                    Pill(label: (Cautions.avoid(p.id, for: settings.profile) ? "⚠ " : "") + settings.name(p.name, p.nameZh), selected: p.id == activeID) { onPress(p.id) }
+                    Pill(label: settings.name(p.name, p.nameZh), selected: p.id == activeID,
+                         warn: Cautions.avoid(p.id, for: settings.profile)) { onPress(p.id) }
                 }
             }
-            if ["foot", "hand", "ear"].contains(filter) {
+            if let title = chartTitle[filter] {
                 NavigationLink(value: Route.chart(id: filter)) {
-                    Text(settings.t("Open \(filter) chart ›", "打开\(filters.first { $0.id == filter }!.label.zh)部图 ›")).font(.subheadline.weight(.semibold))
+                    Label(settings.t(title), systemImage: "hand.raised.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(minHeight: minTap)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Space.l)
             }
             if let p = active {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(settings.name(p.name, p.nameZh)).font(.subheadline.weight(.semibold))
-                    Text(settings.name(p.description, p.descriptionZh)).font(.caption).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: Space.s) {
+                    Text(settings.name(p.name, p.nameZh)).font(.headline)
+                    Text(settings.name(p.description, p.descriptionZh)).font(.subheadline).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                     CautionList(warnings: Cautions.warnings(p.id, for: settings.profile))
                     if let t = p.target {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("→ \(settings.name(t.name, t.nameZh))").font(.subheadline.weight(.semibold))
-                            Text(settings.name(t.effect, t.effectZh)).font(.caption)
-                            HStack {
-                                Text(settings.t("Traditional reflexology claim — not medical advice.", "传统反射疗法说法，非医疗建议。")).font(.caption2).foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: Space.xs) {
+                            Label(settings.name(t.name, t.nameZh), systemImage: "scope")
+                                .font(.subheadline.weight(.semibold)).foregroundStyle(Color.success)
+                            Text(settings.name(t.effect, t.effectZh)).font(.subheadline)
+                                .fixedSize(horizontal: false, vertical: true)
+                            HStack(alignment: .center) {
+                                Text(settings.t("Traditional reflexology claim — not medical advice.", "传统反射疗法说法，非医疗建议。"))
+                                    .font(.caption).foregroundStyle(.secondary)
                                 Spacer()
-                                Button(settings.t("↻ Replay", "↻ 重播")) { onPress(p.id) }.font(.caption.weight(.semibold))
+                                Button { onPress(p.id) } label: {
+                                    Label(settings.t("Replay", "重播"), systemImage: "arrow.counterclockwise")
+                                        .font(.subheadline.weight(.semibold))
+                                        .frame(minHeight: minTap)
+                                }
+                                .buttonStyle(.borderless)
                             }
                         }
                         .opacity(effectVisible ? 1 : 0)
+                        .animation(.easeOut(duration: 0.3), value: effectVisible)
                     }
                 }
-                .padding(12)
-                .background(Color(uiColor: .systemBackground), in: .rect(cornerRadius: 14))
-                .padding(.horizontal, 16)
+                .padding(Space.m)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.page, in: .rect(cornerRadius: Radius.tile, style: .continuous))
+                .padding(.horizontal, Space.l)
+                .sensoryFeedback(.impact(weight: .light), trigger: effectVisible) { _, new in new }
             } else {
-                Text(settings.t("Press a point — watch where it acts. Tap a dot on the body or a name above.", "按一个穴位，看它作用在哪里。点身体上的圆点或上方名称。"))
-                    .font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 16)
+                Hint(symbol: "hand.point.up.left", text: settings.t("Press a point — watch where it acts. Tap a dot on the body or a name above.", "按一个穴位，看它作用在哪里。点身体上的圆点或上方名称。"))
             }
         }
     }
@@ -171,31 +241,35 @@ struct FlowPanel: View {
     @Environment(Settings.self) private var settings
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(settings.t("Heart rate", "心率")).font(.subheadline.weight(.semibold))
-                Spacer()
-                Text(settings.t("\(Int(bpm)) bpm", "\(Int(bpm)) 次/分")).font(.subheadline.weight(.semibold))
+        VStack(alignment: .leading, spacing: Space.s) {
+            VStack(spacing: Space.xxs) {
+                HStack(alignment: .firstTextBaseline) {
+                    Label(settings.t("Heart rate", "心率"), systemImage: "heart.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.emergency)
+                    Spacer()
+                    Text(settings.t("\(Int(bpm)) bpm", "\(Int(bpm)) 次/分")).font(.subheadline.weight(.semibold).monospacedDigit())
+                }
+                Slider(value: Binding(get: { Double(bpm) }, set: { bpm = Float($0) }), in: 40...180)
+                    .accessibilityLabel(settings.t("Heart rate", "心率"))
+                    .accessibilityValue(settings.t("\(Int(bpm)) beats per minute", "每分钟 \(Int(bpm)) 次"))
             }
-            .padding(.horizontal, 16)
-            Slider(value: Binding(get: { Double(bpm) }, set: { bpm = Float($0) }), in: 40...180).padding(.horizontal, 16)
+            .padding(.horizontal, Space.l)
             PillRow {
                 ForEach(Array(stops.enumerated()), id: \.element.id) { i, stop in
                     Pill(label: "\(i + 1). \(settings.name(stop.name, stop.nameZh))", selected: stop.id == activeID) { onStop(stop.id) }
                 }
             }
-            Group {
-                if let stop = stops.first(where: { $0.id == activeID }) {
-                    VStack(alignment: .leading) {
-                        Text(settings.name(stop.name, stop.nameZh)).font(.subheadline.weight(.semibold))
-                        Text(settings.name(stop.description, stop.descriptionZh)).font(.caption).foregroundStyle(.secondary)
-                    }
-                } else {
-                    Text(settings.t("Red = oxygen-rich, blue = oxygen-poor. Drag the heart rate and watch the flow follow.", "红色为富氧血，蓝色为缺氧血。拖动心率，观察血流变化。"))
-                        .font(.caption).foregroundStyle(.secondary)
+            if let stop = stops.first(where: { $0.id == activeID }) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    Text(settings.name(stop.name, stop.nameZh)).font(.headline)
+                    Text(settings.name(stop.description, stop.descriptionZh)).font(.subheadline).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .padding(.horizontal, Space.l)
+            } else {
+                Hint(symbol: "drop.fill", text: settings.t("Red = oxygen-rich, blue = oxygen-poor. Drag the heart rate and watch the flow follow.", "红色为富氧血，蓝色为缺氧血。拖动心率，观察血流变化。"))
             }
-            .padding(.horizontal, 16)
         }
     }
 }
@@ -208,11 +282,11 @@ struct CautionList: View {
     var body: some View {
         ForEach(warnings, id: \.en) { w in
             Label(settings.t(w), systemImage: "exclamationmark.triangle.fill")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color(hex: "#B5462E"))
-                .padding(8)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color.caution)
+                .padding(Space.s)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(hex: "#FBE3DC"), in: .rect(cornerRadius: 8))
+                .background(Color.cautionFill, in: .rect(cornerRadius: Radius.small, style: .continuous))
         }
     }
 }
