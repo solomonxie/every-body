@@ -130,7 +130,7 @@ final class BodyScene {
                 piece.position -= variant.position.simd
                 piece.model?.materials = [Self.material(UIColor(hex: variant.color), opacity: organ.region == true ? 0.45 : 1)]
                 piece.name = organ.names == nil ? "" : organ.id
-                if organ.names != nil { Self.makeTappable(piece) }
+                if organ.names != nil { Self.makeTappable(piece, shape: shape) }
                 container.addChild(piece)
             }
             container.isEnabled = organ.region != true
@@ -143,7 +143,7 @@ final class BodyScene {
             entity.name = part.id
             baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1)
             entity.model?.materials = [baseMaterials[part.id]!]
-            Self.makeTappable(entity)
+            Self.makeTappable(entity, shape: part.shape)
             parent(of: part.id).addChild(entity)
             partEntities[part.id] = entity
             partLayer[part.id] = part.layer
@@ -320,6 +320,7 @@ final class BodyScene {
 
     func focus(_ f: Focus) {
         goalFocusY = f.y
+        panX = 0
         goalDistance = f.distance
     }
 
@@ -339,12 +340,15 @@ final class BodyScene {
         return m
     }
 
-    private static func makeTappable(_ entity: ModelEntity) {
+    private static func makeTappable(_ entity: ModelEntity, shape: PartShape) {
         entity.components.set(InputTargetComponent())
-        if let mesh = entity.model?.mesh {
+        if let cached = collisionCache[shape] {
+            entity.components.set(CollisionComponent(shapes: [cached]))
+        } else if let mesh = entity.model?.mesh {
             Task { @MainActor in
-                if let shape = try? await ShapeResource.generateStaticMesh(from: mesh) {
-                    entity.components.set(CollisionComponent(shapes: [shape]))
+                if let collision = try? await ShapeResource.generateStaticMesh(from: mesh) {
+                    collisionCache[shape] = collision
+                    entity.components.set(CollisionComponent(shapes: [collision]))
                 }
             }
         }
@@ -358,9 +362,9 @@ final class BodyScene {
     private static func entity(for shape: PartShape) -> ModelEntity {
         switch shape {
         case let .sphere(center, radius, scale, rotation):
-            let e = ModelEntity(mesh: .generateSphere(radius: radius))
+            let e = ModelEntity(mesh: unitSphere)
             e.position = center.simd
-            if let scale { e.scale = scale.simd }
+            e.scale = (scale?.simd ?? SIMD3(repeating: 1)) * radius
             if let r = rotation { e.orientation = euler(r) }
             return e
         case let .box(center, size, rotation):
@@ -368,27 +372,54 @@ final class BodyScene {
             e.position = center.simd
             if let r = rotation { e.orientation = euler(r) }
             return e
-        case let .segment(from, to, radius):
-            let e = ModelEntity(mesh: Meshes.capsule(radius: radius, length: max(0.001, simd_distance(from.simd, to.simd))))
-            orient(e, from: from.simd, to: to.simd)
-            return e
         case let .spindle(from, to, radius):
-            let e = ModelEntity(mesh: .generateSphere(radius: 1))
+            let e = ModelEntity(mesh: unitSphere)
             orient(e, from: from.simd, to: to.simd)
             e.scale = SIMD3(radius, simd_distance(from.simd, to.simd) / 2, radius * 0.8)
             return e
-        case let .lathe(from, to, radii, scale):
-            let e = ModelEntity(mesh: Meshes.profile(radii: radii, length: max(0.001, simd_distance(from.simd, to.simd))))
+        case let .segment(from, to, _):
+            let e = ModelEntity(mesh: mesh(for: shape))
+            orient(e, from: from.simd, to: to.simd)
+            return e
+        case let .lathe(from, to, _, scale):
+            let e = ModelEntity(mesh: mesh(for: shape))
             orient(e, from: from.simd, to: to.simd)
             if let scale { e.scale = scale.simd }
             return e
-        case let .tube(points, radius, radii):
-            return ModelEntity(mesh: Meshes.tube(points: points.map(\.simd), radius: radius, radii: radii))
-        case let .plate(points, thickness):
-            return ModelEntity(mesh: Meshes.plate(points: points.map(\.simd), thickness: thickness))
-        case let .loft(sections):
-            return ModelEntity(mesh: Meshes.loft(sections: sections))
+        case .tube, .plate, .loft:
+            return ModelEntity(mesh: mesh(for: shape))
         }
+    }
+
+    // MARK: mesh cache — generated once per launch, shared by every screen
+
+    private static let unitSphere = MeshResource.generateSphere(radius: 1)
+    private static var meshCache: [PartShape: MeshResource] = [:]
+    private static var collisionCache: [PartShape: ShapeResource] = [:]
+    private static var warming: Task<Void, Never>?
+
+    private static func mesh(for shape: PartShape) -> MeshResource {
+        if let cached = meshCache[shape] { return cached }
+        let mesh = Meshes.raw(for: shape)?.resource() ?? unitSphere
+        meshCache[shape] = mesh
+        return mesh
+    }
+
+    /// Builds every body mesh: vertex math off the main thread, resources on it in small batches.
+    static func prepare() async {
+        if let warming { return await warming.value }
+        let task = Task { @MainActor in
+            var shapes = Catalog.body.parts.map(\.shape)
+            for organ in Catalog.body.organs { shapes += organ.shapes + (organ.male?.shapes ?? []) }
+            let pending = Array(Set(shapes)).filter { meshCache[$0] == nil }
+            let raws = await Task.detached(priority: .userInitiated) { pending.map(Meshes.raw(for:)) }.value
+            for (i, (shape, raw)) in zip(pending, raws).enumerated() {
+                if let raw { meshCache[shape] = raw.resource() }
+                if i % 40 == 0 { await Task.yield() }
+            }
+        }
+        warming = task
+        await task.value
     }
 
     /// three.js-style XYZ Euler
