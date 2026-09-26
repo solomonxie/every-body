@@ -176,10 +176,17 @@ enum Meshes {
             let c = SIMD3(r[0], r[1], r[2])
             let prev = rows[max(0, i - 1)], next = rows[min(rows.count - 1, i + 1)]
             let t = simd_normalize(SIMD3(next[0] - prev[0], next[1] - prev[1], next[2] - prev[2]) + 1e-6)
-            // sections are measured against x, or against y when the loft itself runs sideways
-            let ref: SIMD3<Float> = abs(t.x) > 0.8 ? SIMD3(0, 1, 0) : SIMD3(1, 0, 0)
-            let side = simd_normalize(ref - simd_dot(ref, t) * t + 1e-6)
-            let depth = simd_cross(side, t)
+            // near-vertical lofts (body, head, limbs) are sliced horizontally, as their sections are given;
+            // others measure sections against x, or against y when the loft itself runs sideways
+            let side: SIMD3<Float>, depth: SIMD3<Float>
+            if abs(t.y) > 0.6 {
+                side = SIMD3(1, 0, 0)
+                depth = SIMD3(0, 0, t.y > 0 ? -1 : 1)
+            } else {
+                let ref: SIMD3<Float> = abs(t.x) > 0.8 ? SIMD3(0, 1, 0) : SIMD3(1, 0, 0)
+                side = simd_normalize(ref - simd_dot(ref, t) * t + 1e-6)
+                depth = simd_cross(side, t)
+            }
             for s in 0...sides {
                 let a = Float(s) / Float(sides) * 2 * .pi
                 let e = r.count > 5 ? 2 / max(r[5], 1) : 1
@@ -191,6 +198,21 @@ enum Meshes {
                 let nx = copysign(pow(abs(cx), nExp - 1), cx) / max(r[3], 1e-4), ny = copysign(pow(abs(sy), nExp - 1), sy) / max(r[4], 1e-4)
                 normals.append(simd_normalize(nx * side + ny * depth + 1e-6))
                 uvs.append(SIMD2(Float(s) / Float(sides), Float(i) / Float(rows.count - 1)))
+            }
+        }
+        // normals from the surface itself (sections can slope), pointing away from each ring's centre
+        let ring = sides + 1
+        for i in 0..<rows.count {
+            let centre = SIMD3(rows[i][0], rows[i][1], rows[i][2])
+            for s in 0...sides {
+                let k = i * ring + s
+                let around = positions[i * ring + (s + 1) % sides] - positions[i * ring + (s + sides - 1) % sides]
+                let along = positions[min(rows.count - 1, i + 1) * ring + s] - positions[max(0, i - 1) * ring + s]
+                var n = simd_cross(around, along)
+                if simd_length(n) < 1e-9 { continue }
+                n = simd_normalize(n)
+                if simd_dot(n, positions[k] - centre) < 0 { n = -n }
+                normals[k] = n
             }
         }
         let stride = UInt32(sides + 1)
