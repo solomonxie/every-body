@@ -1,3 +1,6 @@
+import { acidReflux } from './scenes/acid-reflux';
+import { ankleSprain } from './scenes/ankle-sprain';
+import { asthma } from './scenes/asthma';
 import { bleeding } from './scenes/bleeding';
 import { bloodFats } from './scenes/blood-fats';
 import { bloodPressure } from './scenes/blood-pressure';
@@ -9,6 +12,7 @@ import { cpr } from './scenes/cpr';
 import { fetalGrowth } from './scenes/fetal-growth';
 import { fracture } from './scenes/fracture';
 import { heartAttack } from './scenes/heart-attack';
+import { kidneyStones } from './scenes/kidney-stones';
 import { labor } from './scenes/labor';
 import { shoulder } from './scenes/shoulder';
 import { stroke } from './scenes/stroke';
@@ -21,12 +25,16 @@ export const ILLUSTRATIONS: Scenario[] = [
   choking,
   bleeding,
   burns,
+  ankleSprain,
   bloodSugar,
   bloodPressure,
   bloodFats,
   stroke,
   heartAttack,
   coldFlu,
+  asthma,
+  acidReflux,
+  kidneyStones,
   fetalGrowth,
   labor,
 ];
