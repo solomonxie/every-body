@@ -86,7 +86,7 @@ struct QuizScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             guard questions.isEmpty else { return }
-            scene.build(skinColor: UIColor(hex: system.color), female: settings.female, points: [], flowStops: [])
+            scene.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, points: [], flowStops: [])
             scene.setLayers(layers)
             start()
         }

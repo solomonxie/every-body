@@ -231,7 +231,7 @@ final class BodyScene {
             skin.isEnabled = skinOpacity > 0
             skin.model?.materials = [Self.material(skinColor, opacity: skinOpacity)]
         }
-        let muscleOpacity: Float = layers.contains(.skeletal) ? 0.55 : 0.95
+        let muscleOpacity: Float = layers.contains(.skeletal) ? 0.55 : 1
         for (id, entity) in partEntities {
             guard let layer = partLayer[id] else { continue }
             entity.isEnabled = layers.contains(layer) && parts.visible(id)

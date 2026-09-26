@@ -68,7 +68,7 @@ struct ViewerScreen: View {
     }
 
     private func rebuild() {
-        scene.build(skinColor: UIColor(hex: isReflex ? "#F2C9A5" : system.color), female: settings.female,
+        scene.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female,
                     points: systemPoints?.points ?? [], flowStops: flowStops)
         scene.setLayers(layers)
         scene.setParts(parts, selected: selectedPart)
