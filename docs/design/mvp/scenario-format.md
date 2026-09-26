@@ -1,5 +1,11 @@
 # Scenario format (T7.1–T7.2, T8.3)
 
+Built: `src/illustrations/` — each topic is a `Scenario` with a 2D SVG `Scene({ params, t })`
+drawn from math (per DESIGN → schematic, not lifelike); steps set param targets, the player
+eases toward them each frame. Try modes: `scrub`, `rhythm`, `drag` (scene `onDrag` maps the
+finger to params). The 3D-body fields below remain the target for topics that need the body.
+
+
 One file per topic: `src/data/scenarios/<group>/<topic>.ts`.
 
 ```ts
