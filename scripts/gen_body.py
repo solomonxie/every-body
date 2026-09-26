@@ -170,6 +170,10 @@ SHIN = [(0.097, 0.515, 0.009, 0.044, 0.046), (0.097, 0.49, 0.008, 0.047, 0.05), 
     (0.086, 0.085, 0.0, 0.029, 0.03), (0.087, 0.055, 0.0, 0.026, 0.028)]
 
 
+HEAD_CORE = [(0, 1.51, 0.055, 0.018, 0.014), (0, 1.53, 0.035, 0.044, 0.05), (0, 1.56, 0.012, 0.052, 0.074), (0, 1.6, 0.0, 0.06, 0.088),
+             (0, 1.64, -0.008, 0.064, 0.092), (0, 1.68, -0.012, 0.064, 0.089), (0, 1.715, -0.016, 0.056, 0.077), (0, 1.738, -0.018, 0.032, 0.042)]
+
+
 def surface(sections, y, theta, k=0.965, square=2.0):
     """Point on a vertical loft at height y and angle theta (degrees; 0 = +x, 90 = front, 270 = back), scaled k toward the axis."""
     rows = sorted(sections, key=lambda r: r[1] if len(r) == 5 else r[0])
@@ -435,9 +439,7 @@ def muscles():
     # deep muscle core under each segment: seams between superficial muscles read as grooves, not holes
     DEEP = "#8E3A34"
     part("deep-trunk", "Deep muscles", "深层肌", "muscular", DEEP, loft([(0, r[0], r[1], r[2] * 0.9, r[3] * 0.88) for r in torso if 0.87 <= r[0] <= 1.44], square=2.4))
-    part("deep-head", "Head & face muscles", "头面部肌", "muscular", DEEP,
-         loft([(0, 1.51, 0.055, 0.018, 0.014), (0, 1.53, 0.035, 0.044, 0.05), (0, 1.56, 0.012, 0.052, 0.074), (0, 1.6, 0.0, 0.06, 0.088),
-               (0, 1.64, -0.008, 0.064, 0.092), (0, 1.68, -0.012, 0.064, 0.089), (0, 1.715, -0.016, 0.056, 0.077), (0, 1.738, -0.018, 0.032, 0.042)]))
+    part("deep-head", "Head & face muscles", "头面部肌", "muscular", DEEP, loft(HEAD_CORE))
     pair("deep-foot", "Deep muscles", "深层肌", "muscular", DEEP,
          loft([(0.089, 0.1, -0.025, 0.022, 0.026), (0.09, 0.05, -0.02, 0.026, 0.034), (0.093, 0.035, 0.04, 0.034, 0.022), (0.098, 0.022, 0.12, 0.038, 0.014)]))
     # hand: palm and thumb-base muscles, a tendon down each finger
@@ -463,9 +465,14 @@ def muscles():
         pair(f"deep-{key}", "Deep muscles", "深层肌", "muscular", DEEP, loft([(x, y, z, rx * 0.86, rz * 0.86) for x, y, z, rx, rz in sec]))
 
     # head & neck
-    m("masseter", "Masseter", "咬肌", (0.058, 1.595, 0.03), (0.05, 1.535, 0.012), 0.013)
-    fibres("temporalis", "Temporalis", "颞肌", [(0.066, 1.67, 0.03), (0.07, 1.68, 0.0), (0.066, 1.665, -0.03)], [(0.058, 1.595, 0.012)], 0.011, (0.004, 0, 0))
-    m("sternocleidomastoid", "Sternocleidomastoid", "胸锁乳突肌", (0.056, 1.585, -0.022), (0.02, 1.44, 0.095), 0.012)
+    # jaw muscles lie on the side of the head: temporalis fans over the temple to the jaw, masseter from cheekbone to jaw angle
+    on("temporalis", "Temporalis", "颞肌", HEAD_CORE, ((1.69, -45), (1.69, 42)), ((1.595, 8), (1.595, 20)), 0.005, 1.0,
+       converge=((0.056, 1.585, 0.028), 0.8))
+    on("masseter", "Masseter", "咬肌", HEAD_CORE, ((1.598, 22), (1.598, 55)), ((1.522, 4), (1.522, 34)), 0.007, 1.0, nv=6)
+    # from behind the ear, wrapping the side of the neck, to the top of the breastbone
+    pair("sternocleidomastoid", "Sternocleidomastoid", "胸锁乳突肌", "muscular", MUSCLE,
+         tube([(0.05, 1.585, -0.022), (0.048, 1.555, -0.006), (0.04, 1.515, 0.018), (0.028, 1.475, 0.04), (0.016, 1.445, 0.058)],
+              0.01, [0.007, 0.011, 0.012, 0.01, 0.006]))
 
     # trunk, front: fibres run to the arm (pectoralis) or down the belly
     # pectoralis: clavicular head from the inner collarbone, sternal head from the breastbone, both twisting into the humerus
