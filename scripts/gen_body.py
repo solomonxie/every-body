@@ -87,6 +87,8 @@ def mirror_shape(s):
             s[key] = flip(s[key])
     if "bulge" in s:
         s["bulge"] = [-s["bulge"][0]] + s["bulge"][1:]
+    if "grid" in s:
+        s["grid"] = [[flip(p) for p in row] for row in s["grid"]]
     for key in ("points", "origins", "insertions"):
         if key in s:
             s[key] = [flip(p) for p in s[key]]
@@ -137,6 +139,79 @@ SKIN = "#F2C9A5"
 
 def lerp(a, b, t):
     return tuple(a[i] + (b[i] - a[i]) * t for i in range(3))
+
+
+# ---------------------------------------------------------------- body surface (skin lofts, reused to lay muscles on)
+
+TORSO = {
+    "male": [(0.83, 0.0, 0.07, 0.065), (0.875, -0.016, 0.166, 0.1), (0.93, -0.016, 0.172, 0.108), (0.99, -0.006, 0.156, 0.1),
+             (1.05, 0.004, 0.144, 0.094), (1.11, 0.005, 0.141, 0.095), (1.19, 0.005, 0.151, 0.1), (1.27, 0.01, 0.164, 0.108),
+             (1.34, 0.005, 0.172, 0.106), (1.39, -0.006, 0.176, 0.098), (1.425, -0.016, 0.158, 0.08), (1.45, -0.02, 0.105, 0.064),
+             (1.475, -0.02, 0.062, 0.055)],
+    "female": [(0.83, 0.0, 0.075, 0.066), (0.875, -0.02, 0.178, 0.104), (0.93, -0.02, 0.186, 0.112), (0.99, -0.008, 0.162, 0.1),
+               (1.05, 0.002, 0.128, 0.088), (1.11, 0.003, 0.125, 0.088), (1.19, 0.003, 0.136, 0.093), (1.27, 0.006, 0.15, 0.1),
+               (1.34, 0.002, 0.158, 0.098), (1.39, -0.008, 0.162, 0.09), (1.425, -0.016, 0.145, 0.074), (1.45, -0.02, 0.098, 0.06),
+               (1.475, -0.02, 0.058, 0.052)],
+}
+UPPER_ARM = [(0.19, 1.428, -0.025, 0.026, 0.03), (0.192, 1.412, -0.025, 0.046, 0.05), (0.197, 1.39, -0.022, 0.052, 0.054),
+    (0.203, 1.3, -0.02, 0.045, 0.05), (0.208, 1.2, -0.017, 0.04, 0.045), (0.213, 1.12, -0.013, 0.036, 0.038),
+    (0.215, 1.09, -0.012, 0.035, 0.034)]
+FOREARM = [(0.215, 1.1, -0.012, 0.036, 0.034), (0.225, 1.03, -0.008, 0.039, 0.036), (0.235, 0.94, 0.0, 0.03, 0.026),
+    (0.242, 0.86, 0.006, 0.026, 0.018)]
+THIGH = [(0.088, 0.93, -0.012, 0.07, 0.08), (0.095, 0.87, -0.004, 0.076, 0.085), (0.099, 0.78, 0.008, 0.072, 0.077),
+    (0.098, 0.68, 0.012, 0.062, 0.068), (0.097, 0.59, 0.012, 0.053, 0.058), (0.097, 0.52, 0.008, 0.048, 0.052),
+    (0.097, 0.49, 0.008, 0.048, 0.05)]
+SHIN = [(0.097, 0.49, 0.008, 0.047, 0.05), (0.097, 0.44, -0.006, 0.048, 0.058), (0.096, 0.38, -0.012, 0.05, 0.062),
+    (0.093, 0.3, -0.008, 0.043, 0.05), (0.09, 0.22, -0.002, 0.034, 0.038), (0.087, 0.14, 0.0, 0.028, 0.03),
+    (0.086, 0.085, 0.0, 0.029, 0.03)]
+
+
+def surface(sections, y, theta, k=0.965, square=2.0):
+    """Point on a vertical loft at height y and angle theta (degrees; 0 = +x, 90 = front, 270 = back), scaled k toward the axis."""
+    rows = sorted(sections, key=lambda r: r[1] if len(r) == 5 else r[0])
+    def at(r):
+        return (0.0, r[0], r[1], r[2], r[3]) if len(r) == 4 else r
+    rows = [at(r) for r in rows]
+    y = min(max(y, rows[0][1]), rows[-1][1])
+    for a, b in zip(rows, rows[1:]):
+        if a[1] <= y <= b[1]:
+            t = (y - a[1]) / ((b[1] - a[1]) or 1)
+            x, _, z, rx, rz = [a[n] + (b[n] - a[n]) * t for n in range(5)]
+            break
+    c, s_ = math.cos(math.radians(theta)), math.sin(math.radians(theta))
+    e = 2 / square
+    return (x + k * rx * math.copysign(abs(c) ** e, c), y, z + k * rz * math.copysign(abs(s_) ** e, s_))
+
+
+def panel(sections, origin, insertion, k=0.965, square=2.0, converge=None, nu=14, nv=10, start=None):
+    """Surface grid for a muscle: origin and insertion are ((y, theta), (y, theta)) edges; rows run origin → insertion.
+    `converge` = (point, from_u) pulls the last rows into a tendon at that point."""
+    grid = []
+    for i in range(nu + 1):
+        u = i / nu
+        row = []
+        for j in range(nv + 1):
+            v = j / nv
+            (oy0, ot0), (oy1, ot1) = origin
+            (iy0, it0), (iy1, it1) = insertion
+            y = (1 - u) * (oy0 + (oy1 - oy0) * v) + u * (iy0 + (iy1 - iy0) * v)
+            th = (1 - u) * (ot0 + (ot1 - ot0) * v) + u * (it0 + (it1 - it0) * v)
+            p = surface(sections, y, th, k, square)
+            if start and u < start[1]:
+                w = 1 - u / start[1]
+                w = w * w * (3 - 2 * w)
+                p = tuple(p[n] + (start[0][n] - p[n]) * w for n in range(3))
+            if converge and u > converge[1]:
+                w = (u - converge[1]) / (1 - converge[1])
+                w = w * w * (3 - 2 * w)
+                p = tuple(p[n] + (converge[0][n] - p[n]) * w for n in range(3))
+            row.append(p)
+        grid.append(row)
+    return grid
+
+
+def slab(grid, thickness):
+    return {"kind": "slab", "grid": [[U(*p) for p in row] for row in grid], "thickness": L(thickness)}
 
 
 # ---------------------------------------------------------------- skeleton
@@ -311,65 +386,93 @@ def fibres(pid, name, zh, origins, insertions, r, bulge=(0, 0, 0)):
 
 
 def muscles():
-    # tendon → belly → tendon, flattened front-to-back
+    """Superficial muscles laid on the body surface as slabs (anatomy-figure style); a few deep or thin ones stay spindles/tubes.
+    Angles: 0 = outer side, 90 = front, 180 = inner side, 270 = back (left side; right is mirrored)."""
     belly = [0.14, 0.45, 0.82, 1.0, 0.97, 0.8, 0.5, 0.2, 0.1]
     m = lambda pid, name, zh, a, b, r: pair(pid, name, zh, "muscular", MUSCLE, lathe(a, b, [r * k for k in belly], [1, 1, 0.78]))
+    torso = TORSO["male"]
+
+    def on(pid, name, zh, sections, origin, insertion, thick, k=0.965, square=2.0, converge=None, nv=10, start=None):
+        # set a little deeper and made thicker, so each belly rounds up and the seams between muscles show
+        sq = min(square, 2.3)
+        pair(pid, name, zh, "muscular", MUSCLE, slab(panel(sections, origin, insertion, k - thick * 2.2, sq, converge, nv=nv, start=start), thick * 1.9))
+
+    # deep muscle core under each segment: seams between superficial muscles read as grooves, not holes
+    DEEP = "#8E3A34"
+    part("deep-trunk", "Deep muscles", "深层肌", "muscular", DEEP, loft([(0, r[0], r[1], r[2] * 0.9, r[3] * 0.88) for r in torso if 0.87 <= r[0] <= 1.44], square=2.4))
+    part("deep-head", "Head & face muscles", "头面部肌", "muscular", DEEP,
+         loft([(0, 1.51, 0.055, 0.018, 0.014), (0, 1.53, 0.035, 0.044, 0.05), (0, 1.56, 0.012, 0.052, 0.074), (0, 1.6, 0.0, 0.06, 0.088),
+               (0, 1.64, -0.008, 0.064, 0.092), (0, 1.68, -0.012, 0.064, 0.089), (0, 1.715, -0.016, 0.056, 0.077), (0, 1.738, -0.018, 0.032, 0.042)]))
+    pair("deep-foot", "Deep muscles", "深层肌", "muscular", DEEP,
+         loft([(0.089, 0.1, -0.025, 0.022, 0.026), (0.09, 0.05, -0.02, 0.026, 0.034), (0.093, 0.035, 0.04, 0.034, 0.022), (0.098, 0.022, 0.12, 0.038, 0.014)]))
+    part("deep-neck", "Deep muscles", "深层肌", "muscular", DEEP,
+         loft([(0, 1.43, -0.02, 0.07, 0.05), (0, 1.47, -0.018, 0.05, 0.047), (0, 1.52, -0.012, 0.044, 0.044), (0, 1.57, -0.018, 0.04, 0.04)]))
+    for key, sec, name in (("upper-arm", UPPER_ARM[1:], "arm"), ("forearm", FOREARM, "forearm"), ("thigh", THIGH, "thigh"), ("shin", SHIN, "leg")):
+        pair(f"deep-{key}", "Deep muscles", "深层肌", "muscular", DEEP, loft([(x, y, z, rx * 0.86, rz * 0.86) for x, y, z, rx, rz in sec]))
+
     # head & neck
     m("masseter", "Masseter", "咬肌", (0.058, 1.595, 0.03), (0.05, 1.535, 0.012), 0.013)
-    fibres("temporalis", "Temporalis", "颞肌", [(0.066, 1.67, 0.03), (0.07, 1.68, 0.0), (0.066, 1.665, -0.03)], [(0.058, 1.595, 0.012)], 0.011, (0.008, 0, 0))
+    fibres("temporalis", "Temporalis", "颞肌", [(0.066, 1.67, 0.03), (0.07, 1.68, 0.0), (0.066, 1.665, -0.03)], [(0.058, 1.595, 0.012)], 0.011, (0.004, 0, 0))
     m("sternocleidomastoid", "Sternocleidomastoid", "胸锁乳突肌", (0.056, 1.585, -0.022), (0.02, 1.44, 0.095), 0.012)
-    fibres("trapezius", "Trapezius", "斜方肌",
-           [(0.002, 1.59, -0.07), (0.002, 1.53, -0.055), (0.002, 1.47, -0.09), (0.002, 1.42, -0.105), (0.002, 1.3, -0.108), (0.002, 1.2, -0.102), (0.002, 1.13, -0.096)],
-           [(0.15, 1.458, -0.012), (0.17, 1.455, -0.03), (0.185, 1.44, -0.05), (0.15, 1.415, -0.088), (0.11, 1.4, -0.108), (0.095, 1.39, -0.112), (0.09, 1.385, -0.112)],
-           0.016, (0, 0.005, -0.012))
-    # shoulder & chest
-    fibres("deltoid", "Deltoid", "三角肌", [(0.13, 1.458, 0.045), (0.165, 1.462, 0.022), (0.2, 1.458, -0.012), (0.18, 1.445, -0.06), (0.14, 1.42, -0.085)],
-           [(0.216, 1.285, -0.01)], 0.02, (0.022, 0.0, 0.0))
-    fibres("pectoralis", "Pectoralis major", "胸大肌",
-           [(0.03, 1.44, 0.1), (0.07, 1.447, 0.094), (0.02, 1.4, 0.126), (0.02, 1.35, 0.132), (0.025, 1.3, 0.133), (0.05, 1.255, 0.128)],
-           [(0.19, 1.385, 0.0), (0.19, 1.37, 0.0), (0.19, 1.355, 0.0)], 0.017, (0, -0.01, 0.025))
-    fibres("serratus", "Serratus anterior", "前锯肌", [(0.14, 1.33, 0.055), (0.148, 1.29, 0.05), (0.15, 1.25, 0.045), (0.145, 1.21, 0.04)],
-           [(0.085, 1.4, -0.095), (0.09, 1.33, -0.098), (0.1, 1.25, -0.1)], 0.009, (0.03, 0, -0.02))
-    fibres("latissimus", "Latissimus dorsi", "背阔肌",
-           [(0.002, 1.25, -0.105), (0.002, 1.18, -0.1), (0.002, 1.1, -0.095), (0.02, 1.02, -0.086), (0.08, 1.05, -0.08), (0.125, 1.07, -0.05)],
-           [(0.18, 1.35, -0.022)], 0.015, (0.03, 0, -0.03))
-    # arm
-    m("biceps", "Biceps", "肱二头肌", (0.19, 1.37, 0.012), (0.222, 1.085, 0.01), 0.021)
+
+    # trunk, front: fibres run to the arm (pectoralis) or down the belly
+    on("pectoralis", "Pectoralis major", "胸大肌", torso, ((1.44, 85), (1.255, 88)), ((1.4, 22), (1.35, 14)), 0.009, 0.97, 2.6,
+       converge=((0.19, 1.37, 0.005), 0.72))
+    for n, (y0, y1) in enumerate(((1.245, 1.18), (1.17, 1.11), (1.1, 1.04), (1.03, 0.9))):
+        on(f"rectus-abdominis-{n + 1}", "Rectus abdominis", "腹直肌", torso, ((y0, 89.6), (y0, 70)), ((y1, 89.6), (y1, 71)), 0.007, 0.985, 2.6, nv=6)
+    on("external-oblique", "External oblique", "腹外斜肌", torso, ((1.26, 30), (1.02, 4)), ((1.14, 69), (0.93, 62)), 0.006, 0.975, 2.6)
+    on("serratus", "Serratus anterior", "前锯肌", torso, ((1.34, 38), (1.21, 30)), ((1.36, 352), (1.26, 346)), 0.005, 0.975, 2.6)
+    part("diaphragm", "Diaphragm", "膈肌", "muscular", "#B8544C", lathe((0.0, 1.165, -0.01), (0.0, 1.255, -0.01), [0.118, 0.114, 0.098, 0.064, 0.013], [1, 1, 0.7]))
+
+    # trunk, back
+    on("trapezius", "Trapezius", "斜方肌", torso, ((1.475, 271), (1.13, 271)), ((1.44, 345), (1.38, 318)), 0.007, 0.985, 2.6)
+    on("erector-spinae", "Erector spinae", "竖脊肌", torso, ((1.3, 273), (1.3, 292)), ((0.95, 274), (0.95, 290)), 0.012, 0.99, 2.6, nv=4)
+    on("latissimus", "Latissimus dorsi", "背阔肌", torso, ((1.25, 271), (0.98, 280)), ((1.33, 338), (1.3, 352)), 0.006, 0.975, 2.6,
+       converge=((0.185, 1.35, -0.025), 0.72))
+    on("gluteus-medius", "Gluteus medius", "臀中肌", torso, ((1.07, 312), (1.07, 378)), ((0.95, 338), (0.95, 362)), 0.01, 0.97, 2.6,
+       converge=((0.135, 0.905, -0.012), 0.45))
+    on("gluteus-maximus", "Gluteus maximus", "臀大肌", torso, ((1.02, 282), (0.855, 274)), ((0.93, 348), (0.86, 326)), 0.016, 0.985, 2.6,
+       converge=((0.14, 0.85, -0.03), 0.8))
+
+    # shoulder & arm
+    on("deltoid", "Deltoid", "三角肌", UPPER_ARM, ((1.435, -125), (1.435, 125)), ((1.29, -20), (1.29, 20)), 0.011, 1.02,
+       converge=((0.216, 1.285, -0.01), 0.75))
+    on("biceps", "Biceps", "肱二头肌", UPPER_ARM, ((1.36, 65), (1.36, 120)), ((1.12, 78), (1.12, 105)), 0.012, 0.95,
+       converge=((0.222, 1.085, 0.01), 0.82))
     m("brachialis", "Brachialis", "肱肌", (0.205, 1.26, 0.0), (0.212, 1.09, 0.0), 0.014)
-    m("triceps", "Triceps", "肱三头肌", (0.18, 1.37, -0.06), (0.206, 1.11, -0.045), 0.023)
-    m("brachioradialis", "Brachioradialis", "肱桡肌", (0.225, 1.17, 0.0), (0.252, 0.875, 0.012), 0.013)
-    m("forearm-flexors", "Forearm flexors", "前臂屈肌", (0.2, 1.09, 0.004), (0.232, 0.88, 0.02), 0.015)
-    m("flexor-carpi-ulnaris", "Flexor carpi ulnaris", "尺侧腕屈肌", (0.198, 1.09, -0.015), (0.222, 0.87, 0.004), 0.011)
-    m("forearm-extensors", "Forearm extensors", "前臂伸肌", (0.232, 1.09, -0.03), (0.244, 0.88, -0.012), 0.014)
-    # trunk
-    for k, (y0, y1) in enumerate(((1.245, 1.185), (1.175, 1.115), (1.105, 1.045), (1.035, 0.9))):
-        z = 0.092 - k * 0.003
-        mid = (y0 + y1) / 2
-        pair(f"rectus-abdominis-{k + 1}", "Rectus abdominis", "腹直肌", "muscular", MUSCLE,
-             loft([(0.032, y0, z - 0.003, 0.02, 0.005), (0.033, mid, z, 0.024, 0.009), (0.034, y1, z - 0.003, 0.021, 0.005)]))
-    fibres("external-oblique", "External oblique", "腹外斜肌", [(0.142, 1.24, 0.07), (0.15, 1.18, 0.06), (0.148, 1.12, 0.05), (0.14, 1.06, 0.04)],
-           [(0.06, 1.1, 0.12), (0.06, 1.02, 0.115), (0.1, 0.98, 0.09), (0.125, 1.02, 0.06)], 0.013, (0.01, 0, 0.01))
-    part("diaphragm", "Diaphragm", "膈肌", "muscular", "#B8544C", lathe((0.0, 1.165, -0.01), (0.0, 1.255, -0.01), [0.14, 0.135, 0.115, 0.075, 0.015], [1, 1, 0.7]))
-    # hip & thigh
-    fibres("gluteus-maximus", "Gluteus maximus", "臀大肌", [(0.05, 1.02, -0.09), (0.035, 0.97, -0.098), (0.025, 0.91, -0.1), (0.03, 0.86, -0.095)],
-           [(0.145, 0.87, -0.03), (0.14, 0.83, -0.025)], 0.024, (0, 0, -0.035))
-    m("gluteus-medius", "Gluteus medius", "臀中肌", (0.125, 1.05, -0.04), (0.132, 0.905, -0.012), 0.028)
-    m("tensor-fasciae-latae", "Tensor fasciae latae", "阔筋膜张肌", (0.13, 1.03, 0.04), (0.14, 0.9, 0.02), 0.014)
-    pair("it-band", "Iliotibial band", "髂胫束", "muscular", TENDON, tube([(0.14, 0.9, 0.02), (0.145, 0.7, 0.005), (0.128, 0.48, 0.0)], 0.004))
-    m("rectus-femoris", "Rectus femoris", "股直肌", (0.112, 0.935, 0.05), (0.098, 0.525, 0.05), 0.029)
-    m("vastus-lateralis", "Vastus lateralis", "股外侧肌", (0.14, 0.885, 0.0), (0.118, 0.53, 0.022), 0.034)
-    m("vastus-medialis", "Vastus medialis", "股内侧肌", (0.075, 0.8, 0.03), (0.08, 0.52, 0.035), 0.028)
-    m("adductors", "Adductors", "内收肌群", (0.03, 0.87, 0.03), (0.075, 0.6, 0.0), 0.03)
-    m("gracilis", "Gracilis", "股薄肌", (0.02, 0.86, 0.02), (0.07, 0.47, -0.01), 0.01)
-    pair("sartorius", "Sartorius", "缝匠肌", "muscular", MUSCLE, tube([(0.12, 1.05, 0.065), (0.09, 0.85, 0.06), (0.06, 0.65, 0.03), (0.075, 0.48, -0.005)], 0.008))
-    m("hamstrings-medial", "Hamstrings", "腘绳肌", (0.065, 0.84, -0.04), (0.085, 0.49, -0.035), 0.026)
-    m("hamstrings-lateral", "Hamstrings", "腘绳肌", (0.085, 0.84, -0.05), (0.125, 0.49, -0.03), 0.026)
+    on("triceps", "Triceps", "肱三头肌", UPPER_ARM, ((1.38, 205), (1.38, 330)), ((1.12, 240), (1.12, 300)), 0.012, 0.95,
+       converge=((0.206, 1.105, -0.045), 0.85))
+    on("brachioradialis", "Brachioradialis", "肱桡肌", FOREARM, ((1.1, 20), (1.1, 70)), ((0.9, 55), (0.9, 70)), 0.008, 0.97)
+    on("forearm-flexors", "Forearm flexors", "前臂屈肌", FOREARM, ((1.08, 75), (1.08, 175)), ((0.88, 100), (0.88, 160)), 0.008, 0.96,
+       start=((0.195, 1.1, -0.025), 0.2), converge=((0.238, 0.86, 0.012), 0.8))
+    on("flexor-carpi-ulnaris", "Flexor carpi ulnaris", "尺侧腕屈肌", FOREARM, ((1.08, 180), (1.08, 225)), ((0.88, 170), (0.88, 195)), 0.006, 0.96,
+       start=((0.195, 1.1, -0.025), 0.2))
+    on("forearm-extensors", "Forearm extensors", "前臂伸肌", FOREARM, ((1.08, 235), (1.08, 375)), ((0.88, 250), (0.88, 350)), 0.008, 0.96,
+       start=((0.232, 1.1, -0.02), 0.2), converge=((0.245, 0.86, -0.004), 0.8))
+
+    # thigh
+    on("tensor-fasciae-latae", "Tensor fasciae latae", "阔筋膜张肌", THIGH, ((0.93, 25), (0.93, 60)), ((0.8, 15), (0.8, 30)), 0.006, 0.98)
+    pair("it-band", "Iliotibial band", "髂胫束", "muscular", TENDON, slab(panel(THIGH, ((0.82, 5), (0.82, 25)), ((0.5, 5), (0.5, 20)), 0.99), 0.0015))
+    on("rectus-femoris", "Rectus femoris", "股直肌", THIGH, ((0.92, 72), (0.92, 108)), ((0.53, 80), (0.53, 100)), 0.012, 0.97)
+    on("vastus-lateralis", "Vastus lateralis", "股外侧肌", THIGH, ((0.88, -40), (0.88, 72)), ((0.53, 20), (0.53, 80)), 0.012, 0.965)
+    on("vastus-medialis", "Vastus medialis", "股内侧肌", THIGH, ((0.76, 108), (0.76, 150)), ((0.52, 100), (0.52, 165)), 0.013, 0.965)
+    on("sartorius", "Sartorius", "缝匠肌", THIGH, ((0.93, 55), (0.93, 70)), ((0.5, 190), (0.5, 200)), 0.004, 0.985, nv=4)
+    on("adductors", "Adductors", "内收肌群", THIGH, ((0.88, 150), (0.88, 205)), ((0.6, 165), (0.6, 190)), 0.012, 0.955)
+    on("gracilis", "Gracilis", "股薄肌", THIGH, ((0.88, 205), (0.88, 222)), ((0.5, 195), (0.5, 205)), 0.004, 0.975, nv=4)
+    on("hamstrings-medial", "Hamstrings", "腘绳肌", THIGH, ((0.86, 225), (0.86, 268)), ((0.52, 215), (0.52, 250)), 0.012, 0.96)
+    on("hamstrings-lateral", "Hamstrings", "腘绳肌", THIGH, ((0.86, 272), (0.86, 320)), ((0.52, 290), (0.52, 330)), 0.012, 0.96)
+
     # leg
-    m("gastrocnemius-medial", "Calf (gastrocnemius)", "腓肠肌", (0.078, 0.475, -0.035), (0.09, 0.22, -0.04), 0.027)
-    m("gastrocnemius-lateral", "Calf (gastrocnemius)", "腓肠肌", (0.116, 0.475, -0.035), (0.096, 0.22, -0.04), 0.024)
-    m("soleus", "Soleus", "比目鱼肌", (0.105, 0.4, -0.022), (0.09, 0.12, -0.035), 0.024)
-    m("tibialis", "Tibialis anterior", "胫骨前肌", (0.112, 0.44, 0.028), (0.08, 0.1, 0.04), 0.014)
-    m("peroneus", "Peroneus longus", "腓骨长肌", (0.132, 0.44, -0.005), (0.125, 0.12, -0.01), 0.011)
+    on("gastrocnemius-medial", "Calf (gastrocnemius)", "腓肠肌", SHIN, ((0.48, 215), (0.48, 268)), ((0.24, 255), (0.24, 270)), 0.013, 0.985,
+       converge=((0.09, 0.2, -0.042), 0.85))
+    on("gastrocnemius-lateral", "Calf (gastrocnemius)", "腓肠肌", SHIN, ((0.48, 272), (0.48, 320)), ((0.26, 272), (0.26, 285)), 0.012, 0.985,
+       converge=((0.09, 0.2, -0.042), 0.85))
+    on("soleus", "Soleus", "比目鱼肌", SHIN, ((0.4, 195), (0.4, 345)), ((0.13, 250), (0.13, 290)), 0.008, 0.93,
+       converge=((0.09, 0.12, -0.04), 0.78))
+    on("tibialis", "Tibialis anterior", "胫骨前肌", SHIN, ((0.45, 55), (0.45, 85)), ((0.13, 80), (0.13, 100)), 0.007, 0.975,
+       converge=((0.074, 0.07, 0.035), 0.75))
+    on("peroneus", "Peroneus longus", "腓骨长肌", SHIN, ((0.44, -15), (0.44, 25)), ((0.13, -20), (0.13, 0)), 0.006, 0.975,
+       converge=((0.118, 0.075, -0.018), 0.75))
     pair("achilles", "Achilles tendon", "跟腱", "muscular", TENDON, tube([(0.09, 0.2, -0.042), (0.09, 0.1, -0.04), (0.09, 0.04, -0.05)], 0.006))
 
 
@@ -446,25 +549,13 @@ def skin():
     s("neck", loft([(0, 1.455, -0.015, 0.06, 0.056), (0, 1.5, -0.01, 0.052, 0.052), (0, 1.545, -0.005, 0.05, 0.05)]))
     # torso: crotch → neck; z offsets carry the chest, belly, back and buttocks
     # torso: crotch → neck; rounded-box sections, z offsets carry chest, belly, back and buttocks; shoulders slope into the trapezius
-    torso = {
-        "male": [(0.83, 0.0, 0.07, 0.065), (0.875, -0.016, 0.166, 0.1), (0.93, -0.016, 0.172, 0.108), (0.99, -0.006, 0.156, 0.1),
-                 (1.05, 0.004, 0.144, 0.094), (1.11, 0.005, 0.141, 0.095), (1.19, 0.005, 0.151, 0.1), (1.27, 0.01, 0.164, 0.108),
-                 (1.34, 0.005, 0.172, 0.106), (1.39, -0.006, 0.176, 0.098), (1.425, -0.016, 0.158, 0.08), (1.45, -0.02, 0.105, 0.064),
-                 (1.475, -0.02, 0.062, 0.055)],
-        "female": [(0.83, 0.0, 0.075, 0.066), (0.875, -0.02, 0.178, 0.104), (0.93, -0.02, 0.186, 0.112), (0.99, -0.008, 0.162, 0.1),
-                   (1.05, 0.002, 0.128, 0.088), (1.11, 0.003, 0.125, 0.088), (1.19, 0.003, 0.136, 0.093), (1.27, 0.006, 0.15, 0.1),
-                   (1.34, 0.002, 0.158, 0.098), (1.39, -0.008, 0.162, 0.09), (1.425, -0.016, 0.145, 0.074), (1.45, -0.02, 0.098, 0.06),
-                   (1.475, -0.02, 0.058, 0.052)],
-    }
+    torso = TORSO
     for sex, rows in torso.items():
         s(f"torso-{sex}", loft([(0, y, z, rx, rz) for y, z, rx, rz in rows], square=2.6), sex)
     sp("breast", sphere((0.082, 1.285, 0.098), 0.055, [1, 0.92, 0.8]), "female")
     # upper arm starts as a rounded deltoid cap tucked under the shoulder slope
-    sp("upper-arm", loft([(0.19, 1.428, -0.025, 0.026, 0.03), (0.192, 1.412, -0.025, 0.046, 0.05), (0.197, 1.39, -0.022, 0.052, 0.054),
-                          (0.203, 1.3, -0.02, 0.045, 0.05), (0.208, 1.2, -0.017, 0.04, 0.045), (0.213, 1.12, -0.013, 0.036, 0.038),
-                          (0.215, 1.09, -0.012, 0.035, 0.034)]))
-    sp("forearm", loft([(0.215, 1.1, -0.012, 0.036, 0.034), (0.225, 1.03, -0.008, 0.039, 0.036), (0.235, 0.94, 0.0, 0.03, 0.026),
-                        (0.242, 0.86, 0.006, 0.026, 0.018)]))
+    sp("upper-arm", loft(UPPER_ARM))
+    sp("forearm", loft(FOREARM))
     sp("hand", loft([(0.242, 0.855, 0.006, 0.026, 0.016), (0.241, 0.81, 0.008, 0.039, 0.017), (0.237, 0.77, 0.01, 0.042, 0.014)]))
     for key, x, length in (("index", 0.258, 0.08), ("middle", 0.24, 0.088), ("ring", 0.223, 0.082), ("little", 0.207, 0.064)):
         pts, r = [(x, 0.768, 0.009)], 0.0085 if key != "little" else 0.0075
@@ -474,12 +565,8 @@ def skin():
         sp(f"finger-skin-{key}", tube(pts, r, [r, r * 0.95, r * 0.85, r * 0.7]))
     sp("thumb", tube([(0.25, 0.835, 0.01), (0.266, 0.8, 0.026), (0.277, 0.768, 0.039), (0.285, 0.742, 0.048)], 0.012, [0.014, 0.012, 0.01, 0.008]))
     # thigh tapers hip → knee; calf bulges at the back of the upper shin
-    sp("thigh", loft([(0.088, 0.93, -0.012, 0.07, 0.08), (0.095, 0.87, -0.004, 0.076, 0.085), (0.099, 0.78, 0.008, 0.072, 0.077),
-                      (0.098, 0.68, 0.012, 0.062, 0.068), (0.097, 0.59, 0.012, 0.053, 0.058), (0.097, 0.52, 0.008, 0.048, 0.052),
-                      (0.097, 0.49, 0.008, 0.048, 0.05)]))
-    sp("shin", loft([(0.097, 0.49, 0.008, 0.047, 0.05), (0.097, 0.44, -0.006, 0.048, 0.058), (0.096, 0.38, -0.012, 0.05, 0.062),
-                     (0.093, 0.3, -0.008, 0.043, 0.05), (0.09, 0.22, -0.002, 0.034, 0.038), (0.087, 0.14, 0.0, 0.028, 0.03),
-                     (0.086, 0.085, 0.0, 0.029, 0.03)]))
+    sp("thigh", loft(THIGH))
+    sp("shin", loft(SHIN))
     sp("foot", loft([(0.089, 0.04, -0.06, 0.028, 0.03), (0.091, 0.045, -0.015, 0.034, 0.042), (0.095, 0.036, 0.05, 0.041, 0.033),
                      (0.1, 0.024, 0.12, 0.046, 0.021), (0.1, 0.019, 0.155, 0.045, 0.016)]))
     for key, x, tip, r in (("big", 0.068, 0.205, 0.012), ("2nd", 0.086, 0.198, 0.0085), ("3rd", 0.1, 0.192, 0.008),

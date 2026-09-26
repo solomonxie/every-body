@@ -295,7 +295,9 @@ final class BodyScene {
         let muscleOpacity: Float = layers.contains(.skeletal) ? 0.55 : 1
         for (id, entity) in partEntities {
             guard let layer = partLayer[id] else { continue }
-            entity.isEnabled = layers.contains(layer) && parts.visible(id)
+            // deep muscle cores fill gaps in a muscle-only view but would hide the bones
+            let deep = id.hasPrefix("deep-") && layers.contains(.skeletal)
+            entity.isEnabled = layers.contains(layer) && parts.visible(id) && !deep
             var m = baseMaterials[id]!
             let opacity: Float = parts.faded.contains(id) ? 0.18 : layer == .muscular ? muscleOpacity : 1
             if opacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: opacity)) }
@@ -461,7 +463,7 @@ final class BodyScene {
             orient(e, from: from.simd, to: to.simd)
             if let scale { e.scale = scale.simd }
             return e
-        case .tube, .plate, .loft, .sheet:
+        case .tube, .plate, .loft, .sheet, .slab:
             return ModelEntity(mesh: mesh(for: shape))
         }
     }

@@ -225,28 +225,35 @@ enum Meshes {
     static func sheet(origins: [SIMD3<Float>], insertions: [SIMD3<Float>], bulge: SIMD3<Float>, thickness: Float) -> RawMesh {
         let nu = 14, nv = max(10, origins.count * 3)
         func along(_ pts: [SIMD3<Float>], _ v: Float) -> SIMD3<Float> { pts.count == 1 ? pts[0] : catmullRom(pts, v) }
-        func centre(_ u: Float, _ v: Float) -> SIMD3<Float> {
-            let o = along(origins, v), i = along(insertions, v)
-            let m = (o + i) / 2 + bulge * sin(.pi * v * 0.9 + 0.05)
-            return (1 - u) * (1 - u) * o + 2 * u * (1 - u) * m + u * u * i
+        let grid = (0...nu).map { i in
+            (0...nv).map { j in
+                let u = Float(i) / Float(nu), v = Float(j) / Float(nv)
+                let o = along(origins, v), n = along(insertions, v)
+                let m = (o + n) / 2 + bulge * sin(.pi * v * 0.9 + 0.05)
+                return (1 - u) * (1 - u) * o + 2 * u * (1 - u) * m + u * u * n
+            }
         }
-        // thick in the belly, thin at the tendon ends and the free edges
+        return slab(grid: grid, thickness: thickness)
+    }
+
+    /// Closed slab around a surface grid (rows = origin → insertion, columns = across the muscle),
+    /// thickest mid-belly and thinning to the tendon ends and free edges.
+    static func slab(grid: [[SIMD3<Float>]], thickness: Float) -> RawMesh {
+        let nu = grid.count - 1, nv = grid[0].count - 1
         func half(_ u: Float, _ v: Float) -> Float {
-            thickness * pow(sin(.pi * (0.06 + 0.88 * u)), 0.8) * pow(sin(.pi * (0.04 + 0.92 * v)), 0.35)
+            thickness * pow(sin(.pi * (0.03 + 0.94 * u)), 0.8) * pow(sin(.pi * (0.02 + 0.96 * v)), 0.6)
         }
         var positions: [SIMD3<Float>] = [], normals: [SIMD3<Float>] = [], uvs: [SIMD2<Float>] = [], indices: [UInt32] = []
-        let e: Float = 0.01
         for side: Float in [1, -1] {
             for i in 0...nu {
                 for j in 0...nv {
-                    let u = Float(i) / Float(nu), v = Float(j) / Float(nv)
-                    let c = centre(u, v)
-                    let du = centre(min(1, u + e), v) - centre(max(0, u - e), v)
-                    let dv = centre(u, min(1, v + e)) - centre(u, max(0, v - e))
+                    let c = grid[i][j]
+                    let du = grid[min(nu, i + 1)][j] - grid[max(0, i - 1)][j]
+                    let dv = grid[i][min(nv, j + 1)] - grid[i][max(0, j - 1)]
                     let n = simd_normalize(simd_cross(du, dv) + 1e-7) * side
-                    positions.append(c + n * half(u, v))
+                    positions.append(c + n * half(Float(i) / Float(nu), Float(j) / Float(nv)))
                     normals.append(n)
-                    uvs.append(SIMD2(v * 3, u))
+                    uvs.append(SIMD2(Float(j) / Float(nv) * 1.5, Float(i) / Float(nu)))
                 }
             }
         }
@@ -260,6 +267,7 @@ enum Meshes {
             }
         }
         // stitch the two faces along the rim
+        let middle = grid[nu / 2][nv / 2]
         var rim: [UInt32] = []
         for j in 0...UInt32(nv) { rim.append(j) }
         for i in 1...UInt32(nu) { rim.append(i * stride + UInt32(nv)) }
@@ -267,7 +275,7 @@ enum Meshes {
         for i in (1..<UInt32(nu)).reversed() { rim.append(i * stride) }
         for k in 0..<rim.count {
             let a = rim[k], b = rim[(k + 1) % rim.count]
-            let outward = simd_normalize(positions[Int(a)] + positions[Int(b)] - 2 * centre(0.5, 0.5) + 1e-7)
+            let outward = simd_normalize(positions[Int(a)] + positions[Int(b)] - 2 * middle + 1e-7)
             let base = UInt32(positions.count)
             positions += [positions[Int(a)], positions[Int(b)], positions[Int(a + layer)], positions[Int(b + layer)]]
             normals += [outward, outward, outward, outward]
@@ -314,6 +322,7 @@ enum Meshes {
         case let .loft(sections): loft(sections: sections)
         case let .sheet(origins, insertions, bulge, thickness):
             sheet(origins: origins.map(\.simd), insertions: insertions.map(\.simd), bulge: bulge.simd, thickness: thickness)
+        case let .slab(grid, thickness): slab(grid: grid.map { $0.map(\.simd) }, thickness: thickness)
         }
     }
 }
