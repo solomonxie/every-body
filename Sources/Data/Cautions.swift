@@ -34,7 +34,7 @@ enum Cautions {
         case .infant:
             out.append(Bilingual("Infant: no pressing on points — only a light stroke. A baby's bones and skin are soft.",
                                  "婴儿：不要点按穴位，只能轻抚。婴儿骨骼和皮肤都很娇嫩。"))
-        case .child:
+        case .toddler, .child:
             out.append(Bilingual("Child: light pressure for a few seconds; stop if it hurts.",
                                  "儿童：轻按几秒即可，喊痛就停。"))
         case .senior:

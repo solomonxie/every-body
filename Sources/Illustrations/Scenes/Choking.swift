@@ -2,7 +2,7 @@ import SwiftUI
 
 extension Illustrations {
     static func choking(for who: Profile) -> Scenario {
-        let infant = who.age == .infant, child = who.age == .child, chest = who.isPregnant
+        let infant = who.age == .infant, child = who.age.isChild, chest = who.isPregnant
         let blows = TryStep(mode: .rhythm(target: 5, minRate: 0, maxRate: 9999, label: "BLOW 拍背"), success: { $0[v: "taps"] >= 5 },
                             ok: Bilingual("5 back blows — still stuck? Move on to thrusts.", "拍背 5 次——仍未排出？改用冲击法。"))
         let thrusts = TryStep(mode: .rhythm(target: 5, minRate: 0, maxRate: 9999, label: "THRUST 冲击"), success: { $0[v: "dislodge"] >= 0.99 },
@@ -55,7 +55,7 @@ extension Illustrations {
         s.profileNote = switch who.age {
         case .infant: Bilingual("Baby: back blows face down on your forearm, then 2-finger chest thrusts — never abdominal thrusts.",
                                 "婴儿：趴在前臂上拍背，再用两指按压胸部——不要做腹部冲击。")
-        case .child: Bilingual("Child: same steps as adults, but kneel to their height and use a bit less force.",
+        case .toddler, .child: Bilingual("Child: same steps as adults, but kneel to their height and use a bit less force.",
                                "儿童：步骤同成人，但要跪下与孩子同高，力度稍轻。")
         case .senior: Bilingual("65+: same steps. Thrusts can injure frail ribs and organs — always get checked afterwards.",
                                 "老人：步骤相同。冲击可能伤及肋骨和内脏——事后务必就医检查。")
@@ -81,7 +81,7 @@ extension Illustrations {
 
     private static func drawStandingChoking(_ s: inout Sketch, _ p: Params, _ t: Double, _ who: Profile) {
         let st = Int(p[v: "stage"].rounded()), press = p[v: "press"]
-        let child = who.age == .child, chestThrust = who.isPregnant
+        let child = who.age.isChild, chestThrust = who.isPregnant
         let floor = 278.0
         s.room(floor: floor)
         let c = Casualty(who, adult: 206)

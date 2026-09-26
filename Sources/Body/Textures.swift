@@ -13,6 +13,13 @@ enum Textures {
     }
     static let bone = make { x, y in 0.9 + 0.1 * noise(x, y, 11) }
     static let organ = make { x, y in 0.9 + 0.1 * smooth(x, y, 8) }
+    /// winding grooves for the brain's folds (gyri and sulci)
+    static let brain = make { x, y in
+        let u = Double(x) / 64 * 2 * .pi, v = Double(y) / 64 * 2 * .pi
+        let w = sin(u * 9 + 1.8 * sin(v * 5) + 0.9 * sin(u * 3 + v * 6)) + 0.6 * sin(v * 11 + 1.4 * sin(u * 4))
+        // bright ridges, narrow dark grooves
+        return 0.55 + 0.45 * pow(max(0, min(1, (w + 1.6) / 3.2)), 0.45)
+    }
 
     static func `for`(_ layer: LayerID) -> TextureResource? {
         switch layer {

@@ -52,6 +52,7 @@ struct Casualty {
         switch p.age {
         case .infant: (look, build, self.h) = (.baby, .infant, h * 0.4)
         case .child: (look, build, self.h) = (.kid, .child, h * 0.68)
+        case .toddler: (look, build, self.h) = (.kid, .child, h * 0.5)
         case .senior: (look, build, self.h) = (.senior, .adult, h * 0.97)
         case .adult: (look, build, self.h) = (p.isPregnant || p.female ? .woman : adultLook, .adult, h)
         }

@@ -42,7 +42,7 @@ extension Illustrations {
         var steps = s.steps
         var base = s.params
         switch p.age {
-        case .infant, .child:
+        case .infant, .toddler, .child:
             base["type1"] = 1
             s.profileNote = Bilingual("Children more often get type 1: thirst, peeing a lot, bedwetting, weight loss, tiredness — see a doctor the same day.",
                                       "儿童更常见 1 型糖尿病：口渴、多尿、尿床、消瘦、乏力——当天就医。")
