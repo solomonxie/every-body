@@ -33,27 +33,22 @@ struct ChartScreen: View {
                 .padding(.vertical, 8)
             // each half pinch-zooms on its own; both start fitted
             GeometryReader { stage in
-                switch layout {
-                case .stacked:
-                    VStack(spacing: 0) {
-                        bodyPane.frame(height: stage.size.height * split)
-                        splitBar(total: stage.size.height, vertical: true)
-                        chartPane
-                    }
-                case .sideBySide:
-                    HStack(spacing: 0) {
-                        chartPane.frame(width: stage.size.width * (1 - split))
-                        splitBar(total: stage.size.width, vertical: false)
-                        bodyPane
-                    }
-                case .overlay:
-                    ZStack(alignment: .bottomTrailing) {
-                        bodyPane
-                        chartPane
-                            .background(.white, in: .rect(cornerRadius: 14))
-                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.secondary.opacity(0.4)))
-                            .frame(width: stage.size.width * 0.46, height: stage.size.height * 0.46)
-                            .padding(16)
+                // one body view and one chart view for every layout — only their frames move,
+                // so the 3D scene is never torn down and re-attached
+                let r = rects(stage.size)
+                ZStack(alignment: .topLeading) {
+                    bodyPane
+                        .frame(width: r.body.width, height: r.body.height)
+                        .offset(x: r.body.minX, y: r.body.minY)
+                    chartPane
+                        .background(layout == .overlay ? Color(uiColor: .systemBackground) : .clear, in: .rect(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.secondary.opacity(layout == .overlay ? 0.4 : 0)))
+                        .frame(width: r.chart.width, height: r.chart.height)
+                        .offset(x: r.chart.minX, y: r.chart.minY)
+                    if let bar = r.bar {
+                        splitBar(total: layout == .stacked ? stage.size.height : stage.size.width, vertical: layout == .stacked)
+                            .frame(width: bar.width, height: bar.height)
+                            .offset(x: bar.minX, y: bar.minY)
                     }
                 }
             }
@@ -127,6 +122,27 @@ struct ChartScreen: View {
     }
 
     /// Full-height body: a standing figure is tall and narrow, so a tall pane shows it large.
+    private func rects(_ size: CGSize) -> (body: CGRect, chart: CGRect, bar: CGRect?) {
+        let bar: CGFloat = 22
+        switch layout {
+        case .stacked:
+            let h = (size.height - bar) * split
+            return (CGRect(x: 0, y: 0, width: size.width, height: h),
+                    CGRect(x: 0, y: h + bar, width: size.width, height: size.height - h - bar),
+                    CGRect(x: 0, y: h, width: size.width, height: bar))
+        case .sideBySide:
+            let w = (size.width - bar) * split
+            let chartW = size.width - w - bar
+            return (CGRect(x: chartW + bar, y: 0, width: w, height: size.height),
+                    CGRect(x: 0, y: 0, width: chartW, height: size.height),
+                    CGRect(x: chartW, y: 0, width: bar, height: size.height))
+        case .overlay:
+            let w = size.width * 0.46, h = size.height * 0.46
+            return (CGRect(origin: .zero, size: size),
+                    CGRect(x: size.width - w - 16, y: size.height - h - 16, width: w, height: h), nil)
+        }
+    }
+
     /// Drag handle between the halves; `split` is always the body's share.
     private func splitBar(total: CGFloat, vertical: Bool) -> some View {
         Capsule()
