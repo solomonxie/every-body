@@ -14,11 +14,11 @@ Remove the Expo/React Native app and rebuild every feature natively, data first,
 - [x] T0.1 Remove Expo/RN code, scaffold xcodegen project, icon, signing via gitignored `Local.xcconfig`, device install script — see `project.yml`, `scripts/` — depends: none
 - [x] T0.2 Port data: body parts, organs, joints, points, reflex charts, system info — see `Sources/Data/` — depends: T0.1
 - [x] T0.3 Mesh generators (capsule, ellipsoid, tube, torus arc) + `BodyEntity` with layers — see `Sources/Body/` — depends: T0.2
-- [ ] T0.4 Viewer: orbit camera, tap-to-name, layers, hide/fade/isolate/undo, joints — see `Sources/Viewer/` — depends: T0.3
-- [ ] T0.5 Reflex Map pulse + blood flow on the body — see `Sources/Viewer/` — depends: T0.4
-- [ ] T0.6 Reflex charts in `Canvas` (hand, foot, ear), zoom, 3D inset — see `Sources/Charts/` — depends: T0.3
-- [ ] T0.7 Illustration player + 18 scenes in `Canvas` — see `Sources/Illustrations/` — depends: T0.1
-- [ ] T0.8 Explore, search, quiz, info, settings — see `Sources/Screens/` — depends: T0.4, T0.6, T0.7
+- [x] T0.4 Viewer: orbit camera, tap-to-name, layers, hide/fade/isolate/undo, joints — see `Sources/Viewer/` — depends: T0.3
+- [x] T0.5 Reflex Map pulse + blood flow on the body — see `Sources/Viewer/` — depends: T0.4
+- [x] T0.6 Reflex charts in `Canvas` (hand, foot, ear), zoom, 3D inset — see `Sources/Charts/` — depends: T0.3
+- [x] T0.7 Illustration player + 18 scenes in `Canvas` — see `Sources/Illustrations/` — depends: T0.1
+- [x] T0.8 Explore, search, quiz, info, settings — see `Sources/Screens/` — depends: T0.4, T0.6, T0.7
 
 ## Phase 1: Foundations
 Data types, settings, and name display every later screen reads. No 3D dependency, so
