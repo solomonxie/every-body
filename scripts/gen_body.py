@@ -152,7 +152,7 @@ TORSO = {
              (1.05, 0.004, 0.144, 0.094), (1.11, 0.005, 0.141, 0.095), (1.19, 0.005, 0.151, 0.1), (1.27, 0.01, 0.164, 0.108),
              (1.34, 0.005, 0.172, 0.106), (1.385, -0.006, 0.184, 0.098), (1.41, -0.012, 0.19, 0.088), (1.432, -0.018, 0.165, 0.074),
              (1.452, -0.02, 0.1, 0.06), (1.468, -0.02, 0.05, 0.045)],
-    "female": [(0.815, 0.0, 0.055, 0.05), (0.875, -0.02, 0.162, 0.104), (0.93, -0.02, 0.186, 0.112), (0.99, -0.008, 0.162, 0.1),
+    "female": [(0.815, 0.0, 0.055, 0.05), (0.875, -0.02, 0.156, 0.104), (0.93, -0.02, 0.176, 0.11), (0.99, -0.008, 0.162, 0.1),
                (1.05, 0.002, 0.128, 0.088), (1.11, 0.003, 0.125, 0.088), (1.19, 0.003, 0.136, 0.093), (1.27, 0.006, 0.15, 0.1),
                (1.34, 0.002, 0.158, 0.098), (1.385, -0.008, 0.17, 0.09), (1.41, -0.013, 0.176, 0.082), (1.432, -0.018, 0.152, 0.068),
                (1.452, -0.02, 0.094, 0.056), (1.468, -0.02, 0.046, 0.042)],
@@ -670,6 +670,11 @@ def torso_skin(rows, female):
             k += 0.09 * near(theta, back + side * 30, 20) * bell(y, 0.84, 0.99)          # buttocks
         k -= 0.1 * near(theta, back, 4) * bell(y, 0.82, 0.965)                          # cleft between the buttocks
         k -= 0.02 * near(theta, 90, 4) * bell(y, 0.98, 1.26)                            # belly midline
+        if female:
+            for side in (-1, 1):
+                # breasts: rounded, fuller below the middle, rising out of the chest wall
+                lift = bell(y, 1.215, 1.355) ** 0.8 * (1 + 0.25 * (1.3 - y) / 0.05) if 1.215 < y < 1.355 else 0
+                k += 0.34 * near(theta, 90 + side * 29, 14) * max(0, lift)
         for side in (-1, 1):
             k += 0.03 * near(theta, 90 + side * 38, 22) * bell(y, 1.43, 1.462)          # collarbones
         k -= 0.05 * near(theta, 90, 9) * bell(y, 1.43, 1.47)                            # notch at the base of the throat
@@ -743,7 +748,6 @@ def skin():
     for sex, rows in torso.items():
         s(f"torso-{sex}", torso_skin(rows, sex == "female"), sex)
     # breast: a dome rising out of the chest wall, fuller low
-    sp("breast", lathe((0.08, 1.29, 0.06), (0.086, 1.27, 0.145), [0.062, 0.061, 0.056, 0.047, 0.036, 0.024], [1, 1, 0.92]), "female")
     # upper arm starts as a rounded deltoid cap tucked under the shoulder slope
     sp("upper-arm", limb_skin(UPPER_ARM, lambda y, th:
         0.04 * near(th, 90, 30) * bell(y, 1.13, 1.33)             # biceps
