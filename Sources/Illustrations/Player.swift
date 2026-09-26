@@ -81,23 +81,25 @@ struct PlayerView: View {
     @State private var tapTimes: [Date] = []
     @State private var heldSeconds: Double = 0
     @State private var holding = false
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         let scenario = player.scenario
-        VStack(spacing: 0) {
-            VStack(spacing: Space.s) {
-                canvas(scenario)
-                if let note = scenario.profileNote {
-                    Banner(text: settings.t(note), symbol: "person.fill", ink: .note, fill: .noteFill)
+        Group {
+            // huge type: scroll the whole page instead of squeezing the scene
+            if typeSize.isAccessibilitySize {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        stage(scenario)
+                        panel(player.step)
+                    }
                 }
-                if let w = scenario.warning {
-                    Banner(text: settings.t(w), symbol: "exclamationmark.triangle.fill", ink: .caution, fill: .cautionFill)
+            } else {
+                VStack(spacing: 0) {
+                    stage(scenario).frame(maxHeight: .infinity)
+                    panel(player.step)
                 }
             }
-            .padding(.horizontal, Space.l)
-            .padding(.vertical, Space.m)
-            .frame(maxHeight: .infinity)
-            panel(player.step)
         }
         .background(Color.page)
         .navigationTitle(settings.t(scenario.title))
@@ -113,6 +115,20 @@ struct PlayerView: View {
                 try? await Task.sleep(for: .milliseconds(16))
             }
         }
+    }
+
+    private func stage(_ scenario: Scenario) -> some View {
+        VStack(spacing: Space.s) {
+            canvas(scenario)
+            if let note = scenario.profileNote {
+                Banner(text: settings.t(note), symbol: "person.fill", ink: .note, fill: .noteFill)
+            }
+            if let w = scenario.warning {
+                Banner(text: settings.t(w), symbol: "exclamationmark.triangle.fill", ink: .caution, fill: .cautionFill)
+            }
+        }
+        .padding(.horizontal, Space.l)
+        .padding(.vertical, Space.m)
     }
 
     /// the scene keeps its 360 × 300 shape on a white card
