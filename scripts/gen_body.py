@@ -628,6 +628,49 @@ def vessels():
 
 # ---------------------------------------------------------------- skin (translucent figure)
 
+def torso_skin(rows, female):
+    """Torso loft resampled every 2.5 cm, each slice pushed in or out around its angle: spine groove and the
+    muscle ridges beside it, shoulder blades, a faint belly midline, buttocks with their cleft."""
+    n_around = 72
+
+    def bell(v, lo, hi):
+        return math.sin(math.pi * (v - lo) / (hi - lo)) if lo < v < hi else 0.0
+
+    def near(theta, centre, width):
+        d = (theta - centre + 180) % 360 - 180
+        return math.exp(-(d / width) ** 2)
+
+    def relief(y, theta):
+        k = 0.0
+        back = 270
+        k -= 0.055 * near(theta, back, 5) * bell(y, 0.93, 1.45)                       # groove over the spine
+        for side in (-1, 1):
+            k += 0.035 * near(theta, back + side * 13, 7) * bell(y, 0.93, 1.32)         # erector ridges
+            k += 0.05 * near(theta, back + side * 38, 13) * bell(y, 1.24, 1.43)          # shoulder blades
+            k += 0.09 * near(theta, back + side * 30, 20) * bell(y, 0.84, 0.99)          # buttocks
+        k -= 0.1 * near(theta, back, 4) * bell(y, 0.82, 0.965)                          # cleft between the buttocks
+        k -= 0.02 * near(theta, 90, 4) * bell(y, 0.98, 1.26)                            # belly midline
+        return 1 + k
+
+    ys = [r[0] for r in rows]
+    out = []
+    y = ys[0]
+    while y <= ys[-1] + 1e-9:
+        for a, b in zip(rows, rows[1:]):
+            if a[0] <= y <= b[0]:
+                t = (y - a[0]) / (b[0] - a[0])
+                _, z, rx, rz = [a[n] + (b[n] - a[n]) * t for n in range(4)]
+                break
+        # boxy through chest and belly, rounding off smoothly over the shoulders
+        f = min(1, max(0, (y - 1.3) / 0.17))
+        square = 2.6 - 0.6 * f * f * (3 - 2 * f)
+        # loft angle a points along (cos a, -sin a) in (x, z) for an upward loft, so world angle = -a
+        mults = [relief(y, -360 * k / n_around) for k in range(n_around)]
+        out.append((0, y, z, rx, rz, square, mults))
+        y = round(y + 0.025, 4)
+    return {"kind": "loft", "sections": [U(0, y, z) + [L(rx), L(rz), sq] + [round(m, 4) for m in mults] for _, y, z, rx, rz, sq, mults in out]}
+
+
 def skin():
     s = lambda pid, shape, sex=None: part(pid, "Skin", "皮肤", "skin", SKIN, shape, sex)
     sp = lambda pid, shape, sex=None: pair(pid, "Skin", "皮肤", "skin", SKIN, shape, sex)
@@ -672,12 +715,9 @@ def skin():
     # torso: crotch → neck; rounded-box sections, z offsets carry chest, belly, back and buttocks; shoulders slope into the trapezius
     torso = TORSO
     for sex, rows in torso.items():
-        # boxy through chest and belly, rounding off over the shoulders
-        s(f"torso-{sex}", loft([(0, y, z, rx, rz, 2.6 if y < 1.36 else 2.25 if y < 1.44 else 2.0) for y, z, rx, rz in rows]), sex)
+        s(f"torso-{sex}", torso_skin(rows, sex == "female"), sex)
     # breast: a dome rising out of the chest wall, fuller low
     sp("breast", lathe((0.08, 1.29, 0.06), (0.086, 1.27, 0.145), [0.062, 0.061, 0.056, 0.047, 0.036, 0.024], [1, 1, 0.92]), "female")
-    # buttocks round out the seat below the lower back
-    sp("buttock", sphere((0.056, 0.918, -0.058), 0.068, [0.95, 0.85, 0.72]))
     # upper arm starts as a rounded deltoid cap tucked under the shoulder slope
     sp("upper-arm", loft(UPPER_ARM))
     sp("forearm", loft(FOREARM))

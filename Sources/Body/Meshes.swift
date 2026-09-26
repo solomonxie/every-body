@@ -142,7 +142,10 @@ enum Meshes {
 
     /// Smooth skin through elliptical sections (centre, half-width along x, half-depth), capped at both ends.
     /// An optional 6th value squares the section off (superellipse exponent: 2 = ellipse, 3 ≈ rounded box).
-    static func loft(sections: [[Float]], sides: Int = 20) -> RawMesh {
+    /// Any further values are radius multipliers sampled evenly around the section (relief: grooves, ridges, bulges);
+    /// every section of such a loft carries the same number.
+    static func loft(sections: [[Float]], sides requested: Int = 20) -> RawMesh {
+        let sides = (sections.first?.count ?? 0) > 6 ? 96 : requested
         let n = sections.count
         let steps = (n - 1) * 4
         func at(_ u: Float) -> [Float] {
@@ -192,7 +195,13 @@ enum Meshes {
                 let e = r.count > 5 ? 2 / max(r[5], 1) : 1
                 let ca = cos(a), sa = sin(a)
                 let cx = copysign(pow(abs(ca), e), ca), sy = copysign(pow(abs(sa), e), sa)
-                positions.append(c + cx * r[3] * side + sy * r[4] * depth)
+                var k: Float = 1
+                if r.count > 6 {
+                    let n = r.count - 6, f = Float(s) / Float(sides) * Float(n)
+                    let i0 = Int(f) % n, i1 = (i0 + 1) % n, w = f - Float(Int(f))
+                    k = r[6 + i0] * (1 - w) + r[6 + i1] * w
+                }
+                positions.append(c + k * (cx * r[3] * side + sy * r[4] * depth))
                 // normal of |x/a|^n + |y/b|^n = 1
                 let nExp = 2 / e
                 let nx = copysign(pow(abs(cx), nExp - 1), cx) / max(r[3], 1e-4), ny = copysign(pow(abs(sy), nExp - 1), sy) / max(r[4], 1e-4)
