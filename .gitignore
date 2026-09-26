@@ -41,3 +41,7 @@ example
 # generated native folders
 /ios
 /android
+
+# python (asset scripts)
+venv/
+/build

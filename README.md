@@ -41,3 +41,12 @@ anatomy geometry is sourced (matching how `RotatingMesh` will be swapped out).
 ```bash
 npm install && npx expo start
 ```
+
+Install on a connected iPhone (Release build, no Metro needed) — put `DEVELOPMENT_TEAM`
+and `IOS_BUNDLE_ID` in the gitignored `.env.local` first:
+
+```bash
+scripts/install-ios-device.sh
+```
+
+App icon: `venv/bin/python scripts/make_icons.py` (needs Pillow in `venv/`).
