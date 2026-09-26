@@ -9,22 +9,21 @@ skill's `notation.md`; mobile mocks 60 cols.
       Launch
         │
         ▼
-  ┌ Explore (tab) ┐──tap tile──▶ Viewer ──Details ›──▶ Part info
-  │  🔍 search ───┼──▶ Search ──┘  │ ▲                    │
-  │  图解 group ──┼──▶ Topic list ──▶ Player ──Show in Viewer ›──▶ Viewer
-  └───────────────┘  (sheet)       │ └──Show on model─────┘
-                                   ├──▶ Layers   (sheet)
-  ┌ Settings (tab)┐                ├──▶ Display  (sheet)
-  │ Licenses ›    │──▶ Licenses    ├──▶ Search   (sheet)
-  │ Disclaimer ›  │──▶ Disclaimer  └──▶ Part card (peek sheet)
-  └───────────────┘
+  ┌ Home (one page) ┐──tap tile──▶ Viewer / Chart ──ⓘ──▶ Info
+  │ 🔍 search       │──results inline, same page
+  │ Maps (2 rows ▾) │
+  │ Illustrations ──┼──▶ Player
+  │ Settings        │   (section, not a tab)
+  └─────────────────┘
+  every page: toolbar chip [👤 Adult M ▾] → age / sex / pregnant
 ```
 
 ## Principle: schematic, not lifelike
 
 Draw with geometry — capsules, ellipses, lines, arcs, colour-coded zones. A shape only has
 to be recognisable; what must be exact is *where* things are and *what connects to what*.
-No textures, no realistic outlines, no image assets for anatomy.
+No photo textures, no image assets for anatomy. Allowed: tiny procedural tint patterns
+(muscle fibre stripes, bone grain) that cost nothing to render.
 
 ```
 ✓ ( )  capsule finger, zone at the right joint      ✗ traced photo-real hand
@@ -48,17 +47,18 @@ see [illustrations.md](uiux/illustrations.md#try-primitives).
 
 | Surface | Kind | Why this kind | Mock |
 |---|---|---|---|
-| Explore | tab page | home, category grid | [explore.md](uiux/explore.md) |
+| Home | the only root page | search + maps + illustrations + settings in one scroll | [explore.md](uiux/explore.md) |
 | Viewer | stack page, full-bleed | the model needs the whole screen | [viewer.md](uiux/viewer.md) |
 | Part card | peek sheet over Viewer | keeps model visible while reading | [viewer.md](uiux/viewer.md#part-card) |
 | Points sheet | persistent sheet (reflex / flow systems) | list + effect card, model stays above | [points.md](uiux/points.md) |
 | Layers | sheet | per-system toggle + opacity, multi-row | [viewer.md](uiux/viewer.md#layers-sheet) |
 | Display | sheet | viewer-local toggles | [viewer.md](uiux/viewer.md#display-sheet) |
-| Search | sheet, full height | searches a corpus → sheet, not in-place | [search.md](uiux/search.md) |
+| Search | inline on Home | results replace Home sections while typing | [search.md](uiux/search.md) |
 | Part info | stack page | long text + related parts; own back stack | [part-info.md](uiux/part-info.md) |
 | Topic list | stack page | one group's scenarios | [illustrations.md](uiux/illustrations.md#topic-list) |
 | Player | Viewer in scenario mode | same canvas, rails → step controls | [illustrations.md](uiux/illustrations.md#player) |
-| Settings | tab page | app-wide prefs | [settings.md](uiux/settings.md) |
+| Settings | last Home section | few prefs; a tab for them was overhead | [settings.md](uiux/settings.md) |
+| Profile chip | toolbar menu, every page | who the content is about | [components.md](uiux/components.md#profilemenu) |
 | Licenses, Disclaimer | stack pages | static text | [settings.md](uiux/settings.md) |
 
 Reusable parts: [components.md](uiux/components.md).
