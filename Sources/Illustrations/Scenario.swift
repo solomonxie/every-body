@@ -6,6 +6,14 @@ struct Bilingual: Sendable {
     let en: String
     let zh: String
     init(_ en: String, _ zh: String) { self.en = en; self.zh = zh }
+
+    /// Legacy "breastbone 胸骨" labels: English before the first Chinese character, Chinese from it on.
+    static func pick(mixed: String, zh: Bool) -> String {
+        let isHan: (Character) -> Bool = { $0.unicodeScalars.first.map { (0x4E00...0x9FFF).contains($0.value) } ?? false }
+        guard let i = mixed.firstIndex(where: isHan), mixed.contains(where: { $0.isASCII && $0.isLetter }) else { return mixed }
+        let en = mixed[..<i].trimmingCharacters(in: .whitespaces), cn = mixed[i...].trimmingCharacters(in: .whitespaces)
+        return zh || en.isEmpty ? cn : en
+    }
 }
 
 struct Scrub: Sendable {

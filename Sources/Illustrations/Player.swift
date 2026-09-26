@@ -89,7 +89,7 @@ private struct PlayerView: View {
                     let s = min(size.width / sceneSize.width, size.height / sceneSize.height)
                     ctx.translateBy(x: (size.width - sceneSize.width * s) / 2, y: (size.height - sceneSize.height * s) / 2)
                     ctx.scaleBy(x: s, y: s)
-                    var sketch = Sketch(ctx: ctx)
+                    var sketch = Sketch(ctx: ctx, zh: settings.zh)
                     scenario.draw(&sketch, player.params, player.t)
                 }
                 .background(Color.white, ignoresSafeAreaEdges: [])
