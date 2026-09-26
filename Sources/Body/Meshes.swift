@@ -130,6 +130,58 @@ enum Meshes {
         return build(positions, normals, indices)
     }
 
+    /// Smooth skin through elliptical sections (centre, half-width along x, half-depth), capped at both ends.
+    static func loft(sections: [[Float]], sides: Int = 20) -> MeshResource {
+        let n = sections.count
+        let steps = (n - 1) * 4
+        func at(_ u: Float) -> [Float] {
+            let f = min(Float(n - 1) - 0.0001, max(0, u * Float(n - 1)))
+            let i = Int(f), t = f - Float(i)
+            let a = sections[max(0, i - 1)], b = sections[i], c = sections[min(n - 1, i + 1)], d = sections[min(n - 1, i + 2)]
+            let t2 = t * t, t3 = t2 * t
+            return (0..<5).map { k in
+                0.5 * (2 * b[k] + (-a[k] + c[k]) * t + (2 * a[k] - 5 * b[k] + 4 * c[k] - d[k]) * t2 + (-a[k] + 3 * b[k] - 3 * c[k] + d[k]) * t3)
+            }
+        }
+        let rows = (0...steps).map { at(Float($0) / Float(steps)) }
+        var positions: [SIMD3<Float>] = []
+        var normals: [SIMD3<Float>] = []
+        var indices: [UInt32] = []
+        for (i, r) in rows.enumerated() {
+            let c = SIMD3(r[0], r[1], r[2])
+            let prev = rows[max(0, i - 1)], next = rows[min(rows.count - 1, i + 1)]
+            let t = simd_normalize(SIMD3(next[0] - prev[0], next[1] - prev[1], next[2] - prev[2]) + 1e-6)
+            var side = SIMD3<Float>(1, 0, 0) - simd_dot(SIMD3<Float>(1, 0, 0), t) * t
+            side = simd_normalize(side + 1e-6)
+            let depth = simd_cross(side, t)
+            for s in 0...sides {
+                let a = Float(s) / Float(sides) * 2 * .pi
+                positions.append(c + cos(a) * r[3] * side + sin(a) * r[4] * depth)
+                normals.append(simd_normalize(cos(a) / max(r[3], 1e-4) * side + sin(a) / max(r[4], 1e-4) * depth))
+            }
+        }
+        let stride = UInt32(sides + 1)
+        for i in 0..<UInt32(rows.count - 1) {
+            for s in 0..<UInt32(sides) {
+                let a = i * stride + s, b = a + stride
+                indices += [a, a + 1, b, b, a + 1, b + 1]
+            }
+        }
+        // caps
+        for (row, flip) in [(0, true), (rows.count - 1, false)] {
+            let r = rows[row]
+            let centre = UInt32(positions.count)
+            positions.append(SIMD3(r[0], r[1], r[2]))
+            let t = simd_normalize(SIMD3(rows[min(rows.count - 1, row + 1)][0] - rows[max(0, row - 1)][0],
+                                         rows[min(rows.count - 1, row + 1)][1] - rows[max(0, row - 1)][1],
+                                         rows[min(rows.count - 1, row + 1)][2] - rows[max(0, row - 1)][2]) + 1e-6)
+            normals.append(flip ? -t : t)
+            let base = UInt32(row) * stride
+            for s in 0..<UInt32(sides) { indices += flip ? [centre, base + s + 1, base + s] : [centre, base + s, base + s + 1] }
+        }
+        return build(positions, normals, indices)
+    }
+
     static func catmullRom(_ p: [SIMD3<Float>], _ u: Float) -> SIMD3<Float> {
         let n = p.count - 1
         let f = min(Float(n) - 0.0001, max(0, u * Float(n)))

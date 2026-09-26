@@ -61,6 +61,15 @@ def samples(s):
         for p in pts:
             for t in range(6):
                 out.append([c[n] + (p[n] - c[n]) * t / 5 for n in range(3)])
+    elif k == "loft":
+        secs = s["sections"]
+        flat = abs(secs[-1][2] - secs[0][2]) > abs(secs[-1][1] - secs[0][1])  # runs along z (the foot)
+        for a, b in zip(secs, secs[1:]):
+            for t in range(6):
+                x, y, z, rx, rz = [a[n] + (b[n] - a[n]) * t / 6 for n in range(5)]
+                for j in range(18):
+                    ph = 2 * math.pi * j / 18
+                    out.append([x + rx * math.cos(ph), y + rz * math.sin(ph), z] if flat else [x + rx * math.cos(ph), y, z + rz * math.sin(ph)])
     elif k == "box":
         out.append(s["center"])
     return out
@@ -77,7 +86,7 @@ def main():
     for ax, (i, j), title in ((axes[0], (0, 1), "front"), (axes[1], (2, 1), "side (front →)")):
         for s, color in shapes:
             pts = samples(s)
-            ax.scatter([p[i] for p in pts], [p[1] for p in pts], s=0.4, c=color, alpha=0.5 if s["kind"] == "tube" else 0.25)
+            ax.scatter([p[i] for p in pts], [p[1] for p in pts], s=0.4, c=color, alpha=0.5 if s["kind"] in ("tube", "loft") else 0.25)
         ax.set_aspect("equal")
         ax.set_title(title)
         ax.set_ylim(-1.7, 1.8)

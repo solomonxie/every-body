@@ -38,9 +38,11 @@ enum PartShape: Codable, Sendable {
     case tube(points: [Vec3], radius: Float, radii: [Float]?)
     /// flat bone: a polygon given a thickness
     case plate(points: [Vec3], thickness: Float)
+    /// stacked ellipses along a path — each section is centre + half-width (sideways) + half-depth
+    case loft(sections: [[Float]])
 
     private enum Key: String, CodingKey {
-        case kind, center, radius, scale, size, rotation, from, to, points, radii, thickness
+        case kind, center, radius, scale, size, rotation, from, to, points, radii, thickness, sections
     }
 
     init(from decoder: Decoder) throws {
@@ -63,6 +65,8 @@ enum PartShape: Codable, Sendable {
         case "tube":
             self = .tube(points: try c.decode([Vec3].self, forKey: .points), radius: try f(.radius),
                          radii: try c.decodeIfPresent([Float].self, forKey: .radii))
+        case "loft":
+            self = .loft(sections: try c.decode([[Float]].self, forKey: .sections))
         default:
             self = .plate(points: try c.decode([Vec3].self, forKey: .points), thickness: try f(.thickness))
         }

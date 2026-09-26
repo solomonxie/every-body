@@ -386,6 +386,8 @@ final class BodyScene {
             return ModelEntity(mesh: Meshes.tube(points: points.map(\.simd), radius: radius, radii: radii))
         case let .plate(points, thickness):
             return ModelEntity(mesh: Meshes.plate(points: points.map(\.simd), thickness: thickness))
+        case let .loft(sections):
+            return ModelEntity(mesh: Meshes.loft(sections: sections))
         }
     }
 
