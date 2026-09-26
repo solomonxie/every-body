@@ -219,12 +219,13 @@ struct ChartScreen: View {
                 }
                 .opacity(effectVisible ? 1 : 0)
             } else {
-                Text(settings.t("Tap a zone — the pulse on the figure shows where it acts.", "点按区域，右侧人体会显示对应器官。"))
+                Text(settings.t("Tap a zone — the pulse on the figure shows where it acts.", "点按区域，人体上会显示对应器官。"))
                     .font(.footnote).foregroundStyle(.secondary)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 72, maxHeight: 150, alignment: .topLeading)
-        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, 16).padding(.vertical, 10)
         .background(Color(uiColor: .secondarySystemBackground))
     }
 
