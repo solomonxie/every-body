@@ -49,7 +49,7 @@ final class BodyScene {
     private var partEntities: [String: ModelEntity] = [:]
     private var partLayer: [String: LayerID] = [:]
     private var baseMaterials: [String: PhysicallyBasedMaterial] = [:]
-    private var skinEntities: [ModelEntity] = []
+    private var skinEntities: [(entity: ModelEntity, color: UIColor)] = []
     private var organEntities: [String: Entity] = [:]
     private var jointOuter: [String: Entity] = [:]
     private var pointEntities: [String: ModelEntity] = [:]
@@ -119,9 +119,11 @@ final class BodyScene {
         let sex = female ? "female" : "male"
         for part in Catalog.body.parts where part.layer == .skin && (part.sex == nil || part.sex == sex) {
             let entity = Self.entity(for: part.shape)
-            entity.model?.materials = [Self.material(skinColor, opacity: 0.3)]
+            // eyes, lips and brows keep their own colour; everything else takes the skin tone
+            let color = part.color == "#F2C9A5" ? skinColor : UIColor(hex: part.color)
+            entity.model?.materials = [Self.material(color, opacity: 0.3)]
             parent(of: part.id).addChild(entity)
-            skinEntities.append(entity)
+            skinEntities.append((entity, color))
         }
 
         for organ in Catalog.body.organs {
@@ -288,9 +290,9 @@ final class BodyScene {
         let inner = layers.contains { $0 != .skin }
         // skin alone is solid; over inner layers it's a faint glass
         let skinOpacity: Float = layers.contains(.skin) ? (inner ? 0.12 : 1) : 0
-        for skin in skinEntities {
+        for (skin, color) in skinEntities {
             skin.isEnabled = skinOpacity > 0
-            skin.model?.materials = [Self.material(skinColor, opacity: skinOpacity)]
+            skin.model?.materials = [Self.material(color, opacity: skinOpacity)]
         }
         let muscleOpacity: Float = layers.contains(.skeletal) ? 0.55 : 1
         for (id, entity) in partEntities {
