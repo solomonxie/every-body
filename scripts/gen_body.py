@@ -356,8 +356,13 @@ def skeleton():
          lathe((0.188, 1.39, -0.028), (0.212, 1.105, -0.015), [0.02, 0.012, 0.0105, 0.0105, 0.012, 0.018, 0.022], [1.1, 1, 0.8]))
     pair("ulna", "Ulna", "尺骨", "skeletal", BONE, lathe((0.2, 1.118, -0.03), (0.224, 0.852, -0.004), [0.011, 0.0095, 0.0075, 0.0065, 0.006, 0.0075]))
     pair("radius", "Radius", "桡骨", "skeletal", BONE, lathe((0.226, 1.096, -0.008), (0.25, 0.853, 0.012), [0.0075, 0.007, 0.0075, 0.009, 0.011, 0.014]))
-    pair("carpals", "Carpal bones", "腕骨", "skeletal", BONE,
-         loft([(0.24, 0.848, 0.005, 0.019, 0.009), (0.239, 0.834, 0.006, 0.025, 0.011), (0.237, 0.82, 0.007, 0.026, 0.01)], square=2.5))
+    # carpals: two rows of four small bones between the forearm and the palm
+    pebbles = []
+    for row, (y, span) in enumerate(((0.844, 0.021), (0.83, 0.025))):
+        for k in range(4):
+            x = 0.24 - span + span * 2 * (k + 0.5) / 4
+            pebbles.append([(x, y + 0.006, 0.006), (x, y - 0.006, 0.007)])
+    pair("carpals", "Carpal bones", "腕骨", "skeletal", BONE, tubes(pebbles, 0.0058))
     fingers = [("index", "食指", 0.258, 0.08), ("middle", "中指", 0.24, 0.088), ("ring", "无名指", 0.223, 0.082), ("little", "小指", 0.207, 0.064)]
     for key, zh, x, length in fingers:
         base, knuckle = (x - 0.003 * (x - 0.232) / 0.03, 0.822, 0.006), (x, 0.765, 0.008)

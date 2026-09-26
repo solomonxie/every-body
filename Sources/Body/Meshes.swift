@@ -74,10 +74,12 @@ enum Meshes {
     /// Tube along a Catmull-Rom curve through the points; `radii` (one per point) taper it.
     static func tube(points: [SIMD3<Float>], radius: Float, radii: [Float]? = nil, samples: Int = 40, sides: Int = 8) -> RawMesh {
         let path = (0...samples).map { catmullRom(points, Float($0) / Float(samples)) }
-        // ends close to a rounded tip so an open tube never shows a hollow rim
+        // ends close in a round cap about one radius long, so no tube shows a hollow rim
+        let length = zip(path, path.dropFirst()).reduce(Float(0)) { $0 + simd_distance($1.0, $1.1) }
+        let cap = min(0.45, radius / max(length, 1e-5))
         func r(_ i: Int) -> Float {
-            let end = Float(min(i, samples - i)) / Float(max(1, samples)) * 40
-            return body(i) * (end >= 1 ? 1 : max(0.05, sin(end * .pi / 2)))
+            let e = Float(min(i, samples - i)) / Float(max(1, samples)) / cap
+            return body(i) * (e >= 1 ? 1 : max(0.05, (1 - (1 - e) * (1 - e)).squareRoot()))
         }
         func body(_ i: Int) -> Float {
             guard let radii, radii.count > 1 else { return radius }
