@@ -4,6 +4,7 @@ import { SKELETON } from './skeleton';
 import { VESSELS } from './vessels';
 
 export type { LayerId, SchematicPart } from './types';
+export { JOINTS, jointForTry, jointOfPart, type Joint } from './joints';
 
 export const SCHEMATIC_PARTS: SchematicPart[] = [...SKELETON, ...MUSCLES, ...VESSELS];
 

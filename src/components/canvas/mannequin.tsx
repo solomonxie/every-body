@@ -5,6 +5,7 @@ import type { Mesh, MeshStandardMaterial } from 'three';
 import { REFLEX_RESPONSE_MS } from '@/constants/reflex';
 import { BODY_PARTS, ORGAN_NAMES, ORGANS, type BodyPart, type OrganId } from '@/data/anatomy';
 
+import { Articulated, type JointAngles } from './articulated';
 import type { SceneBusRef } from './scene-bus';
 
 const RESPONSE_SECONDS = REFLEX_RESPONSE_MS / 1000;
@@ -63,17 +64,32 @@ function OrganMesh({ id, busRef, selected }: { id: OrganId; busRef: SceneBusRef;
 }
 
 /** Translucent primitive figure with the organs visible inside. */
-type Props = { skinColor: string; busRef: SceneBusRef; skinOpacity?: number; showOrgans?: boolean; selectedId?: string };
+type Props = {
+  skinColor: string;
+  busRef: SceneBusRef;
+  skinOpacity?: number;
+  showOrgans?: boolean;
+  selectedId?: string;
+  angles?: JointAngles;
+};
 
-export function Mannequin({ skinColor, busRef, skinOpacity = 0.32, showOrgans = true, selectedId }: Props) {
+export function Mannequin({ skinColor, busRef, skinOpacity = 0.32, showOrgans = true, selectedId, angles = {} }: Props) {
   return (
     <group>
-      {skinOpacity > 0 && BODY_PARTS.map((part) => (
-        <mesh key={part.id} position={part.position} rotation={[0, 0, part.rotationZ ?? 0]} scale={part.scale ?? [1, 1, 1]} renderOrder={1}>
-          <PartGeometry shape={part.shape} />
-          <meshStandardMaterial color={skinColor} transparent opacity={skinOpacity} depthWrite={false} roughness={0.6} />
-        </mesh>
-      ))}
+      {skinOpacity > 0 && (
+        <Articulated
+          angles={angles}
+          items={BODY_PARTS.map((part) => ({
+            id: part.id,
+            node: (
+              <mesh key={part.id} position={part.position} rotation={[0, 0, part.rotationZ ?? 0]} scale={part.scale ?? [1, 1, 1]} renderOrder={1}>
+                <PartGeometry shape={part.shape} />
+                <meshStandardMaterial color={skinColor} transparent opacity={skinOpacity} depthWrite={false} roughness={0.6} />
+              </mesh>
+            ),
+          }))}
+        />
+      )}
       {(Object.keys(ORGANS) as OrganId[])
         .filter((id) => showOrgans || ORGANS[id].region)
         .map((id) => (

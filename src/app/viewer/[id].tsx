@@ -12,13 +12,14 @@ import { createSceneBus, DEFAULT_BPM, faceFront, FOCUS, setFocus } from '@/compo
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FlowPanel } from '@/components/viewer/flow-panel';
+import { JointControl } from '@/components/viewer/joint-control';
 import { LayerBar } from '@/components/viewer/layer-bar';
 import { PartCard } from '@/components/viewer/part-card';
 import { ModelView } from '@/components/viewer/model-view';
 import { ReflexPanel, type RegionFilter } from '@/components/viewer/reflex-panel';
 import { REFLEX_TRAVEL_MS } from '@/constants/reflex';
 import { Spacing } from '@/constants/theme';
-import { DEFAULT_LAYERS, SCHEMATIC_PARTS, type LayerId } from '@/data/body';
+import { DEFAULT_LAYERS, jointForTry, SCHEMATIC_PARTS, type LayerId } from '@/data/body';
 import { POINTS_BY_SYSTEM } from '@/data/system-points';
 import type { BodyPoint } from '@/types/BodyPoint';
 import { BODY_SYSTEMS } from '@/types/BodySystem';
@@ -50,6 +51,8 @@ export default function ViewerScreen() {
   const [hidden, setHidden] = useState<string[]>([]);
   const [selectedPartId, setSelectedPartId] = useState<string | undefined>(partParam);
   const innerLayers = layers.some((layer) => layer !== 'skin');
+  const [angles, setAngles] = useState<Record<string, number>>({});
+  const tryJoint = selectedPartId ? jointForTry(selectedPartId) : undefined;
 
   const activePoint = systemPoints?.points.find((point) => point.id === activePointId);
 
@@ -115,9 +118,10 @@ export default function ViewerScreen() {
         skinOpacity={layers.includes('skin') ? (innerLayers ? 0.12 : 0.32) : 0}
         showOrgans={layers.includes('organs')}
         selectedId={selectedPartId}
+        angles={angles}
         onPick={pick}
       >
-        <SchematicBody layers={layers} hidden={hidden} selectedId={selectedPartId} />
+        <SchematicBody layers={layers} hidden={hidden} selectedId={selectedPartId} angles={angles} />
         {systemPoints && <PointMarkers points={systemPoints.points} activeId={activePointId} />}
         {isReflex && <ReflexPulse point={activePoint} triggerKey={pressTrigger} busRef={busRef} />}
         {flowStops && <BloodFlow stops={flowStops} busRef={busRef} />}
@@ -129,6 +133,13 @@ export default function ViewerScreen() {
             <LayerBar layers={layers} onToggle={toggleLayer} hiddenCount={hidden.length} onShowAll={() => setHidden([])} />
             {selectedPartId && (
               <PartCard partId={selectedPartId} onHide={hidePart} onClose={() => setSelectedPartId(undefined)} />
+            )}
+            {tryJoint && (
+              <JointControl
+                joint={tryJoint}
+                angle={angles[tryJoint.id] ?? 0}
+                onChange={(degrees) => setAngles({ ...angles, [tryJoint.id]: degrees })}
+              />
             )}
             {isReflex && systemPoints ? (
               <ReflexPanel
@@ -143,7 +154,7 @@ export default function ViewerScreen() {
               <FlowPanel stops={flowStops} bpm={bpm} onBpm={changeBpm} activeStop={activePoint} onStop={pressPoint} />
             ) : (
               <ThemedText type="small" themeColor="textSecondary" style={styles.placeholder}>
-                Tap any part to name it — 点击任意部位查看名称. Toggle layers above to peel the body.
+                Tap any part to name it — 点击任意部位查看名称. Tap an arm or leg bone/muscle to move its joint.
               </ThemedText>
             )}
           </View>
