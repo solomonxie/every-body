@@ -161,12 +161,20 @@ extension Illustrations {
                 // falling onto an outstretched hand
                 let ground = 272.0
                 s.line(box.minX + 6, ground, box.maxX - 6, ground, stroke: hex("#BBBBBB"), lw: 2)
-                let fall = Person(h: 96, lean: 0, shoulder: 80, elbow: 0, hip: 10, knee: 20)
-                let hl = fall.hand(), r = 58.0 * .pi / 180
-                let hw = CGPoint(x: hl.x * cos(r) - hl.y * sin(r), y: hl.x * sin(r) + hl.y * cos(r))
-                let origin = CGPoint(x: cx + 26 - hw.x, y: ground - 3 - hw.y)
-                fall.draw(&s, at: origin, rotation: 58, farArm: false)
-                s.path("M \(cx + 18) \(ground - 8) l -6 -6 M \(cx + 26) \(ground - 12) l 0 -8 M \(cx + 34) \(ground - 8) l 6 -6", stroke: red, lw: 1.5)
+                // pitching forward, feet still on the ground, arm locked straight onto the hand
+                var fall = SideFigure(h: 82, look: .man, hip: .zero, rotation: 54, face: .distress)
+                fall.headTilt = -30
+                fall.nearLeg = .init(hip: 30, knee: 70, point: 20)
+                fall.farLeg = .init(hip: -6, knee: 10, point: 70)
+                let palmY = ground - fall.build.hand * fall.h * 0.22
+                let sh = fall.shoulderPoint, hand = CGPoint(x: cx + 34, y: palmY)
+                let armLen = (fall.build.upperArm + fall.build.foreArm + fall.build.hand * 0.45) * fall.h * 0.97
+                let hipY = fall.hipY(onFloor: ground), drop = palmY - hipY - sh.y
+                fall.hip = CGPoint(x: hand.x - sh.x - max(0, armLen * armLen - drop * drop).squareRoot(), y: hipY)
+                fall.near = .init(reach: hand, hand: .open, handAngle: 0)
+                fall.far = .init(reach: CGPoint(x: hand.x - 7, y: palmY), hand: .open, handAngle: 0)
+                fall.draw(&s)
+                s.path("M \(hand.x - 9) \(ground - 10) l -6 -6 M \(hand.x) \(ground - 14) l 0 -8 M \(hand.x + 9) \(ground - 10) l 6 -6", stroke: red, lw: 1.5)
                 s.label("fall on the hand", "手撑地跌倒", cx, 164, size: 9, color: red, anchor: .middle)
             case 2:
                 var fig = InjuryFigure(h: 150)
