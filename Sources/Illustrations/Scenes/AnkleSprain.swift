@@ -1,8 +1,33 @@
 import SwiftUI
 
 extension Illustrations {
+    static let ankleSprain = ankleSprain(for: .standard)
+
     static func ankleSprain(for p: Profile) -> Scenario {
-        var s: Scenario = ankleSprain
+        let kid = p.isKid
+        var s = Scenario(
+            id: "ankle-sprain", group: .firstAid, title: Bilingual("Sprained ankle", "踝关节扭伤"),
+            params: ["injured": 0, "grade": 0, "rice": 0, "scene": 0],
+            steps: [
+                .watch("Your right ankle from the outside. Ligaments are tough straps joining bone to bone; three hold the outer ankle bone (the tip of the fibula) to the foot.",
+                       "从外侧看右脚踝。韧带是连接骨与骨的坚韧纤维带；外踝（腓骨下端）靠三条韧带与足骨相连。",
+                       set: ["injured": 0, "grade": 0, "rice": 0, "scene": 0]),
+                .watch("Stepping off a kerb or landing on someone’s foot rolls the foot inward and down. The outer ligaments over-stretch — the front one (ATFL) goes first.",
+                       "踩空台阶或落地踩到别人脚上，脚向内、向下翻。外侧韧带被过度拉伸——前面的距腓前韧带最先受伤。",
+                       set: ["injured": 1, "scene": 1]),
+                .tryIt("Compare the three grades of sprain.", "试一试：对比三种扭伤程度。", set: ["scene": 2],
+                       TryStep(mode: .compare(param: "grade", options: [("I", 0), ("II", 1), ("III", 2)]), success: { $0[v: "grade"] > 1.5 },
+                               ok: Bilingual("Can’t take 4 steps, or the bone itself is tender? Get an X-ray.", "无法行走 4 步，或骨头本身压痛？需拍 X 光。"))),
+                .tryIt("First 48 h — Rest, Ice (20 min, wrapped in a cloth), Compression bandage, Elevate above the heart. Apply RICE.",
+                       "试一试：48 小时内——休息、冰敷（包布，20 分钟）、弹力绷带加压、抬高过心脏。",
+                       set: ["grade": 1, "scene": 3],
+                       TryStep(mode: .scrub([Scrub(param: "rice", label: "RICE 处理", min: 0, max: 1)]), success: { $0[v: "rice"] > 0.9 },
+                               ok: Bilingual("Swelling down. Then gentle movement as pain allows; most sprains heal in 2–6 weeks.", "肿胀减轻。之后在疼痛允许下逐步活动；多数扭伤 2–6 周恢复。"),
+                               demo: ["rice": 1])),
+            ],
+            draw: { s, p, t in drawAnkle(&s, p, t, kid: kid) },
+            sources: ["BJSM / Red Cross acute ankle sprain management (RICE / PEACE & LOVE)", "Ottawa ankle rules"]
+        )
         s.profileNote = switch p.age {
         case .infant, .toddler, .child: Bilingual("Children: ligaments are stronger than the growth plate, so a “sprain” may be a growth-plate break — X-ray if the bone is tender or they won’t walk.",
                                         "儿童：韧带比生长板结实，“扭伤”可能是生长板骨折——骨头压痛或不肯走路要拍 X 光。")
@@ -13,171 +38,220 @@ extension Illustrations {
         return s
     }
 
-    static let ankleSprain = Scenario(
-        id: "ankle-sprain", group: .firstAid, title: Bilingual("Sprained ankle", "踝关节扭伤"),
-        params: ["injured": 0, "grade": 0, "rice": 0, "scene": 0],
-        steps: [
-            .watch("Your ankle from the outside. Ligaments are tough straps holding bone to bone; three of them hold the outer ankle bone (the fibula’s tip) to the foot.",
-                   "从外侧看脚踝。韧带是连接骨与骨的坚韧纤维带；外踝（腓骨下端）靠三条韧带与足骨相连。",
-                   set: ["injured": 0, "grade": 0, "rice": 0, "scene": 0]),
-            .watch("Stepping off a kerb or landing on someone’s foot rolls the ankle inward. The outer ligaments over-stretch — the front one (ATFL) goes first.",
-                   "踩空台阶或落地踩到别人脚上，脚踝向内翻。外侧韧带被过度拉伸——前面的距腓前韧带最先受伤。",
-                   set: ["injured": 1, "scene": 1]),
-            .tryIt("Compare the three grades of sprain.", "试一试：对比三种扭伤程度。", set: ["scene": 2],
-                   TryStep(mode: .compare(param: "grade", options: [("I", 0), ("II", 1), ("III", 2)]), success: { $0[v: "grade"] > 1.5 },
-                           ok: Bilingual("Can’t take 4 steps, or the bone itself is tender? Get an X-ray.", "无法行走 4 步，或骨头本身压痛？需拍 X 光。"))),
-            .tryIt("First 48 h — Rest, Ice (20 min, wrapped in a cloth), Compression bandage, Elevate above the heart. Apply RICE.",
-                   "试一试：48 小时内——休息、冰敷（包布，20 分钟）、弹力绷带加压、抬高过心脏。",
-                   set: ["grade": 1, "scene": 3],
-                   TryStep(mode: .scrub([Scrub(param: "rice", label: "RICE 处理", min: 0, max: 1)]), success: { $0[v: "rice"] > 0.9 },
-                           ok: Bilingual("Swelling down. Then gentle movement as pain allows; most sprains heal in 2–6 weeks.", "肿胀减轻。之后在疼痛允许下逐步活动；多数扭伤 2–6 周恢复。"),
-                           demo: ["rice": 1])),
-        ],
-        draw: { s, p, _ in
-            // right ankle from the outside (lateral view), toes to the right
-            let g = Int(p[v: "grade"].rounded()), scene = Int(p[v: "scene"].rounded())
-            let injured = p[v: "injured"] > 0.5, rice = p[v: "rice"]
-            let swelling = max(0, p[v: "injured"] * (0.4 + Double(g) * 0.3) * (1 - 0.6 * rice))
-            let bone = hex("#E9E2CF"), edge = hex("#B8A58A"), lig = hex("#C1443C"), label = hex("#8F7E63"), blue = hex("#3F95D6")
-            let skin = "M 132 0 C 134 80, 132 150, 124 196 C 116 216, 108 244, 116 258 C 124 268, 140 270, 156 268 L 250 268 C 290 270, 320 272, 344 270 "
-                + "C 358 268, 360 254, 350 248 C 320 236, 280 216, 252 196 C 240 186, 234 170, 232 140 C 230 100, 228 50, 230 0 Z"
-            s.path(skin, fill: hex("#F7E6DA"), stroke: hex("#DDBFA8"), lw: 2)
-            s.ellipse(186, 204, 34 + swelling * 22, 22 + swelling * 14, fill: hex("#D8434B"), opacity: 0.25 * swelling)
-            if injured && g >= 1 { s.ellipse(178, 236, 18 + Double(g) * 8, 10 + Double(g) * 3, fill: hex("#6C4F9E"), opacity: 0.18 * (1 - 0.5 * rice)) }
-            // bones: heel, talus, tibia, then the fibula on top (it's the outer bone)
-            s.path("M 124 222 C 118 240, 122 262, 146 264 L 222 256 C 232 248, 230 232, 216 226 L 176 214 C 156 210, 132 208, 124 222 Z", fill: bone, stroke: edge, lw: 1.5)
-            s.path("M 158 192 C 176 176, 208 176, 222 184 C 230 188, 236 194, 240 200 C 236 210, 224 212, 212 210 L 162 212 C 152 208, 150 198, 158 192 Z", fill: bone, stroke: edge, lw: 1.5)
-            s.path("M 170 0 L 226 0 C 224 60, 222 130, 224 170 C 222 180, 214 184, 204 182 L 176 180 C 168 150, 170 60, 170 0 Z", fill: hex("#E2DAC4"), stroke: edge, lw: 1.5)
-            s.ellipse(248, 204, 9, 9, fill: bone, stroke: edge)
-            s.ellipse(264, 208, 8, 9, fill: bone, stroke: edge)
-            s.ellipse(240, 236, 13, 11, fill: bone, stroke: edge)
-            for (x0, y0, x1, y1) in [(272.0, 212.0, 330.0, 246.0), (262, 228, 326, 256), (252, 246, 318, 262)] {
-                s.line(x0, y0, x1, y1, stroke: edge, lw: 9, cap: .round)
-                s.line(x0, y0, x1, y1, stroke: bone, lw: 7, cap: .round)
-                s.line(x1 + 5, y1 + 2, x1 + 24, y1 + 6, stroke: edge, lw: 7, cap: .round)
-                s.line(x1 + 5, y1 + 2, x1 + 24, y1 + 6, stroke: bone, lw: 5, cap: .round)
+    /// how far the foot is rolled in (0…1) at time t while the injury plays
+    private static func ankleRoll(_ scene: Int, _ t: Double) -> Double {
+        scene == 1 ? pow(max(0, sin(t * 1.6)), 2) : 0
+    }
+
+    // Right ankle from the outside (lateral view): heel left, toes right.
+    @MainActor private static func drawAnkle(_ s: inout Sketch, _ p: Params, _ t: Double, kid: Bool) {
+        let g = p[v: "grade"], gi = Int(g.rounded()), scene = Int(p[v: "scene"].rounded())
+        let injured = p[v: "injured"], rice = p[v: "rice"]
+        let roll = ankleRoll(scene, t) * injured
+        let pivot = pt(200, 200), angle = 22 * roll
+        func foot(_ q: CGPoint) -> CGPoint {
+            let a = angle * .pi / 180, dx = q.x - pivot.x, dy = q.y - pivot.y
+            return CGPoint(x: pivot.x + dx * cos(a) - dy * sin(a), y: pivot.y + dx * sin(a) + dy * cos(a))
+        }
+        func blended(_ q: CGPoint) -> CGPoint { lerp(q, foot(q), Anat.ease((q.y - 172) / 26)) }
+
+        // skin, the foot part turning with the bones
+        let outline: [CGPoint] = [pt(238, -10), pt(236, 60), pt(234, 130), pt(236, 170), pt(244, 190), pt(264, 197), pt(292, 207),
+                                  pt(320, 226), pt(344, 242), pt(356, 252), pt(357, 263), pt(348, 272), pt(310, 273), pt(250, 273),
+                                  pt(190, 273), pt(140, 272), pt(118, 267), pt(106, 252), pt(106, 230), pt(116, 206), pt(124, 178),
+                                  pt(128, 130), pt(132, 60), pt(134, -10)].map(blended)
+        let skinPath = smoothPath(outline)
+        s.gradFill(skinPath, [Anat.skin, Anat.skin, Anat.skinShade], from: pt(240, 0), to: pt(110, 0), stroke: Anat.skinEdge, lw: 1.6)
+        let gradeSwell = [0.45, 0.75, 1.0][min(2, max(0, gi))]
+        let swelling = injured * (scene == 1 ? roll * 0.5 : gradeSwell) * (1 - 0.65 * rice)
+        s.softGlow(blended(pt(206, 212)), 44 + 14 * swelling, 30 + 10 * swelling, Anat.red, 0.3 * swelling)
+        if injured > 0.5 && scene >= 2 && gi >= 1 {
+            s.softGlow(pt(176, 250), 30 + Double(gi) * 8, 14, hex("#6C4F9E"), 0.22 * (1 - 0.5 * rice))
+        }
+
+        let tendonTop = pt(140, 40), tendonEnd = foot(pt(122, 236))
+        s.path("M \(tendonTop.x - 6) \(tendonTop.y) C 134 120, 130 170, \(tendonEnd.x - 5) \(tendonEnd.y) L \(tendonEnd.x + 6) \(tendonEnd.y - 2) "
+               + "C 142 170, 146 120, \(tendonTop.x + 8) \(tendonTop.y) Z", fill: Anat.tendon, stroke: Anat.tendonEdge, lw: 0.9)
+
+        // tibia behind, then the foot bones, then the fibula on the outside
+        s.boneFill("M 178 -10 L 228 -10 C 226 60, 224 130, 228 168 C 231 178, 229 186, 222 189 C 206 186, 190 186, 178 189 C 174 160, 176 60, 178 -10 Z",
+                   light: pt(190, 0), dark: pt(228, 0), fill: hex("#EFE7D4"))
+        if kid { s.path("M 180 172 C 196 170, 212 170, 228 172", stroke: Anat.blue.opacity(0.75), lw: 1.8) }
+        s.group(rotate: angle, about: pivot) { f in
+            // calcaneus with its heel tuberosity
+            f.boneFill("M 124 232 C 116 246, 120 266, 142 268 L 232 262 C 244 258, 248 246, 242 236 C 232 230, 222 228, 212 227 L 178 227 C 160 224, 136 220, 124 232 Z",
+                       light: pt(160, 228), dark: pt(160, 268))
+            // talus: cartilage-capped dome under the tibia, neck and head toward the toes
+            f.boneFill("M 172 197 C 180 184, 214 180, 227 190 C 234 194, 240 196, 249 198 C 259 198, 265 206, 261 214 C 257 221, 247 221, 239 217 "
+                       + "C 231 219, 222 223, 212 225 L 178 225 C 169 219, 167 207, 172 197 Z", light: pt(200, 186), dark: pt(210, 225))
+            f.path("M 174 195 C 184 185, 212 181, 226 190", stroke: Anat.cartilageEdge, lw: 3.4, cap: .round)
+            f.path("M 174 195 C 184 185, 212 181, 226 190", stroke: Anat.cartilage, lw: 2, cap: .round)
+            // midfoot
+            f.boneFill("M 264 200 C 272 198, 278 204, 278 212 C 278 220, 272 224, 264 222 C 268 214, 268 206, 264 200 Z", light: pt(266, 200), dark: pt(276, 222))
+            f.boneFill("M 246 236 C 256 232, 268 234, 274 240 L 274 254 C 264 258, 254 258, 246 254 C 248 248, 248 242, 246 236 Z", light: pt(250, 234), dark: pt(270, 256))
+            f.boneFill("M 281 204 C 291 204, 299 210, 301 218 L 293 233 C 285 233, 279 227, 279 219 Z", light: pt(284, 204), dark: pt(296, 232))
+            // metatarsals and toes
+            f.limb([pt(296, 228), pt(336, 255)], w: 7, fill: Anat.boneShade, line: Anat.boneEdge)
+            f.limb([pt(276, 250), pt(330, 263)], w: 7, fill: Anat.bone, line: Anat.boneEdge)
+            f.circle(276, 252, 5.5, fill: Anat.bone, stroke: Anat.boneEdge, lw: 0.9)
+            f.limb([pt(301, 216), pt(338, 247)], w: 9, fill: Anat.bone, line: Anat.boneEdge)
+            f.limb([pt(334, 264), pt(348, 266)], w: 5, fill: Anat.bone, line: Anat.boneEdge)
+            f.limb([pt(343, 251), pt(355, 257)], w: 7, fill: Anat.bone, line: Anat.boneEdge)
+        }
+        s.boneFill("M 164 -10 L 178 -10 C 178 60, 180 130, 186 170 C 194 180, 196 200, 190 213 C 186 221, 177 223, 173 215 "
+                   + "C 167 205, 165 191, 167 177 C 166 130, 166 60, 164 -10 Z", light: pt(168, 0), dark: pt(190, 0))
+        if kid { s.path("M 166 172 C 174 170, 180 170, 186 171", stroke: Anat.blue.opacity(0.75), lw: 1.8) }
+
+        // the three outer ligaments; fibula ends stay, foot ends move with the roll
+        let atfl0 = pt(190, 199), atfl1 = foot(pt(230, 206))
+        let cfl0 = pt(180, 216), cfl1 = foot(pt(170, 244))
+        let ptfl0 = pt(172, 206), ptfl1 = foot(pt(156, 214))
+        func strain(_ a: CGPoint, _ b: CGPoint, rest: Double) -> Double { ((hypot(b.x - a.x, b.y - a.y) / rest - 1) * 5).clamped(0, 1) }
+        let hurt = injured > 0.5 && scene >= 2
+        let atflTear = hurt ? [0, 0.5, 1][min(2, gi)] : 0, cflTear = hurt && gi >= 2 ? 1.0 : 0
+        let atflStretch = scene == 1 ? strain(atfl0, atfl1, rest: 40.6) : hurt && gi == 0 ? 0.8 : 0
+        s.ligamentBand(ptfl0, ptfl1, width: 7)
+        s.ligamentBand(cfl0, cfl1, width: 7, stretch: scene == 1 ? strain(cfl0, cfl1, rest: 29.7) : 0, tear: cflTear)
+        s.ligamentBand(atfl0, atfl1, width: 8, stretch: atflStretch, tear: atflTear)
+        if scene == 1 && roll > 0.3 { s.softGlow(lerp(atfl0, atfl1, 0.5), 12, 8, Anat.red, 0.5 * roll) }
+
+        // RICE on the ankle: ice pack, then a figure-of-eight elastic wrap
+        if rice > 0.55 {
+            var wrap = s
+            wrap.ctx.clip(to: skinPath); wrap.ctx.clip(to: Path(ellipseIn: CGRect(x: 138, y: 170, width: 176, height: 130)))
+            let k = Anat.ease((rice - 0.55) / 0.2)
+            for i in 0..<6 {
+                let y = 180 + Double(i) * 15
+                let (a, b) = i % 2 == 0 ? (pt(140, y + 36), pt(310, y - 10)) : (pt(140, y - 16), pt(310, y + 34))
+                let d = "M \(a.x) \(a.y) Q 225 \(y + 8) \(b.x) \(b.y)"
+                wrap.path(d, stroke: hex("#C4AE82"), lw: 13, opacity: 0.85 * k)
+                wrap.path(d, stroke: hex("#E9D8B4"), lw: 11, opacity: 0.85 * k)
             }
-            s.path("M 158 0 L 172 0 C 172 60, 174 130, 180 170 C 188 182, 190 198, 180 210 C 170 212, 160 204, 158 192 C 158 170, 160 130, 158 0 Z", fill: bone, stroke: edge, lw: 1.5)
-            // lateral ligaments: ATFL (front), CFL (down to the heel), PTFL (back)
-            func band(_ d: String, torn: Bool, stretched: Bool) {
-                if torn {
-                    s.path(d, stroke: lig, lw: 5, cap: .round, dash: [6, 7])
+        }
+        if rice > 0.3 && rice < 0.8 {
+            let k = Anat.ease((rice - 0.3) / 0.12) * (1 - Anat.ease((rice - 0.7) / 0.1))
+            s.group(rotate: -14, about: pt(206, 208), opacity: k) { g in
+                g.rect(178, 192, 56, 32, r: 9, fill: hex("#CFE8F7"), stroke: Anat.blue, lw: 1.5)
+                g.shape(Path(roundedRect: CGRect(x: 182, y: 196, width: 48, height: 24), cornerRadius: 6), stroke: .white, lw: 1.5, dash: [3, 3])
+            }
+        }
+
+        // labels
+        let lig = Anat.ligament
+        if rice < 0.3 {
+            s.leader("front (ATFL)", "距腓前韧带", at: lerp(atfl0, atfl1, 0.6), 250, 178, color: lig, bold: true)
+            s.leader("lower (CFL)", "跟腓韧带", at: lerp(cfl0, cfl1, 0.55), 196, 292, color: lig, bold: true)
+            s.leader("back (PTFL)", "距腓后韧带", at: lerp(ptfl0, ptfl1, 0.6), 12, 212, color: lig, bold: true)
+            s.leader("heel bone", "跟骨", at: foot(pt(150, 250)), 12, 292)
+        }
+        s.leader("fibula", "腓骨", at: pt(171, 110), 12, 110)
+        s.leader("tibia", "胫骨", at: pt(204, 96), 204, 66, anchor: .middle)
+        s.leader("Achilles tendon", "跟腱", at: pt(134, 150), 12, 150)
+        if scene == 0 { s.leader("outer ankle bone", "外踝", at: pt(186, 190), 12, 184) }
+        if kid { s.leader("growth plates", "生长板", at: pt(182, 172), 12, 240, color: Anat.blue) }
+        if rice > 0.3 && rice < 0.8 { s.leader("ice 20 min, in a cloth", "冰袋包布，敷 20 分钟", at: pt(236, 196), 250, 180, color: Anat.blue, bold: true) }
+        if rice >= 0.8 { s.leader("elastic bandage", "弹力绷带", at: pt(290, 222), 250, 180, color: hex("#A08250"), bold: true) }
+
+        let chip: (String, String) = injured < 0.5 ? ("Healthy ligaments", "韧带正常") : scene == 3 && rice > 0.9 ? ("Swelling going down", "肿胀消退")
+            : scene == 1 ? ("Rolling in", "脚踝内翻")
+            : [("Grade I · stretched", "Ⅰ度 · 拉伤"), ("Grade II · partly torn", "Ⅱ度 · 部分撕裂"), ("Grade III · torn through", "Ⅲ度 · 完全断裂")][min(2, gi)]
+        s.stateChip(chip.0, chip.1, 8, 8, color: injured < 0.5 ? Anat.green : scene == 3 && rice > 0.9 ? Anat.blue : Anat.red)
+
+        drawAnkleCard(&s, scene: scene, grade: gi, rice: rice, roll: roll)
+    }
+
+    @MainActor private static func drawAnkleCard(_ s: inout Sketch, scene: Int, grade: Int, rice: Double, roll: Double) {
+        let box = CGRect(x: 252, y: 8, width: 102, height: 144)
+        let titles: [(String, String)] = [("Viewpoint", "观察角度"), ("From behind", "后面观"), ("Ligament fibres", "韧带纤维"), ("RICE, first 48 h", "伤后 48 小时 RICE")]
+        let ti = titles[min(3, scene)]
+        s.inset(box.minX, box.minY, box.width, box.height, ti.0, ti.1)
+        var c = s.clipped(box.minX, box.minY, box.width, box.height)
+        let cx = box.midX, lig = Anat.ligament
+        switch scene {
+        case 0:
+            // right foot from above; we look at it from the little-toe side
+            let fx = cx - 8, top = box.minY + 30
+            c.path("M \(fx - 10) \(top + 96) C \(fx - 18) \(top + 70), \(fx - 22) \(top + 30), \(fx - 14) \(top + 12) C \(fx - 8) \(top + 2), \(fx + 12) \(top + 2), \(fx + 18) \(top + 14) "
+                   + "C \(fx + 24) \(top + 36), \(fx + 18) \(top + 70), \(fx + 14) \(top + 96) C \(fx + 10) \(top + 108), \(fx - 6) \(top + 108), \(fx - 10) \(top + 96) Z",
+                   fill: Anat.skin, stroke: Anat.skinEdge, lw: 1.2)
+            for (i, r) in [5.5, 4, 3.6, 3.2, 2.8].enumerated() {
+                c.circle(fx - 12 + Double(i) * 7, top + 4 + Double(i) * 1.6, r, fill: Anat.skin, stroke: Anat.skinEdge, lw: 0.9)
+            }
+            c.circle(fx + 14, top + 84, 3, fill: Anat.boneShade, stroke: Anat.boneEdge, lw: 0.8)
+            c.bendArrow(pt(box.maxX - 8, top + 96), via: pt(box.maxX - 14, top + 84), pt(fx + 22, top + 84), color: Anat.blue, lw: 1.8)
+            c.cardNote("outer side", "外侧", box.maxX - 20, top + 64, width: 40, size: 8, color: Anat.blue, bold: true)
+        case 1:
+            // from behind: the heel tips in and the outer strap stretches
+            let ground = box.maxY - 14, ankle = pt(cx, ground - 30), tip = 26 * roll
+            c.line(box.minX + 6, ground, box.maxX - 6, ground, stroke: hex("#C9C2B6"), lw: 2)
+            c.gradFill("M \(cx - 22) \(box.minY + 20) C \(cx - 26) \(box.minY + 60), \(cx - 18) \(ankle.y - 16), \(cx - 16) \(ankle.y) L \(cx + 16) \(ankle.y) "
+                       + "C \(cx + 18) \(ankle.y - 16), \(cx + 26) \(box.minY + 60), \(cx + 22) \(box.minY + 20) Z",
+                       [Anat.skin, Anat.skinShade], from: pt(cx - 20, 0), to: pt(cx + 20, 0), stroke: Anat.skinEdge)
+            c.group(rotate: tip, about: ankle) { f in
+                f.path("M \(cx - 17) \(ankle.y - 4) C \(cx - 22) \(ankle.y + 16), \(cx - 16) \(ground), \(cx) \(ground) C \(cx + 16) \(ground), \(cx + 22) \(ankle.y + 16), \(cx + 17) \(ankle.y - 4) Z",
+                       fill: Anat.skin, stroke: Anat.skinEdge)
+                f.boneFill("M \(cx - 11) \(ankle.y + 6) C \(cx - 12) \(ground - 6), \(cx + 12) \(ground - 6), \(cx + 11) \(ankle.y + 6) C \(cx + 6) \(ankle.y + 2), \(cx - 6) \(ankle.y + 2), \(cx - 11) \(ankle.y + 6) Z",
+                           light: pt(cx - 8, ankle.y), dark: pt(cx + 8, ground))
+            }
+            c.boneFill("M \(cx - 14) \(box.minY + 22) L \(cx + 4) \(box.minY + 22) L \(cx + 5) \(ankle.y - 2) C \(cx - 4) \(ankle.y + 2), \(cx - 12) \(ankle.y + 4), \(cx - 15) \(ankle.y) Z",
+                       light: pt(cx - 10, 0), dark: pt(cx + 4, 0))
+            c.boneFill("M \(cx + 8) \(box.minY + 22) L \(cx + 14) \(box.minY + 22) L \(cx + 16) \(ankle.y + 6) C \(cx + 14) \(ankle.y + 10), \(cx + 10) \(ankle.y + 8), \(cx + 9) \(ankle.y + 4) Z",
+                       light: pt(cx + 8, 0), dark: pt(cx + 16, 0))
+            let a = tip * .pi / 180, q = pt(10, 14)
+            let end = pt(ankle.x + q.x * cos(a) - q.y * sin(a), ankle.y + q.x * sin(a) + q.y * cos(a))
+            c.ligamentBand(pt(cx + 13, ankle.y + 7), end, width: 4, stretch: (roll * 1.4).clamped(0, 1))
+            c.bendArrow(pt(cx - 30, ankle.y - 10), via: pt(cx - 34, ankle.y + 14), pt(cx - 20, ankle.y + 22), color: Anat.ink, lw: 1.3)
+            c.label("inner", "内侧", box.minX + 7, ground + 10, size: 7.5, color: Anat.muted)
+            c.label("outer", "外侧", box.maxX - 7, ground + 10, size: 7.5, color: Anat.muted, anchor: .end)
+        case 2:
+            // the same ligament up close: fibres stretched, partly torn, torn through
+            let y0 = box.minY + 36, y1 = box.maxY - 30
+            c.rect(box.minX + 10, y0 - 14, box.width - 20, 14, r: 4, fill: Anat.bone, stroke: Anat.boneEdge)
+            c.rect(box.minX + 10, y1, box.width - 20, 14, r: 4, fill: Anat.bone, stroke: Anat.boneEdge)
+            for i in 0..<8 {
+                let x = box.minX + 18 + Double(i) * 9.4
+                let broken = grade == 2 || (grade == 1 && [1, 2, 4, 6].contains(i))
+                if broken {
+                    c.path("M \(x) \(y0) C \(x + 1) \(y0 + 14), \(x - 2) \(y0 + 22), \(x + 2) \(y0 + 30)", stroke: lig, lw: 2.6, cap: .round)
+                    c.path("M \(x) \(y1) C \(x - 1) \(y1 - 14), \(x + 2) \(y1 - 20), \(x - 2) \(y1 - 28)", stroke: lig, lw: 2.6, cap: .round)
                 } else {
-                    s.path(d, stroke: lig, lw: stretched ? 3 : 5, opacity: stretched ? 0.75 : 1, cap: .round)
+                    c.line(x, y0, x, y1, stroke: grade == 0 ? Anat.ligamentLight : lig, lw: grade == 0 ? 2 : 2.6)
                 }
             }
-            band("M 186 194 L 222 196", torn: injured && g >= 1, stretched: injured && g == 0)
-            band("M 178 208 L 170 238", torn: injured && g >= 2, stretched: injured && g == 1)
-            band("M 164 200 L 150 206", torn: false, stretched: false)
-
-            // RICE: ice pack, then an elastic wrap
+            if grade >= 1 { c.softGlow(pt(cx, (y0 + y1) / 2), 36, 14, hex("#A3202F"), 0.3 + 0.15 * Double(grade)) }
+            c.cardNote(["stretched", "partly torn", "torn through"][grade], ["拉伤", "部分撕裂", "完全断裂"][grade], cx, box.maxY - 12, width: 96, size: 9, color: lig, bold: true)
+        default:
+            let steps = [("R", "休"), ("I", "冰"), ("C", "压"), ("E", "抬")]
+            for (i, (en, zh)) in steps.enumerated() {
+                let on = rice > [0.05, 0.3, 0.55, 0.8][i]
+                let x = box.minX + 17 + Double(i) * 22.5
+                c.circle(x, box.minY + 34, 9.5, fill: on ? Anat.blue : hex("#EEEEEE"))
+                c.label(en, zh, x, box.minY + 38, size: 10, color: on ? .white : hex("#A0A0A0"), anchor: .middle, bold: true)
+            }
+            let up = Anat.ease((rice - 0.8) / 0.15)
+            let floor = box.maxY - 26
+            c.rect(box.minX + 6, floor, box.width - 12, 6, r: 2, fill: hex("#D9C9B0"))
+            var body = SideFigure(h: 72, look: .man, hip: .zero, rotation: -90)
+            body.near = .init(shoulder: 6, elbow: 8)
+            body.nearLeg = .init(hip: 2 + 20 * up, knee: 2 + 4 * up, point: 20)
+            body.farLeg = .init(hip: 1, knee: 2, point: 20)
+            body.hip = CGPoint(x: box.minX + 44, y: floor - body.build.depth * body.h * 0.5)
+            c.rect(box.minX + 8, floor - 6, 16, 6, r: 3, fill: .white, stroke: hex("#CCCCCC"))
+            if up > 0.05 {
+                let a = body.ankle(), top = a.y + body.build.legW * body.h * 0.45
+                c.rect(a.x - 20, top, 30, floor - top, r: 6, fill: hex("#DCE6F2"), stroke: hex("#9FB3CC"), opacity: up)
+            }
+            body.drawBack(&c, farArm: false)
+            body.drawBody(&c)
+            body.drawArm(&c, near: true)
             if rice > 0.55 {
-                var wrap = s
-                wrap.ctx.clip(to: SVGPath.parse(skin))
-                wrap.ctx.clip(to: Path(CGRect(x: 136, y: 140, width: 150, height: 132)))
-                for k in 0..<7 {
-                    let y = 150 + Double(k) * 17
-                    wrap.line(150, y + 34, 300, y - 6 + Double(k) * 8, stroke: hex("#E8D5B0"), lw: 14, opacity: 0.9)
-                    wrap.line(150, y + 34, 300, y - 6 + Double(k) * 8, stroke: hex("#C9B48A"), lw: 1, opacity: 0.9)
-                }
+                let a = body.ankle()
+                c.circle(a.x, a.y, body.build.legW * body.h * 0.6, fill: hex("#E6D3AE"), stroke: hex("#C4AE82"))
             }
-            if rice > 0.3 {
-                s.group(rotate: -12, about: CGPoint(x: 186, y: 204)) { g in
-                    g.rect(160, 188, 54, 32, r: 8, fill: hex("#BFE3F5"), stroke: blue, lw: 1.5)
-                    g.shape(Path(roundedRect: CGRect(x: 164, y: 192, width: 46, height: 24), cornerRadius: 6), stroke: .white, lw: 1.5, dash: [3, 3])
-                }
-                s.label("ice 20 min", "冰敷 20 分钟", 150, 180, size: 9, color: blue, anchor: .end)
-            }
-            if scene == 0 { s.label("outer ankle bone", "外踝", 150, 188, size: 9, color: label, anchor: .end) }
-            s.label("fibula", "腓骨", 152, 70, size: 9, color: label, anchor: .end)
-            s.label("tibia", "胫骨", 232, 70, size: 9, color: label)
-            if rice <= 0.3 {
-                s.label("ATFL", "距腓前韧带", 226, 186, size: 9, color: lig)
-                s.label("CFL", "跟腓韧带", 106, 290, size: 9, color: lig)
-                s.path("M 128 282 L 168 240", stroke: lig, lw: 0.8)
-                s.label("PTFL", "距腓后韧带", 110, 210, size: 9, color: lig, anchor: .end)
-                s.label("heel", "跟骨", 180, 286, size: 9, color: label)
-            }
-            s.rect(8, 6, 220, 30, r: 8, fill: .white, stroke: lig, lw: 2)
-            let grades = [s.t("I — ATFL stretched", "Ⅰ度：距腓前韧带拉伤"), s.t("II — ATFL torn", "Ⅱ度：距腓前韧带撕裂"), s.t("III — ATFL + CFL torn", "Ⅲ度：两条韧带断裂")]
-            s.text(injured ? grades[min(2, max(0, g))] : s.t("Healthy ligaments", "韧带正常"), 18, 26, size: 11, color: lig, bold: true)
-
-            // inset
-            let box = CGRect(x: 262, y: 44, width: 92, height: 128)
-            let cx = box.midX
-            if scene == 1 {
-                // from behind: the foot tips inward and the outer strap stretches
-                s.rect(box.minX, box.minY, box.width, box.height, r: 10, fill: .white, stroke: hex("#DDDDDD"), lw: 1.5)
-                s.label("from behind", "后面观", cx, box.minY + 14, size: 8, color: label, anchor: .middle)
-                s.label("rolled in", "内翻", cx, 170, size: 8, color: lig, anchor: .middle, bold: true)
-                s.line(box.minX + 8, 162, box.maxX - 8, 162, stroke: hex("#BBBBBB"), lw: 2)
-                let ankle = CGPoint(x: cx, y: 128), tip = 18.0
-                s.group(rotate: tip, about: ankle) { f in
-                    f.path("M \(cx - 18) 128 C \(cx - 24) 146, \(cx - 18) 158, \(cx) 158 C \(cx + 18) 158, \(cx + 24) 146, \(cx + 18) 128 Z", fill: hex("#F7E6DA"), stroke: hex("#DDBFA8"))
-                    f.ellipse(cx, 144, 11, 9, fill: bone, stroke: edge)
-                    f.line(cx - 16, 158, cx + 16, 158, stroke: hex("#8A6A5A"), lw: 3, cap: .round)
-                }
-                s.path("M \(cx - 24) 64 C \(cx - 27) 90, \(cx - 18) 114, \(cx - 16) 132 L \(cx + 16) 132 C \(cx + 18) 114, \(cx + 27) 90, \(cx + 24) 64 Z", fill: hex("#F7E6DA"), stroke: hex("#DDBFA8"))
-                s.rect(cx - 14, 64, 16, 62, r: 3, fill: hex("#E2DAC4"), stroke: edge)
-                s.rect(cx + 6, 64, 8, 72, r: 4, fill: bone, stroke: edge)
-                s.label("inner", "内侧", box.minX + 8, 170, size: 7, color: label)
-                s.label("outer", "外侧", box.maxX - 8, 170, size: 7, color: label, anchor: .end)
-                let a = tip * .pi / 180, q = CGPoint(x: cx + 14 - ankle.x, y: 146 - ankle.y)
-                let end = CGPoint(x: ankle.x + q.x * cos(a) - q.y * sin(a), y: ankle.y + q.x * sin(a) + q.y * cos(a))
-                s.line(cx + 11, 134, end.x, end.y, stroke: lig, lw: 3, cap: .round)
-                s.path("M \(cx - 30) 110 C \(cx - 34) 132, \(cx - 26) 146, \(cx - 18) 150", stroke: hex("#555555"), lw: 1.2, dash: [3, 2])
-            } else if scene == 2 {
-                // ligament fibres up close
-                s.rect(box.minX, box.minY, box.width, box.height, r: 10, fill: .white, stroke: hex("#DDDDDD"), lw: 1.5)
-                s.label("fibres", "纤维", cx, box.minY + 14, size: 8, color: label, anchor: .middle)
-                s.rect(box.minX + 10, 66, box.width - 20, 16, r: 4, fill: bone, stroke: edge)
-                s.rect(box.minX + 10, 140, box.width - 20, 16, r: 4, fill: bone, stroke: edge)
-                for i in 0..<7 {
-                    let x = box.minX + 20 + Double(i) * 8.5
-                    let broken = g == 2 || (g == 1 && i % 2 == 0)
-                    if broken {
-                        s.path("M \(x) 82 L \(x + 1) 100 l -2 4", stroke: lig, lw: 2.5, cap: .round)
-                        s.path("M \(x) 140 L \(x - 1) 122 l 2 -4", stroke: lig, lw: 2.5, cap: .round)
-                    } else {
-                        s.path(g == 0 ? "M \(x) 82 L \(x) 140" : "M \(x) 82 C \(x + 3) 100, \(x - 3) 120, \(x) 140", stroke: lig, lw: g == 0 ? 2 : 2.5)
-                    }
-                }
-                s.label(["stretched", "partly torn", "torn through"][g],["拉伸", "部分撕裂", "完全断裂"][g], cx, box.maxY - 4, size: 8, color: lig, anchor: .middle)
-            } else if scene == 3 {
-                // lying down, foot up on pillows above the heart
-                s.rect(box.minX, box.minY, box.width, box.height, r: 10, fill: .white, stroke: hex("#DDDDDD"), lw: 1.5)
-                let steps = [("R", "休"), ("I", "冰"), ("C", "压"), ("E", "抬")]
-                for (i, (en, zh)) in steps.enumerated() {
-                    let on = rice > [0.08, 0.3, 0.55, 0.8][i]
-                    let x = box.minX + 14 + Double(i) * 21.5
-                    s.circle(x, box.minY + 18, 9, fill: on ? blue : hex("#EEEEEE"))
-                    s.label(en, zh, x, box.minY + 22, size: 10, color: on ? .white : hex("#999999"), anchor: .middle, bold: true)
-                }
-                let up = rice > 0.8
-                let floor = 150.0
-                s.rect(box.minX + 6, floor, box.width - 12, 6, r: 2, fill: hex("#D9C9B0"))
-                // on the back, head left; the hurt leg on pillows
-                var body = SideFigure(h: 68, look: .man, hip: .zero, rotation: -90)
-                body.near = .init(shoulder: 6, elbow: 8)
-                body.nearLeg = .init(hip: up ? 17 : 2, knee: up ? 3 : 2, point: 20)
-                body.farLeg = .init(hip: 1, knee: 2, point: 20)
-                body.hip = CGPoint(x: box.minX + 42, y: floor - body.build.depth * body.h * 0.5)
-                s.rect(box.minX + 8, floor - 6, 16, 6, r: 3, fill: .white, stroke: hex("#CCCCCC"))
-                if up {
-                    let a = body.ankle(), top = a.y + body.build.legW * body.h * 0.45
-                    s.rect(a.x - 22, top, 32, floor - top, r: 6, fill: hex("#DCE6F2"), stroke: hex("#9FB3CC"))
-                }
-                body.drawBack(&s, farArm: false)
-                body.drawBody(&s)
-                body.drawArm(&s, near: true)
-                if rice > 0.55 {
-                    let a = body.ankle()
-                    s.circle(a.x, a.y, body.build.legW * body.h * 0.6, fill: hex("#E8D5B0"), stroke: hex("#C9B48A"))
-                }
-                let now = rice > 0.8 ? s.t("foot above heart", "脚高于心脏") : rice > 0.55 ? s.t("elastic wrap", "弹力绷带") : rice > 0.3 ? s.t("ice in a cloth", "冰袋包布") : s.t("rest, no weight", "休息，别负重")
-                s.text(now, cx, box.maxY - 4, size: 8, color: blue, anchor: .middle)
-            }
-        },
-        sources: ["BJSM / Red Cross acute ankle sprain management (RICE / PEACE & LOVE)", "Ottawa ankle rules"]
-    )
+            let now = rice > 0.8 ? ("foot above the heart", "脚高于心脏") : rice > 0.55 ? ("elastic wrap", "弹力绷带") : rice > 0.3 ? ("ice in a cloth", "冰袋包布") : ("rest, no weight", "休息，别负重")
+            c.cardNote(now.0, now.1, cx, box.maxY - 10, width: 96, size: 8.5, color: Anat.blue, bold: true)
+        }
+    }
 }
+
+private func pt(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: x, y: y) }
