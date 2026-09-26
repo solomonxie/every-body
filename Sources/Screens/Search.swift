@@ -13,6 +13,16 @@ struct SearchEntry: Identifiable {
             case .part: Bilingual("Body parts", "身体部位")
             }
         }
+
+        var symbol: String {
+            switch self {
+            case .illustration: "play.fill"
+            case .system: "square.grid.2x2.fill"
+            case .zone: "hand.raised.fill"
+            case .point: "smallcircle.filled.circle"
+            case .part: "figure.stand"
+            }
+        }
     }
 
     let id: String
@@ -138,29 +148,135 @@ struct SearchResults: View {
 
     var body: some View {
         let sections = SearchIndex.search(query)
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Space.xl) {
             if sections.isEmpty {
-                Text(settings.t("No matches for “\(query)”. Try a body part, a symptom, or a procedure like “CPR”.",
-                                "没有找到“\(query)”。试试身体部位、症状，或“心肺复苏”等操作名称。"))
-                    .foregroundStyle(.secondary)
+                NoMatches(query: query)
             }
             ForEach(sections, id: \.kind) { section in
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("\(settings.t(section.kind.title)) · \(section.items.count)")
-                        .font(.footnote.weight(.semibold)).foregroundStyle(.secondary).padding(.bottom, 4)
-                    ForEach(section.items) { item in
-                        NavigationLink(value: item.route) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(settings.t(item.name)).foregroundStyle(.primary).lineLimit(1)
-                                    Text(settings.t(item.detail)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
-                            }
-                            .padding(.vertical, 8)
+                VStack(alignment: .leading, spacing: Space.s) {
+                    Eyebrow("\(settings.t(section.kind.title)) · \(section.items.count)").padding(.horizontal, Space.xs)
+                    VStack(spacing: 0) {
+                        ForEach(Array(section.items.enumerated()), id: \.element.id) { i, item in
+                            if i > 0 { Divider().padding(.leading, Space.l + 30 + Space.m) }
+                            NavigationLink(value: item.route) { SearchRow(entry: item) }
+                                .buttonStyle(RowButtonStyle())
+                                .simultaneousGesture(TapGesture().onEnded { settings.remember(search: query) })
                         }
-                        Divider()
+                    }
+                    .background(Color.card, in: .rect(cornerRadius: Radius.card, style: .continuous))
+                    .clipShape(.rect(cornerRadius: Radius.card, style: .continuous))
+                }
+            }
+        }
+    }
+}
+
+private struct SearchRow: View {
+    let entry: SearchEntry
+    @Environment(Settings.self) private var settings
+
+    private var tint: Color {
+        switch entry.route {
+        case let .illustration(id): Illustrations.find(id)?.group.color ?? .brandFill
+        case .chart: Color(hex: "#D9853B")
+        default:
+            switch entry.kind {
+            case .system: .brandFill
+            case .point: Color(hex: "#3E8E7E")
+            default: Color(hex: "#4A7BD0")
+            }
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: Space.m) {
+            IconBadge(symbol: entry.kind.symbol, color: tint)
+            VStack(alignment: .leading, spacing: Space.xxs) {
+                Text(settings.t(entry.name)).foregroundStyle(.primary).lineLimit(2)
+                let detail = settings.t(entry.detail)
+                if !detail.isEmpty {
+                    Text(detail).font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+            .multilineTextAlignment(.leading)
+            Spacer(minLength: Space.s)
+            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, Space.l)
+        .padding(.vertical, Space.m)
+        .frame(minHeight: minTap)
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct NoMatches: View {
+    let query: String
+    @Environment(Settings.self) private var settings
+
+    var body: some View {
+        VStack(spacing: Space.s) {
+            Image(systemName: "magnifyingglass").font(.system(size: 40, weight: .light)).foregroundStyle(.tertiary)
+                .padding(.bottom, Space.xs)
+            Text(settings.t("No matches for “\(query)”", "没有找到“\(query)”")).font(.headline)
+                .multilineTextAlignment(.center)
+            Text(settings.t("Try a body part, a symptom, or a procedure like “CPR”.", "试试身体部位、症状，或“心肺复苏”等操作名称。"))
+                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Space.xxl)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Focused, nothing typed: recent and suggested searches.
+struct SearchSuggestions: View {
+    @Binding var query: String
+    @Environment(Settings.self) private var settings
+
+    private static let suggested: [Bilingual] = [
+        Bilingual("CPR", "心肺复苏"), Bilingual("Choking", "海姆立克"), Bilingual("Stroke", "中风"), Bilingual("Burn", "烧伤"),
+        Bilingual("Femur", "股骨"), Bilingual("Heart", "心脏"), Bilingual("Blood pressure", "血压"), Bilingual("Hegu", "合谷"),
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.xl) {
+            if !settings.recentSearches.isEmpty {
+                VStack(alignment: .leading, spacing: Space.s) {
+                    HStack {
+                        Eyebrow(settings.t("Recent", "最近搜索"))
+                        Spacer()
+                        Button(settings.t("Clear", "清除")) { settings.clearRecentSearches() }
+                            .font(.subheadline.weight(.semibold))
+                            .frame(minHeight: minTap)
+                    }
+                    .padding(.horizontal, Space.xs)
+                    VStack(spacing: 0) {
+                        ForEach(Array(settings.recentSearches.enumerated()), id: \.element) { i, recent in
+                            if i > 0 { Divider().padding(.leading, Space.l + 24 + Space.m) }
+                            Button { query = recent } label: {
+                                HStack(spacing: Space.m) {
+                                    Image(systemName: "clock.arrow.circlepath").foregroundStyle(.secondary).frame(width: 24)
+                                    Text(recent).foregroundStyle(.primary)
+                                    Spacer()
+                                    Image(systemName: "arrow.up.left").font(.footnote).foregroundStyle(.tertiary)
+                                }
+                                .padding(.horizontal, Space.l)
+                                .frame(minHeight: minTap + 4)
+                                .contentShape(.rect)
+                            }
+                            .buttonStyle(RowButtonStyle())
+                        }
+                    }
+                    .background(Color.card, in: .rect(cornerRadius: Radius.card, style: .continuous))
+                    .clipShape(.rect(cornerRadius: Radius.card, style: .continuous))
+                }
+            }
+            VStack(alignment: .leading, spacing: Space.s) {
+                Eyebrow(settings.t("Try searching", "试试搜索")).padding(.horizontal, Space.xs)
+                FlowLayout(spacing: Space.s) {
+                    ForEach(Self.suggested, id: \.en) { s in
+                        Pill(label: settings.t(s), symbol: "magnifyingglass") { query = settings.t(s) }
                     }
                 }
             }
@@ -175,11 +291,23 @@ struct SearchScreen: View {
 
     var body: some View {
         ScrollView {
-            SearchResults(query: query).padding(16)
+            Group {
+                if query.trimmingCharacters(in: .whitespaces).isEmpty {
+                    SearchSuggestions(query: $query)
+                } else {
+                    SearchResults(query: query)
+                }
+            }
+            .padding(.horizontal, Space.l)
+            .padding(.vertical, Space.s)
         }
+        .scrollDismissesKeyboard(.immediately)
+        .background(Color.page)
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
                     prompt: settings.t("Body parts, illnesses, procedures", "身体部位、疾病、操作"))
+        .onSubmit(of: .search) { settings.remember(search: query) }
         .navigationTitle(settings.t("Search", "搜索"))
         .navigationBarTitleDisplayMode(.inline)
+        .profileToolbar()
     }
 }
