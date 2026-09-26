@@ -19,6 +19,7 @@ struct ChartScreen: View {
     /// share of the stage given to the 3D body; the bar between the halves drags it
     @State private var split: CGFloat = 0.42
     @State private var splitStart: CGFloat?
+    @AppStorage("chartLayout") private var layout: ChartLayout = .stacked
     @State private var ready = false
 
     private var chart: ReflexChart { Catalog.chart(chartID) ?? Catalog.charts.charts[0] }
@@ -30,13 +31,30 @@ struct ChartScreen: View {
             controls
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-            // body on top, chart below — each pinch-zooms on its own, both start fitted
+            // each half pinch-zooms on its own; both start fitted
             GeometryReader { stage in
-                VStack(spacing: 0) {
-                    bodyPane
-                        .frame(height: stage.size.height * split)
-                    splitBar(total: stage.size.height)
-                    chartPane
+                switch layout {
+                case .stacked:
+                    VStack(spacing: 0) {
+                        bodyPane.frame(height: stage.size.height * split)
+                        splitBar(total: stage.size.height, vertical: true)
+                        chartPane
+                    }
+                case .sideBySide:
+                    HStack(spacing: 0) {
+                        chartPane.frame(width: stage.size.width * (1 - split))
+                        splitBar(total: stage.size.width, vertical: false)
+                        bodyPane
+                    }
+                case .overlay:
+                    ZStack(alignment: .bottomTrailing) {
+                        bodyPane
+                        chartPane
+                            .background(.white, in: .rect(cornerRadius: 14))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.secondary.opacity(0.4)))
+                            .frame(width: stage.size.width * 0.46, height: stage.size.height * 0.46)
+                            .padding(16)
+                    }
                 }
             }
             zoneList
@@ -62,7 +80,18 @@ struct ChartScreen: View {
                 }
                 .pickerStyle(.segmented)
             }
-
+            Menu {
+                Picker(settings.t("Layout", "布局"), selection: $layout) {
+                    ForEach(ChartLayout.allCases, id: \.self) { l in
+                        Label(settings.t(l.label), systemImage: l.symbol).tag(l)
+                    }
+                }
+            } label: {
+                Image(systemName: layout.symbol)
+                    .frame(width: 32, height: 32)
+                    .background(Color.secondary.opacity(0.12), in: .rect(cornerRadius: 8))
+            }
+            .accessibilityLabel(settings.t("Layout", "布局"))
         }
     }
 
@@ -98,17 +127,20 @@ struct ChartScreen: View {
     }
 
     /// Full-height body: a standing figure is tall and narrow, so a tall pane shows it large.
-    private func splitBar(total: CGFloat) -> some View {
+    /// Drag handle between the halves; `split` is always the body's share.
+    private func splitBar(total: CGFloat, vertical: Bool) -> some View {
         Capsule()
             .fill(Color.secondary.opacity(splitStart == nil ? 0.35 : 0.7))
-            .frame(width: 44, height: 5)
-            .frame(maxWidth: .infinity, minHeight: 22)
+            .frame(width: vertical ? 44 : 5, height: vertical ? 5 : 44)
+            .frame(maxWidth: vertical ? .infinity : 22, maxHeight: vertical ? 22 : .infinity)
             .contentShape(.rect)
             .gesture(DragGesture(minimumDistance: 0)
                 .onChanged { v in
                     let start = splitStart ?? split
                     splitStart = start
-                    split = min(0.8, max(0.15, start + v.translation.height / max(total, 1)))
+                    // stacked: body above, dragging down grows it; side by side: body right, dragging left grows it
+                    let delta = vertical ? v.translation.height : -v.translation.width
+                    split = min(0.8, max(0.15, start + delta / max(total, 1)))
                 }
                 .onEnded { _ in splitStart = nil })
             .accessibilityLabel(settings.t("Resize body and chart", "调整人体与图的大小"))
@@ -353,5 +385,25 @@ struct ChartCanvas: View {
         let p = point.applying(toDrawing)
         let hits = zones.filter { zone in zone.shapes.contains { ellipse($0).contains(p) || hypot($0.cx - p.x, $0.cy - p.y) < 9 } }
         return hits.min { a, b in (a.shapes.first.map { $0.rx * $0.ry } ?? 0) < (b.shapes.first.map { $0.rx * $0.ry } ?? 0) }
+    }
+}
+
+enum ChartLayout: String, CaseIterable {
+    case stacked, sideBySide, overlay
+
+    var label: Bilingual {
+        switch self {
+        case .stacked: Bilingual("Up / down", "上下")
+        case .sideBySide: Bilingual("Left / right", "左右")
+        case .overlay: Bilingual("Body + chart box", "人体 + 小图")
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .stacked: "rectangle.split.1x2"
+        case .sideBySide: "rectangle.split.2x1"
+        case .overlay: "rectangle.inset.bottomright.filled"
+        }
     }
 }
