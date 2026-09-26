@@ -128,7 +128,8 @@ final class BodyScene {
             for shape in variant.shapes {
                 let piece = Self.entity(for: shape)
                 piece.position -= variant.position.simd
-                piece.model?.materials = [Self.material(UIColor(hex: variant.color), opacity: organ.region == true ? 0.45 : 1)]
+                piece.model?.materials = [Self.material(UIColor(hex: variant.color), opacity: organ.region == true ? 0.45 : 1,
+                                                        texture: organ.region == true ? nil : Textures.organ)]
                 piece.name = organ.names == nil ? "" : organ.id
                 if organ.names != nil { Self.makeTappable(piece, shape: shape) }
                 container.addChild(piece)
@@ -141,7 +142,7 @@ final class BodyScene {
         for part in Catalog.body.parts where part.layer != .skin {
             let entity = Self.entity(for: part.shape)
             entity.name = part.id
-            baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1)
+            baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1, texture: Textures.for(part.layer))
             entity.model?.materials = [baseMaterials[part.id]!]
             Self.makeTappable(entity, shape: part.shape)
             parent(of: part.id).addChild(entity)
@@ -197,11 +198,18 @@ final class BodyScene {
     func setJoint(_ id: String, degrees: Float) {
         guard let joint = Catalog.joint(id), let outer = jointOuter[id] else { return }
         outer.orientation = simd_quatf(angle: degrees * .pi / 180, axis: simd_normalize(joint.axis.simd))
+        // the working muscle shortens and thickens
+        let bulge = 1 + 0.6 * min(1, degrees / joint.maxDeg)
         for mover in joint.movers {
-            guard let entity = partEntities[mover], case let .spindle(from, to, radius) = Catalog.part(mover)?.shape else { continue }
-            let bulge = 1 + 0.6 * min(1, degrees / joint.maxDeg)
-            let length = simd_distance(from.simd, to.simd)
-            entity.scale = SIMD3(radius * bulge, length / 2 * (2 - bulge).squareRoot(), radius * 0.8 * bulge)
+            guard let entity = partEntities[mover], let shape = Catalog.part(mover)?.shape else { continue }
+            switch shape {
+            case let .spindle(from, to, radius):
+                entity.scale = SIMD3(radius * bulge, simd_distance(from.simd, to.simd) / 2 * (2 - bulge).squareRoot(), radius * 0.8 * bulge)
+            case let .lathe(_, _, _, scale):
+                entity.scale = (scale?.simd ?? SIMD3(repeating: 1)) * SIMD3(bulge, (2 - bulge).squareRoot(), bulge)
+            default:
+                break
+            }
         }
     }
 
@@ -308,9 +316,15 @@ final class BodyScene {
             let u = (flowPhase + Float(i) / Float(flowDots.count)).truncatingRemainder(dividingBy: 1)
             dot.position = Meshes.catmullRom(loop, u)
             let venous = u > flowSplit.capillary && u < flowSplit.lungs
-            dot.model?.materials = [UnlitMaterial(color: UIColor(hex: venous ? "#3A5BD9" : "#E03A3E"))]
+            if dot.name != (venous ? "v" : "a") {
+                dot.name = venous ? "v" : "a"
+                dot.model?.materials = [venous ? Self.venous : Self.arterial]
+            }
         }
     }
+
+    private static let arterial = UnlitMaterial(color: UIColor(hex: "#E03A3E"))
+    private static let venous = UnlitMaterial(color: UIColor(hex: "#3A5BD9"))
 
     // MARK: helpers
 
