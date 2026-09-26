@@ -19,6 +19,7 @@ Remove the Expo/React Native app and rebuild every feature natively, data first,
 - [x] T0.6 Reflex charts in `Canvas` (hand, foot, ear), zoom, 3D inset — see `Sources/Charts/` — depends: T0.3
 - [x] T0.7 Illustration player + 18 scenes in `Canvas` — see `Sources/Illustrations/` — depends: T0.1
 - [x] T0.8 Explore, search, quiz, info, settings — see `Sources/Screens/` — depends: T0.4, T0.6, T0.7
+- [x] T0.9 Anatomical accuracy: landmark-based generator (bones with processes/discs/cartilage, hand & foot bones, ~30 muscles origin→insertion, shaped organs, proportioned skin) — see `scripts/gen_body.py`, `scripts/preview_body.py` — depends: T0.3
 
 ## Phase 1: Foundations
 Data types, settings, and name display every later screen reads. No 3D dependency, so

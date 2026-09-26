@@ -26,42 +26,45 @@ enum LayerID: String, Codable, Sendable, CaseIterable {
 }
 
 enum PartShape: Codable, Sendable {
-    case sphere(center: Vec3, radius: Float, scale: Vec3?)
+    case sphere(center: Vec3, radius: Float, scale: Vec3?, rotation: Vec3?)
     case box(center: Vec3, size: Vec3, rotation: Vec3?)
     /// capsule between two points
     case segment(from: Vec3, to: Vec3, radius: Float)
     /// ellipsoid stretched between two points — muscle bellies
     case spindle(from: Vec3, to: Vec3, radius: Float)
-    /// tube along a smooth curve — vessels, nerves, gut
-    case tube(points: [Vec3], radius: Float)
-    /// flat torus arc (ribs); angles in radians, 0 = figure's left, π/2 = front
-    case arc(center: Vec3, radius: Float, tube: Float, start: Float, sweep: Float, depth: Float)
+    /// surface of revolution from → to, radii sampled evenly along the axis; `scale` squashes the cross-section
+    case lathe(from: Vec3, to: Vec3, radii: [Float], scale: Vec3?)
+    /// tube along a smooth curve; optional per-point radii taper it
+    case tube(points: [Vec3], radius: Float, radii: [Float]?)
+    /// flat bone: a polygon given a thickness
+    case plate(points: [Vec3], thickness: Float)
 
     private enum Key: String, CodingKey {
-        case kind, center, radius, scale, size, rotation, from, to, points, tube, start, sweep, depth
+        case kind, center, radius, scale, size, rotation, from, to, points, radii, thickness
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Key.self)
+        func v(_ k: Key) throws -> Vec3 { try c.decode(Vec3.self, forKey: k) }
+        func f(_ k: Key) throws -> Float { try c.decode(Float.self, forKey: k) }
         switch try c.decode(String.self, forKey: .kind) {
         case "sphere":
-            self = .sphere(center: try c.decode(Vec3.self, forKey: .center), radius: try c.decode(Float.self, forKey: .radius),
-                           scale: try c.decodeIfPresent(Vec3.self, forKey: .scale))
+            self = .sphere(center: try v(.center), radius: try f(.radius), scale: try c.decodeIfPresent(Vec3.self, forKey: .scale),
+                           rotation: try c.decodeIfPresent(Vec3.self, forKey: .rotation))
         case "box":
-            self = .box(center: try c.decode(Vec3.self, forKey: .center), size: try c.decode(Vec3.self, forKey: .size),
-                        rotation: try c.decodeIfPresent(Vec3.self, forKey: .rotation))
+            self = .box(center: try v(.center), size: try v(.size), rotation: try c.decodeIfPresent(Vec3.self, forKey: .rotation))
         case "segment":
-            self = .segment(from: try c.decode(Vec3.self, forKey: .from), to: try c.decode(Vec3.self, forKey: .to),
-                            radius: try c.decode(Float.self, forKey: .radius))
+            self = .segment(from: try v(.from), to: try v(.to), radius: try f(.radius))
         case "spindle":
-            self = .spindle(from: try c.decode(Vec3.self, forKey: .from), to: try c.decode(Vec3.self, forKey: .to),
-                            radius: try c.decode(Float.self, forKey: .radius))
+            self = .spindle(from: try v(.from), to: try v(.to), radius: try f(.radius))
+        case "lathe":
+            self = .lathe(from: try v(.from), to: try v(.to), radii: try c.decode([Float].self, forKey: .radii),
+                          scale: try c.decodeIfPresent(Vec3.self, forKey: .scale))
         case "tube":
-            self = .tube(points: try c.decode([Vec3].self, forKey: .points), radius: try c.decode(Float.self, forKey: .radius))
+            self = .tube(points: try c.decode([Vec3].self, forKey: .points), radius: try f(.radius),
+                         radii: try c.decodeIfPresent([Float].self, forKey: .radii))
         default:
-            self = .arc(center: try c.decode(Vec3.self, forKey: .center), radius: try c.decode(Float.self, forKey: .radius),
-                        tube: try c.decode(Float.self, forKey: .tube), start: try c.decode(Float.self, forKey: .start),
-                        sweep: try c.decode(Float.self, forKey: .sweep), depth: try c.decode(Float.self, forKey: .depth))
+            self = .plate(points: try c.decode([Vec3].self, forKey: .points), thickness: try f(.thickness))
         }
     }
 
@@ -75,6 +78,8 @@ struct SchematicPart: Codable, Sendable, Identifiable {
     let layer: LayerID
     let color: String
     let shape: PartShape
+    /// "male" / "female" for sex-specific skin; nil = both
+    let sex: String?
 }
 
 struct Joint: Codable, Sendable, Identifiable {
@@ -95,38 +100,22 @@ struct LayerInfo: Codable, Sendable, Identifiable {
     let labelZh: String
 }
 
-/// Translucent skin piece of the primitive figure.
-struct SkinPart: Codable, Sendable, Identifiable {
-    struct Shape: Codable, Sendable {
-        let kind: String
-        let radius: Float?
-        let length: Float?
-        let size: Vec3?
-    }
-    let id: String
-    let shape: Shape
-    let position: Vec3
-    let rotationZ: Float?
-    let scale: Vec3?
-}
-
 struct Organ: Codable, Sendable, Identifiable {
-    struct Placement: Codable, Sendable {
+    struct Variant: Codable, Sendable {
         let position: Vec3
-        let radius: Float
-        let scale: Vec3?
         let color: String
+        let shapes: [PartShape]
     }
     let id: String
-    let position: Vec3
-    let radius: Float
-    let scale: Vec3?
     let color: String
+    /// where a reflex pulse lands
+    let position: Vec3
+    let shapes: [PartShape]
+    let names: [String]?
     /// a region, invisible until it lights up
     let region: Bool?
-    let names: [String]?
-    /// male placement (prostate) where it differs
-    let male: Placement?
+    /// male variant (prostate) where it differs
+    let male: Variant?
 }
 
 struct BodyData: Codable, Sendable {
@@ -134,8 +123,6 @@ struct BodyData: Codable, Sendable {
     let joints: [Joint]
     let layers: [LayerInfo]
     let defaultLayers: [String: [LayerID]]
-    let skin: [SkinPart]
-    let femaleSkin: [SkinPart]
     let organs: [Organ]
 }
 

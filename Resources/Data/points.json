@@ -7,7 +7,7 @@
     "nameZh": "头部/脑反射区(足)",
     "description": "Tips of all toes.",
     "region": "foot",
-    "position": [0.16, -1.52, 0.25],
+    "position": [0.1953, -1.5479, 0.3813],
     "target": {
      "name": "Brain",
      "nameZh": "脑",
@@ -24,7 +24,7 @@
     "nameZh": "肾反射区(足)",
     "description": "Center of the sole.",
     "region": "foot",
-    "position": [0.16, -1.49, 0.02],
+    "position": [0.173, -1.4958, 0.1116],
     "target": {
      "name": "Kidneys",
      "nameZh": "肾",
@@ -42,7 +42,7 @@
     "nameZh": "肝反射区(足)",
     "description": "Upper right sole, right foot only.",
     "region": "foot",
-    "position": [-0.16, -1.49, 0.14],
+    "position": [-0.186, -1.507, 0.2232],
     "target": {
      "name": "Liver",
      "nameZh": "肝",
@@ -59,7 +59,7 @@
     "nameZh": "胃反射区(足)",
     "description": "Mid-sole, just below the ball.",
     "region": "foot",
-    "position": [0.16, -1.49, 0.14],
+    "position": [0.1934, -1.5107, 0.2232],
     "target": {
      "name": "Stomach",
      "nameZh": "胃",
@@ -76,7 +76,7 @@
     "nameZh": "合谷(手)",
     "description": "Web between thumb and index finger.",
     "region": "hand",
-    "position": [0.55, 0.1, 0.05],
+    "position": [0.4873, -0.112, -0.0112],
     "target": {
      "name": "Face & Shoulder Muscles",
      "nameZh": "面部与肩部肌肉",
@@ -93,7 +93,7 @@
     "nameZh": "内关(手)",
     "description": "Inner forearm, above the wrist.",
     "region": "hand",
-    "position": [0.5, 0.26, 0.07],
+    "position": [0.439, 0.074, 0.0521],
     "target": {
      "name": "Heart & Stomach",
      "nameZh": "心与胃",
@@ -111,7 +111,7 @@
     "nameZh": "神门(耳)",
     "description": "Triangular fossa at the top of the ear.",
     "region": "ear",
-    "position": [0.23, 1.49, 0.01],
+    "position": [0.16, 1.4783, 0.0],
     "target": {
      "name": "Nervous System",
      "nameZh": "神经系统",
@@ -128,7 +128,7 @@
     "nameZh": "足三里(腿)",
     "description": "Below the knee, outer leg.",
     "region": "body",
-    "position": [0.26, -0.84, 0.04],
+    "position": [0.2381, -0.856, 0.0744],
     "target": {
      "name": "Digestive Tract",
      "nameZh": "消化道",
@@ -146,7 +146,7 @@
     "nameZh": "百会(头)",
     "description": "Crown of the head — governing vessel.",
     "region": "body",
-    "position": [0, 1.65, 0],
+    "position": [0.0, 1.6606, -0.0186],
     "target": {
      "name": "Whole-Body Qi",
      "nameZh": "全身气机",
@@ -167,7 +167,7 @@
     "nameZh": "三阴交(腿)",
     "description": "Inner ankle, above the bone.",
     "region": "body",
-    "position": [0.08, -1.38, 0.02],
+    "position": [0.1265, -1.3396, 0.0],
     "target": {
      "name": "Reproductive & Digestive Organs",
      "nameZh": "生殖与消化器官",
@@ -188,49 +188,49 @@
     "name": "Heart",
     "nameZh": "心脏",
     "description": "Pumps blood into the circulatory loop.",
-    "position": [0.06, 0.92, 0.1]
+    "position": [0.0372, 0.7622, 0.1302]
    },
    {
     "id": "aorta",
     "name": "Aorta",
     "nameZh": "主动脉",
     "description": "Main artery leaving the heart.",
-    "position": [0.02, 1.06, 0.06]
+    "position": [0.0, 0.9482, 0.0372]
    },
    {
     "id": "arteries",
     "name": "Arteries",
     "nameZh": "动脉",
     "description": "Carry oxygen-rich blood to tissues.",
-    "position": [0.48, 0.62, 0.06]
+    "position": [0.3813, 0.7064, 0.0372]
    },
    {
     "id": "capillaries",
     "name": "Capillaries",
     "nameZh": "毛细血管",
     "description": "Exchange oxygen and nutrients at tissues.",
-    "position": [0.52, 0.05, 0.06]
+    "position": [0.4557, -0.112, 0.0372]
    },
    {
     "id": "veins",
     "name": "Veins",
     "nameZh": "静脉",
     "description": "Carry oxygen-poor blood back toward the heart.",
-    "position": [0.44, 0.9, 0.04]
+    "position": [0.3534, 0.818, -0.0186]
    },
    {
     "id": "venacava",
     "name": "Vena Cava",
     "nameZh": "腔静脉",
     "description": "Returns blood to the right atrium.",
-    "position": [-0.04, 0.72, 0.02]
+    "position": [-0.0558, 0.632, 0.0]
    },
    {
     "id": "lungs",
     "name": "Lungs",
     "nameZh": "肺",
     "description": "Reoxygenates blood via pulmonary circulation.",
-    "position": [-0.15, 0.96, 0.02]
+    "position": [-0.1581, 0.8738, 0.0]
    }
   ],
   "flow": {

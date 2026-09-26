@@ -64,7 +64,7 @@ enum SearchIndex {
             }
         }
         let layerSystem: [LayerID: String] = [.skin: "organs", .muscular: "muscular", .skeletal: "skeletal", .circulatory: "circulatory", .nervous: "nervous", .organs: "organs"]
-        for part in Catalog.body.parts {
+        for part in Catalog.body.parts where part.layer != .skin {
             out.append(SearchEntry(.part, id: "b-\(part.id)", name: part.name, nameZh: part.nameZh, detail: part.layer.rawValue,
                                    route: .viewer(system: layerSystem[part.layer] ?? "organs", part: part.id)))
         }

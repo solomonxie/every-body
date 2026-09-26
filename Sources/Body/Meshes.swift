@@ -45,9 +45,40 @@ enum Meshes {
         return lathe(profile, segments: 16)
     }
 
-    /// Tube of constant radius along a Catmull-Rom curve through the points.
-    static func tube(points: [SIMD3<Float>], radius: Float, samples: Int = 40, sides: Int = 8) -> MeshResource {
+    /// Lathe along +Y centred at the origin: radii sampled evenly over `length`, smoothed, ends rounded shut.
+    static func profile(radii: [Float], length: Float) -> MeshResource {
+        let n = radii.count
+        let steps = max(8, (n - 1) * 4)
+        func radius(_ u: Float) -> Float {
+            let f = u * Float(n - 1)
+            let i = min(n - 2, max(0, Int(f)))
+            let t = f - Float(i)
+            let r0 = radii[max(0, i - 1)], r1 = radii[i], r2 = radii[min(n - 1, i + 1)], r3 = radii[min(n - 1, i + 2)]
+            let t2 = t * t, t3 = t2 * t
+            return max(0.0001, 0.5 * (2 * r1 + (-r0 + r2) * t + (2 * r0 - 5 * r1 + 4 * r2 - r3) * t2 + (-r0 + 3 * r1 - 3 * r2 + r3) * t3))
+        }
+        var points: [SIMD2<Float>] = []
+        let r0 = radii.first!, rn = radii.last!
+        points.append(SIMD2(0.0001, -length / 2 - r0 * 0.35))
+        points.append(SIMD2(r0 * 0.75, -length / 2 - r0 * 0.22))
+        for k in 0...steps {
+            let u = Float(k) / Float(steps)
+            points.append(SIMD2(radius(u), -length / 2 + u * length))
+        }
+        points.append(SIMD2(rn * 0.75, length / 2 + rn * 0.22))
+        points.append(SIMD2(0.0001, length / 2 + rn * 0.35))
+        return lathe(points, segments: 18)
+    }
+
+    /// Tube along a Catmull-Rom curve through the points; `radii` (one per point) taper it.
+    static func tube(points: [SIMD3<Float>], radius: Float, radii: [Float]? = nil, samples: Int = 40, sides: Int = 8) -> MeshResource {
         let path = (0...samples).map { catmullRom(points, Float($0) / Float(samples)) }
+        func r(_ i: Int) -> Float {
+            guard let radii, radii.count > 1 else { return radius }
+            let f = Float(i) / Float(samples) * Float(radii.count - 1)
+            let k = min(radii.count - 2, Int(f))
+            return radii[k] + (radii[k + 1] - radii[k]) * (f - Float(k))
+        }
         var positions: [SIMD3<Float>] = []
         var normals: [SIMD3<Float>] = []
         var indices: [UInt32] = []
@@ -60,7 +91,7 @@ enum Meshes {
             for s in 0...sides {
                 let a = Float(s) / Float(sides) * 2 * .pi
                 let n = cos(a) * normal + sin(a) * binormal
-                positions.append(p + radius * n)
+                positions.append(p + r(i) * n)
                 normals.append(n)
             }
         }
@@ -74,29 +105,27 @@ enum Meshes {
         return build(positions, normals, indices)
     }
 
-    /// Torus arc lying in the XZ plane; angle 0 = +X, π/2 = +Z (front); `depth` squashes Z.
-    static func arc(radius: Float, tube: Float, start: Float, sweep: Float, depth: Float) -> MeshResource {
-        let rings = max(8, Int(sweep / (2 * .pi) * 48)), sides = 8
-        var positions: [SIMD3<Float>] = []
-        var normals: [SIMD3<Float>] = []
+    /// Flat bone: the polygon given `thickness` along its average normal.
+    static func plate(points: [SIMD3<Float>], thickness: Float) -> MeshResource {
+        let n = points.count
+        let c = points.reduce(SIMD3<Float>.zero, +) / Float(n)
+        var normal = SIMD3<Float>.zero
+        for i in 0..<n { normal += simd_cross(points[i] - c, points[(i + 1) % n] - c) }
+        normal = simd_normalize(normal + 1e-6)
+        let h = normal * thickness / 2
+        var positions: [SIMD3<Float>] = [c + h, c - h]
+        var normals: [SIMD3<Float>] = [normal, -normal]
         var indices: [UInt32] = []
-        for i in 0...rings {
-            let u = start + Float(i) / Float(rings) * sweep
-            let center = SIMD3(radius * cos(u), 0, radius * sin(u) * depth)
-            let out = SIMD3(cos(u), 0, sin(u))
-            for s in 0...sides {
-                let v = Float(s) / Float(sides) * 2 * .pi
-                let n = cos(v) * out + sin(v) * SIMD3(0, 1, 0)
-                positions.append(center + tube * n)
-                normals.append(n)
-            }
-        }
-        let stride = UInt32(sides + 1)
-        for i in 0..<UInt32(rings) {
-            for s in 0..<UInt32(sides) {
-                let a = i * stride + s, b = a + stride
-                indices += [a, a + 1, b, b, a + 1, b + 1]
-            }
+        for p in points { positions += [p + h, p - h]; normals += [normal, -normal] }
+        for i in 0..<UInt32(n) {
+            let a = 2 + 2 * i, b = 2 + 2 * ((i + 1) % UInt32(n))
+            indices += [0, a, b, 1, b + 1, a + 1]
+            // side wall
+            let out = simd_normalize(simd_cross(normal, points[Int((i + 1) % UInt32(n))] - points[Int(i)]) + 1e-6)
+            let base = UInt32(positions.count)
+            positions += [points[Int(i)] + h, points[Int(i)] - h, points[Int((i + 1) % UInt32(n))] + h, points[Int((i + 1) % UInt32(n))] - h]
+            normals += [out, out, out, out]
+            indices += [base, base + 1, base + 2, base + 2, base + 1, base + 3]
         }
         return build(positions, normals, indices)
     }
