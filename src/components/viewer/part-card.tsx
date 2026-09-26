@@ -4,14 +4,14 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
-import { ORGAN_NAMES, type OrganId } from '@/data/anatomy';
+import { organName, type OrganId } from '@/data/anatomy';
 import { LAYERS, SCHEMATIC_PARTS } from '@/data/body';
 import { zonesForOrgan } from '@/data/reflex-lookup';
-import { useName } from '@/state/settings';
+import { useName, useSettings } from '@/state/settings';
 
 import type { PartAction } from './part-state';
 
-export function partLabel(partId: string) {
+export function partLabel(partId: string, female = false) {
   const part = SCHEMATIC_PARTS.find((p) => p.id === partId);
   if (part) {
     const layer = LAYERS.find((l) => l.id === part.layer);
@@ -21,7 +21,7 @@ export function partLabel(partId: string) {
       layer: layer ? `${layer.labelZh} ${layer.label}` : '',
     };
   }
-  const organ = ORGAN_NAMES[partId as OrganId];
+  const organ = organName(partId as OrganId, female);
   return organ && { name: organ[0], nameZh: organ[1], layer: '器官 Organs' };
 }
 
@@ -35,7 +35,8 @@ type Props = {
 
 /** Name of the tapped part, with Hide / Fade / Isolate. */
 export function PartCard({ partId, onAction, faded, isolated, onClose }: Props) {
-  const label = partLabel(partId);
+  const female = useSettings().settings.body === 'female';
+  const label = partLabel(partId, female);
   const name = useName();
   const zones = zonesForOrgan(partId);
   if (!label) return null;

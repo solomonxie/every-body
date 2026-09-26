@@ -40,6 +40,19 @@ export const BODY_PARTS: BodyPart[] = [
   ...mirrored({ id: 'foot', shape: { kind: 'box', size: [0.16, 0.08, 0.32] }, position: [0.16, -1.53, 0.08] }),
 ];
 
+/** schematic female variant: wider pelvis, narrower waist, breasts */
+export function bodyParts(female: boolean): BodyPart[] {
+  if (!female) return BODY_PARTS;
+  return [
+    ...BODY_PARTS.map((part) =>
+      part.id === 'pelvis' ? { ...part, scale: [1.28, 0.68, 0.76] as Vec3 } :
+      part.id === 'torso' ? { ...part, scale: [1.05, 1, 0.68] as Vec3 } :
+      part,
+    ),
+    ...mirrored({ id: 'breast', shape: { kind: 'sphere', radius: 0.085 }, position: [0.12, 0.86, 0.17], scale: [1, 0.9, 0.8] }),
+  ];
+}
+
 export type OrganId =
   | 'brain'
   | 'heart'
@@ -84,6 +97,15 @@ export const ORGAN_NAMES: Partial<Record<OrganId, [string, string]>> = {
   bladder: ['Bladder', '膀胱'],
   pancreas: ['Pancreas', '胰腺'],
 };
+
+/** male: prostate below the bladder instead of the uterus */
+export function organAt(id: OrganId, female: boolean): Organ {
+  if (id === 'uterus' && !female) return { ...ORGANS.uterus, position: [0, -0.04, 0.05], radius: 0.035, color: '#B98AA0' };
+  return ORGANS[id];
+}
+
+export const organName = (id: OrganId, female: boolean): [string, string] | undefined =>
+  id === 'uterus' ? (female ? ['Uterus', '子宫'] : ['Prostate', '前列腺']) : ORGAN_NAMES[id];
 
 export const ORGANS: Record<OrganId, Organ> = {
   brain: { position: [0, 1.47, 0], radius: 0.14, scale: [1, 0.8, 1.1], color: '#E8A0B4' },

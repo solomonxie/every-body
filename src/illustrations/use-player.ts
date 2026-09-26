@@ -9,7 +9,8 @@ const targetsAt = (scenario: Scenario, index: number): Params =>
   Object.assign({}, scenario.params, ...scenario.steps.slice(0, index + 1).map((step) => step.set ?? {}));
 
 /** Steps through a scenario, easing params toward each step's targets every frame. */
-export function usePlayer(scenario: Scenario) {
+/** `reduceMotion`: jump to targets instead of easing */
+export function usePlayer(scenario: Scenario, reduceMotion = false) {
   const [stepIndex, setStepIndex] = useState(0);
   const [frame, setFrame] = useState<{ t: number; params: Params }>(() => ({
     t: 0,
@@ -23,7 +24,7 @@ export function usePlayer(scenario: Scenario) {
     let last = performance.now();
     const start = last;
     const loop = (now: number) => {
-      const k = 1 - Math.exp(-EASE * Math.min(0.1, (now - last) / 1000));
+      const k = reduceMotion ? 1 : 1 - Math.exp(-EASE * Math.min(0.1, (now - last) / 1000));
       last = now;
       const goals = targets.current;
       const jumps = instant.current;
@@ -39,7 +40,7 @@ export function usePlayer(scenario: Scenario) {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [reduceMotion]);
 
   const goTo = (index: number) => {
     const clamped = Math.max(0, Math.min(scenario.steps.length - 1, index));

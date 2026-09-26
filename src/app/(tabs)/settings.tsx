@@ -40,6 +40,13 @@ export default function SettingsScreen() {
             </View>
           </View>
           <View style={styles.line}>
+            <ThemedText>Body 体型</ThemedText>
+            <View style={styles.row}>
+              <Pill label="Male 男" selected={settings.body === 'male'} onPress={() => update({ body: 'male' })} />
+              <Pill label="Female 女" selected={settings.body === 'female'} onPress={() => update({ body: 'female' })} />
+            </View>
+          </View>
+          <View style={styles.line}>
             <ThemedText>Auto-rotate on open 自动旋转</ThemedText>
             <Switch value={settings.autoRotate} onValueChange={(autoRotate) => update({ autoRotate })} />
           </View>
