@@ -56,29 +56,33 @@ Card fades in only after the target flash — the effect "lands" with the animat
 ## Hand, foot & ear charts
 
 Stack page — from Explore tiles, or Reflex Map › Foot/Hand/Ear filter › "Open … chart".
-Chart and body side by side: a standing figure is tall and narrow, so a full-height pane
-shows it several times larger than an inset, and both stay visible while the pulse travels.
+Body on top, chart below, a draggable bar between them sets the split (15–80 %). Each half
+pinch-zooms on its own and starts fitted. Zones carry no labels; names live in a list below,
+linked both ways.
 
 ```
- ‹ Back        手部反射区 Hand reflex zones
- [ Left 左 | RIGHT 右 ]  [ 掌 PALM | 背 Back ]  [Aa]
-┌──────────────────────────────┬───────────────────┐
-│    ___ ___                   │ 肾 → 左肾、右肾    │ ← caption: zone → organs
-│   |鼻窦|鼻窦|  ___            │        ◯          │
-│   | 眼 | 耳 | |   |          │       /█\         │
-│   (    肺·支气管    ) 肩      │      / █ \        │
-│  /大脑\  (肾上腺)  (心)       │        █ ✦ ← lit  │
-│ / 颈项 /   (肾)   (脾)        │       ▐ ▌         │
-│        (   结肠   )           │  ·•·  ▐ ▌ pulse   │
-│  胃 胰   ( 小肠 )  │          │       ▐ ▌         │
-│        (  膀胱  )             │       ▀ ▀         │
-│ ● 头脑 ● 五官 ● 呼吸 ● 消化 …  │                   │
-│  chart ≈ 60% · pinch to zoom │  3D body ≈ 40%    │
-├──────────────────────────────┴───────────────────┤
-│ Kidneys · 肾                          ↻ Replay   │
-│ Middle of metacarpal 3, centre of the palm. …    │ ← fixed height: no jump on tap
-│ 第3掌骨中点，掌心。…                             │
-│ Traditional claim — not medical advice.          │
+ ‹ Back          Hand reflex zones           [👤 Adult M ▾]
+ [ Left | RIGHT ]  [ PALM | Back ]
+┌──────────────────────────────────────────────────┐
+│          Kidney → Left kidney, Right kidney      │ ← caption
+│                        ◯                         │
+│                       /█\   ✦ lit organ          │  3D body ≈ 42 %
+│                        █    1 finger spin, pinch │
+│                       ▐ ▌                        │
+└──────────────────────────────────────────────────┘
+                     ━━━━━━  ← drag to resize
+┌──────────────────────────────────────────────────┐
+│        ___ ___         ┌──────┐                  │
+│       |   |   |        │Kidney│ ← tag on selected │  chart, pinch + pan
+│      (  ◯   ◯  )        └──◉───┘                  │  ⟲ 1× when zoomed
+│        (  ◯  )   ◯                               │
+└──────────────────────────────────────────────────┘
+ ● Brain ● Pituitary  ● Neck   ● Eye ● Ear  ⚠ Gonads │ ← name list, 96 pt, scrolls;
+ ● Lung  ◉ KIDNEY ◉   ● Bladder …                    │   tap ↔ chart both ways
+├──────────────────────────────────────────────────┤
+│ Kidney                                 ↻ Replay  │
+│ ⚠ caution for the chosen person (if any)         │
+│ Middle of the palm. …                            │
 └──────────────────────────────────────────────────┘
 ```
 - One drawing per face (left palm, back of right hand, left sole/top, left ear); the other
