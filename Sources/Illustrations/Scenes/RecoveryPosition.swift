@@ -71,7 +71,9 @@ extension Illustrations {
         case 4, 5: hands = [(body.farPalm, .open), (body.farKnee, .open)]
         default: break
         }
-        for (i, (at, shape)) in hands.enumerated() { yourHand(&g, at: at, from: CGPoint(x: at.x + 26 + Double(i) * 14, y: 330), shape: shape, k: lay.k) }
+        for (i, (at, shape)) in hands.enumerated() {
+            yourHand(&g, at: at, from: CGPoint(x: at.x + 30 + Double(i) * 16, y: at.y + 90), shape: shape, k: lay.k)
+        }
         if st == 5 && p[v: "roll"] < 0.95 {
             let k = body.farKnee, pulse = 1 + 0.25 * sin(t * 5)
             g.circle(k.x, k.y, 14 * pulse, stroke: red, lw: 2, opacity: 0.8)
@@ -89,7 +91,7 @@ extension Illustrations {
         // labels, unmirrored
         switch st {
         case 0:
-            s.tag("Are you OK?", "你还好吗？", 180, 272, size: 11, bold: true)
+            s.bubble("Are you OK?", "你还好吗？", 200, 262, tip: CGPoint(x: 214, y: 302))
             s.tag("no response", "无反应", mx(body.head).x, body.head.y - 40, size: 10, color: red, bold: true)
         case 1: s.tag("look · listen · feel ≤ 10 s", "看 · 听 · 感觉 ≤ 10 秒", mx(body.head).x + (her ? -30 : 30), body.head.y - 42, size: 10, bold: true)
         case 2: s.tag("right angle, palm up", "直角，掌心向上", mx(body.nearElbow).x, body.nearElbow.y + 34, size: 10, color: red, bold: true)
@@ -116,12 +118,16 @@ extension Illustrations {
 
     /// your forearm coming in from the bottom edge, hand at `at`
     private static func yourHand(_ s: inout Sketch, at: CGPoint, from: CGPoint, shape: SideFigure.Hand, k: Double) {
-        let look = Look.rescuer, w = 15.0 * k
+        // forearm and a stub of sleeve, like a manual's drawing: the rest of you is out of the picture
+        let look = Look.rescuer, L = 21 * k, aw = 10.5 * k
         let d = unit(CGPoint(x: at.x - from.x, y: at.y - from.y))
-        let wrist = CGPoint(x: at.x - d.x * 10 * k, y: at.y - d.y * 10 * k), cuff = CGPoint(x: wrist.x - d.x * 26 * k, y: wrist.y - d.y * 26 * k)
-        s.limb([from, wrist], w: w * 0.75, fill: look.skin, line: look.skinLine)
-        s.limb([from, cuff], w: w, fill: look.top, line: look.topLine)
-        drawHand(&s, at: at, dir: d, len: 22 * k, shape: shape, look: look)
+        let wrist = CGPoint(x: at.x - d.x * L * 0.45, y: at.y - d.y * L * 0.45)
+        let elbow = CGPoint(x: wrist.x - d.x * 44 * k, y: wrist.y - d.y * 44 * k)
+        s.ellipse(at.x + 4 * k, at.y + 5 * k, L * 0.5, L * 0.3, fill: .black.opacity(0.08))
+        s.taper([elbow, wrist], [aw, aw * 0.7], fill: look.skin, line: look.skinLine)
+        let cuff = lerp(elbow, wrist, 0.3), back = CGPoint(x: elbow.x - d.x * 12 * k, y: elbow.y - d.y * 12 * k)
+        s.taper([back, cuff], [aw * 1.4, aw * 1.25], fill: look.top, line: look.topLine)
+        drawHand(&s, at: at, dir: d, len: L, shape: shape, look: look, thumb: -1)
     }
 
     /// person seen from above, head left
@@ -130,15 +136,16 @@ extension Illustrations {
         let lw = bd.legW * h, aw = bd.armW * h
         func leg(_ pts: [CGPoint]) {
             let d = unit(CGPoint(x: pts[2].x - pts[1].x, y: pts[2].y - pts[1].y))
-            let toe = CGPoint(x: pts[2].x + d.x * bd.foot * h * 0.45, y: pts[2].y + d.y * bd.foot * h * 0.45)
-            s.limb(pts, w: lw, fill: look.bottom, line: look.onePiece ? look.topLine : darker(look.bottom))
-            s.limb([pts[2], toe], w: lw * 0.6, fill: look.shoes, line: look.bareFeet ? look.skinLine : hex("#1E1E24"))
+            // shoe seen from above: sole outline, toe cap
+            let toe = CGPoint(x: pts[2].x + d.x * bd.foot * h * 0.55, y: pts[2].y + d.y * bd.foot * h * 0.55)
+            s.taper([lerp(pts[2], toe, 0.1), toe], [lw * 0.62, lw * 0.56], fill: look.shoes, line: look.bareFeet ? look.skinLine : hex("#1E1E24"))
+            if !look.bareFeet { s.circle(lerp(pts[2], toe, 0.62).x, lerp(pts[2], toe, 0.62).y, lw * 0.1, fill: .white, opacity: 0.25) }
+            s.taper(pts, [lw * 1.12, lw * 0.86, lw * 0.64], fill: look.bottom, line: look.onePiece ? look.topLine : darker(look.bottom))
         }
         func arm(_ sh: CGPoint, _ e: CGPoint, _ palm: CGPoint) {
             let d = unit(CGPoint(x: palm.x - e.x, y: palm.y - e.y))
             let w = CGPoint(x: palm.x - d.x * bd.hand * h * 0.45, y: palm.y - d.y * bd.hand * h * 0.45)
-            s.limb([sh, e, w], w: aw * 0.8, fill: look.skin, line: look.skinLine)
-            s.limb(look.longSleeves ? [sh, e, lerp(e, w, 0.85)] : [sh, lerp(sh, e, 0.75)], w: aw, fill: look.top, line: look.topLine)
+            dressedArm(&s, sh, e, w, aw: aw, look: look)
             drawHand(&s, at: palm, dir: d, len: bd.hand * h, shape: .open, look: look)
         }
         leg(b.nearLeg)
@@ -185,7 +192,7 @@ struct RecoveryLayout: Sendable {
     let h: Double, build: Build, look: Look, bump: Double
     /// zoom: small people are drawn closer, your hands grow with them
     let k: Double
-    let x0: Double, y0 = 124.0
+    let x0: Double, y0 = 140.0
 
     init(_ p: Profile) {
         let adult = p.age == .toddler ? 420.0 : p.age == .child ? 360 : 290
@@ -282,48 +289,56 @@ extension Illustrations {
         let st = Int(p[v: "stage"].rounded()), tilt = p[v: "tilt"]
         let green = hex("#2E9E5B"), red = hex("#D8434B")
         if st <= 1 {
-            // baby on the bed, parent leaning in behind
-            let top = 234.0, rh = 400.0
+            // close-up: baby on the bed, your hand and head come in from above
+            let top = 250.0, bh = 290.0
             s.rect(0, 0, 360, 300, fill: hex("#F5F2ED"))
-            var b = SideFigure(h: 0.4 * rh, build: .infant, look: .baby, hip: .zero, rotation: -90, face: .closed)
-            b.hip = CGPoint(x: 206, y: top - Build.infant.depth * b.h * 0.5)
-            b.near = .init(shoulder: 20, elbow: 40)
-            b.far = .init(shoulder: -8, elbow: 30)
-            b.nearLeg = .init(hip: 10, knee: 20, point: 20)
-            b.farLeg = .init(hip: 20, knee: 34, point: 20)
-            var r = FrontFigure(h: rh, neck: CGPoint(x: b.hip.x - 10, y: top - 0.36 * rh), left: .zero, right: .zero)
-            if st == 0 {
-                let foot = b.legPoint(2)
-                r.neck.x = foot.x - 20
-                r.left = CGPoint(x: b.hip.x - 10, y: top - 10)
-                r.right = CGPoint(x: foot.x + 10, y: foot.y - 4)
-            } else {
-                r.bow = 0.4
-                r.neck = CGPoint(x: b.headCentre.x + 16, y: top - 0.26 * rh)
-                r.left = b.headPoint(-0.2, -1.0)
-                r.right = b.front(0.45)
-            }
-            r.draw(&s)
             s.rect(0, top, 360, 300 - top, fill: hex("#DCE6F0"))
             s.rect(0, top, 360, 6, fill: hex("#EEF3F8"))
+            s.line(0, top + 6, 360, top + 6, stroke: hex("#BCCADA"), lw: 1)
+            var b = SideFigure(h: bh, build: .infant, look: .baby, hip: .zero, rotation: -90, face: .closed)
+            b.near = .init(shoulder: 20, elbow: 40)
+            b.far = .init(shoulder: -8, elbow: 30)
+            b.nearLeg = .init(hip: 16, knee: 28, point: 20)
+            b.farLeg = .init(hip: 26, knee: 40, point: 20)
+            b.hip = CGPoint(x: 0, y: top - Build.infant.depth * bh * 0.5 - 1)
+            b.hip.x = 160 - b.front(0.64).x
+            s.ellipse(b.hip.x - 30, top + 1, 110, 4, fill: .black.opacity(0.08))
+            if st == 1 {
+                // your cheek just above the mouth, eyes on the chest; your body is behind the bed
+                let look = Look.rescuer, rr = 0.064 * 700
+                let up = unit(CGPoint(x: 0.4, y: -1))
+                let cheek = headSpot(.zero, up: up, r: rr, 0.5, 0.75)
+                let rc = CGPoint(x: b.mouth.x - cheek.x - 4, y: b.mouth.y - cheek.y - 10)
+                let rn = headSpot(rc, up: up, r: rr, -0.15, 0.8)
+                s.taper([rn, CGPoint(x: rn.x - 14, y: top)], [rr * 0.85, rr * 0.95], fill: look.skin, line: look.skinLine)
+                s.shape(smoothPath([CGPoint(x: rn.x - 60, y: rn.y + 18), CGPoint(x: rn.x - 8, y: rn.y + 16), CGPoint(x: rn.x + 40, y: rn.y + 30),
+                                    CGPoint(x: rn.x + 50, y: top), CGPoint(x: rn.x - 90, y: top)]), fill: look.top, stroke: look.topLine, lw: 1.3)
+                drawSideHead(&s, at: rc, up: up, r: rr, look: look, face: .calm)
+            }
             b.draw(&s)
-            r.drawArms(&s)
             if st == 0 {
-                s.bubble("Baby? Baby!", "宝宝？宝宝！", 90, 40, tip: CGPoint(x: r.headCentre.x - 14, y: r.headCentre.y + 4))
-                s.tag("floppy, won’t wake", "软绵绵，叫不醒", 80, 176, size: 10, color: red, bold: true)
+                let toe = b.foot(near: true).toe, tap = sin(t * 9) * 2
+                reachIn(&s, from: CGPoint(x: 400, y: 150), palm: CGPoint(x: toe.x + 26 + tap, y: toe.y + 6), dir: unit(CGPoint(x: -1, y: 0.05)), len: 58,
+                        shape: .twoFingers, thumb: -1)
+                s.bubble("Baby? Baby!", "宝宝？宝宝！", 250, 40, tip: CGPoint(x: 290, y: -2))
+                s.callout("tap the sole — don’t shake", "轻拍足底——不要摇晃", 280, 118, to: CGPoint(x: toe.x + 4, y: toe.y - 6), color: red)
+                s.callout("floppy, won’t wake", "软绵绵，叫不醒", 90, 120, to: b.headCentre, color: red)
             } else {
-                s.tag("look · listen · feel ≤ 10 s", "看 · 听 · 感觉 ≤ 10 秒", 96, 40, size: 10, bold: true)
-                let c = b.front(0.6), rise = max(0, sin(t * 2.2))
-                s.arrow(CGPoint(x: c.x, y: c.y - 6), CGPoint(x: c.x, y: c.y - 14 - rise * 6), color: hex("#3F95D6"), lw: 2)
-                s.rect(8, 8 + 250, 146, 30, r: 8, fill: .white, stroke: green, lw: 2)
-                s.label("Breathing normally ✓", "呼吸正常 ✓", 81, 277, size: 11, color: green, anchor: .middle, bold: true)
+                let mouth = b.mouth
+                let c = b.front(0.58), rise = max(0, sin(t * 2.2)), blue = hex("#3F95D6")
+                s.arrow(CGPoint(x: c.x + 8, y: c.y - 4), CGPoint(x: c.x + 8, y: c.y - 14 - rise * 6), color: blue, lw: 2)
+                s.path("M \(mouth.x + 6) \(mouth.y - 6) q 4 -4 0 -8 M \(mouth.x + 11) \(mouth.y - 4) q 6 -6 0 -12", stroke: blue, lw: 1.4, cap: .round)
+                s.tag("look · listen · feel ≤ 10 s", "看 · 听 · 感觉 ≤ 10 秒", 270, 110, size: 10, bold: true)
+                s.tag("head level", "头保持水平", 100, top + 24, size: 10, bold: true)
+                s.rect(210, top + 10, 142, 28, r: 8, fill: .white, stroke: green, lw: 2)
+                s.label("Breathing normally ✓", "呼吸正常 ✓", 281, top + 24, size: 11, color: green, anchor: .middle, bold: true)
             }
             return
         }
         // held face down along the forearm, close-up
         s.rect(0, 0, 360, 300, fill: hex("#F5F2ED"))
-        let rh = 360.0
-        var r = SideFigure(h: rh, look: .helper, hip: CGPoint(x: 96, y: 262), lean: 6, headTilt: 24)
+        let rh = 440.0
+        var r = SideFigure(h: rh, look: .helper, hip: CGPoint(x: 84, y: 246), lean: 6, headTilt: 24)
         r.nearLeg = .init(hip: 2, knee: 0)
         r.farLeg = .init(hip: -2, knee: 0)
         let slope = 2 + tilt * 18
