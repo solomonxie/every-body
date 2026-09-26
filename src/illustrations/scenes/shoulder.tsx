@@ -46,11 +46,10 @@ function ShoulderScene({ params }: SceneProps) {
       <Path d="M 60 40 L 130 70 L 128 190 L 70 250" stroke="#D9CBB0" strokeWidth={22} fill="none" strokeLinejoin="round" />
       <Text x={20} y={30} fontSize={10} fill="#8F7E63">shoulder blade 肩胛骨</Text>
       <Path
-        d={`M ${SOCKET.x - 4} ${SOCKET.y - SOCKET.r} A ${SOCKET.r} ${SOCKET.r} 0 0 1 ${SOCKET.x - 4} ${SOCKET.y + SOCKET.r}`}
+        d={`M ${SOCKET.x - 4} ${SOCKET.y - SOCKET.r} A ${SOCKET.r} ${SOCKET.r} 0 0 0 ${SOCKET.x - 4} ${SOCKET.y + SOCKET.r}`}
         stroke="#8F7E63"
         strokeWidth={8}
         fill="none"
-        transform={`translate(-8 0)`}
       />
       <Text x={86} y={172} fontSize={10} fill="#8F7E63">socket 关节盂</Text>
       <Path d="M 118 60 Q 170 40 205 70" stroke="#D9CBB0" strokeWidth={12} fill="none" strokeLinecap="round" />
