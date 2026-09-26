@@ -1,6 +1,8 @@
 import SwiftUI
 
 extension Illustrations {
+    static func cpr(for p: Profile) -> Scenario { cpr }
+
     static let cpr = Scenario(
         id: "cpr", group: .firstAid, title: Bilingual("CPR", "心肺复苏"),
         params: ["stage": 0, "press": 0, "taps": 0, "rate": 0],

@@ -41,11 +41,10 @@ struct InfoScreen: View {
             VStack(alignment: .leading, spacing: 16) {
                 RoundedRectangle(cornerRadius: 4).fill(Color(hex: system?.color ?? "#999999")).frame(height: 8)
                 if let info = system?.info {
-                    if settings.showEn { Text(info.summary) }
-                    if settings.showZh { Text(info.summaryZh).foregroundStyle(settings.showEn ? .secondary : .primary) }
+                    Text(settings.name(info.summary, info.summaryZh))
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(info.facts, id: \.self) { fact in
-                            Text("• " + (settings.names == .zh ? fact[1] : settings.names == .en ? fact[0] : "\(fact[0])\n  \(fact[1])")).font(.footnote)
+                            Text("• " + settings.name(fact[0], fact[1])).font(.footnote)
                         }
                     }
                     .padding(16)
@@ -53,13 +52,13 @@ struct InfoScreen: View {
                     .background(Color.secondary.opacity(0.1), in: .rect(cornerRadius: 14))
                     ForEach(info.links, id: \.route) { link in
                         if let route = Route(path: link.route) {
-                            NavigationLink(link.label, value: route).font(.subheadline.weight(.semibold))
+                            NavigationLink("\(settings.t(route.title)) ›", value: route).font(.subheadline.weight(.semibold))
                         }
                     }
                 }
                 let parts = systemID == "acupoint-reflex-map" ? [] : systemParts(systemID)
                 if !parts.isEmpty {
-                    Text("PARTS 部位 · \(parts.count)").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                    Text("\(settings.t("PARTS", "部位")) · \(parts.count)").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                     FlowLayout(spacing: 8) {
                         ForEach(parts, id: \.self) { part in
                             NavigationLink(value: Route.viewer(system: systemID, part: part.partID)) {
@@ -74,7 +73,8 @@ struct InfoScreen: View {
             }
             .padding(16)
         }
-        .navigationTitle(system?.name ?? "Info")
+        .navigationTitle(system.map { settings.name($0.name, $0.nameZh) } ?? "")
+        .profileToolbar()
         .navigationBarTitleDisplayMode(.inline)
     }
 }

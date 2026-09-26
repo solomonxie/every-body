@@ -25,7 +25,7 @@ enum LayerID: String, Codable, Sendable, CaseIterable {
     case skin, muscular, skeletal, circulatory, nervous, organs
 }
 
-enum PartShape: Codable, Sendable {
+enum PartShape: Codable, Sendable, Hashable {
     case sphere(center: Vec3, radius: Float, scale: Vec3?, rotation: Vec3?)
     case box(center: Vec3, size: Vec3, rotation: Vec3?)
     /// capsule between two points
@@ -145,6 +145,7 @@ struct BodyPoint: Codable, Sendable, Identifiable {
     let name: String
     let nameZh: String
     let description: String
+    let descriptionZh: String
     let region: String?
     let position: Vec3
     let target: ReflexTarget?
@@ -239,6 +240,7 @@ struct BodySystem: Codable, Sendable, Identifiable {
     }
     let id: String
     let name: String
+    let nameZh: String
     let color: String
     let info: Info?
 }

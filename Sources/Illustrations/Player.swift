@@ -60,12 +60,15 @@ final class Player {
 
 struct IllustrationScreen: View {
     let id: String
+    @Environment(Settings.self) private var settings
 
     var body: some View {
-        if let scenario = Illustrations.find(id) {
+        if let scenario = Illustrations.find(id, for: settings.profile) {
             PlayerView(player: Player(scenario))
+                .id(settings.profile)
+                .profileToolbar()
         } else {
-            Text("Not found")
+            Text(settings.t("Not found", "未找到"))
         }
     }
 }
@@ -98,13 +101,20 @@ private struct PlayerView: View {
                     player.set(onDrag(p, player.params))
                 })
             }
+            if let note = scenario.profileNote {
+                Label(settings.t(note), systemImage: "person.fill")
+                    .font(.caption.weight(.semibold)).foregroundStyle(Color(hex: "#2B2250"))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16).padding(.vertical, 6)
+                    .background(Color(hex: "#E8E2F6"))
+            }
             if let w = scenario.warning {
-                Text("⚠ \(w.en) \(w.zh)").font(.caption).foregroundStyle(Color(hex: "#B5462E"))
+                Text("⚠ \(settings.t(w))").font(.caption).foregroundStyle(Color(hex: "#B5462E"))
                     .padding(.horizontal, 16).padding(.vertical, 4)
             }
             panel(step)
         }
-        .navigationTitle("\(scenario.title.zh) \(scenario.title.en)")
+        .navigationTitle(settings.t(scenario.title))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             player.reduceMotion = UIAccessibility.isReduceMotionEnabled
@@ -124,19 +134,18 @@ private struct PlayerView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                Text(step.kind == .try ? "Try it 试一试" : "Watch 观看").font(.caption).foregroundStyle(.secondary)
+                Text(step.kind == .try ? settings.t("Try it", "试一试") : settings.t("Watch", "观看")).font(.caption).foregroundStyle(.secondary)
             }
-            if settings.showEn { Text(step.caption.en).font(.subheadline.weight(.semibold)) }
-            if settings.showZh { Text(step.caption.zh).font(settings.showEn ? .footnote : .subheadline.weight(.semibold)) }
+            Text(settings.t(step.caption)).font(.subheadline.weight(.semibold))
             if let t = step.try { control(t) }
             if let t = step.try, player.solved {
-                Text("✓ \(t.ok.en) \(t.ok.zh)").font(.footnote.weight(.semibold)).foregroundStyle(Color(hex: "#2E9E5B"))
+                Text("✓ \(settings.t(t.ok))").font(.footnote.weight(.semibold)).foregroundStyle(Color(hex: "#2E9E5B"))
             }
             HStack {
-                navButton("‹ Prev", enabled: player.stepIndex > 0) { player.goTo(player.stepIndex - 1) }
-                if let demo = step.try?.demo, !player.solved { navButton("Show me") { player.ease(demo) } }
+                navButton(settings.t("‹ Prev", "‹ 上一步"), enabled: player.stepIndex > 0) { player.goTo(player.stepIndex - 1) }
+                if let demo = step.try?.demo, !player.solved { navButton(settings.t("Show me", "演示")) { player.ease(demo) } }
                 let last = player.stepIndex == player.scenario.steps.count - 1
-                navButton(last ? "↺ Replay" : step.kind == .try && !player.solved ? "Skip ›" : "Next ›", primary: player.solved) {
+                navButton(last ? settings.t("↺ Replay", "↺ 重播") : step.kind == .try && !player.solved ? settings.t("Skip ›", "跳过 ›") : settings.t("Next ›", "下一步 ›"), primary: player.solved) {
                     heldSeconds = 0
                     tapTimes = []
                     player.goTo(last ? 0 : player.stepIndex + 1)
@@ -155,7 +164,7 @@ private struct PlayerView: View {
                 let v = player.params[s.param] ?? s.min
                 VStack(spacing: 0) {
                     HStack {
-                        Text(s.label).font(.footnote)
+                        Text(settings.t(mixed: s.label)).font(.footnote)
                         Spacer()
                         Text(s.digits.map { String(format: "%.\($0)f", v) } ?? "\(Int((v - s.min) / (s.max - s.min) * 100))%")
                             .font(.footnote.weight(.semibold)) + Text(s.unit.map { " \($0)" } ?? "").font(.footnote)
@@ -165,15 +174,15 @@ private struct PlayerView: View {
             }
         case let .rhythm(_, minRate, maxRate, label):
             VStack(spacing: 6) {
-                bigButton(label) { tapRhythm() }
+                bigButton(settings.t(mixed: label)) { tapRhythm() }
                 if maxRate < 1000 {
-                    Text("Aim for \(Int(minRate))–\(Int(maxRate)) per minute — about 2 taps a second.").font(.caption).foregroundStyle(.secondary)
+                    Text(settings.t("Aim for \(Int(minRate))–\(Int(maxRate)) per minute — about 2 taps a second.", "目标每分钟 \(Int(minRate))–\(Int(maxRate)) 次，约每秒 2 下。")).font(.caption).foregroundStyle(.secondary)
                 }
             }
             .frame(maxWidth: .infinity)
         case let .hold(param, progress, seconds, label):
             VStack(spacing: 6) {
-                Text(label)
+                Text(settings.t(mixed: label))
                     .font(.headline).foregroundStyle(.white)
                     .frame(width: 140, height: 64)
                     .background(holding ? Color(hex: "#A82F36") : Color(hex: "#D8434B"), in: .capsule)
@@ -188,7 +197,7 @@ private struct PlayerView: View {
                             player.set([progress: min(1, heldSeconds / seconds)])
                         }
                     }
-                Text("Press and keep holding 按住不放").font(.caption).foregroundStyle(.secondary)
+                Text(settings.t("Press and keep holding", "按住不放")).font(.caption).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity)
         case let .compare(param, options):
@@ -196,7 +205,7 @@ private struct PlayerView: View {
                 ForEach(options, id: \.label) { o in
                     let selected = abs((player.params[param] ?? 0) - o.value) < 0.5
                     Button { player.ease([param: o.value]) } label: {
-                        Text(o.label).font(.footnote.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 8)
+                        Text(settings.t(mixed: o.label)).font(.footnote.weight(.semibold)).frame(maxWidth: .infinity).padding(.vertical, 8)
                             .background(selected ? Color.brand : Color.secondary.opacity(0.15), in: .capsule)
                             .foregroundStyle(selected ? .white : .primary)
                     }
@@ -204,7 +213,7 @@ private struct PlayerView: View {
                 }
             }
         case .drag:
-            if !player.solved { Text("☝ Drag on the picture 在图上拖动").font(.footnote).foregroundStyle(.secondary) }
+            if !player.solved { Text(settings.t("☝ Drag on the picture", "☝ 在图上拖动")).font(.footnote).foregroundStyle(.secondary) }
         }
     }
 

@@ -51,7 +51,7 @@ struct Step: Sendable {
 }
 
 enum IllustrationGroup: String, CaseIterable, Sendable {
-    case bones, firstAid, blood, illness, pregnancy
+    case firstAid, bones, blood, illness, pregnancy
 
     var title: Bilingual {
         switch self {
@@ -80,6 +80,8 @@ struct Scenario: Sendable, Identifiable {
     let group: IllustrationGroup
     let title: Bilingual
     var warning: Bilingual? = nil
+    /// how this version differs for the chosen person type
+    var profileNote: Bilingual? = nil
     let params: Params
     let steps: [Step]
     let draw: @MainActor @Sendable (inout Sketch, Params, Double) -> Void
@@ -88,6 +90,8 @@ struct Scenario: Sendable, Identifiable {
     /// extra param changes on each rhythm tap
     var onTap: (@Sendable (Params) -> Params)? = nil
     let sources: [String]
+    /// extra search words: everyday names, symptoms
+    var keywords: [String] = []
 
     /// base values plus every step's targets up to `index`, so Prev is deterministic
     func targets(at index: Int) -> Params {

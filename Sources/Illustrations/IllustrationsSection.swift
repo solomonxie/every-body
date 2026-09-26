@@ -1,22 +1,23 @@
 import SwiftUI
 
-/// Explore's list of illustrations, by group.
+/// Home page list of illustrations, by group — first aid first.
 struct IllustrationsSection: View {
+    @Environment(Settings.self) private var settings
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("ILLUSTRATIONS · 图解 — watch, then try").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
-                .padding(.top, 8)
+            SectionTitle(settings.t("Illustrations — watch, then try", "图解 — 先看，再试"))
             ForEach(IllustrationGroup.allCases, id: \.self) { group in
                 let items = Illustrations.all.filter { $0.group == group }
                 if !items.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("\(group.title.en) · \(group.title.zh)").font(.subheadline.weight(.semibold)).foregroundStyle(group.color)
+                        Text(settings.t(group.title)).font(.subheadline.weight(.semibold)).foregroundStyle(group.color)
                         ForEach(items) { scenario in
                             NavigationLink(value: Route.illustration(id: scenario.id)) {
                                 HStack {
-                                    Text("\(scenario.title.zh) \(scenario.title.en)").foregroundStyle(.primary).multilineTextAlignment(.leading)
+                                    Text(settings.t(scenario.title)).foregroundStyle(.primary).multilineTextAlignment(.leading)
                                     Spacer()
-                                    Text("\(scenario.steps.count) steps ›").foregroundStyle(.secondary)
+                                    Text(settings.t("\(scenario.steps.count) steps ›", "\(scenario.steps.count) 步 ›")).foregroundStyle(.secondary)
                                 }
                                 .padding(.vertical, 8)
                             }

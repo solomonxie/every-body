@@ -16,7 +16,8 @@
      "organIds": [
       "brain"
      ]
-    }
+    },
+    "descriptionZh": "所有脚趾尖。"
    },
    {
     "id": "foot-kidney",
@@ -34,7 +35,8 @@
       "kidney-l",
       "kidney-r"
      ]
-    }
+    },
+    "descriptionZh": "足底中央。"
    },
    {
     "id": "foot-liver",
@@ -51,7 +53,8 @@
      "organIds": [
       "liver"
      ]
-    }
+    },
+    "descriptionZh": "右足底上外侧，仅右脚。"
    },
    {
     "id": "foot-stomach",
@@ -68,7 +71,8 @@
      "organIds": [
       "stomach"
      ]
-    }
+    },
+    "descriptionZh": "足底中部，前脚掌下方。"
    },
    {
     "id": "hand-hegu",
@@ -85,7 +89,8 @@
      "organIds": [
       "shoulders"
      ]
-    }
+    },
+    "descriptionZh": "拇指与食指之间的虎口。"
    },
    {
     "id": "hand-neiguan",
@@ -103,7 +108,8 @@
       "heart",
       "stomach"
      ]
-    }
+    },
+    "descriptionZh": "前臂内侧，腕横纹上方。"
    },
    {
     "id": "ear-shenmen",
@@ -120,7 +126,8 @@
      "organIds": [
       "brain"
      ]
-    }
+    },
+    "descriptionZh": "耳廓上部的三角窝。"
    },
    {
     "id": "body-zusanli",
@@ -138,7 +145,8 @@
       "stomach",
       "intestines"
      ]
-    }
+    },
+    "descriptionZh": "膝下，小腿外侧。"
    },
    {
     "id": "body-baihui",
@@ -159,7 +167,8 @@
       "lung-r",
       "stomach"
      ]
-    }
+    },
+    "descriptionZh": "头顶正中——督脉。"
    },
    {
     "id": "body-sanyinjiao",
@@ -177,7 +186,8 @@
       "uterus",
       "intestines"
      ]
-    }
+    },
+    "descriptionZh": "内踝尖上方，胫骨后缘。"
    }
   ]
  },
@@ -188,49 +198,56 @@
     "name": "Heart",
     "nameZh": "心脏",
     "description": "Pumps blood into the circulatory loop.",
-    "position": [0.0372, 0.7622, 0.1302]
+    "position": [0.0372, 0.7622, 0.1302],
+    "descriptionZh": "把血液泵入循环。"
    },
    {
     "id": "aorta",
     "name": "Aorta",
     "nameZh": "主动脉",
     "description": "Main artery leaving the heart.",
-    "position": [0.0, 0.9482, 0.0372]
+    "position": [0.0, 0.9482, 0.0372],
+    "descriptionZh": "离开心脏的主动脉。"
    },
    {
     "id": "arteries",
     "name": "Arteries",
     "nameZh": "动脉",
     "description": "Carry oxygen-rich blood to tissues.",
-    "position": [0.3813, 0.7064, 0.0372]
+    "position": [0.3813, 0.7064, 0.0372],
+    "descriptionZh": "把富氧血输送到组织。"
    },
    {
     "id": "capillaries",
     "name": "Capillaries",
     "nameZh": "毛细血管",
     "description": "Exchange oxygen and nutrients at tissues.",
-    "position": [0.4557, -0.112, 0.0372]
+    "position": [0.4557, -0.112, 0.0372],
+    "descriptionZh": "在组织中交换氧气和养分。"
    },
    {
     "id": "veins",
     "name": "Veins",
     "nameZh": "静脉",
     "description": "Carry oxygen-poor blood back toward the heart.",
-    "position": [0.3534, 0.818, -0.0186]
+    "position": [0.3534, 0.818, -0.0186],
+    "descriptionZh": "把缺氧血送回心脏。"
    },
    {
     "id": "venacava",
     "name": "Vena Cava",
     "nameZh": "腔静脉",
     "description": "Returns blood to the right atrium.",
-    "position": [-0.0558, 0.632, 0.0]
+    "position": [-0.0558, 0.632, 0.0],
+    "descriptionZh": "把血液送回右心房。"
    },
    {
     "id": "lungs",
     "name": "Lungs",
     "nameZh": "肺",
     "description": "Reoxygenates blood via pulmonary circulation.",
-    "position": [-0.1581, 0.8738, 0.0]
+    "position": [-0.1581, 0.8738, 0.0],
+    "descriptionZh": "经肺循环重新为血液充氧。"
    }
   ],
   "flow": {
