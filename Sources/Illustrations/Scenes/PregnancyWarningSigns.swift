@@ -95,7 +95,7 @@ extension Illustrations {
     @MainActor private static func drawSignMap(_ s: inout Sketch, _ p: Params, _ t: Double) {
         let focus = p[v: "focus"]
         let floor = 290.0, pulse = 0.5 + 0.5 * sin(t * 3)
-        s.rect(0, floor, 206, 10, fill: hex("#EFE8DF"))
+        s.stage(94, floor: floor, r: 92, width: 206)
         var f = SideFigure(h: 250, look: .woman, hip: .zero, face: focus > 1.5 && focus < 2.5 ? .distress : .calm, bump: 1)
         f.hip = CGPoint(x: 88, y: floor - SideFigure.hipHeight(250, .adult))
         f.nearLeg = .init(hip: 3, knee: 2)
