@@ -133,6 +133,9 @@ struct Organ: Codable, Sendable, Identifiable {
     let region: Bool?
     /// male variant (prostate) where it differs
     let male: Variant?
+    /// how it looks late in pregnancy (the womb), and parts that exist only then (baby, placenta)
+    let pregnant: Variant?
+    let onlyPregnant: Bool?
 }
 
 struct BodyData: Codable, Sendable {

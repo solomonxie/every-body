@@ -742,7 +742,7 @@ def limb_skin(sections, relief, n_around=48, step=0.02):
     return {"kind": "loft", "sections": out}
 
 
-def torso_skin(rows, female):
+def torso_skin(rows, female, pregnant=False):
     """Torso loft resampled every 2.5 cm, each slice pushed in or out around its angle: spine groove and the
     muscle ridges beside it, shoulder blades, a faint belly midline, buttocks with their cleft."""
     n_around = 72
@@ -761,7 +761,12 @@ def torso_skin(rows, female):
             for side in (-1, 1):
                 # breasts: rounded, fuller below the middle, rising out of the chest wall
                 lift = bell(y, 1.215, 1.355) ** 0.8 * (1 + 0.25 * (1.3 - y) / 0.05) if 1.215 < y < 1.355 else 0
-                k += 0.34 * near(theta, 90 + side * 29, 14) * max(0, lift)
+                k += (0.42 if pregnant else 0.34) * near(theta, 90 + side * 29, 14) * max(0, lift)
+        if pregnant:
+            # third-trimester bump: the womb pushes the belly forward from the pubic bone up to below the ribs
+            # rounded, highest just below the navel, narrower than the hips so it reads as a bump, not a belly
+            b = bell(y, 0.875, 1.25) ** 0.6
+            k += 1.3 * near(theta, 90, 30) * b + 0.04 * (near(theta, 40, 30) + near(theta, 140, 30)) * b
         for side in (-1, 1):
             k += 0.03 * near(theta, 90 + side * 38, 22) * bell(y, 1.43, 1.462)          # collarbones
         k -= 0.05 * near(theta, 90, 9) * bell(y, 1.43, 1.47)                            # notch at the base of the throat
@@ -834,6 +839,7 @@ def skin():
     torso = TORSO
     for sex, rows in torso.items():
         s(f"torso-{sex}", torso_skin(rows, sex == "female"), sex)
+    s("torso-pregnant", torso_skin(TORSO["female"], True, pregnant=True), "pregnant")
     # breast: a dome rising out of the chest wall, fuller low
     # upper arm starts as a rounded deltoid cap tucked under the shoulder slope
     sp("upper-arm", limb_skin(UPPER_ARM, lambda y, th:
@@ -883,8 +889,12 @@ def skin():
 ORGANS = []
 
 
-def organ(oid, color, position, shapes, names=None, region=False, male=None):
+def organ(oid, color, position, shapes, names=None, region=False, male=None, pregnant=None, only_pregnant=False):
     o = {"id": oid, "color": color, "position": U(*position), "shapes": shapes}
+    if pregnant:
+        o["pregnant"] = pregnant
+    if only_pregnant:
+        o["onlyPregnant"] = True
     if names:
         o["names"] = names
     if region:
@@ -1005,7 +1015,25 @@ def organs():
     organ("bladder", "#E0C35A", (0, 0.895, 0.05), [lathe((0, 0.87, 0.045), (0, 0.925, 0.055), [0.012, 0.03, 0.036, 0.032, 0.02], [1.1, 1, 0.9])], ["Bladder", "膀胱"])
     organ("uterus", "#C77DA0", (0, 0.935, 0.025), [lathe((0, 0.975, 0.03), (0, 0.9, 0.02), [0.018, 0.03, 0.028, 0.015, 0.008], [1, 1, 0.7])],
           ["Uterus / prostate", "子宫 / 前列腺"],
-          male={"position": U(0, 0.865, 0.03), "color": "#B98AA0", "shapes": [sphere((0, 0.865, 0.03), 0.017)]})
+          male={"position": U(0, 0.865, 0.03), "color": "#B98AA0", "shapes": [sphere((0, 0.865, 0.03), 0.017)]},
+          pregnant={"position": U(0, 1.04, 0.07), "color": "#D98BA8", "shapes": [
+              # ~34 weeks: fundus under the ribs, the womb filling the belly
+              lathe((0, 0.875, 0.05), (0, 1.225, 0.09), [0.03, 0.09, 0.118, 0.126, 0.12, 0.1, 0.06], [0.82, 1, 0.92]),
+          ]})
+    # the baby, head down, curled, placenta high on the back wall
+    organ("fetus", "#EFB7A0", (0, 1.03, 0.08), [
+        sphere((0, 0.94, 0.075), 0.043),
+        lathe((0, 0.975, 0.08), (0.005, 1.14, 0.075), [0.035, 0.05, 0.054, 0.05, 0.04], [0.9, 1, 0.85]),
+        # legs folded: thighs from the bottom (up here) forward to the knees, shins tucked back up, feet by the bottom
+        tube([(0.028, 1.13, 0.085), (0.034, 1.09, 0.125), (0.03, 1.06, 0.14)], 0.016, [0.019, 0.016, 0.013]),
+        tube([(0.03, 1.06, 0.14), (0.032, 1.11, 0.15), (0.028, 1.15, 0.13)], 0.011, [0.012, 0.01, 0.009]),
+        tube([(-0.028, 1.13, 0.085), (-0.034, 1.09, 0.125), (-0.03, 1.06, 0.14)], 0.016, [0.019, 0.016, 0.013]),
+        tube([(-0.03, 1.06, 0.14), (-0.032, 1.11, 0.15), (-0.028, 1.15, 0.13)], 0.011, [0.012, 0.01, 0.009]),
+        tube([(0.025, 0.99, 0.1), (0.035, 0.97, 0.12), (0.02, 0.965, 0.115)], 0.007),
+        tube([(-0.025, 0.99, 0.1), (-0.035, 0.97, 0.12), (-0.02, 0.965, 0.115)], 0.007),
+    ], ["Baby (fetus)", "胎儿"], only_pregnant=True)
+    organ("placenta", "#9E3A55", (0, 1.17, 0.0), [sphere((0, 1.17, 0.005), 0.06, [1.1, 0.8, 0.3], [0.5, 0, 0])],
+          ["Placenta", "胎盘"], only_pregnant=True)
     # spleen: a curved slab hugging the left ribs behind the stomach
     organ("spleen", "#7A2C4A", (0.105, 1.14, -0.05), [loft([(0.085, 1.185, -0.075, 0.008, 0.01), (0.1, 1.17, -0.068, 0.018, 0.028), (0.112, 1.145, -0.052, 0.02, 0.032),
                                                           (0.118, 1.115, -0.032, 0.016, 0.026), (0.115, 1.095, -0.018, 0.006, 0.01)])], ["Spleen", "脾"])

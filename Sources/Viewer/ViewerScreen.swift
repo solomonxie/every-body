@@ -72,6 +72,7 @@ struct ViewerScreen: View {
         .onChange(of: selectedPart) { scene.setParts(parts, selected: selectedPart) }
         .onChange(of: settings.female) { rebuild() }
         .onChange(of: settings.age) { rebuild() }
+        .onChange(of: settings.pregnant) { rebuild() }
         .onChange(of: bpm) { scene.bpm = bpm }
         .onChange(of: acuFilter) { applyAcuFilter() }
     }
@@ -89,7 +90,7 @@ struct ViewerScreen: View {
 
     private func rebuild() {
         scene.setAge(settings.age)
-        scene.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female,
+        scene.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, pregnant: settings.profile.isPregnant,
                     points: systemPoints?.points ?? [], flowStops: flowStops, meridians: meridians)
         scene.setLayers(layers)
         applyAcuFilter()
