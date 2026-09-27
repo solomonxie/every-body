@@ -67,7 +67,7 @@ final class BodyScene {
     private var skinEntities: [(entity: ModelEntity, material: PhysicallyBasedMaterial)] = []
     /// the real (MakeHuman) skin is one mesh: it can't bend, so it steps aside while a joint is bent
     private var realSkin = false
-    /// acupuncture: points and channels show through hair and underwear
+    /// acupuncture: points and channels show through underwear (and the generated skin's hair); the real hair hides
     private var seeThrough = false
     /// the real skin: points (every age) and children's channels are dropped onto it
     private var surface: Figure.Surface?
@@ -78,6 +78,8 @@ final class BodyScene {
     private var pointEntities: [String: [ModelEntity]] = [:]
     private var pointColors: [String: UIColor] = [:]
     private var smallPoints: Set<String> = []
+    /// inner parts that would poke through a child's skin (tuckInside)
+    private var hiddenForAge: Set<String> = []
     private var meridianEntities: [String: [ModelEntity]] = [:]
     /// kept across rebuilds so a new body never brings the lines back
     private var meridianFilter: (visible: Bool, ids: Set<String>?) = (true, nil)
@@ -211,11 +213,11 @@ final class BodyScene {
                 container.addChild(piece)
             }
             container.isEnabled = organ.region != true
-            // late pregnancy crowds the gut up and to the sides of the womb
+            // at term the womb reaches the ribs: the gut is crowded up, back and to the sides of it
             if pregnant && organ.id == "intestines" {
-                container.scale = SIMD3(1.1, 0.55, 0.7)
-                container.position.y += 0.2
-                container.position.z -= 0.05
+                container.scale = SIMD3(1.15, 0.45, 0.6)
+                container.position.y += 0.28
+                container.position.z -= 0.09
             }
             rig.addChild(container)
             organEntities[organ.id] = container
@@ -478,8 +480,66 @@ final class BodyScene {
             outer.position = pivot
             inner.position = -pivot
         }
+        tuckInside()
         organScale = organEntities.mapValues(\.scale)
         focus(.all)
+    }
+
+    /// A child's skin is its own slimmer mesh, not the reshaped adult one: a muscle, vessel or nerve that would poke
+    /// through it is thinned about its long axis until it sits inside; one lying just under the skin (a long vein) hides.
+    private func tuckInside() {
+        let before = hiddenForAge
+        hiddenForAge = []
+        defer { if hiddenForAge != before { applyVisibility() } }
+        guard let surface, age == .infant || age.isChild else { return }
+        let chin = agePoint(SIMD3(0, Self.chinY, 0)).y
+        for (id, entity) in partEntities {
+            guard let layer = partLayer[id], [.muscular, .circulatory, .nervous].contains(layer), let model = entity.model else { continue }
+            let m = entity.transform.matrix
+            var pts: [SIMD3<Float>] = []
+            for part in model.mesh.contents.models.flatMap({ Array($0.parts) }) {
+                let pos = part.positions.elements
+                for i in stride(from: 0, to: pos.count, by: max(1, pos.count / 400)) {
+                    let p = m * SIMD4(pos[i], 1)
+                    pts.append(SIMD3(p.x, p.y, p.z))
+                }
+            }
+            guard !pts.isEmpty else { continue }
+            // a piece wholly in the head (fitted as a whole, its muscles hug the face) only shrinks a little, never hides
+            let head = pts.map(\.y).min()! >= chin
+            var c = pts.reduce(.zero, +) / Float(pts.count)
+            // shrink toward a point well inside the skin (a thin piece along the skin has its own centre near it)
+            let (depth, normal) = surface.depthNormal(c)
+            if depth > -0.03 && !head { c -= normal * (depth + 0.03) }
+            // thinned across its length (a limb muscle keeps its attachments), not shortened
+            var axis = SIMD3<Float>(0, 1, 0)
+            for _ in 0..<8 {
+                var next = SIMD3<Float>.zero
+                for p in pts { let d = p - c; next += d * simd_dot(d, axis) }
+                if simd_length(next) > 1e-9 { axis = simd_normalize(next) }
+            }
+            // a Transform holds no shear: a lengthwise (mostly vertical) piece thins in x and z, any other shrinks evenly
+            let upright = abs(axis.y) > 0.7 && !head
+            let squeeze = { (s: Float) in simd_float3x3(diagonal: SIMD3(s, upright ? 1 : s, s)) }
+            let out = { (s: Float) in let q = squeeze(s); return pts.contains { surface.depth(c + q * ($0 - c)) > -0.005 } }
+            guard out(1) else { continue }
+            // still out even thinned: it lies just under this skin (a superficial vein, a slip of muscle) and hides
+            let floor: Float = head ? 0.8 : layer == .muscular ? 0.5 : 0.35  // thinner still would leave gaps
+            if out(floor) && !head {
+                hiddenForAge.insert(id)
+                continue
+            }
+            var (s, big): (Float, Float) = (floor, 1)
+            for _ in 0..<5 {
+                let mid = (s + big) / 2
+                if out(mid) { big = mid } else { s = mid }
+            }
+            let q = squeeze(s)
+            var k = matrix_identity_float4x4
+            k.columns.0 = SIMD4(q.columns.0, 0); k.columns.1 = SIMD4(q.columns.1, 0); k.columns.2 = SIMD4(q.columns.2, 0)
+            k.columns.3 = SIMD4(c - q * c, 1)
+            entity.transform.matrix = k * m
+        }
     }
 
     /// adult scene y (on the body's midline, or a limb) → scene y for this age
@@ -575,7 +635,9 @@ final class BodyScene {
         // skin alone is solid; over inner layers it's a faint glass
         let skinOpacity: Float = layers.contains(.skin) ? (inner ? Self.glassOpacity : 1) : 0
         for (skin, base) in skinEntities {
-            skin.isEnabled = skinOpacity > 0 && !(realSkin && !bentJoints.isEmpty)
+            // the real figure's hair steps aside for points and channels: its scalp is already tinted the hair's colour
+            let hidden = seeThrough && realSkin && skin.name == "skin:hair"
+            skin.isEnabled = skinOpacity > 0 && !(realSkin && !bentJoints.isEmpty) && !hidden
             let hair = seeThrough && (skin.name == "skin:hair" || skin.name.hasPrefix("skin:underwear"))
             skin.model?.materials = [Self.faded(base, hair ? min(skinOpacity, 0.35) : skinOpacity)]
         }
@@ -584,7 +646,7 @@ final class BodyScene {
             guard let layer = partLayer[id] else { continue }
             // deep muscle cores fill gaps in a muscle-only view but would hide the bones
             let deep = id.hasPrefix("deep-") && layers.contains(.skeletal)
-            entity.isEnabled = layers.contains(layer) && parts.visible(id) && !deep
+            entity.isEnabled = layers.contains(layer) && parts.visible(id) && !deep && !hiddenForAge.contains(id)
             var m = baseMaterials[id]!
             let opacity: Float = parts.faded.contains(id) ? 0.18 : layer == .muscular ? muscleOpacity : 1
             if opacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: opacity)) }
