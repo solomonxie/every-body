@@ -66,8 +66,8 @@ extension Illustrations {
             }
         }
         // table
-        s.shade(Path(roundedRect: CGRect(x: 0, y: table, width: 200, height: 10), cornerRadius: 3), hex("#D5B08A"), hex("#B98D62"))
-        s.shade(Path(CGRect(x: 0, y: table + 10, width: 200, height: 58)), hex("#E6D6C2"), hex("#D8C4AA"), vertical: true)
+        s.shade(Path(roundedRect: CGRect(x: 0, y: table, width: 200, height: 10), cornerRadius: 3), hex("#E6CFB2"), hex("#D8BC9A"))
+        s.shade(Path(CGRect(x: 0, y: table + 10, width: 200, height: 58)), hex("#F0E6DA"), hex("#E8DCCC"), vertical: true)
         if calm > 0.02 {
             s.group(opacity: calm) { g in
                 // ginger tea

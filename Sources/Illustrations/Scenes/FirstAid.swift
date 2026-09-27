@@ -41,7 +41,7 @@ extension Illustrations {
         let infant = who.age == .infant
         let floor = infant ? 252.0 : 262
         if infant {
-            s.rect(0, 0, 360, 300, fill: hex("#F5F2ED"))
+            s.backdrop()
             s.rect(0, floor, 360, 300 - floor, fill: hex("#DCE6F0"))
             s.rect(0, floor, 360, 6, fill: hex("#EEF3F8"))
         } else {
@@ -243,7 +243,7 @@ extension Illustrations {
         if st == 2 || st == 3 { padInset(&s, 236, 8, pressure: st == 3 ? 1 : pressure, clot: clot, flow: flow, t: t) }
         // status pill
         let status = flow > 0.3 ? red : hex("#2E9E5B")
-        s.rect(8, 8, 148, 28, r: 14, fill: .white, stroke: status, lw: 2)
+        s.tonal(8, 8, 148, 28, r: 14, color: status)
         s.label("Bleeding \(Int((flow * 100).rounded()))%", "出血 \(Int((flow * 100).rounded()))%", 18, 22, size: 11, color: status, bold: true)
         s.rect(104, 19, 44, 6, r: 3, fill: hex("#EEEEEE"))
         s.rect(104, 19, 44 * clot, 6, r: 3, fill: hex("#2E9E5B"))
@@ -307,21 +307,20 @@ extension Illustrations {
     private static func drawBurns(_ s: inout Sketch, _ p: Params, _ t: Double, _ who: Profile) {
         let st = Int(p[v: "stage"].rounded()), depth = heatDepth(p)
         let floor = 292.0
-        s.room(floor: floor)
+        s.room(floor: floor, blob: 120)
         let counterX = 200.0, top = floor - 0.53 * 220
-        // tiles, counter, sink cut away
-        for row in 0..<4 {
-            for col in 0..<8 {
-                s.rect(counterX + Double(col) * 20 + Double(row % 2) * 10, top - 80 + Double(row) * 20, 19, 19, fill: hex("#E6EEF2"), stroke: hex("#D0DCE2"), lw: 0.8)
-            }
-        }
-        s.rect(counterX, top + 8, 160, floor - top - 8, fill: hex("#C49A6C"))
-        s.line(counterX + 80, top + 14, counterX + 80, floor - 6, stroke: hex("#A47C52"), lw: 1.2)
+        // plain splashback panel, counter, sink cut away
+        s.rect(counterX + 6, top - 84, 170, 84, r: 14, fill: hex("#E2EAF0"))
+        s.rect(counterX, top + 8, 170, floor - top - 8, r: 6, fill: hex("#DCBF98"))
+        s.rect(counterX, top + 8, 170, 6, fill: hex("#C9AA82"))
+        s.line(counterX + 80, top + 20, counterX + 80, floor - 8, stroke: hex("#C9AA82"), lw: 1)
+        for x in [counterX + 70, counterX + 90] { s.rect(x - 1.5, top + 26, 3, 14, r: 1.5, fill: hex("#B8966C")) }
         let carried = who.age == .infant || who.age == .toddler
         let basin = carried ? (x0: counterX + 12, x1: counterX + 96) : (x0: counterX + 34, x1: counterX + 118)
-        s.rect(basin.x0, top + 4, basin.x1 - basin.x0, 44, r: 10, fill: hex("#D5DCE1"), stroke: hex("#98A4AD"), lw: 1.2)
-        s.rect(counterX - 4, top, basin.x0 - counterX + 6, 8, r: 2, fill: hex("#E4E0D8"), stroke: hex("#BDB6AA"))
-        s.rect(basin.x1 - 2, top, 364 - basin.x1, 8, r: 2, fill: hex("#E4E0D8"), stroke: hex("#BDB6AA"))
+        s.rect(basin.x0, top + 4, basin.x1 - basin.x0, 44, r: 12, fill: hex("#D3DBE2"))
+        s.rect(basin.x0 + 4, top + 4, basin.x1 - basin.x0 - 8, 8, r: 4, fill: hex("#BFC9D2"))
+        s.rect(counterX - 4, top, basin.x0 - counterX + 6, 8, r: 4, fill: hex("#F1EEE9"))
+        s.rect(basin.x1 - 2, top, 364 - basin.x1, 8, r: 4, fill: hex("#F1EEE9"))
 
         // person at the sink, facing right; a child stands on a stool, a baby or toddler is held by a parent
         let kid = who.age == .child
