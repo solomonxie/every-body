@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "Resources" / "Models"
 INDEX = OUT / "models.json"
-BUDGET_MB = 25.0
+BUDGET_MB = 35.0  # skeleton + skins + internals; app total ≤ 50 MB
 SKELETON_TRIS = (100_000, 150_000)
 
 # generated body landmarks (scene units), left side; right mirrors x
@@ -285,11 +285,19 @@ def save_index(index):
 # ------------------------------------------------------------------ skeleton
 
 
-def build_skeleton():
-    import bpy
-    import numpy as np
+def flip_faces(me):
+    """mirrored clones (negative scale) come out of transform() inside-out"""
+    import bmesh
+    b = bmesh.new()
+    b.from_mesh(me)
+    bmesh.ops.reverse_faces(b, faces=b.faces)
+    b.to_mesh(me)
+    b.free()
 
-    body_parts = {p["id"]: p for p in json.loads((ROOT / "Resources/Data/body.json").read_text())["parts"]}
+
+def skeleton_source(bpy, np):
+    """Z-Anatomy bones (raw scene coords) and their landmarks: (pieces, segment, src, top_src).
+    Shared with build_internals.py so muscles and organs get the same warp as the bones."""
     dg = bpy.context.evaluated_depsgraph_get()
     wanted = [o for c in ("1: Skeletal system", "3: Joints") for o in bpy.data.collections[c].objects
               if o.type == "MESH" and len(o.data.polygons)]
@@ -304,6 +312,8 @@ def build_skeleton():
         pid, seg = hit
         me = bpy.data.meshes.new_from_object(o.evaluated_get(dg))
         me.transform(o.matrix_world)
+        if o.matrix_world.determinant() < 0:
+            flip_faces(me)
         pieces.setdefault(pid, []).append((o.name, to_scene(np, mesh_coords(np, me)), me))
         segment[pid] = seg
 
@@ -329,7 +339,16 @@ def build_skeleton():
         src[f"lateral-{side}"] = pts(f"metacarpal-index-{side}").mean(0) - pts(f"metacarpal-little-{side}").mean(0)
     src["neck"] = pts("vertebra-C1").mean(0)
     allp = np.concatenate([pts(k) for k in pieces])
-    top_src, sole_src = allp[:, 1].max(), 0.0
+    return pieces, segment, src, allp[:, 1].max()
+
+
+def build_skeleton():
+    import bpy
+    import numpy as np
+
+    body_parts = {p["id"]: p for p in json.loads((ROOT / "Resources/Data/body.json").read_text())["parts"]}
+    pieces, segment, src, top_src = skeleton_source(bpy, np)
+    sole_src = 0.0
     fit, s = fitter(np, src, top_src, sole_src, "bone")
     print("SKELETON scale", round(s, 4), {k: np.round(v, 3).tolist() for k, v in src.items()})
 
@@ -412,6 +431,8 @@ def report():
     print(f"{'total':32} {total / 1024:8.0f}  (budget {BUDGET_MB:.0f} MB)")
     if "skeleton" in index:
         print(f"skeleton: {len(index['skeleton']['parts'])} parts, {index['skeleton']['triangles']} triangles")
+    if "internals" in index:
+        print(f"internals: {len(index['internals']['parts'])} parts, {index['internals']['triangles']} triangles")
     if "figure" in index:
         f = index["figure"]
         print(f"figure: {len(f['variants'])} variants, triangles {f['triangles']}")
