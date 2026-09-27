@@ -9,6 +9,14 @@ struct ViewerScreen: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var scene = BodyScene()
     @State private var showCredits = false
+    /// the full-body page always opens as an adult man in underwear; changes there stay on the page
+    @State private var local = LocalFigure()
+    private var isFullBody: Bool { systemID == "body" }
+    private var female: Bool { isFullBody ? local.female : settings.female }
+    private var age: AgeGroup { isFullBody ? local.age : settings.age }
+    private var pregnant: Bool { isFullBody ? local.pregnant && local.female && local.age == .adult : settings.profile.isPregnant }
+    private var underwear: Bool { isFullBody ? local.underwear : settings.showUnderwear }
+    private var isKid: Bool { age == .infant || age.isChild }
     @State private var layers: Set<LayerID> = []
     @State private var parts = PartState()
     @State private var history: [PartState] = []
@@ -27,7 +35,7 @@ struct ViewerScreen: View {
     private var meridians: [Meridian] { systemPoints?.meridians ?? [] }
     private var isAcupuncture: Bool { !meridians.isEmpty }
     /// adult body shape: before puberty both sexes use the same figure (as BodyScene does)
-    private var femaleShape: Bool { settings.female && settings.age != .infant && !settings.age.isChild }
+    private var femaleShape: Bool { female && !isKid }
     private var flowStops: [BodyPoint] {
         guard let sp = systemPoints, let flow = sp.flow else { return [] }
         return flow.pointIds.compactMap { id in sp.points.first { $0.id == id } }
@@ -65,7 +73,9 @@ struct ViewerScreen: View {
                 NavigationLink(value: Route.info(system: systemID)) { Image(systemName: "info.circle") }
                     .accessibilityLabel(settings.t("About this system", "关于此系统"))
             }
-            ToolbarItem { ProfileMenu() }
+            ToolbarItem {
+                if isFullBody { LocalFigureMenu(figure: $local) } else { ProfileMenu() }
+            }
             ToolbarItem { ViewerOptionsMenu(showCredits: $showCredits) }
         }
         .sheet(isPresented: $showCredits) { CreditsView() }
@@ -78,6 +88,7 @@ struct ViewerScreen: View {
         .onChange(of: settings.pregnant) { rebuild() }
         .onChange(of: settings.heritage) { rebuild() }
         .onChange(of: settings.showUnderwear) { rebuild() }
+        .onChange(of: local) { rebuild() }
         .onChange(of: bpm) { scene.bpm = bpm }
         .onChange(of: acuFilter) { applyAcuFilter() }
     }
@@ -94,10 +105,10 @@ struct ViewerScreen: View {
     }
 
     private func rebuild() {
-        scene.setAge(settings.age)
+        scene.setAge(age)
         scene.heritage = settings.heritage
-        scene.underwear = settings.showUnderwear
-        scene.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, pregnant: settings.profile.isPregnant,
+        scene.underwear = underwear || isKid
+        scene.build(skinColor: UIColor(hex: "#F2C9A5"), female: female, pregnant: pregnant,
                     points: systemPoints?.points ?? [], flowStops: flowStops, meridians: meridians)
         scene.setLayers(layers)
         applyAcuFilter()
@@ -170,9 +181,9 @@ struct ViewerScreen: View {
                     }
                 }
                 // what the figure wears, next to the layers; children always keep theirs on
-                if layers.contains(.skin) && !settings.profile.isKid {
-                    Pill(label: settings.t("Clothes", "衣服"), selected: settings.showUnderwear, symbol: "tshirt") {
-                        settings.showUnderwear.toggle()
+                if layers.contains(.skin) && !isKid {
+                    Pill(label: settings.t("Clothes", "衣服"), selected: underwear, symbol: "tshirt") {
+                        if isFullBody { local.underwear.toggle() } else { settings.showUnderwear.toggle() }
                     }
                 }
                 if parts.changedCount > 0 {
@@ -182,7 +193,7 @@ struct ViewerScreen: View {
             .padding(.top, Space.xs)
             Group {
                 if let id = selectedPart {
-                    PartCard(partID: id, parts: parts, female: settings.female, onChange: change) { selectedPart = nil }
+                    PartCard(partID: id, parts: parts, female: female, onChange: change) { selectedPart = nil }
                 }
                 if let joint = tryJoint {
                     JointControl(joint: joint, angle: angles[joint.id] ?? 0) { deg in
@@ -250,5 +261,55 @@ struct ViewerOptionsMenu: View {
             Image(systemName: "ellipsis.circle")
         }
         .accessibilityLabel(settings.t("3D view options", "3D 视图选项"))
+    }
+}
+
+/// Who the full-body page shows; not saved.
+struct LocalFigure: Equatable {
+    var female = false
+    var age: AgeGroup = .adult
+    var pregnant = false
+    var underwear = true
+}
+
+/// Profile menu for the full-body page: same choices, kept on the page only.
+struct LocalFigureMenu: View {
+    @Binding var figure: LocalFigure
+    @Environment(Settings.self) private var settings
+
+    var body: some View {
+        @Bindable var settings = settings
+        Menu {
+            Picker(settings.t("Age", "年龄"), selection: $figure.age) {
+                ForEach(AgeGroup.allCases, id: \.self) { Text(settings.t($0.label)).tag($0) }
+            }
+            Picker(settings.t("Sex", "性别"), selection: $figure.female) {
+                Text(settings.t("Male", "男")).tag(false)
+                Text(settings.t("Female", "女")).tag(true)
+            }
+            if figure.female && figure.age == .adult {
+                Toggle(settings.t("Pregnant", "怀孕"), isOn: $figure.pregnant)
+            }
+            if !(figure.age == .infant || figure.age.isChild) {
+                Toggle(settings.t("Show underwear", "显示内衣"), isOn: $figure.underwear)
+            }
+            Picker(settings.t("Appearance", "外貌"), selection: $settings.heritage) {
+                ForEach(Heritage.allCases, id: \.self) { Text(settings.t($0.label)).tag($0) }
+            }
+            .pickerStyle(.menu)
+        } label: {
+            Label(title, systemImage: figure.age == .adult || figure.age == .senior ? "figure.stand" : "figure.child")
+                .labelStyle(.titleAndIcon)
+                .font(.footnote.weight(.semibold))
+        }
+        .accessibilityLabel(settings.t("Figure", "人物"))
+    }
+
+    private var title: String {
+        switch figure.age {
+        case .adult: settings.t(figure.female ? "Woman" : "Man", figure.female ? "女" : "男")
+        case .senior: settings.t(figure.female ? "Older woman" : "Older man", figure.female ? "老年女性" : "老年男性")
+        default: settings.t(figure.age.label)
+        }
     }
 }
