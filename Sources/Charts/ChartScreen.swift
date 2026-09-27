@@ -19,9 +19,9 @@ struct ChartScreen: View {
     /// share of the stage given to the 3D body; the bar between the halves drags it
     @State private var split: CGFloat = 0.42
     @State private var splitStart: CGFloat?
-    @AppStorage("chartLayout2") private var layout: ChartLayout = .overlay
-    /// what the 3D body shows besides the skin, remembered across charts
-    @AppStorage("chartInsetLayers") private var insetLayersRaw = "organs"
+    @State private var layout: ChartLayout = .overlay
+    /// what the 3D body shows besides the skin; every visit starts fresh
+    @State private var insetLayersRaw = "organs"
     @State private var ready = false
 
     private var chart: ReflexChart { Catalog.chart(chartID) ?? Catalog.charts.charts[0] }
@@ -303,6 +303,7 @@ struct ChartScreen: View {
     private func setUp() {
         guard !ready else { return }
         ready = true
+        settings.resetViewOptions()
         faceID = initialFace ?? chart.faces[0].id
         side = initialSide ?? .right
         Task {
