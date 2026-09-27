@@ -326,7 +326,7 @@ extension Illustrations {
         let kid = who.age == .child
         let c = Casualty(who, adult: 220)
         let stool = kid ? 52.0 : 0
-        if kid { s.rect(128, floor - stool, 56, stool, r: 3, fill: hex("#7FA7C9"), stroke: hex("#5A83A6")) }
+        if kid { s.rect(128, floor - stool, 56, stool, r: 8, fill: hex("#A9BFDD")); s.rect(128, floor - stool, 56, 8, r: 4, fill: hex("#BFD0E6")) }
         var v = SideFigure(h: c.h, build: c.build, look: c.look, hip: .zero, lean: carried ? 4 : 10, face: st == 0 ? .distress : .calm, bump: c.bump)
         v.hip = CGPoint(x: 160, y: floor - stool - SideFigure.hipHeight(c.h, c.build))
         v.nearLeg = .init(hip: 4, knee: 2)
