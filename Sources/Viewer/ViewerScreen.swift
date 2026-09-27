@@ -38,7 +38,7 @@ struct ViewerScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            BodyView(scene: scene) { pick in
+            BodyView(scene: scene, meridians: isAcupuncture ? $acuFilter.lines : nil) { pick in
                 switch pick {
                 case let .point(id): press(id)
                 case let .part(id): selectedPart = selectedPart == id ? nil : id
@@ -73,6 +73,8 @@ struct ViewerScreen: View {
         .onChange(of: settings.female) { rebuild() }
         .onChange(of: settings.age) { rebuild() }
         .onChange(of: settings.pregnant) { rebuild() }
+        .onChange(of: settings.heritage) { rebuild() }
+        .onChange(of: settings.showUnderwear) { rebuild() }
         .onChange(of: bpm) { scene.bpm = bpm }
         .onChange(of: acuFilter) { applyAcuFilter() }
     }
@@ -90,6 +92,8 @@ struct ViewerScreen: View {
 
     private func rebuild() {
         scene.setAge(settings.age)
+        scene.heritage = settings.heritage
+        scene.underwear = settings.showUnderwear
         scene.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, pregnant: settings.profile.isPregnant,
                     points: systemPoints?.points ?? [], flowStops: flowStops, meridians: meridians)
         scene.setLayers(layers)
