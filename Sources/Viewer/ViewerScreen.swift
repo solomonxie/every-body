@@ -8,6 +8,7 @@ struct ViewerScreen: View {
     @Environment(Settings.self) private var settings
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var scene = BodyScene()
+    @State private var showCredits = false
     @State private var layers: Set<LayerID> = []
     @State private var parts = PartState()
     @State private var history: [PartState] = []
@@ -65,7 +66,9 @@ struct ViewerScreen: View {
                     .accessibilityLabel(settings.t("About this system", "关于此系统"))
             }
             ToolbarItem { ProfileMenu() }
+            ToolbarItem { ViewerOptionsMenu(showCredits: $showCredits) }
         }
+        .sheet(isPresented: $showCredits) { CreditsView() }
         .task { await BodyScene.prepare(); setUp() }
         .onChange(of: layers) { scene.setLayers(layers) }
         .onChange(of: parts) { scene.setParts(parts, selected: selectedPart) }
@@ -226,5 +229,26 @@ struct ViewerScreen: View {
 
     private func layerColor(_ id: LayerID) -> Color {
         id == .skin ? Color(hex: "#F2C9A5") : Color(hex: Catalog.system(id.rawValue)?.color ?? "#999999")
+    }
+}
+
+/// 3D view options: background, auto-rotate, and the credits for the 3D models.
+struct ViewerOptionsMenu: View {
+    @Binding var showCredits: Bool
+    @Environment(Settings.self) private var settings
+
+    var body: some View {
+        @Bindable var settings = settings
+        Menu {
+            Toggle(settings.t("White background", "白色背景"), isOn: $settings.whiteBackground)
+            Toggle(settings.t("Auto-rotate on open", "打开时自动旋转"), isOn: $settings.autoRotate)
+            Divider()
+            Button { showCredits = true } label: {
+                Label(settings.t("Credits & licences", "致谢与许可"), systemImage: "doc.text")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+        .accessibilityLabel(settings.t("3D view options", "3D 视图选项"))
     }
 }
