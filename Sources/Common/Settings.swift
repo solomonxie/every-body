@@ -10,15 +10,16 @@ enum NameMode: String, CaseIterable {
 @Observable
 final class Settings {
     var names: NameMode { didSet { save() } }
-    var whiteBackground: Bool { didSet { save() } }
-    var autoRotate: Bool { didSet { save() } }
+    // view options: not saved, every page starts from these defaults (resetViewOptions)
+    var whiteBackground = false
+    var autoRotate = true
     var female: Bool { didSet { save() } }
     var age: AgeGroup { didSet { save() } }
     var pregnant: Bool { didSet { save() } }
     /// the 3D figure's face and skin tone
     var heritage: Heritage { didSet { save() } }
     /// adults only; children always wear it
-    var showUnderwear: Bool { didSet { save() } }
+    var showUnderwear = true
     private(set) var recentSearches: [String] { didSet { save() } }
 
     private let store = UserDefaults.standard
@@ -26,27 +27,28 @@ final class Settings {
     init() {
         names = NameMode(rawValue: store.string(forKey: "names") ?? "")
             ?? (Locale.preferredLanguages.first?.hasPrefix("zh") == true ? .zh : .en)
-        whiteBackground = store.bool(forKey: "whiteBackground")
-        autoRotate = store.object(forKey: "autoRotate") as? Bool ?? true
         female = store.bool(forKey: "female")
         age = AgeGroup(rawValue: store.string(forKey: "age") ?? "") ?? .adult
         pregnant = store.bool(forKey: "pregnant")
         heritage = Heritage(rawValue: store.string(forKey: "heritage") ?? "")
             ?? (Locale.preferredLanguages.first?.hasPrefix("zh") == true ? .eastAsian : .white)
-        showUnderwear = store.object(forKey: "showUnderwear") as? Bool ?? true
         recentSearches = store.stringArray(forKey: "recentSearches") ?? []
     }
 
     private func save() {
         store.set(names.rawValue, forKey: "names")
-        store.set(whiteBackground, forKey: "whiteBackground")
-        store.set(autoRotate, forKey: "autoRotate")
         store.set(female, forKey: "female")
         store.set(age.rawValue, forKey: "age")
         store.set(pregnant, forKey: "pregnant")
         store.set(heritage.rawValue, forKey: "heritage")
-        store.set(showUnderwear, forKey: "showUnderwear")
         store.set(recentSearches, forKey: "recentSearches")
+    }
+
+    /// Pages don't remember how they were last viewed.
+    func resetViewOptions() {
+        whiteBackground = false
+        autoRotate = true
+        showUnderwear = true
     }
 
     /// newest first, 6 kept
