@@ -17,6 +17,10 @@ struct ProfileMenu: View {
             if settings.female && settings.age == .adult {
                 Toggle(settings.t("Pregnant", "怀孕"), isOn: $settings.pregnant)
             }
+            // children always keep theirs on, so only adults get the switch
+            if !settings.profile.isKid {
+                Toggle(settings.t("Show underwear", "显示内衣"), isOn: $settings.showUnderwear)
+            }
             Picker(settings.t("Appearance", "外貌"), selection: $settings.heritage) {
                 ForEach(Heritage.allCases, id: \.self) { Text(settings.t($0.label)).tag($0) }
             }

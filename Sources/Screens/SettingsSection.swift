@@ -42,6 +42,13 @@ struct SettingsSection: View {
                         Toggle(settings.t("Pregnant", "怀孕"), isOn: $settings.pregnant).labelsHidden()
                     }
                 }
+                // with sex and pregnancy: what the figure wears; children always keep theirs on
+                if !settings.profile.isKid {
+                    divider
+                    row("tshirt.fill", Color(hex: "#6F9BC9"), settings.t("Show underwear", "显示内衣")) {
+                        Toggle(settings.t("Show underwear", "显示内衣"), isOn: $settings.showUnderwear).labelsHidden()
+                    }
+                }
             }
             .adaptivePickerStyle()
             .animation(.snappy, value: settings.female && settings.age == .adult)
@@ -54,10 +61,6 @@ struct SettingsSection: View {
                     }
                     .pickerStyle(.menu)
                     .fixedSize()
-                }
-                divider
-                row("tshirt.fill", Color(hex: "#6F9BC9"), settings.t("Show underwear", "显示内衣")) {
-                    Toggle(settings.t("Show underwear", "显示内衣"), isOn: $settings.showUnderwear).labelsHidden()
                 }
                 divider
                 row("square.fill", .gray, settings.t("White background", "白色背景")) {
