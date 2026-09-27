@@ -69,16 +69,20 @@ extension Sketch {
                           color: Color = Tone.label, size: Double = 8.5, bold: Bool = true, dot: Bool = true) {
         let w = width(en, zh, size: size, bold: bold)
         let x0 = anchor == .start ? x : anchor == .middle ? x - w / 2 : x - w
+        let d: String
         if anchor == .middle {
             let ly = p.y < y ? y - size - 1 : y + 3
-            path("M \(p.x) \(p.y) L \(x) \(ly)", stroke: color.opacity(0.75), lw: 0.7)
+            d = "M \(p.x) \(p.y) L \(x) \(ly)"
         } else {
             // attach on the side of the text that faces the feature
             let right = p.x > x0 + w / 2, ex = right ? x0 + w + 3 : x0 - 3, ly = y - size * 0.35
             let knee = CGPoint(x: ex + (right ? 6 : -6), y: ly)
-            path("M \(p.x) \(p.y) L \(knee.x) \(knee.y) L \(ex) \(ly)", stroke: color.opacity(0.75), lw: 0.7)
+            d = "M \(p.x) \(p.y) L \(knee.x) \(knee.y) L \(ex) \(ly)"
         }
-        if dot { circle(p.x, p.y, 1.6, fill: color) }
+        // white halo keeps the leader readable where it crosses a busy drawing
+        path(d, stroke: .white, lw: 2.2, opacity: 0.6)
+        path(d, stroke: color.opacity(0.85), lw: 0.9)
+        if dot { circle(p.x, p.y, 1.9, fill: color, stroke: .white, lw: 0.7) }
         label(en, zh, x, y, size: size, color: color, anchor: anchor, bold: bold)
     }
 
