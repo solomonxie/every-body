@@ -10,6 +10,8 @@ enum Pick {
 struct BodyView: View {
     let scene: BodyScene
     var compact = false
+    /// acupuncture: a rail switch for the meridian lines
+    var meridians: Binding<Bool>? = nil
     var onPick: (Pick) -> Void = { _ in }
 
     @Environment(Settings.self) private var settings
@@ -57,6 +59,11 @@ struct BodyView: View {
     private var rail: some View {
         VStack(spacing: 10) {
             RailButton(symbol: "arrow.counterclockwise", label: settings.t("Reset view", "重置视角")) { scene.resetView() }
+            if let meridians {
+                RailButton(symbol: "point.bottomleft.forward.to.point.topright.scurvepath",
+                           label: meridians.wrappedValue ? settings.t("Hide meridians", "隐藏经络线") : settings.t("Show meridians", "显示经络线"),
+                           on: meridians.wrappedValue) { meridians.wrappedValue.toggle() }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .padding(12)
@@ -123,9 +130,16 @@ struct RailButton: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(on == true ? Color.brand : .primary)
                 .frame(width: minTap, height: minTap)
                 .background(.regularMaterial, in: .circle)
+                .overlay(Circle().strokeBorder(Color.brand.opacity(on == true ? 0.7 : 0), lineWidth: 1.5))
+                // off: struck through, so the state reads without colour
+                .overlay {
+                    if on == false {
+                        Capsule().fill(.primary).frame(width: 2, height: 26).rotationEffect(.degrees(-45))
+                    }
+                }
                 .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
         }
         .buttonStyle(PressableStyle())

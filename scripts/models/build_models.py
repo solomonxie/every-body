@@ -6,7 +6,7 @@ Both are warped onto the generated body's landmarks (scripts/gen_body.py: y up, 
 
 Run through scripts/models/build.sh (Blender headless):
   Blender -b Z-Anatomy/Startup.blend -P build_models.py -- skeleton
-  Blender -b -P build_models.py -- skin
+  (skin figures: build_figure.py)
   venv/bin/python build_models.py report      # size table + budget check
 """
 
@@ -22,7 +22,6 @@ OUT = ROOT / "Resources" / "Models"
 INDEX = OUT / "models.json"
 BUDGET_MB = 35.0  # skeleton + skins + internals; app total ≤ 50 MB
 SKELETON_TRIS = (100_000, 150_000)
-SKIN_TRIS = (20_000, 45_000)
 
 # generated body landmarks (scene units), left side; right mirrors x
 GEN = {
@@ -144,19 +143,25 @@ JOINT = {"uparm": "shoulder", "forearm": "elbow", "hand": "elbow", "shin": "knee
 # ------------------------------------------------------------------ fitting (numpy, scene coords)
 
 
-def fitter(np, src, top_src, sole_src, kind):
+def fitter(np, src, top_src, sole_src, kind, gen=None, top=None, sole=None, widths=None):
     """Maps source points (raw scene axes, metres) onto the generated body.
 
     Trunk: piecewise-linear heights through hip / shoulder / neck / top, depth re-centred on the same
-    landmarks, uniform width. Limbs: each segment maps its two joints exactly (rotate + stretch)."""
+    landmarks, uniform width. Limbs: each segment maps its two joints exactly (rotate + stretch).
+    gen / top / sole replace the adult landmarks (a child's reshaped body); widths = (x, z) scale at
+    hip, shoulder, neck and crown heights instead of the uniform one."""
     V = lambda t: np.array(t, dtype=float)
-    top_t = TOP[kind]
-    s = (top_t - SOLE) / (top_src - sole_src)
+    GEN_ = gen or GEN
+    top_t = TOP[kind] if top is None else top
+    sole_t = SOLE if sole is None else sole
+    s = (top_t - sole_t) / (top_src - sole_src)
     mid = lambda k: (src[k + "-l"] + src[k + "-r"]) / 2
     ys = [mid("hip")[1], mid("shoulder")[1], src["neck"][1], top_src]
-    yt = [GEN["hip"][1], GEN["shoulder"][1], GEN["neck"][1], top_t]
+    yt = [GEN_["hip"][1], GEN_["shoulder"][1], GEN_["neck"][1], top_t]
     zs = [mid("hip")[2], mid("shoulder")[2], src["neck"][2]]
-    zt = [GEN["hip"][2], GEN["shoulder"][2], GEN["neck"][2]]
+    zt = [GEN_["hip"][2], GEN_["shoulder"][2], GEN_["neck"][2]]
+    wx = [w[0] for w in widths] if widths else [s] * 4
+    wz = [w[1] for w in widths] if widths else [s] * 4
 
     def height(y):
         out = np.interp(y, ys, yt)
@@ -168,7 +173,8 @@ def fitter(np, src, top_src, sole_src, kind):
         y2 = height(p[:, 1])
         zc = np.interp(p[:, 1], ys[:3], zs)
         zc2 = np.interp(y2, yt[:3], zt)
-        return np.stack([p[:, 0] * s, y2, (p[:, 2] - zc) * s + zc2], axis=1)
+        sx, sz = np.interp(p[:, 1], ys, wx), np.interp(p[:, 1], ys, wz)
+        return np.stack([p[:, 0] * sx, y2, (p[:, 2] - zc) * sz + zc2], axis=1)
 
     def rot(a, b):
         a, b = a / np.linalg.norm(a), b / np.linalg.norm(b)
@@ -183,7 +189,7 @@ def fitter(np, src, top_src, sole_src, kind):
 
     segs = {}
     for side, sx in (("l", 1), ("r", -1)):
-        g = lambda k: V(GEN[k]) * V((sx, 1, 1))
+        g = lambda k: V(GEN_[k]) * V((sx, 1, 1))
         sh, hp = trunk(src["shoulder-" + side])[0], trunk(src["hip-" + side])[0]
         chain = {"uparm": ("shoulder", "elbow", sh, g("elbow")), "forearm": ("elbow", "wrist", g("elbow"), g("wrist")),
                  "hand": ("wrist", "finger", g("wrist"), g("finger")), "thigh": ("hip", "knee", hp, g("knee")),
@@ -409,189 +415,6 @@ def join_meshes(bpy, meshes, name):
     return out
 
 
-# ------------------------------------------------------------------ skin (MakeHuman via MPFB2)
-
-VARIANTS = {
-    # id: (gender, extra targets, skin, hair, eyebrows)
-    "male": (1.0, {}, "young_asian_male", "short02", "eyebrow001"),
-    "female": (0.0, {}, "young_asian_female", "ponytail01", "eyebrow009"),
-    "female-pregnant": (0.0, {"stomach/stomach-pregnant-incr": 1.0}, "young_asian_female", "ponytail01", "eyebrow009"),
-}
-LIMB_BONES = [(r"upperarm0[12]", "uparm"), (r"lowerarm01", "fore1"), (r"lowerarm02", "fore2"),
-              (r"(wrist|metacarpal|finger)", "hand"), (r"upperleg0[12]", "thigh"), (r"lowerleg0[12]", "shin"),
-              (r"(foot|toe)", "foot")]
-
-
-def bone_segment(name):
-    m = re.match(r"(.+)\.([LR])$", name)
-    if not m:
-        return "trunk"
-    for pat, seg in LIMB_BONES:
-        if re.match(pat, m[1]):
-            return f"{seg}-{m[2].lower()}"
-    return "trunk"
-
-
-def build_skins(only=None):
-    import bpy
-    import numpy as np
-
-    def imp(pkg, key):
-        import importlib
-        for m in list(sys.modules):
-            if m.endswith(pkg):
-                return getattr(importlib.import_module(m), key)
-        raise ImportError(pkg)
-
-    HumanService = imp("mpfb.services.humanservice", "HumanService")
-    AssetService = imp("mpfb.services.assetservice", "AssetService")
-    TargetService = imp("mpfb.services.targetservice", "TargetService")
-    LocationService = imp("mpfb.services.locationservice", "LocationService")
-    data = Path(AssetService.find_asset_absolute_path("low-poly.mhclo", asset_subdir="eyes")).parents[2]
-    index = load_index()
-    skins = index.get("skins", {})
-    for vid, (gender, targets, skin, hair, brows) in VARIANTS.items():
-        if only and vid != only:
-            continue
-        for o in list(bpy.data.objects):
-            bpy.data.objects.remove(o)
-        macros = TargetService.get_default_macro_info_dict()
-        macros.update(gender=gender, age=0.5, muscle=0.55, weight=0.5, height=0.5, proportions=0.6)
-        macros["race"] = {"asian": 0.6, "caucasian": 0.3, "african": 0.1}
-        h = HumanService.create_human(macro_detail_dict=macros)
-        for t, w in targets.items():
-            TargetService.load_target(h, os.path.join(LocationService.get_mpfb_data("targets"), t + ".target.gz"), weight=w)
-        rig = HumanService.add_builtin_rig(h, "default")
-        assets = [("eyes", "low-poly.mhclo", "Eyes", "eyes"), ("eyebrows", f"{brows}.mhclo", "Eyebrows", "eyebrows"),
-                  ("eyelashes", "eyelashes01.mhclo", "Eyelashes", "eyelashes"), ("hair", f"{hair}.mhclo", "Hair", "hair")]
-        extra = {}
-        for sub, f, kind, key in assets:
-            before = set(bpy.data.objects)
-            HumanService.add_mhclo_asset(AssetService.find_asset_absolute_path(f, asset_subdir=sub), h, asset_type=kind, subdiv_levels=0)
-            extra[key] = next(iter(set(bpy.data.objects) - before))
-        bones = {b.name: b for b in rig.data.bones}
-        W = lambda n: to_scene(np, np.array([rig.matrix_world @ bones[n].head_local]))[0]
-        Wt = lambda n: to_scene(np, np.array([rig.matrix_world @ bones[n].tail_local]))[0]
-        src = {"neck": W("head")}
-        for side, S in (("l", "L"), ("r", "R")):
-            src.update({f"shoulder-{side}": W(f"upperarm01.{S}"), f"elbow-{side}": W(f"lowerarm01.{S}"),
-                        f"wrist-{side}": W(f"wrist.{S}"), f"finger-{side}": Wt(f"finger3-3.{S}"),
-                        f"hip-{side}": W(f"upperleg01.{S}"), f"knee-{side}": W(f"lowerleg01.{S}"),
-                        f"ankle-{side}": W(f"foot.{S}"), f"toe-{side}": Wt(f"toe1-2.{S}"),
-                        f"lateral-{side}": W(f"finger2-1.{S}") - W(f"finger5-1.{S}")})
-        dg = bpy.context.evaluated_depsgraph_get()
-        objs = {"body": h, **extra}
-        meshes = {}
-        for key, o in objs.items():
-            me = bpy.data.meshes.new_from_object(o.evaluated_get(dg), preserve_all_data_layers=True, depsgraph=dg)
-            me.transform(o.matrix_world)
-            meshes[key] = (o, me)
-        body_raw = to_scene(np, mesh_coords(np, meshes["body"][1]))
-        fit, s = fitter(np, src, body_raw[:, 1].max(), body_raw[:, 1].min(), "skin")
-        print("SKIN", vid, "scale", round(s, 4))
-
-        col = bpy.data.collections.new("export-" + vid)
-        bpy.context.scene.collection.children.link(col)
-        out_objs, total, files = [], 0, []
-        for key, (o, me) in meshes.items():
-            raw = to_scene(np, mesh_coords(np, me))
-            groups = {g.index: bone_segment(g.name) for g in o.vertex_groups if g.name in bones}
-            keys = sorted(set(groups.values()) | {"trunk"})
-            wts = np.zeros((len(me.vertices), len(keys)))
-            for v in me.vertices:
-                for g in v.groups:
-                    if g.group in groups and g.weight > 0:
-                        wts[v.index, keys.index(groups[g.group])] += g.weight
-            none = wts.sum(1) == 0
-            wts[none, keys.index("trunk")] = 1
-            wts /= wts.sum(1, keepdims=True)
-            out = np.zeros_like(raw)
-            for i, k in enumerate(keys):
-                sel = wts[:, i] > 0
-                if sel.any():
-                    out[sel] += fit(raw[sel], k) * wts[sel, i:i + 1]
-            set_coords(np, me, to_blender(np, out))
-            me.name = prim(key)
-            ob = bpy.data.objects.new(prim(key), me)
-            col.objects.link(ob)
-            for p in me.polygons:
-                p.use_smooth = True
-            files.append(skin_material(bpy, data, ob, key, vid, skin, hair, brows))
-            n = tris(me)
-            total += n
-            out_objs.append(ob)
-        lo, hi = SKIN_TRIS
-        print(f"SKIN {vid} {total} triangles")
-        if not lo <= total <= hi:
-            sys.exit(f"skin {vid} triangles {total} outside {lo}-{hi}")
-        export_usdz(bpy, out_objs, OUT / f"skin-{vid}.usdz", materials=True)
-        skins[vid] = {"file": f"skin-{vid}.usdz", "source": "MakeHuman (MPFB2)", "license": "CC0",
-                      "skin": skin, "hair": hair, "triangles": total, "parts": [prim(k) for k in objs]}
-    index = load_index()
-    index["skins"] = skins
-    save_index(index)
-
-
-TEX_SIZE = {"body": 2048, "eyes": 512, "eyebrows": 256, "eyelashes": 256, "hair": 1024}
-
-
-def skin_material(bpy, data, ob, key, vid, skin, hair, brows):
-    """One simple textured material per piece (baked JPEG/PNG) instead of MPFB's node trees."""
-    import numpy as np
-    src = {
-        "body": next((data / "skins" / skin).glob("*.png")),
-        "eyes": data / "eyes" / "materials" / "brown_eye.png",
-        "eyebrows": data / "eyebrows" / brows / f"{brows}.png",
-        "eyelashes": data / "eyelashes" / "eyelashes01" / "eyelashes01.png",
-        "hair": next((data / "hair" / hair).glob("*_diffuse.png")),
-    }[key]
-    alpha = key in ("eyebrows", "eyelashes", "hair")
-    tex_dir = ROOT / "build" / "models"
-    tex_dir.mkdir(parents=True, exist_ok=True)
-    img = bpy.data.images.load(str(src))
-    size = TEX_SIZE[key]
-    if img.size[0] > size:
-        img.scale(size, size * img.size[1] // img.size[0])
-    if alpha:
-        # see-through texels are white in the source: fill them with the mean strand colour so edges don't glow
-        px = np.array(img.pixels[:]).reshape(-1, 4)
-        solid = px[:, 3] > 0.5
-        px[~solid, :3] = px[solid, :3].mean(0)
-        img.pixels[:] = px.reshape(-1)
-    if key == "eyes":
-        # MakeHuman's "brown" iris reads red at phone size: tone it to a dark brown
-        px = np.array(img.pixels[:]).reshape(-1, 4)
-        lum = px[:, :3] @ np.array([0.3, 0.59, 0.11])
-        iris = (lum < 0.45)[:, None]
-        tone = np.where(iris, lum[:, None] * np.array([1.0, 0.72, 0.5]) * 0.8, lum[:, None] + 0.35 * (px[:, :3] - lum[:, None]))
-        px[:, :3] = tone
-        img.pixels[:] = px.reshape(-1)
-    fmt = "PNG" if alpha else "JPEG"
-    path = tex_dir / f"{vid}-{key}.{'png' if alpha else 'jpg'}"
-    img.filepath_raw = str(path)
-    img.file_format = fmt
-    if not alpha:
-        bpy.context.scene.render.image_settings.quality = 82
-    img.save()
-    img = bpy.data.images.load(str(path))
-    mat = bpy.data.materials.new(f"{vid}_{key}")
-    mat.use_nodes = True
-    nt = mat.node_tree
-    bsdf = nt.nodes["Principled BSDF"]
-    t = nt.nodes.new("ShaderNodeTexImage")
-    t.image = img
-    nt.links.new(t.outputs["Color"], bsdf.inputs["Base Color"])
-    if alpha:
-        nt.links.new(t.outputs["Alpha"], bsdf.inputs["Alpha"])
-    bsdf.inputs["Roughness"].default_value = 0.55 if key == "body" else 0.4 if key == "eyes" else 0.7
-    me = ob.data
-    me.materials.clear()
-    me.materials.append(mat)
-    for p in me.polygons:
-        p.material_index = 0
-    return path
-
-
 # ------------------------------------------------------------------ report
 
 
@@ -610,8 +433,9 @@ def report():
         print(f"skeleton: {len(index['skeleton']['parts'])} parts, {index['skeleton']['triangles']} triangles")
     if "internals" in index:
         print(f"internals: {len(index['internals']['parts'])} parts, {index['internals']['triangles']} triangles")
-    for vid, s in index.get("skins", {}).items():
-        print(f"skin {vid}: {s['triangles']} triangles")
+    if "figure" in index:
+        f = index["figure"]
+        print(f"figure: {len(f['variants'])} variants, triangles {f['triangles']}")
     if total > BUDGET_MB * 1024 * 1024:
         sys.exit("over budget")
 
@@ -621,7 +445,5 @@ if __name__ == "__main__":
     mode = args[0] if args else "report"
     if mode == "skeleton":
         build_skeleton()
-    elif mode == "skin":
-        build_skins(args[1] if len(args) > 1 else None)
     else:
         report()

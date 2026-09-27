@@ -399,7 +399,7 @@ class Warp:
 
 
 class SkinClamp:
-    """Moves the muscles that stick out of an adult skin figure (Resources/Models/skin-*.usdz) back under it.
+    """Moves the muscles that stick out of an adult skin figure (Resources/Models/figure.bin) back under it.
 
     Z-Anatomy's man is more muscular than the MakeHuman figures (chest, flanks, shoulders); without this the
     pectorals and serratus show through the glass skin. Outside vertices slide horizontally towards their
@@ -413,24 +413,18 @@ class SkinClamp:
 
     def __init__(self, np):
         from mathutils.bvhtree import BVHTree
-        from pxr import Usd, UsdGeom
+        from build_figure import FIGURE, read_figure
         self.np, self.trees = np, {}
+        if not FIGURE.exists():
+            return
+        header, block, piece = read_figure(np)
+        vmap, index = piece("body")
+        polys = np.unique(vmap[index].astype(np.int64), axis=0).tolist()
         for sex in ("male", "female"):
-            f = OUT / f"skin-{sex}.usdz"
-            if not f.exists():
-                continue
-            stage = Usd.Stage.Open(str(f))
-            body = next((p for p in stage.Traverse() if p.GetName() == "body" and p.IsA(UsdGeom.Mesh)), None)
-            if body is None:
-                continue
-            m = UsdGeom.Mesh(body)
-            pts = bm.to_scene(np, np.array(m.GetPointsAttr().Get(), dtype=float))
-            counts, idx = list(m.GetFaceVertexCountsAttr().Get()), list(m.GetFaceVertexIndicesAttr().Get())
-            polys, i = [], 0
-            for c in counts:
-                polys.append(tuple(idx[i:i + c]))
-                i += c
-            self.trees[sex] = BVHTree.FromPolygons(pts.tolist(), polys)
+            # heritage only changes the head, which isn't clamped
+            v = header["variants"].get(f"{sex}.adult.east-asian")
+            if v:
+                self.trees[sex] = BVHTree.FromPolygons(block(v["body"]).tolist(), polys)
 
     @staticmethod
     def inside(tree, p):
