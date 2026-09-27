@@ -15,6 +15,7 @@ struct ViewerScreen: View {
     @State private var activePoint: String?
     @State private var effectVisible = false
     @State private var filter = "all"
+    @State private var acuFilter = AcuFilter()
     @State private var bpm: Float = 72
     @State private var angles: [String: Float] = [:]
     @State private var built = false
@@ -22,6 +23,10 @@ struct ViewerScreen: View {
     private var system: BodySystem { Catalog.system(systemID) ?? Catalog.systems[0] }
     private var systemPoints: SystemPoints? { Catalog.points[systemID] }
     private var isReflex: Bool { systemPoints?.points.contains { $0.target != nil } ?? false }
+    private var meridians: [Meridian] { systemPoints?.meridians ?? [] }
+    private var isAcupuncture: Bool { !meridians.isEmpty }
+    /// adult body shape: before puberty both sexes use the same figure (as BodyScene does)
+    private var femaleShape: Bool { settings.female && settings.age != .infant && !settings.age.isChild }
     private var flowStops: [BodyPoint] {
         guard let sp = systemPoints, let flow = sp.flow else { return [] }
         return flow.pointIds.compactMap { id in sp.points.first { $0.id == id } }
@@ -68,6 +73,7 @@ struct ViewerScreen: View {
         .onChange(of: settings.female) { rebuild() }
         .onChange(of: settings.age) { rebuild() }
         .onChange(of: bpm) { scene.bpm = bpm }
+        .onChange(of: acuFilter) { applyAcuFilter() }
     }
 
     private func setUp() {
@@ -84,8 +90,10 @@ struct ViewerScreen: View {
     private func rebuild() {
         scene.setAge(settings.age)
         scene.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female,
-                    points: systemPoints?.points ?? [], flowStops: flowStops)
+                    points: systemPoints?.points ?? [], flowStops: flowStops, meridians: meridians)
         scene.setLayers(layers)
+        applyAcuFilter()
+        if let activePoint { scene.setActivePoint(activePoint) }
         scene.setParts(parts, selected: selectedPart)
         for (id, deg) in angles { scene.setJoint(id, degrees: deg) }
     }
@@ -95,6 +103,10 @@ struct ViewerScreen: View {
         scene.touched = true
         activePoint = id
         scene.setActivePoint(id)
+        if let acu = point.acu, let site = acu.sites(female: femaleShape).first {
+            scene.focus(on: site.simd, normal: acu.normal.simd)
+            return
+        }
         guard let target = point.target else { return }
         scene.faceFront()
         scene.pulse(from: point.position.simd, to: target.organIds)
@@ -103,6 +115,22 @@ struct ViewerScreen: View {
             try? await Task.sleep(for: .milliseconds(1400))
             if activePoint == id { effectVisible = true }
         }
+    }
+
+    private func applyAcuFilter() {
+        guard isAcupuncture, let points = systemPoints?.points else { return }
+        let all = acuFilter.region == "all" && acuFilter.meridian == nil && !acuFilter.common
+        scene.showPoints(all ? nil : Set(points.filter(acuFilter.shows).map(\.id)))
+        scene.showMeridians(acuFilter.lines, only: acuFilter.meridian)
+    }
+
+    /// Organs on, camera back to the whole body, a pulse from the point to what it's said to act on.
+    private func showLink(_ point: BodyPoint) {
+        guard let acu = point.acu, let site = acu.sites(female: femaleShape).first else { return }
+        layers.insert(.organs)
+        scene.faceFront()
+        scene.focus(.all)
+        scene.pulse(from: site.simd, to: acu.organIds)
     }
 
     private func change(_ next: PartState) {
@@ -148,7 +176,14 @@ struct ViewerScreen: View {
                         scene.setJoint(joint.id, degrees: deg)
                     }
                 }
-                if isReflex, let sp = systemPoints {
+                if isAcupuncture, let sp = systemPoints {
+                    AcupuncturePanel(points: sp.points, meridians: meridians, filter: $acuFilter, activeID: activePoint,
+                                     onPress: press, onFocus: { f in
+                        scene.touched = true
+                        if f != .back { scene.faceFront() }
+                        scene.focus(f)
+                    }, onLink: showLink)
+                } else if isReflex, let sp = systemPoints {
                     ReflexPanel(points: sp.points, filter: $filter, activeID: activePoint, effectVisible: effectVisible, onPress: press) { f in
                         scene.touched = true
                         scene.faceFront()
