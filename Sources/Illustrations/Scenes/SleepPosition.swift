@@ -79,8 +79,8 @@ extension Illustrations {
                 s.circle(px + 12, y - 3, 2.2, fill: Anat.green)
                 s.label(tip.0, tip.1, px + 20, y, size: 8.5, color: Tone.ink)
             }
-            s.cardNote("Going to sleep on the back late in pregnancy is linked to ≈ 2× stillbirth risk",
-                       "孕晚期仰卧入睡与死产风险约翻倍相关", px + pw / 2, 276, width: pw - 14, size: 7.5, color: Tone.sub)
+            s.cardNote("Going to sleep on the back late in pregnancy is linked to a 2–3× higher stillbirth risk",
+                       "孕晚期仰卧入睡与死产风险升高 2–3 倍相关", px + pw / 2, 276, width: pw - 14, size: 7.5, color: Tone.sub)
         } else {
             s.card(px, 164, pw, 130)
             s.caption("Which way to lie", "怎么躺", px + 10, 180)
