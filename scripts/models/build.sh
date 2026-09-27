@@ -1,6 +1,6 @@
 #!/bin/sh
 # Rebuild Resources/Models from the raw downloads (sources and licences: LICENSES/THIRD_PARTY.md).
-# Usage: scripts/models/build.sh [skeleton|skin [variant]|report]   (default: everything)
+# Usage: scripts/models/build.sh [skeleton|internals|skin [variant]|report]   (default: everything)
 # Tools live outside git in $EVERYBODY_TOOLS (default ./tools):
 #   Blender.app            official macOS arm64 build (4.5 LTS), copied out of the .dmg
 #   downloads/Z-Anatomy/   Startup.blend from github.com/Z-Anatomy/Models-of-human-anatomy (Z-Anatomy.zip)
@@ -14,6 +14,9 @@ export BLENDER_USER_RESOURCES="$TOOLS/blender-user"
 step=${1:-all}
 if [ "$step" = all ] || [ "$step" = skeleton ]; then
   "$BLENDER" -b "$TOOLS/downloads/Z-Anatomy/Startup.blend" -P scripts/models/build_models.py -- skeleton 2>&1 | grep -E "^(SKELETON|SKIN)|Error|error:" || true
+fi
+if [ "$step" = all ] || [ "$step" = internals ]; then
+  "$BLENDER" -b "$TOOLS/downloads/Z-Anatomy/Startup.blend" -P scripts/models/build_internals.py 2>&1 | grep -E "^INTERNALS|Error|error:" || true
 fi
 if [ "$step" = all ] || [ "$step" = skin ]; then
   "$BLENDER" -b -P scripts/models/build_models.py -- skin $2 2>&1 | grep -E "^(SKELETON|SKIN)|Error|error:" || true
