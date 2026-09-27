@@ -1,5 +1,30 @@
 [
  {
+  "id": "body",
+  "name": "Full body",
+  "nameZh": "全身",
+  "color": "#E0A987",
+  "info": {
+   "summary": "The whole body as it looks from outside: face, skin and proportions. Turn on layers to look underneath — skeleton, muscles, organs, vessels and nerves.",
+   "summaryZh": "从外面看到的整个人体：面容、皮肤与体型。打开图层即可看到里面的骨骼、肌肉、器官、血管和神经。",
+   "facts": [
+    [
+     "An adult is about 7½ heads tall; a newborn about 4.",
+     "成人身高约为 7.5 个头长，新生儿约为 4 个头长。"
+    ],
+    [
+     "Skin is the largest organ: about 2 m² and 4 kg in an adult.",
+     "皮肤是最大的器官：成人约 2 平方米、4 公斤。"
+    ],
+    [
+     "The arm span is roughly equal to the height.",
+     "两臂展开的长度约等于身高。"
+    ]
+   ],
+   "links": []
+  }
+ },
+ {
   "id": "acupoint-reflex-map",
   "name": "Reflex Map",
   "color": "#6C4F9E",

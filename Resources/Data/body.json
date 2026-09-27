@@ -23758,6 +23758,9 @@
   }
  ],
  "defaultLayers": {
+  "body": [
+   "skin"
+  ],
   "skeletal": [
    "skin",
    "skeletal"

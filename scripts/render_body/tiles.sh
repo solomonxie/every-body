@@ -15,6 +15,7 @@ tile() {
   "$PY" scripts/render_body/matte.py "$TMP/$1-w.png" "$TMP/$1-b.png" "$ASSETS/tile-$1.imageset/$(ls "$ASSETS/tile-$1.imageset" | grep png)" "${6:-0.02}"
 }
 
+tile body skin 0.45 0.6 3.6
 tile skeletal skeletal 0.45 0.6 3.6
 tile muscular muscular 0.45 0.6 3.6
 tile circulatory circulatory 0.45 0.6 2.9
