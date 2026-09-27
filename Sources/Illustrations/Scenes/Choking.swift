@@ -111,15 +111,17 @@ extension Illustrations {
         switch st {
         case 1:
             // leaning well forward; rescuer beside and behind, one hand across the chest
-            v.hip.x -= 30
-            v.lean = 58
-            v.headTilt = -25
-            v.near = .init(shoulder: -38, elbow: 14)
-            v.far = .init(shoulder: -34, elbow: 18)
-            v.nearLeg = .init(hip: 8, knee: 4)
+            // bent over far enough that the head is below the chest, so the object can fall out
+            v.hip.x -= 34
+            v.lean = 80
+            v.headTilt = 32
+            v.near = .init(shoulder: -66, elbow: 14)
+            v.far = .init(shoulder: -62, elbow: 18)
+            v.nearLeg = .init(hip: -6, knee: 4)
+            v.farLeg = .init(hip: -12, knee: 2)
             place(v.hip.x - (kneel ? 46 : 58))
-            r.lean = kneel ? 12 : 24
-            r.far = .init(reach: lerp(v.front(0.78), v.torso(0, 0.78), 0.1), hand: .open)
+            r.lean = kneel ? 14 : 28
+            r.far = .init(reach: lerp(v.front(0.74), v.torso(0, 0.74), 0.3), hand: .open, handAngle: 0)
             let blades = v.back(0.8), n = unit(CGPoint(x: blades.x - v.torso(0, 0.8).x, y: blades.y - v.torso(0, 0.8).y))
             let gap = 2 + (1 - press) * 18
             let along = v.torso(0, 1).x - v.torso(0, 0).x, alongY = v.torso(0, 1).y - v.torso(0, 0).y
@@ -157,6 +159,11 @@ extension Illustrations {
         if st == 1 || st == 2 { r.drawArm(&s, near: false) }
         v.draw(&s)
         r.drawArm(&s, near: true)
+        // back blows: the supporting hand, seen under the chest
+        let support = lerp(v.torso(0, 0.72), v.front(0.72), 1.12)
+        if st == 1 {
+            drawHand(&s, at: support, dir: unit(CGPoint(x: 1, y: -0.15)), len: r.build.hand * rh, shape: .open, look: r.look, thumb: 1)
+        }
         if st == 2 && !chestThrust {
             // the far hand grasping the fist, seen round the front
             drawHand(&s, at: CGPoint(x: r.palm().x + 3, y: r.palm().y - 3), dir: unit(CGPoint(x: 0.3, y: 1)), len: r.build.hand * rh, shape: .open,
@@ -173,7 +180,7 @@ extension Illustrations {
         case 1:
             let b = v.back(0.8)
             s.callout("heel of hand, between the shoulder blades", "掌根拍两肩胛骨之间", 250, 44, to: CGPoint(x: b.x + 2, y: b.y - 2), color: red, width: 140)
-            s.callout("other hand supports the chest", "另一手扶住胸部", 110, 272, to: r.palm(near: false), color: hex("#555555"))
+            s.callout("other hand supports the chest", "另一手扶住胸部", 270, 272, to: support, color: hex("#555555"))
             s.tag("head lower than chest", "头低于胸部", v.headPoint(0, 0).x + 10, v.headPoint(0, 0).y + 52, size: 9, bold: true)
             // blow direction
             let from = CGPoint(x: b.x - 26, y: b.y - 30), to = CGPoint(x: b.x - 8, y: b.y - 10)
@@ -201,7 +208,7 @@ extension Illustrations {
     /// front view of the trunk: where the fist goes, thumb side in, other hand over it
     private static func fistCard(_ s: inout Sketch, _ x: Double, _ y: Double, chest: Bool) {
         let w = 114.0, h = 112.0
-        s.inset(x, y, w, h, chest ? "Fist on the breastbone" : "Fist above the navel", chest ? "拳头放在胸骨下半段" : "拳头放在肚脐上方")
+        s.inset(x, y, w, h, chest ? "Fist on breastbone" : "Fist above the navel", chest ? "拳头放在胸骨下半段" : "拳头放在肚脐上方")
         let cx = x + w / 2, top = y + 24
         let skin = hex("#F6D8BF"), edge = hex("#D1A98A"), bone = hex("#D9CBA8")
         var g = s.clipped(x, y + 18, w, h - 18)

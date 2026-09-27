@@ -635,8 +635,8 @@ func dressedArm(_ g: inout Sketch, _ s: CGPoint, _ e: CGPoint, _ w: CGPoint, aw:
 
 /// short sleeve: round over the shoulder, slightly flared, cut straight at the hem
 func shortSleeve(_ g: inout Sketch, _ s: CGPoint, _ e: CGPoint, aw: Double, look: Look) {
-    let hem = lerp(s, e, 0.55), d = unit(CGPoint(x: e.x - s.x, y: e.y - s.y)), n = CGPoint(x: -d.y, y: d.x)
-    let r0 = aw * 0.58, r1 = aw * 0.66
+    let hem = lerp(s, e, 0.45), d = unit(CGPoint(x: e.x - s.x, y: e.y - s.y)), n = CGPoint(x: -d.y, y: d.x)
+    let r0 = aw * 0.56, r1 = aw * 0.62
     var tube = Path()
     tube.addLines([CGPoint(x: s.x + n.x * r0, y: s.y + n.y * r0), CGPoint(x: hem.x + n.x * r1, y: hem.y + n.y * r1),
                    CGPoint(x: hem.x - n.x * r1, y: hem.y - n.y * r1), CGPoint(x: s.x - n.x * r0, y: s.y - n.y * r0)])
