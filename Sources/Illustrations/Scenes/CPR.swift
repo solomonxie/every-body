@@ -78,7 +78,7 @@ extension Illustrations {
         let floor = 262.0
         s.room(floor: floor)
         let rh = 330.0
-        let c = Casualty(who, adult: rh * (who.age == .toddler ? 1.3 : child ? 1.12 : 0.95))
+        let c = Casualty(art: who, adult: rh * (who.age == .toddler ? 1.3 : child ? 1.12 : 0.95))
 
         // casualty on the back, head left, legs running off the right edge; breastbone at x ≈ 180
         var pt = SideFigure(h: c.h, build: c.build, look: c.look, hip: .zero, rotation: -90, face: .closed, bump: c.bump)
@@ -93,7 +93,8 @@ extension Illustrations {
         let sink = press * (child ? 5 : 6)
 
         // rescuer kneels on the far side, facing us
-        var r = FrontFigure(h: rh, neck: CGPoint(x: sternum.x + 10, y: floor - 0.56 * rh), left: .zero, right: .zero, floor: floor)
+        var r = FrontFigure(h: rh, build: Build.adult.art, look: Look.Cast.rescuer, neck: CGPoint(x: sternum.x + 10, y: floor - 0.56 * rh), left: .zero, right: .zero,
+                            floor: floor)
         let hands = CGPoint(x: sternum.x, y: sternum.y + sink)
         switch st {
         case 0:
@@ -112,7 +113,7 @@ extension Illustrations {
                 r.left = pt.headPoint(0.3, -0.8)
             } else {
                 r.hands = .interlocked
-                r.neck = FrontFigure.neckAbove(hands, h: rh)
+                r.neck = FrontFigure.neckAbove(hands, h: rh, build: r.build)
                 r.left = CGPoint(x: hands.x - 1, y: hands.y)
                 r.right = CGPoint(x: hands.x + 1, y: hands.y - 2)
             }
@@ -136,7 +137,7 @@ extension Illustrations {
         if st == 1 {
             // helper hurries off for the AED
             let hh = 196.0
-            var helper = SideFigure(h: hh, look: .helper, hip: CGPoint(x: 300, y: floor - 6 - 0.51 * hh), lean: 8)
+            var helper = SideFigure(h: hh, build: Build.adult.art, look: Look.Cast.helper, hip: CGPoint(x: 300, y: floor - 6 - 0.51 * hh), lean: 8)
             helper.near = .init(shoulder: 24, elbow: 40)
             helper.far = .init(shoulder: -22, elbow: 30)
             helper.nearLeg = .init(hip: 26, knee: 12, point: -6)
@@ -220,12 +221,12 @@ extension Illustrations {
         let top = 252.0, bh = 290.0
         s.backdrop()
         s.ellipse(170, top - 30, 170, 110, fill: Palette.blob)
-        var b = SideFigure(h: bh, build: .infant, look: .baby, hip: .zero, rotation: -90, face: .closed)
+        var b = SideFigure(h: bh, build: Build.infant.art, look: Look.Cast.baby, hip: .zero, rotation: -90, face: .closed)
         b.near = .init(shoulder: 14, elbow: 50)
         b.far = .init(shoulder: -6, elbow: 40)
         b.nearLeg = .init(hip: 16, knee: 28, point: 20)
         b.farLeg = .init(hip: 26, knee: 40, point: 20)
-        b.hip = CGPoint(x: 0, y: top - Build.infant.depth * bh * 0.5 - 1)
+        b.hip = CGPoint(x: 0, y: top - b.build.depth * bh * 0.5 - 1)
         b.hip.x = 158 - b.front(0.64).x
         let sink = st == 3 ? press * 7 : 0
         let sternum = b.front(0.64), L = 58.0
@@ -233,7 +234,7 @@ extension Illustrations {
         let red = hex("#D8434B"), blue = hex("#3F95D6")
 
         // far hand behind the chest (only its forearm shows), then the table and the baby
-        if st == 2 || st == 3 { reachIn(&s, from: CGPoint(x: push.x + 110, y: -10), palm: CGPoint(x: push.x + 6, y: push.y + L * 0.4), dir: unit(CGPoint(x: -0.35, y: 1)), len: L, shape: .encircle, thumb: -1) }
+        if st == 2 || st == 3 { reachIn(&s, from: CGPoint(x: push.x + 110, y: -10), palm: CGPoint(x: push.x + 6, y: push.y + L * 0.4), dir: unit(CGPoint(x: -0.35, y: 1)), len: L, shape: .encircle, thumb: -1, look: Look.Cast.rescuer.shaded(0.85)) }
         s.rect(-20, top, 400, 320 - top, r: 14, fill: hex("#DCC3A2"))
         s.rect(-20, top, 400, 6, r: 3, fill: hex("#E9D6BC"))
         s.ellipse(b.hip.x - 30, top + 1, 110, 4, fill: .black.opacity(0.08))
@@ -252,7 +253,7 @@ extension Illustrations {
             // tap the sole of the foot
             let toe = b.foot(near: true).toe, tap = sin(t * 9) * 2
             reachIn(&s, from: CGPoint(x: 400, y: 150), palm: CGPoint(x: toe.x + 26 + tap, y: toe.y + 6), dir: unit(CGPoint(x: -1, y: 0.05)), len: L,
-                    shape: .twoFingers, thumb: -1)
+                    shape: .twoFingers, thumb: -1, look: Look.Cast.rescuer)
             s.bubble("Baby? Baby!", "宝宝？宝宝！", 250, 40, tip: CGPoint(x: 290, y: -2))
             s.callout("tap the sole — don’t shake", "轻拍足底——不要摇晃", 280, 120, to: CGPoint(x: toe.x + 4, y: toe.y - 6), color: red)
             s.callout("Normal breathing? ≤ 10 s", "有无正常呼吸？≤ 10 秒", 110, 110, to: b.front(0.55), color: hex("#333333"))
@@ -265,7 +266,7 @@ extension Illustrations {
             // near hand wrapped round the chest, thumbs on the breastbone; forearm rises straight up
             var g = s
             g.ctx.clip(to: Path(CGRect(x: 0, y: 0, width: 360, height: top)))
-            reachIn(&g, from: CGPoint(x: push.x + 80, y: -10), palm: CGPoint(x: push.x - 2, y: push.y + L * 0.42), dir: unit(CGPoint(x: -0.25, y: 1)), len: L, shape: .encircle, thumb: 1)
+            reachIn(&g, from: CGPoint(x: push.x + 80, y: -10), palm: CGPoint(x: push.x - 2, y: push.y + L * 0.42), dir: unit(CGPoint(x: -0.25, y: 1)), len: L, shape: .encircle, thumb: 1, look: Look.Cast.rescuer)
             if st == 2 {
                 s.chestMap(238, 8, 114, 112, mark: .thumbs, baby: true, title: Bilingual("Where to push", "按压位置"))
                 s.callout("both thumbs on the breastbone", "双拇指并排按胸骨", 84, 150, to: CGPoint(x: push.x - 2, y: push.y + 2), color: red, width: 120)
@@ -302,13 +303,15 @@ extension Illustrations {
         let off = headSpot(.zero, up: ru, r: rr, 0.95, 0.6)
         let rc = CGPoint(x: target.x - off.x, y: target.y - off.y - 3)
         let rn = headSpot(rc, up: ru, r: rr, -0.2, 0.85)
-        let look = Look.rescuer
+        let look = Look.Cast.rescuer
         // neck and a shoulder leaving the frame at the top left
-        let sh = CGPoint(x: rn.x - 34, y: rn.y - 46)
-        s.taper([rn, sh], [rr * 0.8, rr * 0.9], fill: look.skin, line: look.skinLine)
+        // the library head brings its own neck; the shoulder covers where it ends
+        let nb = headSpot(rc, up: ru, r: rr, -0.4, 1.9)
+        let sh = CGPoint(x: nb.x - 6, y: nb.y - 10)
+        drawSideHead(&s, at: rc, up: ru, r: rr, look: look, face: .closed, only: [.back, .skin])
         s.shape(smoothPath([CGPoint(x: sh.x + 26, y: sh.y - 8), CGPoint(x: sh.x - 8, y: sh.y + 22), CGPoint(x: -30, y: sh.y + 40),
-                            CGPoint(x: -30, y: -30), CGPoint(x: sh.x + 30, y: -30)]), fill: look.top, stroke: look.topLine, lw: 1.3)
-        drawSideHead(&s, at: rc, up: ru, r: rr, look: look, face: .closed)
+                            CGPoint(x: -30, y: -30), CGPoint(x: sh.x + 30, y: -30)]), fill: look.top)
+        drawSideHead(&s, at: rc, up: ru, r: rr, look: look, face: .closed, only: [.front])
         let rise = max(0, sin(t * 2.2)), c = b.front(0.58)
         s.arrow(CGPoint(x: c.x + 10, y: c.y - 4), CGPoint(x: c.x + 10, y: c.y - 14 - rise * 6), color: blue, lw: 2)
         s.tag("chest just rises", "胸廓刚好抬起", c.x + 14, c.y - 28, size: 10, color: blue, anchor: .start, bold: true)
@@ -319,8 +322,8 @@ extension Illustrations {
 
     /// an adult forearm (sleeve pushed up) reaching in from off-frame to a hand at `palm`
     static func reachIn(_ s: inout Sketch, from: CGPoint, palm: CGPoint, dir: CGPoint, len L: Double, shape: SideFigure.Hand, thumb: Double,
-                        gloves: Color? = nil) {
-        var look = Look.rescuer
+                        gloves: Color? = nil, look base: Look = .rescuer) {
+        var look = base
         look.gloves = gloves
         let aw = L * 0.5
         let wrist = CGPoint(x: palm.x - dir.x * L * 0.45, y: palm.y - dir.y * L * 0.45)
@@ -328,6 +331,12 @@ extension Illustrations {
         let u = unit(CGPoint(x: from.x - wrist.x, y: from.y - wrist.y))
         let dist = hypot(from.x - wrist.x, from.y - wrist.y), bare = min(dist * 0.65, L * 1.2)
         let cuff = CGPoint(x: wrist.x + u.x * bare, y: wrist.y + u.y * bare)
+        if look.art != nil {
+            s.taper([CGPoint(x: cuff.x + u.x * 4, y: cuff.y + u.y * 4), wrist], [aw * 0.62, aw * 0.4], fill: look.skin, line: nil)
+            s.taper([CGPoint(x: from.x + u.x * 20, y: from.y + u.y * 20), cuff], [aw * 1.2, aw * 1.0], fill: look.top, line: nil)
+            drawHand(&s, at: palm, dir: dir, len: L, shape: shape, look: look, thumb: thumb)
+            return
+        }
         s.taper([CGPoint(x: cuff.x + u.x * 4, y: cuff.y + u.y * 4), wrist], [aw * 0.95, aw * 0.6], fill: look.skin, line: look.skinLine)
         s.taper([CGPoint(x: from.x + u.x * 20, y: from.y + u.y * 20), cuff], [aw * 1.25, aw * 1.12], fill: look.top, line: look.topLine)
         s.line(cuff.x - u.y * aw * 0.5, cuff.y + u.x * aw * 0.5, cuff.x + u.y * aw * 0.5, cuff.y - u.x * aw * 0.5, stroke: look.topLine, lw: 1, opacity: 0.8)
@@ -354,12 +363,12 @@ extension Illustrations {
 
     /// helper kneeling on our side pushes the bump away from us — to her left
     private static func pushBump(_ s: inout Sketch, _ pt: SideFigure) {
-        let bump = pt.front(0.28), look = Look.helper, aw = 0.05 * 200
+        let bump = pt.front(0.28), look = Look.Cast.helper, aw = 0.1 * 200
         for (i, dx) in [-14.0, 10].enumerated() {
             let palm = CGPoint(x: bump.x + dx + 4, y: bump.y + 20 + Double(i) * 2)
             let elbow = CGPoint(x: palm.x + dx * 1.2 + 12, y: 300)
             dressedArm(&s, CGPoint(x: elbow.x - 8, y: 330), elbow, lerp(elbow, palm, 0.8), aw: aw, look: look)
-            drawHand(&s, at: palm, dir: unit(CGPoint(x: palm.x - elbow.x, y: palm.y - elbow.y)), len: 20, shape: .open, look: look, thumb: dx < 0 ? 1 : -1)
+            drawHand(&s, at: palm, dir: unit(CGPoint(x: palm.x - elbow.x, y: palm.y - elbow.y)), len: 26, shape: .encircle, look: look, thumb: dx < 0 ? 1 : -1)
         }
         s.callout("helper pushes the bump to her left", "旁人把子宫推向她的左侧", 290, 150, to: CGPoint(x: bump.x + 4, y: bump.y + 2),
                   color: hex("#B06C84"), width: 110)
@@ -391,7 +400,7 @@ extension Illustrations {
         let up = CGPoint(x: -cos(a), y: sin(a)), f = CGPoint(x: -up.y, y: up.x)
         let ground = y + h - 5
         let pc = CGPoint(x: x + 60, y: ground - pr * (baby ? 1.0 : 1.06))
-        let look: Look = baby ? .baby : .man
+        let look: Look = baby ? Look.Cast.baby : Look.Cast.man
         g.rect(x, ground, w, 8, fill: Palette.floor)
         let neck = headSpot(pc, up: up, r: pr, -0.05, 0.8)
         g.taper([neck, CGPoint(x: neck.x + 34, y: neck.y + 2)], [pr * 0.8, pr * 0.9], fill: look.skin, line: look.skinLine)
@@ -425,7 +434,7 @@ extension Illustrations {
 
     /// the rescuer's forearm and hand reaching into a close-up from `from`
     private static func hand(_ s: inout Sketch, at: CGPoint, dir: CGPoint, from: CGPoint, shape: SideFigure.Hand, thumb: Double = -1) {
-        let look = Look.rescuer, L = 19.0
+        let look = Look.Cast.rescuer, L = 24.0
         let wrist = CGPoint(x: at.x - dir.x * L * 0.45, y: at.y - dir.y * L * 0.45)
         dressedArm(&s, from, lerp(from, wrist, 0.5), wrist, aw: 10, look: look)
         drawHand(&s, at: at, dir: dir, len: L, shape: shape, look: look, thumb: thumb)
