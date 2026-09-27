@@ -1,0 +1,35 @@
+# Third-party assets
+
+Only the files in `Resources/Models/` come from third parties. Built by `scripts/models/build.sh`.
+
+## Skeleton — Z-Anatomy (CC BY-SA 4.0)
+
+- File: `Resources/Models/skeleton.usdz` (and the `skeleton` entries of `models.json`)
+- Source: "Z-Anatomy – The libre 3D atlas of anatomy", `Z-Anatomy.zip` / `Startup.blend`,
+  https://github.com/Z-Anatomy/Models-of-human-anatomy
+- Authors: Gauthier Kervyn (design, 3D, anatomy), Marcin Zielinski (Blender add-on), Lluis Vinent, and translators listed in the source.
+- Attribution requested by the authors:
+  - **"Z-Anatomy - The libre 3D atlas of anatomy - CC-BY-SA 4.0"**
+  - **"BodyParts3D, © The Database Center for Life Science licensed under CC Attribution-Share Alike 2.1 Japan"**
+    (Kousaku Okubo; https://dbarchive.biosciencedbc.jp/en/bodyparts3d/)
+- Licence: https://creativecommons.org/licenses/by-sa/4.0/
+- Changes: only skeletal-system meshes plus intervertebral discs, menisci and the interpubic disc; objects
+  renamed to this app's ids, small bones merged (carpals, finger/toe phalanges, teeth, sternum, ossicles),
+  decimated to ~138k triangles, and warped piecewise (per limb segment, trunk heights) onto this app's body landmarks.
+  Parts Z-Anatomy marks as non-commercial (inner ear, kidney) are **not** used.
+- **The adapted model files in `Resources/Models/skeleton.usdz` are released under CC BY-SA 4.0.**
+
+## Skin figures — MakeHuman via MPFB2 (CC0 1.0)
+
+- Files: `Resources/Models/skin-male.usdz`, `skin-female.usdz`, `skin-female-pregnant.usdz`
+- Made headless with MPFB 2.0.17 (https://github.com/makehumancommunity/mpfb2) in Blender 4.5 LTS.
+- Assets: MakeHuman base mesh and targets (bundled with MPFB, CC0 per `LICENSE.ASSETS.md`), and
+  `makehuman_system_assets` (CC0, https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html):
+  skins `young_asian_male` / `young_asian_female`, eyes `low-poly` + `brown`, eyebrows `eyebrow001` / `eyebrow009`,
+  eyelashes `eyelashes01`, hair `short02` / `ponytail01`.
+- Licence: CC0 1.0 (public domain dedication), https://creativecommons.org/publicdomain/zero/1.0/ — no attribution required; credited anyway.
+- Changes: posed into the anatomical position and fitted to the app's landmarks, textures resized/recompressed, iris toned.
+
+## Tools
+
+- Blender 4.5 LTS (GPL) and the MPFB2 add-on (GPL code) were used as tools only; no code from them ships in the app.

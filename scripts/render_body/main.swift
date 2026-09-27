@@ -53,6 +53,10 @@ final class Renderer: NSObject, NSApplicationDelegate {
                 scene.yaw = scene.goalYaw ?? scene.yaw
                 scene.focusY = scene.goalFocusY; scene.distance = scene.goalDistance; scene.panX = scene.goalPanX
             }
+            // JOINT=elbow-l:90 bends a joint
+            if let spec = ProcessInfo.processInfo.environment["JOINT"]?.split(separator: ":"), spec.count == 2 {
+                scene.setJoint(String(spec[0]), degrees: Float(spec[1]) ?? 0)
+            }
             let anchor = AnchorEntity(world: .zero)
             anchor.addChild(scene.root)
             view.scene.addAnchor(anchor)
