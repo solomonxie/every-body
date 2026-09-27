@@ -130,7 +130,7 @@ extension Illustrations {
                     let h = f.h
                     for sx in [-1.0, 1.0] {
                         b.taper([CGPoint(x: sx * 0.055 * h, y: 0.34 * h), CGPoint(x: sx * 0.05 * h, y: 0.62 * h)], [0.085 * h, 0.06 * h],
-                                fill: woman.top, line: woman.topLine)
+                                fill: woman.bottom, line: woman.topLine)
                     }
                     f.drawBody(&b, at: .zero)
                     let c = CGPoint(x: 0, y: 0.27 * h + breath)
