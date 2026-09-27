@@ -11,9 +11,10 @@ correct positions and cause → effect (see `docs/design/mvp/DESIGN.md`). Every 
 
 ## What's in it
 
-- **Body** — bones, muscles, vessels, nerves and organs as ~150 math-built parts
+- **Body** — real skeleton (Z-Anatomy, ~200 tappable bones) and textured skin figures (MakeHuman: male, female,
+  pregnant) in `Resources/Models/`; muscles, vessels, nerves and organs still math-built
   (`Resources/Data/body.json`, meshes in `Sources/Body/`). Layers, tap to name, Hide / Fade / Isolate / Undo, bend shoulder, elbow
-  and knee (muscles bulge), male / female variant.
+  and knee (muscles bulge), male / female variant. Children use the generated skin.
 - **Reflex Map 穴位反射图** — hand, foot and ear charts with zones per the standard maps
   (GB/T 13734 ear points, WHO acupoints). Press a zone → a pulse travels to the organ it's
   said to act on. Tapping an organ lists its zones.
@@ -56,6 +57,9 @@ App icon: `venv/bin/python scripts/make_icons.py` (needs Pillow in `venv/`).
 Body: `venv/bin/python scripts/gen_body.py` regenerates `body.json` and point positions; acupoints and meridian
 courses live in `scripts/acupuncture.py` (cast onto the skin mesh). Check placement with
 `POINTS=acupuncture [FOCUS=acu-li11] [PANX=0.42] [PITCH=0.9] scripts/render_body/render.sh out.png skin <yaw> <focusY> <distance>`.
+Real models: `scripts/models/build.sh` (Blender 4.5 headless + MPFB2, raw downloads in gitignored `tools/`) rebuilds
+`Resources/Models/` and prints a size table; `REAL_MODELS=0` (env) falls back to the generated skeleton and skin.
+Third-party licences: `LICENSES/THIRD_PARTY.md` (Z-Anatomy CC BY-SA 4.0, MakeHuman CC0), also in Settings → Credits.
 Illustrations: `scripts/render_scenes/render.sh /tmp/scenes` renders every step to PNG on the Mac.
 Reflex charts: `venv/bin/python scripts/render_charts/gen_charts.py` regenerates `charts.json` (needs shapely);
 `scripts/render_charts/render.sh` renders every face to `build/charts/` with the app's `ChartCanvas`.
