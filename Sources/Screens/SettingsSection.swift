@@ -4,7 +4,6 @@ import SwiftUI
 struct SettingsSection: View {
     @Environment(Settings.self) private var settings
     @State private var showSources = false
-    @State private var showCredits = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -20,29 +19,6 @@ struct SettingsSection: View {
                 }
             }
             .adaptivePickerStyle()
-
-            Eyebrow(settings.t("3D viewer", "3D 视图")).padding(.horizontal, Space.xs).padding(.top, Space.s)
-            group {
-                row("square.fill", .gray, settings.t("White background", "白色背景")) {
-                    Toggle(settings.t("White background", "白色背景"), isOn: $settings.whiteBackground).labelsHidden()
-                }
-                divider
-                row("arrow.trianglehead.2.clockwise.rotate.90", .teal, settings.t("Auto-rotate on open", "打开时自动旋转")) {
-                    Toggle(settings.t("Auto-rotate on open", "打开时自动旋转"), isOn: $settings.autoRotate).labelsHidden()
-                }
-                divider
-                Button { showCredits = true } label: {
-                    HStack(spacing: Space.m) {
-                        label("doc.text", .indigo, settings.t("Credits & licences", "致谢与许可"))
-                        Spacer(minLength: Space.s)
-                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
-                    }
-                    .padding(.vertical, Space.m)
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .sheet(isPresented: $showCredits) { CreditsView() }
-            }
 
             about.padding(.top, Space.s)
         }
