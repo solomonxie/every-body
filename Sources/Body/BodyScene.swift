@@ -17,10 +17,22 @@ struct PartState: Equatable {
 }
 
 enum Focus {
-    case all, foot, hand, ear
+    case all, foot, hand, ear, head, arm, front, back, leg
 
-    var y: Float { switch self { case .all: 0.05; case .foot: -1.48; case .hand: -0.1; case .ear: 1.43 } }
-    var distance: Float { switch self { case .all: 5.8; case .foot: 1.3; case .hand: 1.5; case .ear: 0.9 } }
+    var y: Float {
+        switch self {
+        case .all: 0.05; case .foot: -1.48; case .hand: -0.1; case .ear: 1.43
+        case .head: 1.36; case .arm: 0.28; case .front: 0.55; case .back: 0.55; case .leg: -0.78
+        }
+    }
+    var distance: Float {
+        switch self {
+        case .all: 5.8; case .foot: 1.3; case .hand: 1.5; case .ear: 0.9
+        case .head: 1.25; case .arm: 2.4; case .front, .back: 2.6; case .leg: 3.1
+        }
+    }
+    /// sideways camera slide, scene units (the left arm hangs off the midline)
+    var panX: Float { self == .arm ? 0.44 : 0 }
 }
 
 /// The schematic body as RealityKit entities, plus everything animated on it.
@@ -39,6 +51,7 @@ final class BodyScene {
     var distance: Float = Focus.all.distance
     var focusY: Float = 0
     var panX: Float = 0
+    var goalPanX: Float = 0
     var goalDistance: Float = Focus.all.distance
     var goalFocusY: Float = 0
     var goalYaw: Float?
@@ -53,7 +66,10 @@ final class BodyScene {
     private var organEntities: [String: Entity] = [:]
     private var jointOuter: [String: Entity] = [:]
     private var jointInner: [String: Entity] = [:]
-    private var pointEntities: [String: ModelEntity] = [:]
+    private var pointEntities: [String: [ModelEntity]] = [:]
+    private var pointColors: [String: UIColor] = [:]
+    private var smallPoints: Set<String> = []
+    private var meridianEntities: [String: [ModelEntity]] = [:]
     private var pulseDots: [ModelEntity] = []
     private var pulseCurves: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)] = []
     private var pulseStart: Float = -100
@@ -96,11 +112,11 @@ final class BodyScene {
 
     // MARK: build
 
-    func build(skinColor: UIColor, female: Bool, points: [BodyPoint], flowStops: [BodyPoint]) {
+    func build(skinColor: UIColor, female: Bool, points: [BodyPoint], flowStops: [BodyPoint], meridians: [Meridian] = []) {
         self.skinColor = skinColor
         self.female = female
         rig.children.removeAll()
-        partEntities = [:]; skinEntities = []; organEntities = [:]; jointOuter = [:]; pointEntities = [:]
+        partEntities = [:]; skinEntities = []; organEntities = [:]; jointOuter = [:]; pointEntities = [:]; pointColors = [:]; smallPoints = []; meridianEntities = [:]
 
         // joint pivots: outer at the pivot (rotates), inner offset back so children use body coords
         var inner: [String: Entity] = [:]
@@ -167,14 +183,32 @@ final class BodyScene {
             partLayer[part.id] = part.layer
         }
 
+        let meridianColor = Dictionary(meridians.map { ($0.id, UIColor(hex: $0.color)) }) { a, _ in a }
+        let adultShape = sex == "female"
         for point in points {
-            let dot = ModelEntity(mesh: .generateSphere(radius: 0.035), materials: [UnlitMaterial(color: UIColor(hex: "#6C4F9E"))])
-            dot.name = "point:\(point.id)"
-            dot.position = point.position.simd
-            dot.components.set(InputTargetComponent())
-            dot.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.09)]))
-            rig.addChild(dot)
-            pointEntities[point.id] = dot
+            // acupuncture points are small, coloured by meridian, on both sides; reflex points one big dot
+            let sites = point.acu?.sites(female: adultShape).map(\.simd) ?? [point.position.simd]
+            let color = point.acu.flatMap { meridianColor[$0.meridian] } ?? UIColor(hex: "#6C4F9E")
+            pointColors[point.id] = color
+            if point.acu != nil { smallPoints.insert(point.id) }
+            pointEntities[point.id] = sites.map { site in
+                let small = point.acu != nil
+                let dot = ModelEntity(mesh: small ? Self.acuDot : Self.reflexDot, materials: [UnlitMaterial(color: color)])
+                dot.name = "point:\(point.id)"
+                dot.position = site
+                dot.components.set(InputTargetComponent())
+                dot.components.set(CollisionComponent(shapes: [.generateSphere(radius: small ? 0.032 : 0.09)]))
+                rig.addChild(dot)
+                return dot
+            }
+        }
+        for meridian in meridians {
+            let material = UnlitMaterial(color: meridianColor[meridian.id] ?? .gray)
+            meridianEntities[meridian.id] = meridian.pieces(female: adultShape).map { paths in
+                let line = ModelEntity(mesh: Self.mesh(for: Self.meridianShape(paths)), materials: [material])
+                rig.addChild(line)
+                return line
+            }
         }
 
         pulseDots = (0..<15).map { i in
@@ -202,7 +236,8 @@ final class BodyScene {
         for e in partEntities.values { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
         for (e, _) in skinEntities { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
         for e in organEntities.values { keep(e, centre: e.position) }
-        for e in pointEntities.values { keep(e, centre: e.position) }
+        for e in pointEntities.values.joined() { keep(e, centre: e.position) }
+        for e in meridianEntities.values.joined() { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
         applyVisibility()
         applyAge()
     }
@@ -353,9 +388,25 @@ final class BodyScene {
     }
 
     func setActivePoint(_ id: String?) {
-        for (pid, dot) in pointEntities {
-            dot.model?.materials = [UnlitMaterial(color: UIColor(hex: pid == id ? "#FFD166" : "#6C4F9E"))]
-            dot.scale = SIMD3(repeating: pid == id ? 1.4 : 1)
+        for (pid, dots) in pointEntities {
+            for dot in dots {
+                dot.model?.materials = [UnlitMaterial(color: pid == id ? UIColor(hex: "#FFD166") : pointColors[pid] ?? UIColor(hex: "#6C4F9E"))]
+                dot.scale = SIMD3(repeating: pid == id ? (smallPoints.contains(pid) ? 1.8 : 1.4) : 1)
+            }
+        }
+    }
+
+    /// Only these points show (nil = all).
+    func showPoints(_ ids: Set<String>?) {
+        for (pid, dots) in pointEntities {
+            for dot in dots { dot.isEnabled = ids?.contains(pid) ?? true }
+        }
+    }
+
+    /// Meridian lines on or off; with `only`, just that channel.
+    func showMeridians(_ visible: Bool, only: String? = nil) {
+        for (id, lines) in meridianEntities {
+            for line in lines { line.isEnabled = visible && (only == nil || only == id) }
         }
     }
 
@@ -411,6 +462,7 @@ final class BodyScene {
         }
         distance += (goalDistance - distance) * k
         focusY += (goalFocusY - focusY) * k
+        panX += (goalPanX - panX) * k
         rig.orientation = simd_quatf(angle: pitch, axis: SIMD3(1, 0, 0)) * simd_quatf(angle: yaw, axis: SIMD3(0, 1, 0))
         camera.look(at: SIMD3(panX, focusY, 0), from: SIMD3(panX, focusY, distance), relativeTo: nil)
 
@@ -485,23 +537,41 @@ final class BodyScene {
         goalYaw = (yaw / (2 * .pi)).rounded() * 2 * .pi
     }
 
+    func faceBack() {
+        goalYaw = ((yaw - .pi) / (2 * .pi)).rounded() * 2 * .pi + .pi
+    }
+
     func focus(_ f: Focus) {
         let body = proportions.body
         switch f {
         case .all:
             // centre between the (raised) feet and the (enlarged) crown
             goalFocusY = (ageY(-1.6, x: 0.17) + ageY(1.646)) / 2
-        case .foot: goalFocusY = ageY(f.y, x: 0.17)
-        case .hand: goalFocusY = ageY(f.y, x: 0.45)
-        case .ear: goalFocusY = ageY(f.y)
+        case .foot, .leg: goalFocusY = ageY(f.y, x: 0.17)
+        case .hand, .arm: goalFocusY = ageY(f.y, x: 0.45)
+        case .ear, .head, .front, .back: goalFocusY = ageY(f.y)
         }
-        panX = 0
+        if f == .back { faceBack() }
+        goalPanX = f.panX * body
         // smaller bodies bring the camera a little closer but still read as small
         goalDistance = f.distance * (f == .all ? 0.55 + 0.45 * body : body.squareRoot())
     }
 
+    /// Turn and zoom so a point on the skin faces the camera, centred.
+    func focus(on point: SIMD3<Float>, normal n: SIMD3<Float>, distance: Float = 1.45) {
+        let body = proportions.body
+        // straight up (crown): look from the front
+        var target: Float = abs(n.x) + abs(n.z) < 0.3 ? 0 : -atan2(n.x, n.z)
+        target += ((yaw - target) / (2 * .pi)).rounded() * 2 * .pi
+        goalYaw = target
+        let turned = (simd_quatf(angle: pitch, axis: SIMD3(1, 0, 0)) * simd_quatf(angle: target, axis: SIMD3(0, 1, 0))).act(agePoint(point) * body)
+        goalPanX = turned.x
+        goalFocusY = turned.y
+        goalDistance = distance * body.squareRoot()
+    }
+
     func resetView() {
-        pitch = 0; panX = 0
+        pitch = 0; goalPanX = 0
         faceFront()
         focus(.all)
     }
@@ -570,6 +640,10 @@ final class BodyScene {
     // MARK: mesh cache — generated once per launch, shared by every screen
 
     private static let unitSphere = MeshResource.generateSphere(radius: 1)
+    private static let reflexDot = MeshResource.generateSphere(radius: 0.035)
+    private static let acuDot = MeshResource.generateSphere(radius: 0.0125)
+
+    static func meridianShape(_ paths: [[Vec3]]) -> PartShape { .tubes(paths: paths, radius: 0.0036) }
     private static var meshCache: [PartShape: MeshResource] = [:]
     private static var collisionCache: [PartShape: ShapeResource] = [:]
     private static var warming: Task<Void, Never>?
@@ -587,6 +661,9 @@ final class BodyScene {
         let task = Task { @MainActor in
             var shapes = Catalog.body.parts.map(\.shape)
             for organ in Catalog.body.organs { shapes += organ.shapes + (organ.male?.shapes ?? []) }
+            for m in Catalog.points.values.flatMap({ $0.meridians ?? [] }) {
+                shapes += (m.pieces + (m.femalePieces ?? [])).map(meridianShape)
+            }
             let pending = Array(Set(shapes)).filter { meshCache[$0] == nil }
             let raws = await Task.detached(priority: .userInitiated) { pending.map(Meshes.raw(for:)) }.value
             for (i, (shape, raw)) in zip(pending, raws).enumerated() {

@@ -85,6 +85,7 @@ struct BodyView: View {
         panStart = start
         let k = scene.distance * 0.0012
         scene.panX = max(-2, min(2, start.x - Float(t.x) * k))
+        scene.goalPanX = scene.panX
         scene.goalFocusY = max(-1.8, min(1.8, start.y + Float(t.y) * k))
         scene.focusY = scene.goalFocusY
     }

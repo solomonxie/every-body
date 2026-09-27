@@ -55,7 +55,21 @@ struct RenderUI {
         }
         if want("results") { sheet("results", out: out) { SearchResults(query: "heart") } }
         if want("nomatch") { sheet("nomatch", out: out) { SearchResults(query: "zzqx") } }
-        if want("info") { for id in ["skeletal", "circulatory"] { sheet("info-\(id)", out: out) { InfoContent(systemID: id) } } }
+        if want("acu-search") {
+            for q in ["elbow", "LI11", "曲池", "quchi"] { sheet("results-\(q)", out: out) { SearchResults(query: q) } }
+        }
+        if want("acu") {
+            let sp = Catalog.points["acupuncture"]
+            for id in ["acu-li11", "acu-li4"] {
+                sheet("acu-\(id)", out: out) {
+                    AcupuncturePanel(points: sp?.points ?? [], meridians: sp?.meridians ?? [], filter: .constant(AcuFilter(region: "arm")),
+                                     activeID: id, onPress: { _ in }, onFocus: { _ in }, onLink: { _ in })
+                        .padding(.vertical, 12)
+                        .background(Color.card, in: .rect(cornerRadius: 22))
+                }
+            }
+        }
+        if want("info") { for id in ["skeletal", "circulatory", "acupuncture"] { sheet("info-\(id)", out: out) { InfoContent(systemID: id) } } }
         // first try step of each listed scenario
         for id in ["cpr", "stroke", "choking"] where want("try-\(id)") {
             sheet("try-\(id)", out: out, height: 760) {

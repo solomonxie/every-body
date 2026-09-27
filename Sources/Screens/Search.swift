@@ -64,6 +64,7 @@ enum SearchIndex {
         "heartburn": ["reflux"], "烧心": ["反流"], "胃酸": ["反流"],
         "pregnant": ["pregnancy", "fetal"], "baby": ["fetal", "labor"], "birth": ["labor"], "分娩": ["分娩"], "生孩子": ["分娩"], "怀孕": ["孕"],
         "massage": ["reflex", "point"], "按摩": ["反射", "穴"], "acupressure": ["point"], "穴位": ["穴"], "虎口": ["合谷"],
+        "needle": ["acupuncture"], "扎针": ["针灸"], "针刺": ["针灸"], "经络": ["经"],
         "bone": ["skeletal"], "骨头": ["骨"], "muscle": ["muscular"], "肌肉": ["肌"], "blood": ["circulatory"], "nerve": ["nervous"],
     ]
 
@@ -89,7 +90,18 @@ enum SearchIndex {
             }
         }
         for (systemID, sp) in Catalog.points {
+            let channels = Dictionary((sp.meridians ?? []).map { ($0.id, $0) }) { a, _ in a }
             for point in sp.points {
+                if let acu = point.acu {
+                    // "Quchi (LI11)" / "曲池 (LI11)"; found by code, pinyin, English and Chinese names, aliases and location
+                    let channel = channels[acu.meridian]
+                    out.append(SearchEntry(.point, id: "p-\(systemID)-\(point.id)",
+                                           name: Bilingual("\(acu.pinyin) (\(acu.code)) · \(point.name)", "\(point.nameZh)（\(acu.code)）"),
+                                           detail: Bilingual("Acupuncture · \(channel?.name ?? "")", "针灸 · \(channel?.nameZh ?? "")"),
+                                           route: .viewer(system: systemID, point: point.id),
+                                           extra: [acu.pinyin, point.description, point.descriptionZh, acu.uses, acu.usesZh] + (acu.aliases ?? [])))
+                    continue
+                }
                 out.append(SearchEntry(.point, id: "p-\(systemID)-\(point.id)", name: Bilingual(point.name, point.nameZh),
                                        detail: Bilingual(point.description, point.descriptionZh),
                                        route: .viewer(system: systemID, point: point.id),
