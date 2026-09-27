@@ -30,6 +30,10 @@ struct CreditsView: View {
                body: Bilingual("Skin figures for every age and appearance made with MPFB (MakeHuman for Blender) from the MakeHuman base mesh, body and age targets, skins (young and old; African, Asian and Caucasian, some blended), eyes, eyebrows, eyelashes and hair — dedicated to the public domain. The underwear is cut from the same base mesh. Thank you to the MakeHuman community.",
                                "各年龄与各外貌的皮肤人体由 MPFB（Blender 版 MakeHuman）以 MakeHuman 的基础网格、体型与年龄目标、皮肤贴图（青年与老年；非洲、亚洲、高加索，部分混合）、眼睛、眉毛、睫毛与头发生成，已贡献至公有领域。内衣取自同一基础网格。感谢 MakeHuman 社区。"),
                license: "CC0 1.0", link: "https://static.makehumancommunity.org"),
+        Credit(title: "Humaaans",
+               body: Bilingual("People in the CPR illustration: “Humaaans” by Pablo Stanley — heads, hair, hands and shoes, recoloured, with new poses, face-on heads and child and baby parts drawn in the same style.",
+                               "心肺复苏图解中的人物：Pablo Stanley 的 “Humaaans”——头部、发型、手与鞋，经重新配色，并以相同风格新绘了姿势、正面头像及儿童与婴儿部件。"),
+               license: "CC0 / CC BY 4.0", link: "https://www.humaaans.com"),
         Credit(title: "Blender",
                body: Bilingual("Used as a tool to convert the models; no Blender code ships in the app.",
                                "仅用作模型转换工具，应用中不含 Blender 代码。"),
@@ -54,8 +58,8 @@ struct CreditsView: View {
                     }
                 }
                 Section {
-                    Text(settings.t("Everything else — the generated body, charts, illustrations and texts — is original to Every Body.",
-                                    "其余内容（生成的人体、图表、图解与文字）均为 Every Body 原创。"))
+                    Text(settings.t("Everything else — the generated body, charts, the other illustrations and texts — is original to Every Body.",
+                                    "其余内容（生成的人体、图表、其他图解与文字）均为 Every Body 原创。"))
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }
