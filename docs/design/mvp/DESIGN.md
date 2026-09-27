@@ -148,3 +148,15 @@ peel layers, and see what a point connects to — on a phone, free, offline.
   strands into one mesh (sheet muscles), keep skin solid unless inner layers show.
 - Opaque parts are back-face culled; textures are 64×64 procedural tints only.
 
+## 3D body source (2026-09 decision)
+
+- Generated math body hit a quality ceiling; target is Visible-Body-like realism.
+- Switch to real models, converted offline (Blender headless) to USDZ:
+  - internals: Z-Anatomy (CC BY-SA 4.0, from BodyParts3D) — skeleton first, then muscles, organs, vessels, nerves;
+  - skin figure: MakeHuman export (CC0), male/female.
+- Budget: app ≤ 50 MB. Levers: decimate + baked normal maps, 1–2K compressed textures, merge tiny parts,
+  load layers lazily; over budget → download layers on demand.
+- Generated engine kept as fallback (`deprecated/`), still drives parts not yet replaced.
+- Licence: credits in app (Settings → Credits & licences) and `LICENSES/THIRD_PARTY.md`;
+  adapted model files stay CC BY-SA 4.0. App code unaffected.
+
