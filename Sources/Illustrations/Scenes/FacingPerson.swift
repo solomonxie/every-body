@@ -15,12 +15,12 @@ func twoBone(_ s: CGPoint, _ t: CGPoint, _ l1: Double, _ l2: Double, bend: CGPoi
 /// Front-facing person, for faces and hands that must read. Local frame: base of the neck at the origin, y down; `h` = standing height.
 struct FacingPerson {
     var h: Double = 240
-    var skin = hex("#F2C9A5")
-    var line = hex("#C9A58A")
-    var shirt = hex("#8FB3E0")
-    var shirtLine = hex("#5F87B8")
-    var trousers = hex("#5B6B8C")
-    var hair = hex("#6B5344")
+    var skin = Look.Skin.light
+    var line = Look.edge(Look.Skin.light)
+    var shirt = hex("#7F9BE0")
+    var shirtLine = Look.edge(hex("#7F9BE0"))
+    var trousers = hex("#3A4766")
+    var hair = hex("#3A2C28")
     var longHair = false
     /// head size multiplier: children have bigger heads for their height
     var head: Double = 1
@@ -64,7 +64,7 @@ struct FacingPerson {
                 let s0 = shoulderPoint(side), (e, hd) = arm(side)
                 g.line(s0.x, s0.y, e.x, e.y, stroke: shirt, lw: 0.05 * h, cap: .round)
                 g.line(e.x, e.y, hd.x, hd.y, stroke: skin, lw: 0.036 * h, cap: .round)
-                g.circle(hd.x, hd.y, 0.024 * h, fill: skin, stroke: line)
+                g.circle(hd.x, hd.y, 0.024 * h, fill: skin)
             }
         }
     }
@@ -74,7 +74,7 @@ struct FacingPerson {
         if legs {
             for side in [-1.0, 1.0] {
                 g.line(side * 0.05 * h, 0.34 * h, side * 0.055 * h, 0.8 * h, stroke: trousers, lw: 0.075 * h, cap: .round)
-                g.ellipse(side * 0.065 * h, 0.83 * h, 0.045 * h, 0.018 * h, fill: hex("#3E3E4A"))
+                g.ellipse(side * 0.065 * h, 0.83 * h, 0.045 * h, 0.018 * h, fill: hex("#2A2D3A"))
             }
         }
         if longHair { g.path("M \(-rx * 1.05) \(c.y) C \(-rx * 1.2) \(c.y + ry * 1.2) \(-rx * 0.9) \(c.y + ry * 1.5) \(-rx * 0.4) \(c.y + ry * 1.3) L \(rx * 0.4) \(c.y + ry * 1.3) C \(rx * 0.9) \(c.y + ry * 1.5) \(rx * 1.2) \(c.y + ry * 1.2) \(rx * 1.05) \(c.y) Z", fill: hair) }
@@ -82,12 +82,12 @@ struct FacingPerson {
         let w = 0.115 * h
         g.path("M \(-w) \(0.02 * h) C \(-w - 0.02 * h) \(0.06 * h) \(-0.1 * h) \(0.2 * h) \(-0.09 * h) \(0.3 * h) L \(-0.1 * h) \(0.37 * h) L \(0.1 * h) \(0.37 * h) L \(0.09 * h) \(0.3 * h) "
                + "C \(0.1 * h) \(0.2 * h) \(w + 0.02 * h) \(0.06 * h) \(w) \(0.02 * h) C \(0.06 * h) \(-0.005 * h) \(-0.06 * h) \(-0.005 * h) \(-w) \(0.02 * h) Z",
-               fill: shirt, stroke: shirtLine, lw: 1.5)
+               fill: shirt, stroke: shirtLine, lw: 0.9)
         if bump { g.ellipse(0, 0.3 * h, 0.085 * h, 0.07 * h, fill: shirt, stroke: shirtLine, lw: 1) }
-        g.path("M \(-0.03 * h) \(c.y + ry * 0.7) L \(-0.032 * h) \(0.01 * h) Q 0 \(0.035 * h) \(0.032 * h) \(0.01 * h) L \(0.03 * h) \(c.y + ry * 0.7) Z", fill: skin, stroke: line)
+        g.path("M \(-0.03 * h) \(c.y + ry * 0.7) L \(-0.032 * h) \(0.01 * h) Q 0 \(0.035 * h) \(0.032 * h) \(0.01 * h) L \(0.03 * h) \(c.y + ry * 0.7) Z", fill: dim(skin, 0.92))
         // head
-        for side in [-1.0, 1.0] { g.ellipse(side * rx * 0.98, c.y + ry * 0.05, rx * 0.16, ry * 0.2, fill: skin, stroke: line) }
-        g.ellipse(c.x, c.y, rx, ry, fill: skin, stroke: line, lw: 1.5)
+        for side in [-1.0, 1.0] { g.ellipse(side * rx * 0.98, c.y + ry * 0.05, rx * 0.15, ry * 0.19, fill: dim(skin, 0.95)) }
+        g.ellipse(c.x, c.y, rx, ry, fill: skin, stroke: line, lw: 0.9)
         g.path("M \(-rx * 1.02) \(c.y + ry * 0.05) C \(-rx * 1.1) \(c.y - ry * 1.25) \(rx * 1.1) \(c.y - ry * 1.25) \(rx * 1.02) \(c.y + ry * 0.05) "
                + "C \(rx * 0.9) \(c.y - ry * 0.4) \(rx * 0.3) \(c.y - ry * 0.62) \(-rx * 0.2) \(c.y - ry * 0.5) C \(-rx * 0.6) \(c.y - ry * 0.45) \(-rx * 0.9) \(c.y - ry * 0.3) \(-rx * 1.02) \(c.y + ry * 0.05) Z",
                fill: hair)
@@ -101,22 +101,23 @@ struct FacingPerson {
     }
 
     private func faceDetails(_ g: inout Sketch, _ c: CGPoint, _ rx: Double, _ ry: Double) {
-        let ink = hex("#4A4550"), ey = c.y + ry * 0.02
+        let ink = Ink.ink, ey = c.y + ry * 0.02
         for side in [-1.0, 1.0] {
             let sag = side < 0 ? droop : 0
             let x = c.x + side * rx * 0.4, y = ey + sag * ry * 0.06
             if face == .sneeze || face == .pain {
                 g.path("M \(x - rx * 0.14) \(y) Q \(x) \(y + ry * 0.07) \(x + rx * 0.14) \(y)", stroke: ink, lw: 1.4, cap: .round)
             } else {
-                g.ellipse(x, y, rx * 0.12, ry * 0.1 * (1 - 0.5 * sag), fill: ink)
+                g.ellipse(x, y, rx * 0.1, ry * 0.09 * (1 - 0.5 * sag), fill: ink)
                 if sag > 0.1 { g.path("M \(x - rx * 0.17) \(y - ry * 0.06) L \(x + rx * 0.17) \(y - ry * 0.04)", stroke: skin, lw: ry * 0.08 * sag) }
             }
             let inner = face == .pain || face == .worried ? -ry * 0.1 : 0
             g.line(x - side * rx * 0.2, ey - ry * 0.29 + inner + sag * ry * 0.04, x + side * rx * 0.2, ey - ry * 0.26 + sag * ry * 0.08,
-                   stroke: hair, lw: 1.6, cap: .round)
+                   stroke: hair, lw: 1.3, cap: .round, opacity: 0.85)
+            g.circle(c.x + side * rx * 0.56, c.y + ry * 0.36, rx * 0.15, fill: Ink.blush, opacity: 0.25)
         }
-        g.path("M \(c.x) \(c.y + ry * 0.1) Q \(c.x - rx * 0.14) \(c.y + ry * 0.3) \(c.x + rx * 0.06) \(c.y + ry * 0.32)", stroke: line, lw: 1.2, cap: .round)
-        let my = c.y + ry * 0.55, mw = rx * 0.34, lip = hex("#B5646A")
+        g.path("M \(c.x) \(c.y + ry * 0.1) Q \(c.x - rx * 0.14) \(c.y + ry * 0.3) \(c.x + rx * 0.06) \(c.y + ry * 0.32)", stroke: line, lw: 1, cap: .round)
+        let my = c.y + ry * 0.55, mw = rx * 0.3, lip = Ink.lip
         let leftY = my + droop * ry * 0.2
         switch face {
         case .smile: g.path("M \(-mw) \(leftY - ry * 0.04) Q 0 \(my + ry * 0.16) \(mw) \(my - ry * 0.04)", stroke: lip, lw: 1.6, cap: .round)
@@ -125,7 +126,7 @@ struct FacingPerson {
         case .pain:
             g.path("M \(-mw) \(leftY + ry * 0.05) Q 0 \(my - ry * 0.1) \(mw) \(my + ry * 0.05) Q 0 \(my + ry * 0.04) \(-mw) \(leftY + ry * 0.05) Z",
                    fill: .white, stroke: lip, lw: 1.4)
-        case .sneeze: g.ellipse(0, my, mw * 0.7, ry * 0.12, fill: hex("#7A3B45"))
+        case .sneeze: g.ellipse(0, my, mw * 0.7, ry * 0.12, fill: Ink.mouth)
         }
     }
 }
