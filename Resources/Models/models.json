@@ -4558,13 +4558,17 @@
   ],
   "triangles": {
    "hair-short04": 1050,
-   "hair-short02": 3344,
+   "hair-short01": 3678,
    "body": 26756,
-   "brows-eyebrow001": 192,
-   "brows-eyebrow009": 192,
+   "hair-long01": 4108,
+   "brows-eyebrow010": 192,
+   "brows-eyebrow012": 192,
+   "brows-eyebrow006": 192,
+   "lashes-eyelashes01": 368,
    "hair-ponytail01": 5352,
-   "eyes": 172,
-   "lashes": 368
+   "lashes-eyelashes03": 368,
+   "lashes-eyelashes02": 368,
+   "eyes": 172
   }
  }
 }
