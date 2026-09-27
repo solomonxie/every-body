@@ -38,6 +38,44 @@
   "nameZh": "穴位反射图"
  },
  {
+  "id": "acupuncture",
+  "name": "Acupuncture points",
+  "nameZh": "针灸穴位",
+  "color": "#1F7A6E",
+  "info": {
+   "summary": "Acupuncture places fine needles at set points along channels (meridians). 67 of the most used points, located by WHO Standard Acupuncture Point Locations (2008) with proportional ‘cun’ measurement from bony landmarks.",
+   "summaryZh": "针刺是在经络上的特定穴位刺入细针。这里收录 67 个最常用穴位，定位依据世界卫生组织《标准针灸穴位定位》（2008），以骨性标志为基准按“同身寸”折量。",
+   "facts": [
+    [
+     "1 cun ≈ the width of the patient's own thumb joint; the elbow crease to the wrist crease is 12 cun.",
+     "1 寸约为本人拇指指间关节的宽度；肘横纹至腕横纹为 12 寸。"
+    ],
+    [
+     "12 main meridians run on each side, plus the Governor (back) and Conception (front) vessels on the midline.",
+     "左右各有 12 条正经，另有督脉（背正中）与任脉（前正中）。"
+    ],
+    [
+     "Needles are hair-thin (0.16–0.35 mm), sterile and used once.",
+     "针极细（0.16–0.35 毫米），无菌，一次性使用。"
+    ],
+    [
+     "Uses listed are traditional claims; evidence is mixed and strongest for some pain and nausea.",
+     "所列主治为传统说法；证据不一，较有支持的是部分疼痛与恶心。"
+    ],
+    [
+     "Only by a licensed practitioner. Tell them about pregnancy, blood thinners, bleeding disorders or a pacemaker.",
+     "须由有资质的医师操作。请告知怀孕、服用抗凝药、出血性疾病或装有起搏器等情况。"
+    ]
+   ],
+   "links": [
+    {
+     "label": "Reflex map 穴位反射图 ›",
+     "route": "/viewer/acupoint-reflex-map"
+    }
+   ]
+  }
+ },
+ {
   "id": "skeletal",
   "name": "Skeletal",
   "color": "#E4DECB",

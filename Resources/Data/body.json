@@ -23461,6 +23461,9 @@
   "acupoint-reflex-map": [
    "skin",
    "organs"
+  ],
+  "acupuncture": [
+   "skin"
   ]
  },
  "organs": [
