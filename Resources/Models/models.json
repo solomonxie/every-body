@@ -1,0 +1,1729 @@
+{
+ "skeleton": {
+  "file": "skeleton.usdz",
+  "source": "Z-Anatomy",
+  "license": "CC BY-SA 4.0",
+  "triangles": 138232,
+  "parts": [
+   {
+    "id": "calcaneus-l",
+    "name": "Calcaneus (heel bone) (L)",
+    "nameZh": "左跟骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 260
+   },
+   {
+    "id": "calcaneus-r",
+    "name": "Calcaneus (heel bone) (R)",
+    "nameZh": "右跟骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 260
+   },
+   {
+    "id": "carpals-l",
+    "name": "Carpal bones (L)",
+    "nameZh": "左腕骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 1114
+   },
+   {
+    "id": "carpals-r",
+    "name": "Carpal bones (R)",
+    "nameZh": "右腕骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 1114
+   },
+   {
+    "id": "clavicle-l",
+    "name": "Clavicle (L)",
+    "nameZh": "左锁骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 278
+   },
+   {
+    "id": "clavicle-r",
+    "name": "Clavicle (R)",
+    "nameZh": "右锁骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 278
+   },
+   {
+    "id": "coccyx",
+    "name": "Coccyx",
+    "nameZh": "尾骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 220
+   },
+   {
+    "id": "costal-cartilage-1-l",
+    "name": "Costal cartilage (L)",
+    "nameZh": "左肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 498
+   },
+   {
+    "id": "costal-cartilage-1-r",
+    "name": "Costal cartilage (R)",
+    "nameZh": "右肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 498
+   },
+   {
+    "id": "costal-cartilage-10-l",
+    "name": "Costal cartilage (L)",
+    "nameZh": "左肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 274
+   },
+   {
+    "id": "costal-cartilage-10-r",
+    "name": "Costal cartilage (R)",
+    "nameZh": "右肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 274
+   },
+   {
+    "id": "costal-cartilage-2-l",
+    "name": "Costal cartilage (L)",
+    "nameZh": "左肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 612
+   },
+   {
+    "id": "costal-cartilage-2-r",
+    "name": "Costal cartilage (R)",
+    "nameZh": "右肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 612
+   },
+   {
+    "id": "costal-cartilage-3-l",
+    "name": "Costal cartilage (L)",
+    "nameZh": "左肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 648
+   },
+   {
+    "id": "costal-cartilage-3-r",
+    "name": "Costal cartilage (R)",
+    "nameZh": "右肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 648
+   },
+   {
+    "id": "costal-cartilage-4-l",
+    "name": "Costal cartilage (L)",
+    "nameZh": "左肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 804
+   },
+   {
+    "id": "costal-cartilage-4-r",
+    "name": "Costal cartilage (R)",
+    "nameZh": "右肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 804
+   },
+   {
+    "id": "costal-cartilage-5-l",
+    "name": "Costal cartilage (L)",
+    "nameZh": "左肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 1168
+   },
+   {
+    "id": "costal-cartilage-5-r",
+    "name": "Costal cartilage (R)",
+    "nameZh": "右肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 1168
+   },
+   {
+    "id": "costal-cartilage-6-l",
+    "name": "Costal cartilage (L)",
+    "nameZh": "左肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 1460
+   },
+   {
+    "id": "costal-cartilage-6-r",
+    "name": "Costal cartilage (R)",
+    "nameZh": "右肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 1460
+   },
+   {
+    "id": "costal-cartilage-7-l",
+    "name": "Costal cartilage (L)",
+    "nameZh": "左肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 2476
+   },
+   {
+    "id": "costal-cartilage-7-r",
+    "name": "Costal cartilage (R)",
+    "nameZh": "右肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 2476
+   },
+   {
+    "id": "costal-cartilage-8-l",
+    "name": "Costal cartilage (L)",
+    "nameZh": "左肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 472
+   },
+   {
+    "id": "costal-cartilage-8-r",
+    "name": "Costal cartilage (R)",
+    "nameZh": "右肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 472
+   },
+   {
+    "id": "costal-cartilage-9-l",
+    "name": "Costal cartilage (L)",
+    "nameZh": "左肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 352
+   },
+   {
+    "id": "costal-cartilage-9-r",
+    "name": "Costal cartilage (R)",
+    "nameZh": "右肋软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 352
+   },
+   {
+    "id": "cricoid-cartilage",
+    "name": "Cricoid cartilage",
+    "nameZh": "环状软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 338
+   },
+   {
+    "id": "disc-C2",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 220
+   },
+   {
+    "id": "disc-C3",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 220
+   },
+   {
+    "id": "disc-C4",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 220
+   },
+   {
+    "id": "disc-C5",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 220
+   },
+   {
+    "id": "disc-C6",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 220
+   },
+   {
+    "id": "disc-C7",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 220
+   },
+   {
+    "id": "disc-L1",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 563
+   },
+   {
+    "id": "disc-L2",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 608
+   },
+   {
+    "id": "disc-L3",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 560
+   },
+   {
+    "id": "disc-L4",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 590
+   },
+   {
+    "id": "disc-L5",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 644
+   },
+   {
+    "id": "disc-T1",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 224
+   },
+   {
+    "id": "disc-T10",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 516
+   },
+   {
+    "id": "disc-T11",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 610
+   },
+   {
+    "id": "disc-T12",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 598
+   },
+   {
+    "id": "disc-T2",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 238
+   },
+   {
+    "id": "disc-T3",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 244
+   },
+   {
+    "id": "disc-T4",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 292
+   },
+   {
+    "id": "disc-T5",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 312
+   },
+   {
+    "id": "disc-T6",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 428
+   },
+   {
+    "id": "disc-T7",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 478
+   },
+   {
+    "id": "disc-T8",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 520
+   },
+   {
+    "id": "disc-T9",
+    "name": "Intervertebral disc",
+    "nameZh": "椎间盘",
+    "layer": "skeletal",
+    "color": "#B9C8D8",
+    "tris": 224
+   },
+   {
+    "id": "ethmoid-bone",
+    "name": "Ethmoid bone",
+    "nameZh": "筛骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1822
+   },
+   {
+    "id": "femur-l",
+    "name": "Femur (L)",
+    "nameZh": "左股骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 682
+   },
+   {
+    "id": "femur-r",
+    "name": "Femur (R)",
+    "nameZh": "右股骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 682
+   },
+   {
+    "id": "fibula-l",
+    "name": "Fibula (L)",
+    "nameZh": "左腓骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 226
+   },
+   {
+    "id": "fibula-r",
+    "name": "Fibula (R)",
+    "nameZh": "右腓骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 226
+   },
+   {
+    "id": "frontal-bone",
+    "name": "Frontal bone",
+    "nameZh": "额骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1398
+   },
+   {
+    "id": "hip-bone-l",
+    "name": "Hip bone (L)",
+    "nameZh": "左髋骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 680
+   },
+   {
+    "id": "hip-bone-r",
+    "name": "Hip bone (R)",
+    "nameZh": "右髋骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 680
+   },
+   {
+    "id": "humerus-l",
+    "name": "Humerus (L)",
+    "nameZh": "左肱骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "shoulder-l",
+    "tris": 770
+   },
+   {
+    "id": "humerus-r",
+    "name": "Humerus (R)",
+    "nameZh": "右肱骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "shoulder-r",
+    "tris": 770
+   },
+   {
+    "id": "hyoid",
+    "name": "Hyoid bone",
+    "nameZh": "舌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 238
+   },
+   {
+    "id": "lacrimal-bone-l",
+    "name": "Lacrimal bone (L)",
+    "nameZh": "左泪骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 220
+   },
+   {
+    "id": "lacrimal-bone-r",
+    "name": "Lacrimal bone (R)",
+    "nameZh": "右泪骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 220
+   },
+   {
+    "id": "lower-teeth",
+    "name": "Teeth",
+    "nameZh": "牙齿",
+    "layer": "skeletal",
+    "color": "#F7F4EA",
+    "tris": 4278
+   },
+   {
+    "id": "mandible",
+    "name": "Mandible",
+    "nameZh": "下颌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 3390
+   },
+   {
+    "id": "maxilla-l",
+    "name": "Maxilla (L)",
+    "nameZh": "左上颌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 862
+   },
+   {
+    "id": "maxilla-r",
+    "name": "Maxilla (R)",
+    "nameZh": "右上颌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 862
+   },
+   {
+    "id": "meniscus-lateral-l",
+    "name": "Lateral meniscus (L)",
+    "nameZh": "左外侧半月板",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "joint": "knee-l",
+    "tris": 220
+   },
+   {
+    "id": "meniscus-lateral-r",
+    "name": "Lateral meniscus (R)",
+    "nameZh": "右外侧半月板",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "joint": "knee-r",
+    "tris": 220
+   },
+   {
+    "id": "meniscus-medial-l",
+    "name": "Medial meniscus (L)",
+    "nameZh": "左内侧半月板",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "joint": "knee-l",
+    "tris": 220
+   },
+   {
+    "id": "meniscus-medial-r",
+    "name": "Medial meniscus (R)",
+    "nameZh": "右内侧半月板",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "joint": "knee-r",
+    "tris": 220
+   },
+   {
+    "id": "metacarpal-index-l",
+    "name": "Metacarpal (L)",
+    "nameZh": "左掌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 220
+   },
+   {
+    "id": "metacarpal-index-r",
+    "name": "Metacarpal (R)",
+    "nameZh": "右掌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 220
+   },
+   {
+    "id": "metacarpal-little-l",
+    "name": "Metacarpal (L)",
+    "nameZh": "左掌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 220
+   },
+   {
+    "id": "metacarpal-little-r",
+    "name": "Metacarpal (R)",
+    "nameZh": "右掌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 220
+   },
+   {
+    "id": "metacarpal-middle-l",
+    "name": "Metacarpal (L)",
+    "nameZh": "左掌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 218
+   },
+   {
+    "id": "metacarpal-middle-r",
+    "name": "Metacarpal (R)",
+    "nameZh": "右掌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 218
+   },
+   {
+    "id": "metacarpal-ring-l",
+    "name": "Metacarpal (L)",
+    "nameZh": "左掌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 218
+   },
+   {
+    "id": "metacarpal-ring-r",
+    "name": "Metacarpal (R)",
+    "nameZh": "右掌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 218
+   },
+   {
+    "id": "metatarsal-2nd-l",
+    "name": "Metatarsal (L)",
+    "nameZh": "左跖骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 220
+   },
+   {
+    "id": "metatarsal-2nd-r",
+    "name": "Metatarsal (R)",
+    "nameZh": "右跖骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 220
+   },
+   {
+    "id": "metatarsal-3rd-l",
+    "name": "Metatarsal (L)",
+    "nameZh": "左跖骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 218
+   },
+   {
+    "id": "metatarsal-3rd-r",
+    "name": "Metatarsal (R)",
+    "nameZh": "右跖骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 218
+   },
+   {
+    "id": "metatarsal-4th-l",
+    "name": "Metatarsal (L)",
+    "nameZh": "左跖骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 220
+   },
+   {
+    "id": "metatarsal-4th-r",
+    "name": "Metatarsal (R)",
+    "nameZh": "右跖骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 220
+   },
+   {
+    "id": "metatarsal-5th-l",
+    "name": "Metatarsal (L)",
+    "nameZh": "左跖骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 220
+   },
+   {
+    "id": "metatarsal-5th-r",
+    "name": "Metatarsal (R)",
+    "nameZh": "右跖骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 220
+   },
+   {
+    "id": "metatarsal-big-l",
+    "name": "Metatarsal (L)",
+    "nameZh": "左跖骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 248
+   },
+   {
+    "id": "metatarsal-big-r",
+    "name": "Metatarsal (R)",
+    "nameZh": "右跖骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 248
+   },
+   {
+    "id": "nasal-bone-l",
+    "name": "Nasal bone (L)",
+    "nameZh": "左鼻骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 220
+   },
+   {
+    "id": "nasal-bone-r",
+    "name": "Nasal bone (R)",
+    "nameZh": "右鼻骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 220
+   },
+   {
+    "id": "nasal-cartilage",
+    "name": "Nasal cartilages",
+    "nameZh": "鼻软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 220
+   },
+   {
+    "id": "nasal-cartilage-l",
+    "name": "Nasal cartilages (L)",
+    "nameZh": "左鼻软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 219
+   },
+   {
+    "id": "nasal-cartilage-r",
+    "name": "Nasal cartilages (R)",
+    "nameZh": "右鼻软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 219
+   },
+   {
+    "id": "nasal-concha-l",
+    "name": "Inferior nasal concha (L)",
+    "nameZh": "左下鼻甲",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 220
+   },
+   {
+    "id": "nasal-concha-r",
+    "name": "Inferior nasal concha (R)",
+    "nameZh": "右下鼻甲",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 220
+   },
+   {
+    "id": "occipital-bone",
+    "name": "Occipital bone",
+    "nameZh": "枕骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1355
+   },
+   {
+    "id": "ossicles-l",
+    "name": "Ear ossicles (L)",
+    "nameZh": "左听小骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1954
+   },
+   {
+    "id": "ossicles-r",
+    "name": "Ear ossicles (R)",
+    "nameZh": "右听小骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1954
+   },
+   {
+    "id": "palatine-bone-l",
+    "name": "Palatine bone (L)",
+    "nameZh": "左腭骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 262
+   },
+   {
+    "id": "palatine-bone-r",
+    "name": "Palatine bone (R)",
+    "nameZh": "右腭骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 262
+   },
+   {
+    "id": "parietal-bone-l",
+    "name": "Parietal bone (L)",
+    "nameZh": "左顶骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1238
+   },
+   {
+    "id": "parietal-bone-r",
+    "name": "Parietal bone (R)",
+    "nameZh": "右顶骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1220
+   },
+   {
+    "id": "patella-l",
+    "name": "Patella (L)",
+    "nameZh": "左髌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 220
+   },
+   {
+    "id": "patella-r",
+    "name": "Patella (R)",
+    "nameZh": "右髌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 220
+   },
+   {
+    "id": "phalanges-index-l",
+    "name": "Index finger phalanges (L)",
+    "nameZh": "左食指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 220
+   },
+   {
+    "id": "phalanges-index-r",
+    "name": "Index finger phalanges (R)",
+    "nameZh": "右食指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 220
+   },
+   {
+    "id": "phalanges-little-l",
+    "name": "Little finger phalanges (L)",
+    "nameZh": "左小指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 220
+   },
+   {
+    "id": "phalanges-little-r",
+    "name": "Little finger phalanges (R)",
+    "nameZh": "右小指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 220
+   },
+   {
+    "id": "phalanges-middle-l",
+    "name": "Middle finger phalanges (L)",
+    "nameZh": "左中指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 220
+   },
+   {
+    "id": "phalanges-middle-r",
+    "name": "Middle finger phalanges (R)",
+    "nameZh": "右中指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 220
+   },
+   {
+    "id": "phalanges-ring-l",
+    "name": "Ring finger phalanges (L)",
+    "nameZh": "左无名指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 220
+   },
+   {
+    "id": "phalanges-ring-r",
+    "name": "Ring finger phalanges (R)",
+    "nameZh": "右无名指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 220
+   },
+   {
+    "id": "pubic-symphysis",
+    "name": "Pubic symphysis",
+    "nameZh": "耻骨联合",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 220
+   },
+   {
+    "id": "radius-l",
+    "name": "Radius (L)",
+    "nameZh": "左桡骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 218
+   },
+   {
+    "id": "radius-r",
+    "name": "Radius (R)",
+    "nameZh": "右桡骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 218
+   },
+   {
+    "id": "rib-1-l",
+    "name": "Rib 1 (L)",
+    "nameZh": "左第1肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 576
+   },
+   {
+    "id": "rib-1-r",
+    "name": "Rib 1 (R)",
+    "nameZh": "右第1肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 576
+   },
+   {
+    "id": "rib-10-l",
+    "name": "Rib 10 (L)",
+    "nameZh": "左第10肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1264
+   },
+   {
+    "id": "rib-10-r",
+    "name": "Rib 10 (R)",
+    "nameZh": "右第10肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1264
+   },
+   {
+    "id": "rib-11-l",
+    "name": "Rib 11 (L)",
+    "nameZh": "左第11肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 906
+   },
+   {
+    "id": "rib-11-r",
+    "name": "Rib 11 (R)",
+    "nameZh": "右第11肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 906
+   },
+   {
+    "id": "rib-12-l",
+    "name": "Rib 12 (L)",
+    "nameZh": "左第12肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 540
+   },
+   {
+    "id": "rib-12-r",
+    "name": "Rib 12 (R)",
+    "nameZh": "右第12肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 540
+   },
+   {
+    "id": "rib-2-l",
+    "name": "Rib 2 (L)",
+    "nameZh": "左第2肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 964
+   },
+   {
+    "id": "rib-2-r",
+    "name": "Rib 2 (R)",
+    "nameZh": "右第2肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 964
+   },
+   {
+    "id": "rib-3-l",
+    "name": "Rib 3 (L)",
+    "nameZh": "左第3肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1256
+   },
+   {
+    "id": "rib-3-r",
+    "name": "Rib 3 (R)",
+    "nameZh": "右第3肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1256
+   },
+   {
+    "id": "rib-4-l",
+    "name": "Rib 4 (L)",
+    "nameZh": "左第4肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1556
+   },
+   {
+    "id": "rib-4-r",
+    "name": "Rib 4 (R)",
+    "nameZh": "右第4肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1556
+   },
+   {
+    "id": "rib-5-l",
+    "name": "Rib 5 (L)",
+    "nameZh": "左第5肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1686
+   },
+   {
+    "id": "rib-5-r",
+    "name": "Rib 5 (R)",
+    "nameZh": "右第5肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1686
+   },
+   {
+    "id": "rib-6-l",
+    "name": "Rib 6 (L)",
+    "nameZh": "左第6肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1822
+   },
+   {
+    "id": "rib-6-r",
+    "name": "Rib 6 (R)",
+    "nameZh": "右第6肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1822
+   },
+   {
+    "id": "rib-7-l",
+    "name": "Rib 7 (L)",
+    "nameZh": "左第7肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1758
+   },
+   {
+    "id": "rib-7-r",
+    "name": "Rib 7 (R)",
+    "nameZh": "右第7肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1758
+   },
+   {
+    "id": "rib-8-l",
+    "name": "Rib 8 (L)",
+    "nameZh": "左第8肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1488
+   },
+   {
+    "id": "rib-8-r",
+    "name": "Rib 8 (R)",
+    "nameZh": "右第8肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1488
+   },
+   {
+    "id": "rib-9-l",
+    "name": "Rib 9 (L)",
+    "nameZh": "左第9肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1400
+   },
+   {
+    "id": "rib-9-r",
+    "name": "Rib 9 (R)",
+    "nameZh": "右第9肋",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1400
+   },
+   {
+    "id": "sacrum",
+    "name": "Sacrum",
+    "nameZh": "骶骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 2101
+   },
+   {
+    "id": "scapula-l",
+    "name": "Scapula (L)",
+    "nameZh": "左肩胛骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 4558
+   },
+   {
+    "id": "scapula-r",
+    "name": "Scapula (R)",
+    "nameZh": "右肩胛骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 4558
+   },
+   {
+    "id": "sphenoid-bone",
+    "name": "Sphenoid bone",
+    "nameZh": "蝶骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1314
+   },
+   {
+    "id": "sternum",
+    "name": "Sternum",
+    "nameZh": "胸骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 1446
+   },
+   {
+    "id": "talus-l",
+    "name": "Heel bones (talus & calcaneus) (L)",
+    "nameZh": "左距骨与跟骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 242
+   },
+   {
+    "id": "talus-r",
+    "name": "Heel bones (talus & calcaneus) (R)",
+    "nameZh": "右距骨与跟骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 242
+   },
+   {
+    "id": "tarsals-l",
+    "name": "Tarsal bones (L)",
+    "nameZh": "左跗骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 684
+   },
+   {
+    "id": "tarsals-r",
+    "name": "Tarsal bones (R)",
+    "nameZh": "右跗骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 684
+   },
+   {
+    "id": "temporal-bone-l",
+    "name": "Temporal bone (L)",
+    "nameZh": "左颞骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 2536
+   },
+   {
+    "id": "temporal-bone-r",
+    "name": "Temporal bone (R)",
+    "nameZh": "右颞骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 2536
+   },
+   {
+    "id": "thumb-1-l",
+    "name": "Thumb metacarpal (L)",
+    "nameZh": "左拇指掌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 220
+   },
+   {
+    "id": "thumb-1-r",
+    "name": "Thumb metacarpal (R)",
+    "nameZh": "右拇指掌骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 220
+   },
+   {
+    "id": "thumb-2-l",
+    "name": "Thumb phalanx (L)",
+    "nameZh": "左拇指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 220
+   },
+   {
+    "id": "thumb-2-r",
+    "name": "Thumb phalanx (R)",
+    "nameZh": "右拇指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 220
+   },
+   {
+    "id": "thumb-3-l",
+    "name": "Thumb phalanx (L)",
+    "nameZh": "左拇指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 220
+   },
+   {
+    "id": "thumb-3-r",
+    "name": "Thumb phalanx (R)",
+    "nameZh": "右拇指指骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 220
+   },
+   {
+    "id": "thyroid-cartilage",
+    "name": "Thyroid cartilage",
+    "nameZh": "甲状软骨",
+    "layer": "skeletal",
+    "color": "#C9D6E0",
+    "tris": 806
+   },
+   {
+    "id": "tibia-l",
+    "name": "Tibia (L)",
+    "nameZh": "左胫骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 300
+   },
+   {
+    "id": "tibia-r",
+    "name": "Tibia (R)",
+    "nameZh": "右胫骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 300
+   },
+   {
+    "id": "toe-2nd-l",
+    "name": "Toe phalanges (L)",
+    "nameZh": "左第2趾趾骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 220
+   },
+   {
+    "id": "toe-2nd-r",
+    "name": "Toe phalanges (R)",
+    "nameZh": "右第2趾趾骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 220
+   },
+   {
+    "id": "toe-3rd-l",
+    "name": "Toe phalanges (L)",
+    "nameZh": "左第3趾趾骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 220
+   },
+   {
+    "id": "toe-3rd-r",
+    "name": "Toe phalanges (R)",
+    "nameZh": "右第3趾趾骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 220
+   },
+   {
+    "id": "toe-4th-l",
+    "name": "Toe phalanges (L)",
+    "nameZh": "左第4趾趾骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 220
+   },
+   {
+    "id": "toe-4th-r",
+    "name": "Toe phalanges (R)",
+    "nameZh": "右第4趾趾骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 220
+   },
+   {
+    "id": "toe-5th-l",
+    "name": "Toe phalanges (L)",
+    "nameZh": "左第5趾趾骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 220
+   },
+   {
+    "id": "toe-5th-r",
+    "name": "Toe phalanges (R)",
+    "nameZh": "右第5趾趾骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 220
+   },
+   {
+    "id": "toe-big-l",
+    "name": "Toe phalanges (L)",
+    "nameZh": "左拇趾趾骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-l",
+    "tris": 220
+   },
+   {
+    "id": "toe-big-r",
+    "name": "Toe phalanges (R)",
+    "nameZh": "右拇趾趾骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "knee-r",
+    "tris": 220
+   },
+   {
+    "id": "ulna-l",
+    "name": "Ulna (L)",
+    "nameZh": "左尺骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-l",
+    "tris": 220
+   },
+   {
+    "id": "ulna-r",
+    "name": "Ulna (R)",
+    "nameZh": "右尺骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "joint": "elbow-r",
+    "tris": 220
+   },
+   {
+    "id": "upper-teeth",
+    "name": "Teeth",
+    "nameZh": "牙齿",
+    "layer": "skeletal",
+    "color": "#F7F4EA",
+    "tris": 4158
+   },
+   {
+    "id": "vertebra-C1",
+    "name": "C1 vertebra",
+    "nameZh": "第1颈椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 394
+   },
+   {
+    "id": "vertebra-C2",
+    "name": "C2 vertebra",
+    "nameZh": "第2颈椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 420
+   },
+   {
+    "id": "vertebra-C3",
+    "name": "C3 vertebra",
+    "nameZh": "第3颈椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 438
+   },
+   {
+    "id": "vertebra-C4",
+    "name": "C4 vertebra",
+    "nameZh": "第4颈椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 348
+   },
+   {
+    "id": "vertebra-C5",
+    "name": "C5 vertebra",
+    "nameZh": "第5颈椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 420
+   },
+   {
+    "id": "vertebra-C6",
+    "name": "C6 vertebra",
+    "nameZh": "第6颈椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 414
+   },
+   {
+    "id": "vertebra-C7",
+    "name": "C7 vertebra",
+    "nameZh": "第7颈椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 388
+   },
+   {
+    "id": "vertebra-L1",
+    "name": "L1 vertebra",
+    "nameZh": "第1腰椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 568
+   },
+   {
+    "id": "vertebra-L2",
+    "name": "L2 vertebra",
+    "nameZh": "第2腰椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 482
+   },
+   {
+    "id": "vertebra-L3",
+    "name": "L3 vertebra",
+    "nameZh": "第3腰椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 568
+   },
+   {
+    "id": "vertebra-L4",
+    "name": "L4 vertebra",
+    "nameZh": "第4腰椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 684
+   },
+   {
+    "id": "vertebra-L5",
+    "name": "L5 vertebra",
+    "nameZh": "第5腰椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 724
+   },
+   {
+    "id": "vertebra-T1",
+    "name": "T1 vertebra",
+    "nameZh": "第1胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 350
+   },
+   {
+    "id": "vertebra-T10",
+    "name": "T10 vertebra",
+    "nameZh": "第10胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 550
+   },
+   {
+    "id": "vertebra-T11",
+    "name": "T11 vertebra",
+    "nameZh": "第11胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 322
+   },
+   {
+    "id": "vertebra-T12",
+    "name": "T12 vertebra",
+    "nameZh": "第12胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 464
+   },
+   {
+    "id": "vertebra-T2",
+    "name": "T2 vertebra",
+    "nameZh": "第2胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 384
+   },
+   {
+    "id": "vertebra-T3",
+    "name": "T3 vertebra",
+    "nameZh": "第3胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 420
+   },
+   {
+    "id": "vertebra-T4",
+    "name": "T4 vertebra",
+    "nameZh": "第4胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 398
+   },
+   {
+    "id": "vertebra-T5",
+    "name": "T5 vertebra",
+    "nameZh": "第5胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 386
+   },
+   {
+    "id": "vertebra-T6",
+    "name": "T6 vertebra",
+    "nameZh": "第6胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 320
+   },
+   {
+    "id": "vertebra-T7",
+    "name": "T7 vertebra",
+    "nameZh": "第7胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 502
+   },
+   {
+    "id": "vertebra-T8",
+    "name": "T8 vertebra",
+    "nameZh": "第8胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 311
+   },
+   {
+    "id": "vertebra-T9",
+    "name": "T9 vertebra",
+    "nameZh": "第9胸椎",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 536
+   },
+   {
+    "id": "vomer",
+    "name": "Vomer",
+    "nameZh": "犁骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 220
+   },
+   {
+    "id": "zygomatic-l",
+    "name": "Cheekbone (zygomatic) (L)",
+    "nameZh": "左颧骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 238
+   },
+   {
+    "id": "zygomatic-r",
+    "name": "Cheekbone (zygomatic) (R)",
+    "nameZh": "右颧骨",
+    "layer": "skeletal",
+    "color": "#E9E2CF",
+    "tris": 238
+   }
+  ]
+ },
+ "skins": {
+  "male": {
+   "file": "skin-male.usdz",
+   "source": "MakeHuman (MPFB2)",
+   "license": "CC0",
+   "skin": "young_asian_male",
+   "hair": "short02",
+   "triangles": 30832,
+   "parts": [
+    "body",
+    "eyes",
+    "eyebrows",
+    "eyelashes",
+    "hair"
+   ]
+  },
+  "female": {
+   "file": "skin-female.usdz",
+   "source": "MakeHuman (MPFB2)",
+   "license": "CC0",
+   "skin": "young_asian_female",
+   "hair": "ponytail01",
+   "triangles": 32840,
+   "parts": [
+    "body",
+    "eyes",
+    "eyebrows",
+    "eyelashes",
+    "hair"
+   ]
+  },
+  "female-pregnant": {
+   "file": "skin-female-pregnant.usdz",
+   "source": "MakeHuman (MPFB2)",
+   "license": "CC0",
+   "skin": "young_asian_female",
+   "hair": "ponytail01",
+   "triangles": 32840,
+   "parts": [
+    "body",
+    "eyes",
+    "eyebrows",
+    "eyelashes",
+    "hair"
+   ]
+  }
+ }
+}
