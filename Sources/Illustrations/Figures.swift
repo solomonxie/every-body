@@ -373,7 +373,7 @@ struct FrontFigure {
                     CGPoint(x: 0.98, y: 0.42), CGPoint(x: 1.04, y: 0.18), CGPoint(x: 0.86, y: 0.02), CGPoint(x: 0.3, y: -0.01)]
         func P(_ q: CGPoint) -> CGPoint { CGPoint(x: n.x + q.x * sw, y: n.y + (q.y < 0.3 ? q.y * 0.35 * build.torso * h : q.y * tl) * flip) }
         s.limb([CGPoint(x: n.x, y: n.y + 2), CGPoint(x: n.x, y: head.y + r * 0.6)], w: r * 0.85, fill: look.skin, line: look.skinLine)
-        if bow < 0.5 { s.limb([CGPoint(x: n.x, y: n.y + 1), CGPoint(x: n.x, y: n.y - r * 0.25)], w: r * 0.6, fill: .black.opacity(0.08), line: nil) }
+        if bow < 0.5 { s.limb([CGPoint(x: n.x, y: n.y + 1), CGPoint(x: n.x, y: n.y - r * 0.25)], w: r * 0.6, fill: .black.opacity(0.05), line: nil) }
         let torso = smoothPath(body.map(P))
         s.flat(torso, look.top, from: P(CGPoint(x: -1, y: 0)), to: P(CGPoint(x: 1, y: 1)), stroke: look.topLine)
         var sh = s
@@ -469,8 +469,14 @@ func drawSideHead(_ s: inout Sketch, at c: CGPoint, up: CGPoint, side: Double = 
         let front = look.style == .thin ? P(0.3, -1.02) : P(0.8, -0.6)
         hr.move(to: front)
         hr.addCurve(to: P(-0.95, -0.35), control1: look.style == .thin ? P(-0.2, -1.2) : P(0.72, -1.3), control2: P(-0.62, -1.3))
-        hr.addCurve(to: P(-0.62, 0.55), control1: P(-1.07, 0.05), control2: P(-0.9, 0.4))
-        hr.addCurve(to: P(0.05, -0.15), control1: P(-0.35, 0.45), control2: P(-0.35, -0.1))
+        if look.style == .long || look.style == .bun {
+            hr.addCurve(to: P(-0.62, 0.55), control1: P(-1.07, 0.05), control2: P(-0.9, 0.4))
+            hr.addCurve(to: P(0.05, -0.15), control1: P(-0.35, 0.45), control2: P(-0.35, -0.1))
+        } else {
+            // short cut: tapered at the nape, clear of the ear
+            hr.addCurve(to: P(-0.74, 0.34), control1: P(-1.06, 0.0), control2: P(-0.96, 0.26))
+            hr.addCurve(to: P(0.05, -0.2), control1: P(-0.42, 0.2), control2: P(-0.36, -0.14))
+        }
         hr.addCurve(to: front, control1: P(0.3, -0.35), control2: P(0.55, -0.45))
         hr.closeSubpath()
         g.shape(hr, fill: look.hair)
