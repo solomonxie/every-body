@@ -97,7 +97,10 @@ extension Illustrations {
             let up = atan2(e.x - sh.x, e.y - sh.y) * 180 / .pi, fore = atan2(c.x - e.x, c.y - e.y) * 180 / .pi
             v.near = .init(shoulder: up - v.lean, elbow: (fore - up + 540).truncatingRemainder(dividingBy: 360) - 180, hand: .fist)
             v.drawBack(&s)
-            v.drawArm(&s, near: true)
+            // the fist ends up on the far side of the head: clip it so it can't peek out behind the neck
+            var arm = s
+            arm.ctx.clip(to: Path(CGRect(x: v.headCentre.x - v.headR * 0.2, y: 0, width: 400, height: 400)))
+            v.drawArm(&arm, near: true)
             v.drawBody(&s)
             let e2 = v.elbow()
             s.limb([lerp(sh, e2, 0.3), e2, lerp(e2, v.palm(), 0.3)], w: v.build.armW * v.h, fill: v.look.top, line: v.look.topLine)

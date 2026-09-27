@@ -270,7 +270,7 @@ extension Illustrations {
         if !clot {
             s.callout("aorta", "主动脉", at: hp(150, 30), 352, hp(150, 30).y - 4, anchor: .end, color: Tone.label, size: 7.5)
             s.callout("right coronary", "右冠状动脉", at: hp(62, 172), 198, 228, color: hex("#9A6A1B"), size: 7.5)
-            s.callout("LAD artery", "前降支", at: hp(140, 190), 234, 248, color: hex("#9A6A1B"), size: 7.5)
+            s.callout("LAD artery", "前降支", at: hp(140, 190), 214, 262, color: hex("#9A6A1B"), size: 7.5)
             s.label("right\nventricle", "右心室", hp(98, 150).x, hp(98, 150).y, size: 7, color: .white, anchor: .middle, bold: true)
             s.callout("left ventricle", "左心室", at: hp(170, 150), 352, 222, anchor: .end, color: Tone.organLine, size: 7.5)
         } else {
