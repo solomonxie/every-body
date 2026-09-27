@@ -142,7 +142,7 @@ extension Illustrations {
             s.leader("cartilage", "关节软骨", at: pt(head.x + 18, head.y + 17), 178, 190)
         } else {
             s.leader("empty socket", "关节盂空了", at: pt(143, 136), 8, 104, color: Anat.red, bold: true)
-            s.leader("ball under the coracoid", "肱骨头滑到喙突下", at: pt(head.x + 4, head.y + 24), 146, 222, color: Anat.red, bold: true)
+            s.leader("ball under the coracoid", "肱骨头滑到喙突下", at: pt(head.x + 4, head.y + 24), 244, 222, anchor: .end, color: Anat.red, bold: true)
             if scene == 2 { s.leader("squared off", "方肩", at: pt(84, 150), 8, 150, color: Anat.red) }
         }
         s.leader("humerus", "肱骨", at: local(0, 150), 12, 282)
@@ -179,7 +179,7 @@ extension Illustrations {
         case 1:
             let ground = box.maxY - 12
             c.line(box.minX + 6, ground, box.maxX - 6, ground, stroke: hex("#C9C2B6"), lw: 2)
-            let (shoulderPt, hand) = c.fallOnHand(x: cx - 6, ground: ground, h: 90)
+            let (shoulderPt, hand) = c.fallOnHand(x: cx + 3, ground: ground, h: 80)
             // force travels up the straight arm into the shoulder
             c.arrow(CGPoint(x: hand.x + 12, y: hand.y - 6), CGPoint(x: shoulderPt.x + 12, y: shoulderPt.y + 4), color: Anat.red, lw: 1.8)
             c.softGlow(shoulderPt, 12, 12, Anat.red, 0.35 + 0.15 * sin(t * 4))
