@@ -39,8 +39,9 @@ struct HomeContent: View {
             } else {
                 TileGrid(title: settings.t("Acupuncture & reflexology", "针灸与反射区"), tiles: Tile.reflex, expanded: nil)
                 TileGrid(title: settings.t("Human body", "人体"), tiles: Tile.body, expanded: $showAllBody)
-                ChildrenSection()
                 IllustrationsSection()
+                PregnancySection()
+                ChildrenSection()
                 SettingsSection()
             }
         }
