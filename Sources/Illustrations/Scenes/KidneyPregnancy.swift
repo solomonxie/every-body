@@ -261,8 +261,11 @@ extension Illustrations {
             let head = CGPoint(x: L * 0.06, y: top + hr)
             // far arm and leg, in shade
             if week >= 9 {
-                g.limb([pt(-L * 0.02, top + hr * 2.2), pt(L * 0.16 * limb, top + hr * 2.1 + L * 0.1), pt(hr * 0.9, top + hr * 1.5)], w: max(1, L * 0.07), fill: shade, line: nil)
-                g.limb([pt(L * 0.02, L * 0.3), pt(L * 0.3 * limb + kick * 0.3, L * 0.02), pt(L * 0.24 * limb, L * 0.36)], w: max(1.2, L * 0.1 * (0.8 + 0.3 * fat)), fill: shade, line: nil)
+                let aw = max(1, L * 0.07), lw = max(1.2, L * 0.1 * (0.8 + 0.3 * fat))
+                g.taper([pt(-L * 0.02, top + hr * 2.2), pt(L * 0.16 * limb, top + hr * 2.1 + L * 0.1), pt(hr * 0.9, top + hr * 1.5)],
+                        [aw * 1.2, aw * 0.95, aw * 0.8], fill: shade, line: nil)
+                g.taper([pt(L * 0.02, L * 0.3), pt(L * 0.3 * limb + kick * 0.3, L * 0.02), pt(L * 0.24 * limb, L * 0.36)],
+                        [lw * 1.3, lw * 0.95, lw * 0.6], fill: shade, line: nil)
             }
             // trunk: curved back, rounded rump, belly
             let back = -L * (0.36 + 0.04 * fat), belly = L * (0.24 + 0.08 * fat)
@@ -274,12 +277,19 @@ extension Illustrations {
                 g.path("M \(L * 0.02) \(L * 0.48) Q \(L * 0.14) \(L * 0.58) \(L * 0.2) \(L * 0.46)", stroke: skin, lw: max(1, L * 0.12), cap: .round)
             }
             // near leg: thigh up toward the chest, shin folded back, foot
+            // tapered thigh → calf → ankle, so a full-term baby reads soft rather than tubular
             let knee = pt(L * 0.32 * limb + kick, L * 0.06), foot = pt(L * 0.26 * limb + kick * 0.5, L * 0.4)
-            g.limb([pt(L * 0.02, L * 0.34), knee, foot], w: max(1.4, L * 0.12 * (0.8 + 0.3 * fat)), fill: skin, line: line)
-            if week >= 10 { g.limb([foot, pt(foot.x + L * 0.1 * limb, foot.y + L * 0.02)], w: max(1, L * 0.06), fill: skin, line: line) }
+            let legW = max(1.4, L * 0.12 * (0.8 + 0.3 * fat)), lineW = L > 40 ? 0.8 : 1.1
+            if week >= 10 {
+                let toe = pt(foot.x + L * 0.1 * limb, foot.y + L * 0.02)
+                g.taper([foot, toe], [legW * 0.6, legW * 0.45], fill: skin, line: line, lw: lineW)
+            }
+            g.taper([pt(L * 0.02, L * 0.34), knee, foot], [legW * 1.35, legW * 0.9, legW * 0.6], fill: skin, line: line, lw: lineW)
             // near arm, hand up by the face
-            g.limb([pt(L * 0.02, top + hr * 2.3), pt(L * 0.2 * limb, top + hr * 2.2 + L * 0.12 * limb), pt(hr * 1.05, top + hr * 1.55)],
-                   w: max(1.2, L * 0.075), fill: skin, line: line)
+            let armW = max(1.2, L * 0.075), hand = pt(hr * 1.05, top + hr * 1.55)
+            g.taper([pt(L * 0.02, top + hr * 2.3), pt(L * 0.2 * limb, top + hr * 2.2 + L * 0.12 * limb), hand],
+                    [armW * 1.25, armW * 0.95, armW * 0.75], fill: skin, line: line, lw: lineW)
+            if L > 40 { g.circle(hand.x, hand.y, armW * 0.62, fill: skin, stroke: line, lw: lineW) }
             // head with face
             g.gradFill(Path(ellipseIn: CGRect(x: head.x - hr, y: head.y - hr, width: 2 * hr, height: 2 * hr * 0.97)), [skin, shade],
                        from: CGPoint(x: head.x + hr * 0.6, y: head.y - hr * 0.6), to: CGPoint(x: head.x - hr, y: head.y + hr), stroke: line, lw: 0.9)

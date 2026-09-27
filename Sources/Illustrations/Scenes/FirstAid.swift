@@ -191,8 +191,11 @@ extension Illustrations {
             s.limb([a, b], w: 6, fill: hex("#2F3136"), line: hex("#15161A"))
             let rod = onShin(0.26, 1.55)
             s.line(rod.x - 9, rod.y - 2, rod.x + 9, rod.y + 2, stroke: hex("#5A5E66"), lw: 3, cap: .round)
-            s.rect(rod.x - 16, rod.y - 14, 32, 8, r: 2, fill: .white, stroke: hex("#D8434B"), lw: 1)
-            s.text("T 14:05", rod.x, rod.y - 10, size: 6, color: hex("#D8434B"), anchor: .middle, bold: true)
+            // time tag hangs off to the side, where the twisting hands don't cover it
+            let tag = CGPoint(x: rod.x - 34, y: rod.y - 8)
+            s.line(tag.x + 16, tag.y + 2, rod.x - 6, rod.y - 1, stroke: hex("#D8434B"), lw: 0.8)
+            s.rect(tag.x - 16, tag.y - 4, 32, 8, r: 2, fill: .white, stroke: hex("#D8434B"), lw: 1)
+            s.label("T 14:05", "T 14:05", tag.x, tag.y + 2.2, size: 6, color: hex("#D8434B"), anchor: .middle, bold: true)
         }
         if infant {
             let L = 48.0
@@ -230,8 +233,9 @@ extension Illustrations {
                 s.callout("more pads, keep pressing", "加敷料，继续按压", lx, 60, to: wound, color: red)
                 s.tag("keep baby warm", "给婴儿保暖", lx, 84, size: 9, bold: true)
             } else {
-                s.callout("tourniquet 5–7 cm above the wound", "止血带：伤口上方 5–7 厘米", 290, 60, to: band, color: red, width: 110)
-                s.tag("tighten till it stops · write the time", "拧紧至不出血 · 记下时间", 290, 96, size: 9, color: red, bold: true, width: 110)
+                // one line each: below the floor line next to the band, and top right clear of the rescuer
+                s.callout("tourniquet 5–7 cm above the wound", "止血带：伤口上方 5–7 厘米", band.x - 40, floor + 22, to: band, color: red, width: 240)
+                s.tag("tighten till it stops · write the time", "拧紧至不出血 · 记下时间", 352, 50, size: 9, color: red, anchor: .end, bold: true, width: 240)
                 s.callout("keep them warm", "注意保暖", lx - 30, 60, to: v.torso(0.6, 0.7), color: hex("#8A6A2A"))
             }
         default: break
@@ -400,8 +404,8 @@ extension Illustrations {
         let red = hex("#D8434B")
         switch st {
         case 0:
-            s.callout("scald on the forearm", "前臂烫伤", 250, 40, to: burn, color: red)
-            s.tag("move away from the heat", "先远离热源", 250, 64, size: 9, bold: true)
+            s.callout("scald on the forearm", "前臂烫伤", 250, 66, to: burn, color: red)
+            s.tag("move away from the heat", "先远离热源", 250, 42, size: 9, bold: true)
         case 1:
             s.callout("cool running water", "流动的凉水", 290, 70, to: CGPoint(x: burn.x + 2, y: burn.y - 12), color: hex("#3F7FA8"))
         case 2:

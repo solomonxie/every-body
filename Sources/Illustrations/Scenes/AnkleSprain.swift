@@ -118,14 +118,16 @@ extension Illustrations {
         // RICE on the ankle: ice pack, then a figure-of-eight elastic wrap
         if rice > 0.55 {
             var wrap = s
-            wrap.ctx.clip(to: skinPath); wrap.ctx.clip(to: Path(ellipseIn: CGRect(x: 138, y: 170, width: 176, height: 130)))
+            // figure-of-eight: turns round the lower leg, crossing over the ankle, round the midfoot; ends cut square
+            wrap.ctx.clip(to: skinPath); wrap.ctx.clip(to: Path(CGRect(x: 118, y: 166, width: 188, height: 140)))
             let k = Anat.ease((rice - 0.55) / 0.2)
-            for i in 0..<6 {
-                let y = 180 + Double(i) * 15
-                let (a, b) = i % 2 == 0 ? (pt(140, y + 36), pt(310, y - 10)) : (pt(140, y - 16), pt(310, y + 34))
-                let d = "M \(a.x) \(a.y) Q 225 \(y + 8) \(b.x) \(b.y)"
-                wrap.path(d, stroke: hex("#C4AE82"), lw: 13, opacity: 0.85 * k)
-                wrap.path(d, stroke: hex("#E9D8B4"), lw: 11, opacity: 0.85 * k)
+            let turns: [(CGPoint, CGPoint)] = [(pt(110, 176), pt(260, 170)), (pt(110, 262), pt(300, 196)), (pt(110, 196), pt(300, 262)),
+                                               (pt(110, 278), pt(300, 214)), (pt(110, 214), pt(300, 280)), (pt(200, 290), pt(320, 226))]
+            for (a, b) in turns {
+                let d = "M \(a.x) \(a.y) L \(b.x) \(b.y)"
+                wrap.path(d, stroke: hex("#B89E6E"), lw: 14, opacity: k)
+                wrap.path(d, stroke: hex("#E9D8B4"), lw: 12, opacity: k)
+                wrap.path(d, stroke: hex("#D6C198"), lw: 0.8, opacity: 0.8 * k, dash: [2, 3])
             }
         }
         if rice > 0.3 && rice < 0.8 {
