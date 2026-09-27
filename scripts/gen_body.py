@@ -10,7 +10,11 @@ Run: venv/bin/python scripts/gen_body.py
 import json
 import math
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import acupuncture  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "Resources" / "Data"
@@ -1082,9 +1086,12 @@ def main():
     write(DATA / "body.json", body)
 
     points = json.loads((DATA / "points.json").read_text())
-    for sp in points.values():
+    for key, sp in points.items():
+        if key == "acupuncture":
+            continue
         for p in sp["points"]:
             p["position"] = U(*POINTS[p["id"]])
+    points["acupuncture"] = acupuncture.build(PARTS)
     write(DATA / "points.json", points)
 
     charts = json.loads((DATA / "charts.json").read_text())
@@ -1092,7 +1099,7 @@ def main():
         a = ANCHORS[chart["id"]]
         chart["anchors"] = {"left": U(*a), "right": U(-a[0], a[1], a[2])}
     write(DATA / "charts.json", charts)
-    print(f"{len(PARTS)} parts, {len(ORGANS)} organs")
+    print(f"{len(PARTS)} parts, {len(ORGANS)} organs, {len(points['acupuncture']['points'])} acupoints")
 
 
 if __name__ == "__main__":

@@ -17,6 +17,10 @@ correct positions and cause → effect (see `docs/design/mvp/DESIGN.md`). Every 
 - **Reflex Map 穴位反射图** — hand, foot and ear charts with zones per the standard maps
   (GB/T 13734 ear points, WHO acupoints). Press a zone → a pulse travels to the organ it's
   said to act on. Tapping an organ lists its zones.
+- **Acupuncture 针灸穴位** — 67 most-used points (WHO 2008 locations, cun from bony landmarks)
+  and the 14 meridians drawn on the 3D skin. Filter by region / meridian / commonly needled;
+  a point card gives code, names, location, traditional uses, needling depth, safety and
+  pregnancy / age cautions.
 - **Illustrations 图解** — 18 topics in 5 groups: bone setting, first aid (CPR, choking,
   bleeding, burns, sprain), blood sugar / pressure / fats, illnesses (stroke, heart attack,
   cold vs flu, asthma, reflux, kidney stones), pregnancy & labour. Each scene is a small
@@ -49,7 +53,9 @@ scripts/screenshot.sh viewer/skeletal /tmp/shot.png   # open a screen via everyb
 
 Data lives in `Resources/Data/*.json` (body parts, organs, joints, points, charts, systems).
 App icon: `venv/bin/python scripts/make_icons.py` (needs Pillow in `venv/`).
-Body: `venv/bin/python scripts/gen_body.py` regenerates `body.json`; `scripts/preview_body.py` plots it.
+Body: `venv/bin/python scripts/gen_body.py` regenerates `body.json` and point positions; acupoints and meridian
+courses live in `scripts/acupuncture.py` (cast onto the skin mesh). Check placement with
+`POINTS=acupuncture [FOCUS=acu-li11] [PANX=0.42] [PITCH=0.9] scripts/render_body/render.sh out.png skin <yaw> <focusY> <distance>`.
 Illustrations: `scripts/render_scenes/render.sh /tmp/scenes` renders every step to PNG on the Mac.
 Reflex charts: `venv/bin/python scripts/render_charts/gen_charts.py` regenerates `charts.json` (needs shapely);
 `scripts/render_charts/render.sh` renders every face to `build/charts/` with the app's `ChartCanvas`.

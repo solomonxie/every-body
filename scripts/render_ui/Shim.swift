@@ -86,4 +86,4 @@ struct PartState: Equatable {
     var isolated: String?
 }
 
-enum Focus { case all, foot, hand, ear }
+enum Focus { case all, foot, hand, ear, head, arm, front, back, leg }
