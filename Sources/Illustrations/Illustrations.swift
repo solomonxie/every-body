@@ -7,7 +7,7 @@ enum Illustrations {
         { _ in shoulder }, fracture(for:),
         bloodSugar(for:), bloodPressure(for:), bloodFats(for:),
         stroke(for:), heartAttack(for:), coldFlu(for:), asthma(for:), acidReflux(for:), kidneyStones(for:),
-        { _ in fetalGrowth }, { _ in labor },
+        { _ in fetalGrowth }, { _ in labor }, { _ in pregnancyWarningSigns }, { _ in sleepPosition }, { _ in morningSickness },
     ]
 
     static let all: [Scenario] = builders.map { $0(.standard) }
