@@ -31,6 +31,9 @@ struct Look: Sendable {
     /// disposable gloves
     var gloves: Color? = nil
     var glasses = false
+    /// drawn with character-art parts (`PeopleArt`) in this head style; nil = the hand-built figure
+    var art: PeopleArt.Head? = nil
+    var sneakers = false
 
     /// flat skin tones for a diverse cast
     enum Skin {
@@ -178,9 +181,17 @@ struct SideFigure {
     func drawBody(_ s: inout Sketch) {
         var g = framed(s)
         leg(&g, nearLeg, look: look)
-        trunk(&g)
         let (c, up) = headFrame()
-        drawSideHead(&g, at: c, up: up, r: headR, look: look, face: face, baby: build.headR > 0.1)
+        let baby = build.headR > 0.1
+        if look.art != nil {
+            // library heads carry their own neck: it tucks in behind the collar
+            drawSideHead(&g, at: c, up: up, r: headR, look: look, face: face, baby: baby, only: [.back, .skin])
+            trunk(&g)
+            drawSideHead(&g, at: c, up: up, r: headR, look: look, face: face, baby: baby, only: [.front])
+            return
+        }
+        trunk(&g)
+        drawSideHead(&g, at: c, up: up, r: headR, look: look, face: face, baby: baby)
     }
 
     func drawArm(_ s: inout Sketch, near isNear: Bool, shade: Bool = false) {
@@ -232,6 +243,11 @@ struct SideFigure {
         let neckTop = bodyTorso(0.05, 1 + build.neck / build.torso)
         let a = (lean + headTilt) * .pi / 180
         let up = CGPoint(x: sin(a), y: -cos(a)), f = CGPoint(x: -up.y, y: up.x), r = headR
+        if look.art != nil {
+            // library neck runs down-back from the skull: put its middle on the collar
+            let (fx, uy) = build.headR > 0.1 ? (0.2, 1.05) : (0.36, 1.18)
+            return (CGPoint(x: neckTop.x + f.x * fx * r + up.x * uy * r, y: neckTop.y + f.y * fx * r + up.y * uy * r), up)
+        }
         return (CGPoint(x: neckTop.x + f.x * 0.12 * r + up.x * 0.78 * r, y: neckTop.y + f.y * 0.12 * r + up.y * 0.78 * r), up)
     }
 
@@ -303,8 +319,11 @@ struct SideFigure {
         // neck, shadowed under the jaw
         let nb = bodyTorso(0.02, 0.96), nt = bodyTorso(0.06, 1 + build.neck / build.torso + 0.1)
         let nr = headR * 0.36
-        g.shape(segmentPath(nb, nr * 1.05, nt, nr), fill: look.skin)
-        g.shape(segmentPath(nb, nr * 1.05, lerp(nb, nt, 0.75), nr), fill: .black.opacity(0.08))
+        let art = look.art != nil
+        if !art {
+            g.shape(segmentPath(nb, nr * 1.05, nt, nr), fill: look.skin)
+            g.shape(segmentPath(nb, nr * 1.05, lerp(nb, nt, 0.75), nr), fill: .black.opacity(0.08))
+        }
         let body = smoothPath(outline)
         g.shape(body, fill: look.top)
         var sh = g
@@ -326,9 +345,10 @@ struct SideFigure {
             var ps = g
             ps.ctx.clip(to: p)
             let b1 = bodyTorso(-0.6, py - 0.03), b2 = bodyTorso(1.2, py - 0.03)
-            ps.line(b1.x, b1.y, b2.x, b2.y, stroke: .black, lw: max(0.8, d * 0.05), opacity: 0.1)
+            if !art { ps.line(b1.x, b1.y, b2.x, b2.y, stroke: .black, lw: max(0.8, d * 0.05), opacity: 0.1) }
             ps.shape(openPath([bodyTorso(-0.6, 0.12), bodyTorso(-0.56, -0.1)]), stroke: .black.opacity(0.08), lw: d * 0.4)
         }
+        if art { return }
         // neckline
         let c1 = bodyTorso(0.24, 1.0), c2 = bodyTorso(0.06, 0.94), c3 = bodyTorso(-0.14, 1.02)
         g.shape(curvePath([c1, c2, c3]), stroke: dim(look.top, 0.8), lw: max(0.8, d * 0.05), cap: .round)
@@ -376,7 +396,9 @@ struct FrontFigure {
         let n = neck
         let head = headCentre
         let rx = r * 0.86
+        let art = look.art != nil
         faceOnHairBack(&s, c: head, rx: rx, ry: r, look: look)
+        if art && bow < 0.3 { PeopleArt.frontHead(&s, c: head, r: r, look: look, bow: bow, only: [.neck]) }
         if let floor, bow <= 0.5 {
             // kneeling: hips and two thighs coming toward us, knees on the floor
             let hy = n.y + tl - 6, pants = look.onePiece ? look.top : look.bottom
@@ -385,27 +407,38 @@ struct FrontFigure {
                                     bulge: sw * 0.05, sw * 0.05), fill: side > 0 ? dim(pants, 0.9) : pants)
             }
             s.rect(n.x - sw * 0.86, hy - 4, sw * 1.72, sw * 0.52, r: sw * 0.24, fill: pants)
-            s.line(n.x, hy + sw * 0.3, n.x, hy + sw * 0.9, stroke: .black, lw: 1, opacity: 0.1)
+            if !art { s.line(n.x, hy + sw * 0.3, n.x, hy + sw * 0.9, stroke: .black, lw: 1, opacity: 0.1) }
         }
         let flip = bow > 0.5 ? -0.9 : 1
-        let body = [CGPoint(x: -0.3, y: -0.01), CGPoint(x: -0.8, y: 0.03), CGPoint(x: -1.02, y: 0.18), CGPoint(x: -0.94, y: 0.42),
+        let body = art ? [(-0.24, -0.02), (-0.78, 0.0), (-1.0, 0.1), (-0.98, 0.36), (-0.84, 0.66), (-0.8, 1.0), (0.8, 1.0), (0.84, 0.66),
+                          (0.98, 0.36), (1.0, 0.1), (0.78, 0.0), (0.24, -0.02)].map { CGPoint(x: $0.0, y: $0.1) }
+            : [CGPoint(x: -0.3, y: -0.01), CGPoint(x: -0.8, y: 0.03), CGPoint(x: -1.02, y: 0.18), CGPoint(x: -0.94, y: 0.42),
                     CGPoint(x: -0.74, y: 0.7), CGPoint(x: -0.8, y: 0.98), CGPoint(x: -0.4, y: 1.02), CGPoint(x: 0.4, y: 1.02), CGPoint(x: 0.8, y: 0.98),
                     CGPoint(x: 0.74, y: 0.7), CGPoint(x: 0.94, y: 0.42), CGPoint(x: 1.02, y: 0.18), CGPoint(x: 0.8, y: 0.03), CGPoint(x: 0.3, y: -0.01)]
         func P(_ q: CGPoint) -> CGPoint { CGPoint(x: n.x + q.x * sw, y: n.y + (q.y < 0.3 ? q.y * 0.35 * build.torso * h : q.y * tl) * flip) }
         let nr = r * 0.36
-        s.shape(segmentPath(CGPoint(x: n.x, y: n.y + 2), nr * 1.05, CGPoint(x: n.x, y: head.y + r * 0.55), nr), fill: look.skin)
-        if bow < 0.5 { s.shape(segmentPath(CGPoint(x: n.x, y: n.y + 1), nr * 1.05, CGPoint(x: n.x, y: n.y - r * 0.3), nr), fill: .black.opacity(0.08)) }
+        if !art { s.shape(segmentPath(CGPoint(x: n.x, y: n.y + 2), nr * 1.05, CGPoint(x: n.x, y: head.y + r * 0.55), nr), fill: look.skin) }
+        if bow < 0.5 && !art { s.shape(segmentPath(CGPoint(x: n.x, y: n.y + 1), nr * 1.05, CGPoint(x: n.x, y: n.y - r * 0.3), nr), fill: .black.opacity(0.08)) }
         let torso = smoothPath(body.map(P))
         s.shape(torso, fill: look.top)
         var sh = s
         sh.ctx.clip(to: torso)
         // light from the upper left: one flat shade on the right flank
-        sh.shape(openPath([CGPoint(x: 1.1, y: 0.1), CGPoint(x: 0.98, y: 0.5), CGPoint(x: 0.98, y: 1.05)].map(P)), stroke: .black.opacity(0.07), lw: sw * 0.6)
-        if !look.onePiece && bow < 0.5 {
+        if art {
+            // library-style flat shade: one soft wedge down the far flank, open collar over a light undershirt
+            sh.shape(smoothPath([(0.5, 0.05), (1.1, 0.0), (1.1, 1.1), (0.46, 1.1), (0.62, 0.6)].map { P(CGPoint(x: $0.0, y: $0.1)) }), fill: .black.opacity(0.1))
+            if bow < 0.5 {
+                sh.shape(openPath([(-0.26, -0.1), (0.26, -0.1), (0, 0.5)].map { P(CGPoint(x: $0.0, y: $0.1)) }), fill: Look.Tone.white)
+                sh.shape(openPath([(-0.26, -0.1), (0.26, -0.1), (0, 0.3)].map { P(CGPoint(x: $0.0, y: $0.1)) }), fill: look.skin)
+            }
+        } else {
+            sh.shape(openPath([CGPoint(x: 1.1, y: 0.1), CGPoint(x: 0.98, y: 0.5), CGPoint(x: 0.98, y: 1.05)].map(P)), stroke: .black.opacity(0.07), lw: sw * 0.6)
+        }
+        if !look.onePiece && bow < 0.5 && !art {
             let a = P(CGPoint(x: -0.9, y: 0.97)), b = P(CGPoint(x: 0.9, y: 0.97))
             sh.line(a.x, a.y, b.x, b.y, stroke: .black, lw: max(2, sw * 0.1), opacity: 0.06)
         }
-        if bow < 0.6 {
+        if bow < 0.6 && !art {
             s.shape(curvePath([CGPoint(x: n.x - r * 0.42, y: n.y - 1), CGPoint(x: n.x, y: n.y + r * 0.42), CGPoint(x: n.x + r * 0.42, y: n.y - 1)]),
                     stroke: dim(look.top, 0.8), lw: 1, cap: .round)
         }
@@ -429,7 +462,9 @@ struct FrontFigure {
         let e = (e1.x - neck.x) * side > (e2.x - neck.x) * side ? e1 : e2
         let d = unit(CGPoint(x: target.x - e.x, y: target.y - e.y))
         let w = CGPoint(x: target.x - d.x * half, y: target.y - d.y * half)
-        dressedArm(&s, sh, e, w, aw: build.armW * h, look: look)
+        var armLook = look
+        if look.art != nil { armLook.top = dim(look.top, side > 0 ? 0.84 : 0.92) }
+        dressedArm(&s, sh, e, w, aw: build.armW * h, look: armLook)
         var shape = SideFigure.Hand.open
         if hands == .twoFingers && side > 0 { shape = .twoFingers }
         // interlocked: the right hand lies on top with its fingers laced down between the lower ones
@@ -442,10 +477,16 @@ struct FrontFigure {
 // MARK: - Heads
 
 /// Profile head in its own frame: `up` = unit vector to the crown; the face is on its clockwise side.
-func drawSideHead(_ s: inout Sketch, at c: CGPoint, up: CGPoint, side: Double = 1, r: Double, look: Look, face: Face, baby: Bool = false) {
+func drawSideHead(_ s: inout Sketch, at c: CGPoint, up: CGPoint, side: Double = 1, r: Double, look: Look, face: Face, baby: Bool = false,
+                  only: Set<PeopleArt.Layer>? = nil) {
     var g = s
     let f = CGPoint(x: -up.y * side, y: up.x * side)
-    g.ctx.concatenate(CGAffineTransform(a: f.x * r, b: f.y * r, c: -up.x * r, d: -up.y * r, tx: c.x, ty: c.y))
+    let tf = CGAffineTransform(a: f.x * r, b: f.y * r, c: -up.x * r, d: -up.y * r, tx: c.x, ty: c.y)
+    if look.art != nil {
+        PeopleArt.sideHead(&s, tf, look: look, face: face, baby: baby, only: only)
+        return
+    }
+    g.ctx.concatenate(tf)
     func P(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: x, y: y) }
     let hc = look.hair
     // hair that falls behind the head and neck
@@ -576,6 +617,7 @@ enum Expr: Sendable { case calm, smile, closed, worried, pain, distress, open, s
 
 /// hair that falls behind a face-on head (long hair, curls); draw before the body
 func faceOnHairBack(_ s: inout Sketch, c: CGPoint, rx: Double, ry: Double, look: Look) {
+    if look.art != nil { PeopleArt.frontHead(&s, c: c, r: ry, look: look, only: [.back]); return }
     let hc = look.hair
     switch look.style {
     case .long:
@@ -594,6 +636,7 @@ func faceOnHairBack(_ s: inout Sketch, c: CGPoint, rx: Double, ry: Double, look:
 
 /// Face-on head: ears, head, front hair and a simple characterful face. `bow` tips the face down toward us.
 func faceOnHead(_ s: inout Sketch, c: CGPoint, rx: Double, ry: Double, look: Look, expr: Expr, droop: Double = 0, bow: Double = 0) {
+    if look.art != nil { PeopleArt.frontHead(&s, c: c, r: ry, look: look, bow: bow, only: [.skin, .front]); return }
     let skin = look.skin, hc = look.hair, sh = bow * 0.35 * ry
     for side in [-1.0, 1.0] {
         s.ellipse(c.x + side * rx * 0.98, c.y + ry * 0.1 + sh * 0.5, rx * 0.17, ry * 0.2, fill: skin)
@@ -706,6 +749,7 @@ func drawFrontHead(_ s: inout Sketch, at c: CGPoint, r: Double, look: Look, face
 
 /// Mitten-style hand, palm centre at `c`, fingers along `dir`; `thumb` picks the side.
 func drawHand(_ s: inout Sketch, at c: CGPoint, dir: CGPoint, len L0: Double, shape: SideFigure.Hand, look: Look, thumb: Double = -1) {
+    if look.art != nil { PeopleArt.hand(&s, at: c, dir: dir, len: L0, shape: shape, look: look, thumb: thumb); return }
     var g = s
     // drawn a little smaller than its reach length, wrist end kept in place
     let L = L0 * 0.86, back = L0 * 0.45 - L * 0.45
@@ -809,6 +853,7 @@ func smoothLimb(_ p: [CGPoint], _ rs: [Double], bulge: [(Double, Double)] = []) 
 
 /// Leg from hip via knee to ankle: thigh, calf curve, slim ankle; trousers (or onesie) to the ankle.
 func organicLeg(_ g: inout Sketch, hip: CGPoint, knee k: CGPoint, ankle an: CGPoint, lw: Double, look: Look) {
+    if look.art != nil { PeopleArt.leg(&g, hip: hip, knee: k, ankle: an, lw: lw, look: look); return }
     let shin = unit(CGPoint(x: an.x - k.x, y: an.y - k.y))
     // hem stops above the ankle, so its round end can't poke out under the shoe
     let hem = look.bareFeet ? an : CGPoint(x: an.x - shin.x * lw * 0.26, y: an.y - shin.y * lw * 0.26)
@@ -818,6 +863,7 @@ func organicLeg(_ g: inout Sketch, hip: CGPoint, knee k: CGPoint, ankle an: CGPo
 
 /// Sleeve (long or short) and bare skin from shoulder `s` via elbow `e` to wrist `w`, tapered, with a soft tonal edge.
 func dressedArm(_ g: inout Sketch, _ s: CGPoint, _ e: CGPoint, _ w: CGPoint, aw: Double, look: Look) {
+    if look.art != nil { PeopleArt.arm(&g, s, e, w, aw: aw, look: look); return }
     let skinEdge = dim(look.skin, 0.86), clothEdge = dim(look.top, 0.82)
     func put(_ p: Path, _ fill: Color, _ edge: Color) {
         g.ctx.stroke(p, with: .color(edge), lineWidth: 1.1)
@@ -853,6 +899,7 @@ func shortSleeve(_ g: inout Sketch, _ s: CGPoint, _ e: CGPoint, aw: Double, look
 func drawShoe(_ g: inout Sketch, ankle a: CGPoint, dir fd: CGPoint, shin: CGPoint, len F: Double, w: Double, look: Look) {
     var n = CGPoint(x: -fd.y, y: fd.x)
     if n.x * shin.x + n.y * shin.y < 0 { n = CGPoint(x: -n.x, y: -n.y) }
+    if look.art != nil { PeopleArt.shoe(&g, ankle: a, dir: fd, n: n, len: F, w: w, look: look); return }
     func P(_ along: Double, _ down: Double) -> CGPoint { CGPoint(x: a.x + fd.x * along + n.x * down, y: a.y + fd.y * along + n.y * down) }
     if look.bareFeet {
         g.shape(smoothPath([P(-w * 0.3, -w * 0.12), P(F * 0.4, -w * 0.12), P(F * 0.88, w * 0.02), P(F * 0.84, w * 0.3), P(F * 0.2, w * 0.34),
