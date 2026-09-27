@@ -13,35 +13,26 @@ final class Settings {
     // view options: not saved, every page starts from these defaults (resetViewOptions)
     var whiteBackground = false
     var autoRotate = true
-    var female: Bool { didSet { save() } }
-    var age: AgeGroup { didSet { save() } }
-    var pregnant: Bool { didSet { save() } }
+    // only the language is saved; everything else starts fresh each launch
+    var female = false
+    var age: AgeGroup = .adult
+    var pregnant = false
     /// the 3D figure's face and skin tone
-    var heritage: Heritage { didSet { save() } }
+    var heritage: Heritage
     /// adults only; children always wear it
     var showUnderwear = true
-    private(set) var recentSearches: [String] { didSet { save() } }
+    private(set) var recentSearches: [String] = []
 
     private let store = UserDefaults.standard
 
     init() {
         names = NameMode(rawValue: store.string(forKey: "names") ?? "")
             ?? (Locale.preferredLanguages.first?.hasPrefix("zh") == true ? .zh : .en)
-        female = store.bool(forKey: "female")
-        age = AgeGroup(rawValue: store.string(forKey: "age") ?? "") ?? .adult
-        pregnant = store.bool(forKey: "pregnant")
-        heritage = Heritage(rawValue: store.string(forKey: "heritage") ?? "")
-            ?? (Locale.preferredLanguages.first?.hasPrefix("zh") == true ? .eastAsian : .white)
-        recentSearches = store.stringArray(forKey: "recentSearches") ?? []
+        heritage = Locale.preferredLanguages.first?.hasPrefix("zh") == true ? .eastAsian : .white
     }
 
     private func save() {
         store.set(names.rawValue, forKey: "names")
-        store.set(female, forKey: "female")
-        store.set(age.rawValue, forKey: "age")
-        store.set(pregnant, forKey: "pregnant")
-        store.set(heritage.rawValue, forKey: "heritage")
-        store.set(recentSearches, forKey: "recentSearches")
     }
 
     /// Pages don't remember how they were last viewed.
