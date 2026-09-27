@@ -329,7 +329,7 @@ extension Illustrations {
         let who = kid ? Casualty(Profile(age: .child), adult: 210) : Casualty(p, adult: 200)
         let using = inh > 0.2
         var v = SideFigure(who, lean: using ? 6 : 10 * attack, face: attack > 0.5 && !using ? .distress : .calm)
-        if !kid && p[v: "senior"] < 0.5 && p[v: "pregnant"] < 0.5 { v.look.top = hex("#B7D3A8"); v.look.topLine = hex("#6E9E4F") }
+        if !kid && p[v: "senior"] < 0.5 && p[v: "pregnant"] < 0.5 { v.look.top = hex("#9CCB9E"); v.look.topLine = Look.edge(v.look.top) }
         v.nearLeg = .init(hip: 4, knee: 2)
         v.farLeg = .init(hip: -5, knee: 2)
         v.hip = CGPoint(x: 66, y: v.hipY(onFloor: floor))
@@ -346,7 +346,7 @@ extension Illustrations {
             v.near = .init(shoulder: 6, elbow: 12)
             v.far = .init(shoulder: -3, elbow: 10)
         }
-        s.rect(0, floor, 196, 3, r: 1.5, fill: hex("#E4DDD2"))
+        s.stage(v.hip.x + 30, floor: floor, r: 84, width: 190)
         v.drawBack(&s)
         v.drawBody(&s)
         // airway tree through the chest
