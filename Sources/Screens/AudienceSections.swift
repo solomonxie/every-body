@@ -17,8 +17,14 @@ struct PregnancySection: View {
     private let color = Color(hex: "#C77DA0")
 
     private let items: [AudienceItem] = [
+        AudienceItem(id: "pregnancy-warning-signs", symbol: "exclamationmark.triangle", title: Bilingual("Warning signs", "孕期危险信号"),
+                     note: Bilingual("When to call now, and counting baby’s kicks", "何时立即就医，以及数胎动"), route: .illustration(id: "pregnancy-warning-signs")),
         AudienceItem(id: "fetal-growth", symbol: "figure.and.child.holdinghands", title: Bilingual("Baby’s growth, week by week", "胎儿逐周发育"),
                      note: Bilingual("Size, weight and the bump from week 8 to 40", "第 8–40 周的大小、体重与孕肚"), route: .illustration(id: "fetal-growth")),
+        AudienceItem(id: "morning-sickness", symbol: "leaf", title: Bilingual("Morning sickness", "孕吐"),
+                     note: Bilingual("What helps, the P6 point, and when it’s too much", "缓解方法、内关穴，以及何时需就医"), route: .illustration(id: "morning-sickness")),
+        AudienceItem(id: "pregnancy-sleep-position", symbol: "bed.double", title: Bilingual("Sleeping position", "孕期睡姿"),
+                     note: Bilingual("Sleep on your side from 28 weeks", "孕 28 周起侧卧睡"), route: .illustration(id: "pregnancy-sleep-position")),
         AudienceItem(id: "labor", symbol: "clock.badge.checkmark", title: Bilingual("Labour & birth", "分娩过程"),
                      note: Bilingual("The stages, and when to go to hospital (5-1-1)", "产程分期，何时去医院（5-1-1）"), route: .illustration(id: "labor")),
         AudienceItem(id: "acupressure", symbol: "hand.raised.slash", title: Bilingual("Points to avoid in pregnancy", "孕期禁按穴位"),
