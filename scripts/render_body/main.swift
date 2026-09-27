@@ -32,7 +32,7 @@ final class Renderer: NSObject, NSApplicationDelegate {
             scene.setAge(age)
             // POINTS=acupoint-reflex-map shows that system's points
             let system = ProcessInfo.processInfo.environment["POINTS"].flatMap { Catalog.points[$0] }
-            scene.build(skinColor: NSColor(hex: "#F2C9A5"), female: female, points: system?.points ?? [], flowStops: [],
+            scene.build(skinColor: NSColor(hex: "#F2C9A5"), female: female, pregnant: ProcessInfo.processInfo.environment["PREGNANT"] == "1", points: system?.points ?? [], flowStops: [],
                         meridians: system?.meridians ?? [])
             scene.setLayers(layers)
             scene.touched = true

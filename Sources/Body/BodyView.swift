@@ -6,7 +6,7 @@ enum Pick {
     case part(String)
 }
 
-/// Full-bleed 3D body: drag to spin, pinch to zoom, tap a part or point, double-tap to reset.
+/// Full-bleed 3D body: one finger moves it, two fingers turn it, pinch zooms, tap a part or point, double-tap to reset.
 struct BodyView: View {
     let scene: BodyScene
     var compact = false
@@ -29,8 +29,9 @@ struct BodyView: View {
                     MainActor.assumeIsolated { scene.update(dt: Float(event.deltaTime)) }
                 }
             }
-            .gesture(PanRecognizer(touches: 1, onChange: rotate, onEnd: { dragStart = nil }))
-            .gesture(PanRecognizer(touches: 2, onChange: move, onEnd: { panStart = nil }))
+            // one finger slides the body around, two fingers turn it, pinch zooms
+            .gesture(PanRecognizer(touches: 1, onChange: move, onEnd: { panStart = nil }))
+            .gesture(PanRecognizer(touches: 2, onChange: rotate, onEnd: { dragStart = nil }))
             .gesture(PinchRecognizer(onChange: zoom, onEnd: { zoomStart = nil }))
             .gesture(SpatialTapGesture(count: 2).onEnded { _ in scene.resetView() })
             .gesture(tap)
@@ -38,7 +39,7 @@ struct BodyView: View {
             if !compact {
                 rail
                 if hintVisible {
-                    Label(settings.t("Drag to spin · pinch to zoom · tap a part", "拖动旋转 · 捏合缩放 · 点击部位"), systemImage: "hand.draw")
+                    Label(settings.t("1 finger move · 2 fingers turn · pinch zoom", "单指移动 · 双指旋转 · 捏合缩放"), systemImage: "hand.draw")
                         .font(.footnote.weight(.medium))
                         .padding(.horizontal, Space.l).padding(.vertical, Space.s)
                         .background(.regularMaterial, in: .capsule)
@@ -56,8 +57,6 @@ struct BodyView: View {
     private var rail: some View {
         VStack(spacing: 10) {
             RailButton(symbol: "arrow.counterclockwise", label: settings.t("Reset view", "重置视角")) { scene.resetView() }
-            RailButton(symbol: settings.whiteBackground ? "square.fill" : "square", label: settings.t("White background", "白色背景"),
-                       on: settings.whiteBackground) { settings.whiteBackground.toggle() }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .padding(12)
@@ -68,7 +67,7 @@ struct BodyView: View {
         hintVisible = false
     }
 
-    /// one finger: spin and tilt
+    /// two fingers: spin and tilt
     private func rotate(_ t: CGPoint) {
         firstTouch()
         let start = dragStart ?? (scene.yaw, scene.pitch)
@@ -78,7 +77,7 @@ struct BodyView: View {
         scene.pitch = max(-0.9, min(0.9, start.pitch + Float(t.y) * 0.008))
     }
 
-    /// two fingers: slide the whole body, scaled so it tracks the fingers at any zoom
+    /// one finger: slide the whole body, scaled so it tracks the finger at any zoom
     private func move(_ t: CGPoint) {
         firstTouch()
         let start = panStart ?? (scene.panX, scene.goalFocusY)
