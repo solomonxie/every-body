@@ -181,7 +181,8 @@ extension Illustrations {
             let b = v.back(0.8)
             s.callout("heel of hand, between the shoulder blades", "掌根拍两肩胛骨之间", 250, 44, to: CGPoint(x: b.x + 2, y: b.y - 2), color: red, width: 140)
             s.callout("other hand supports the chest", "另一手扶住胸部", 270, 272, to: support, color: hex("#555555"))
-            s.tag("head lower than chest", "头低于胸部", v.headPoint(0, 0).x + 10, v.headPoint(0, 0).y + 52, size: 9, bold: true)
+            let hd = v.headPoint(0, 0), low = hd.y + 52 > 250
+            s.tag("head lower than chest", "头低于胸部", low ? min(300, hd.x + 70) : hd.x + 10, low ? hd.y - 30 : hd.y + 52, size: 9, bold: true)
             // blow direction
             let from = CGPoint(x: b.x - 26, y: b.y - 30), to = CGPoint(x: b.x - 8, y: b.y - 10)
             s.arrow(lerp(from, to, press * 0.4), lerp(from, to, 0.5 + press * 0.5), color: red, lw: 2)
@@ -243,9 +244,9 @@ extension Illustrations {
         r.nearLeg = .init(hip: 90, knee: 90)
         r.farLeg = .init(hip: 86, knee: 84)
         let seat = r.hip.y + r.build.legW * rh * 0.5
-        s.rect(r.hip.x - 34, seat, 64, 7, r: 2, fill: hex("#A07850"))
-        s.rect(r.hip.x - 34, seat - 78, 7, 78, r: 2, fill: hex("#8C6844"))
-        for x in [r.hip.x - 32, r.hip.x + 22] { s.rect(x, seat + 6, 6, floor - seat - 6, fill: hex("#8C6844")) }
+        s.rect(r.hip.x - 34, seat, 64, 7, r: 2, fill: hex("#CFA97F"))
+        s.rect(r.hip.x - 34, seat - 78, 7, 78, r: 2, fill: hex("#B48D66"))
+        for x in [r.hip.x - 32, r.hip.x + 22] { s.rect(x, seat + 6, 6, floor - seat - 6, fill: hex("#B48D66")) }
 
         let knee = CGPoint(x: r.hip.x + r.build.thigh * rh, y: r.hip.y)
         let lap = r.build.legW * rh * 0.5

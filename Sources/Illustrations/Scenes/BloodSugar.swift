@@ -107,7 +107,7 @@ extension Illustrations {
 
         // left: the person at the table, organs seen through the body; or out for a walk
         let seat = 1 - ex
-        s.circle(92, 160, 86, fill: seat > 0.5 ? hex("#F4EEE6") : hex("#EAF2E4"))
+        s.circle(92, 160, 86, fill: seat > 0.5 ? Palette.blob : hex("#EAF2E4"))
         if seat > 0.01 {
             s.group(opacity: seat) { w in drawMealTable(&w, p, t, meal: meal, ins: ins, type1: type1, kid: kid, sugarHigh: g > 11) }
         }
