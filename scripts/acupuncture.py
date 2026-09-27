@@ -143,7 +143,7 @@ class Skin:
         self.cache = {}
 
     def loft(self, name, sex, side):
-        pid = f"torso-{sex}" if name == "torso" else f"{name}-{side}" if name in self.PAIRED else name
+        pid = f"{name}-{sex}" if name in ("torso", "head") else f"{name}-{side}" if name in self.PAIRED else name
         if pid not in self.cache:
             self.cache[pid] = Loft(self.shapes[pid]["sections"])
         return self.cache[pid]

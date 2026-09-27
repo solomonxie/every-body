@@ -742,6 +742,47 @@ def limb_skin(sections, relief, n_around=48, step=0.02):
     return {"kind": "loft", "sections": out}
 
 
+def relief_loft(sections, relief, step=0.01, n_around=72):
+    """Upward loft through (x, y, z, rx, rz[, square]) sections, resampled every `step`, each slice scaled around its
+    world angle by relief(y, theta) (0 = +x, 90 = front, 270 = back)."""
+    rows = sorted(sections, key=lambda r: r[1])
+    out, y = [], rows[0][1]
+    while y <= rows[-1][1] + 1e-9:
+        for a, b in zip(rows, rows[1:]):
+            if a[1] <= y <= b[1]:
+                t = (y - a[1]) / ((b[1] - a[1]) or 1)
+                v = [a[n] + (b[n] - a[n]) * t for n in range(5)]
+                sq = (a[5] if len(a) > 5 else 2.0) * (1 - t) + (b[5] if len(b) > 5 else 2.0) * t
+                break
+        x, _, z, rx, rz = v
+        mults = [round(1 + relief(y, -360 * k / n_around), 4) for k in range(n_around)]
+        out.append(U(x, y, z) + [L(rx), L(rz), round(sq, 3)] + mults)
+        y = round(y + step, 4)
+    return {"kind": "loft", "sections": out}
+
+
+HEAD = [(0, 1.504, 0.062, 0.02, 0.016, 2.0), (0, 1.515, 0.05, 0.036, 0.032, 2.2), (0, 1.53, 0.034, 0.05, 0.062, 2.2),
+        (0, 1.55, 0.022, 0.058, 0.078, 2.3), (0, 1.575, 0.012, 0.064, 0.087, 2.4), (0, 1.6, 0.004, 0.068, 0.095, 2.3),
+        (0, 1.63, -0.002, 0.071, 0.099, 2.25), (0, 1.66, -0.008, 0.074, 0.1, 2.15), (0, 1.69, -0.012, 0.073, 0.096, 2.1),
+        (0, 1.715, -0.016, 0.066, 0.086, 2.0), (0, 1.733, -0.018, 0.054, 0.07, 2.0), (0, 1.744, -0.02, 0.038, 0.05, 2.0)]
+
+
+def head_relief(male):
+    def relief(y, th):
+        k = 0.0
+        for side in (-1, 1):
+            k += 0.05 * near(th, 90 + side * 48, 16) * bell(y, 1.585, 1.625)               # cheekbones
+            if male:
+                k += 0.045 * near(th, 90 + side * 55, 22) * bell(y, 1.505, 1.565)          # defined jaw angles
+            else:
+                k -= 0.03 * near(th, 90 + side * 55, 20) * bell(y, 1.51, 1.56)             # softer, narrower jaw
+            k -= 0.035 * near(th, 90 + side * 24, 9) * bell(y, 1.615, 1.64)                # eye sockets set in
+        k += (0.05 if male else 0.03) * near(th, 90, 18) * bell(y, 1.5, 1.53)              # chin
+        k += (0.035 if male else 0.015) * near(th, 90, 30) * bell(y, 1.638, 1.655)         # brow ridge
+        return k
+    return relief
+
+
 def torso_skin(rows, female, pregnant=False):
     """Torso loft resampled every 2.5 cm, each slice pushed in or out around its angle: spine groove and the
     muscle ridges beside it, shoulder blades, a faint belly midline, buttocks with their cleft."""
@@ -754,14 +795,14 @@ def torso_skin(rows, female, pregnant=False):
         for side in (-1, 1):
             k += 0.035 * near(theta, back + side * 13, 7) * bell(y, 0.93, 1.32)         # erector ridges
             k += 0.05 * near(theta, back + side * 38, 13) * bell(y, 1.24, 1.43)          # shoulder blades
-            k += 0.09 * near(theta, back + side * 30, 20) * bell(y, 0.84, 0.99)          # buttocks
+            k += (0.14 if female else 0.09) * near(theta, back + side * 30, 20) * bell(y, 0.84, 0.99)   # buttocks
         k -= 0.1 * near(theta, back, 4) * bell(y, 0.82, 0.965)                          # cleft between the buttocks
         k -= 0.02 * near(theta, 90, 4) * bell(y, 0.98, 1.26)                            # belly midline
         if female:
             for side in (-1, 1):
                 # breasts: rounded, fuller below the middle, rising out of the chest wall
                 lift = bell(y, 1.215, 1.355) ** 0.8 * (1 + 0.25 * (1.3 - y) / 0.05) if 1.215 < y < 1.355 else 0
-                k += (0.42 if pregnant else 0.34) * near(theta, 90 + side * 29, 14) * max(0, lift)
+                k += (0.52 if pregnant else 0.45) * near(theta, 90 + side * 29, 15) * max(0, lift)
         if pregnant:
             # third-trimester bump: the womb pushes the belly forward from the pubic bone up to below the ribs
             # rounded, highest just below the navel, narrower than the hips so it reads as a bump, not a belly
@@ -798,10 +839,29 @@ def skin():
     s = lambda pid, shape, sex=None: part(pid, "Skin", "皮肤", "skin", SKIN, shape, sex)
     sp = lambda pid, shape, sex=None: pair(pid, "Skin", "皮肤", "skin", SKIN, shape, sex)
     # head: chin → vertex. Face sections are squarer (flat front, cheeks, jaw angle); the skull above is rounder.
-    s("head", loft([(0, 1.504, 0.062, 0.02, 0.016, 2.0), (0, 1.515, 0.05, 0.036, 0.032, 2.2), (0, 1.53, 0.034, 0.05, 0.062, 2.2),
-                    (0, 1.55, 0.022, 0.058, 0.078, 2.3), (0, 1.575, 0.012, 0.064, 0.087, 2.4), (0, 1.6, 0.004, 0.068, 0.095, 2.3),
-                    (0, 1.63, -0.002, 0.071, 0.099, 2.25), (0, 1.66, -0.008, 0.074, 0.1, 2.15), (0, 1.69, -0.012, 0.073, 0.096, 2.1),
-                    (0, 1.715, -0.016, 0.066, 0.086, 2.0), (0, 1.733, -0.018, 0.054, 0.07, 2.0), (0, 1.744, -0.02, 0.038, 0.05, 2.0)]))
+    s("head-male", relief_loft(HEAD, head_relief(True), step=0.006), "male")
+    s("head-female", relief_loft(HEAD, head_relief(False), step=0.006), "female")
+    s("head-pregnant", relief_loft(HEAD, head_relief(False), step=0.006), "pregnant")
+    # hair: a cap over the skull with a hairline across the forehead; longer at the back for women
+    HAIR = "#3A2A20"
+
+    def below(y, edge, soft=0.012):
+        t = min(1, max(0, (edge - y) / soft))
+        return t * t * (3 - 2 * t)
+
+    def hairline(y, th, low):
+        # tucked inside the head below a soft hairline (forehead, over the ears, nape); elsewhere just over the scalp
+        front = near(th, 90, 50) * below(y, 1.676)
+        ears = (near(th, 0, 24) + near(th, 180, 24)) * below(y, 1.645)
+        nape = near(th, 270, 80) * below(y, low)
+        return 0.022 - 0.12 * min(1, front + ears + nape)
+    cap = [r for r in HEAD if r[1] >= 1.585]
+    part("hair-short", "Hair", "头发", "skin", HAIR, relief_loft(cap, lambda y, th: hairline(y, th, 1.6), step=0.006), "male")
+    for sex in ("female", "pregnant"):
+        part(f"hair-{sex}", "Hair", "头发", "skin", HAIR, relief_loft(cap, lambda y, th: hairline(y, th, 1.585), step=0.006), sex)
+        # long hair falling behind the neck to the shoulders
+        part(f"hair-long-{sex}", "Hair", "头发", "skin", HAIR,
+             loft([(0, 1.44, -0.075, 0.07, 0.022), (0, 1.5, -0.08, 0.078, 0.03), (0, 1.56, -0.082, 0.08, 0.036), (0, 1.62, -0.07, 0.078, 0.04)]), sex)
     # nose: narrow bridge between the eyes, widening to the tip and the nostril wings, sunk into the face
     s("nose", loft([(0, 1.636, 0.084, 0.006, 0.006), (0, 1.622, 0.089, 0.007, 0.008), (0, 1.607, 0.093, 0.009, 0.011),
                     (0, 1.594, 0.094, 0.013, 0.014), (0, 1.586, 0.093, 0.0165, 0.013), (0, 1.58, 0.092, 0.012, 0.009)], square=2.2))
