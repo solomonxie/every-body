@@ -10,6 +10,10 @@ func partLabel(_ id: String, female: Bool) -> (name: Bilingual, layer: Bilingual
         let layer = Catalog.body.layers.first { $0.id == part.layer }
         return (Bilingual(part.name, part.nameZh), layer.map { Bilingual($0.label, $0.labelZh) } ?? Bilingual("", ""))
     }
+    if let part = InternalModels.part(id), part.organ == nil {
+        let layer = Catalog.body.layers.first { $0.id == part.layer }
+        return (Bilingual(part.name, part.nameZh), layer.map { Bilingual($0.label, $0.labelZh) } ?? Bilingual("", ""))
+    }
     guard let names = Catalog.organ(id)?.names else { return nil }
     let organs = Bilingual("Organs", "器官")
     if id == "uterus" { return (female ? Bilingual("Uterus", "子宫") : Bilingual("Prostate", "前列腺"), organs) }
