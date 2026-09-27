@@ -79,6 +79,8 @@ extension Illustrations {
         let h = healing(weeks / speed)
         let m = wristMotion(o, kid: kid)
         let aligned = o < 0.08
+        // the cast comes off once hard callus holds (~6 weeks adult), before remodelling ends
+        let castOn = cast * (1 - ((weeks / speed - 6) / 1.5).clamped(0, 1))
 
         // skin: one outline whose hand side follows the wrist piece, so the “dinner fork” bump forms by itself
         let dorsal: [CGPoint] = [pt(-30, 134), pt(60, 137), pt(130, 141), pt(172, 145), pt(200, 148), pt(226, 150), pt(254, 150),
@@ -95,7 +97,7 @@ extension Illustrations {
         drawCallus(&s, h, weeks: weeks, xray: false)
 
         // cast from below the elbow to the knuckles
-        if cast > 0.02 {
+        if castOn > 0.02 {
             let top = [pt(60, 130), pt(130, 134), pt(172, 138), pt(200, 141), pt(226, 143), pt(254, 143), pt(290, 146)]
             let bottom = [pt(290, 202), pt(272, 209), pt(248, 213), pt(226, 211), pt(204, 206), pt(180, 206), pt(130, 209), pt(60, 215)]
             var shell = Path()
@@ -103,18 +105,18 @@ extension Illustrations {
             for q in top.dropFirst() { shell.addLine(to: q) }
             for q in bottom { shell.addLine(to: q) }
             shell.closeSubpath()
-            s.gradFill(shell, [.white, hex("#EEF1F4")], from: pt(0, 130), to: pt(0, 215), stroke: hex("#B9C0C8"), lw: 1.4, opacity: 0.8 * cast)
+            s.gradFill(shell, [.white, hex("#EEF1F4")], from: pt(0, 130), to: pt(0, 215), stroke: hex("#B9C0C8"), lw: 1.4, opacity: 0.8 * castOn)
             var weave = s
             weave.ctx.clip(to: shell)
             for x in stride(from: 50.0, through: 300, by: 12) {
-                weave.line(x, 120, x - 14, 224, stroke: hex("#C9D0D8"), lw: 0.8, opacity: 0.8 * cast)
+                weave.line(x, 120, x - 14, 224, stroke: hex("#C9D0D8"), lw: 0.8, opacity: 0.8 * castOn)
             }
-            s.rect(56, 128, 8, 89, r: 3, fill: hex("#DCD3C4"), opacity: cast)
+            s.rect(56, 128, 8, 89, r: 3, fill: hex("#DCD3C4"), opacity: castOn)
             s.leader("cast", "石膏", at: pt(100, 214), 92, 240, color: Anat.muted)
         }
 
         // labels
-        if cast < 0.5 {
+        if castOn < 0.5 {
             s.leader("ulna", "尺骨", at: pt(70, 151), 30, 116)
             s.leader("radius", "桡骨", at: pt(70, 170), 30, 240)
             s.leader("wrist bones", "腕骨", at: moved(pt(232, 170)), 214, 240, anchor: .middle)
@@ -146,8 +148,9 @@ extension Illustrations {
     /// Radius (front), ulna (behind), wrist and hand bones; the wrist side moves with the break.
     @MainActor private static func drawForearmBones(_ s: inout Sketch, o: Double, kid: Bool, old: Bool, xray: Bool) {
         let m = wristMotion(o, kid: kid)
-        let fill = xray ? Color.white.opacity(0.82) : Anat.bone, shade = xray ? Color.white.opacity(0.55) : Anat.boneShade
-        let edge = xray ? Color.white : Anat.boneEdge
+        // opaque greys on the dark film, so outlined finger bones don't burn through to solid white
+        let fill = xray ? hex("#C7CCD2") : Anat.bone, shade = xray ? hex("#8C949C") : Anat.boneShade
+        let edge = xray ? hex("#EEF1F4") : Anat.boneEdge
         func bone(_ d: String, _ a: CGPoint, _ b: CGPoint) { s.boneFill(d, light: a, dark: b, fill: fill, shade: shade, edge: edge, lw: xray ? 0.8 : 1.1) }
         let physis = xray ? Color.black.opacity(0.6) : Anat.blue.opacity(0.75)
 
@@ -245,7 +248,8 @@ extension Illustrations {
     }
 
     @MainActor private static func drawFractureCard(_ s: inout Sketch, scene: Int, age: Int, o: Double, weeks: Double, speed: Double, t: Double) {
-        let box = CGRect(x: 250, y: 6, width: 104, height: 108)
+        let xrayCard = scene == 2 || scene >= 4
+        let box = xrayCard ? CGRect(x: 188, y: 6, width: 166, height: 104) : CGRect(x: 250, y: 6, width: 104, height: 108)
         let titles: [(String, String)] = [("How it happens", "如何发生"), ("First aid", "现场处理"), ("X-ray check", "复查 X 光"),
                                           ("Cast + sling", "石膏 + 吊带"), ("Follow-up X-ray", "随访 X 光")]
         let ti = titles[min(scene, 4)]
@@ -289,7 +293,8 @@ extension Illustrations {
             // X-ray: the same bones in negative
             c.rect(box.minX + 4, box.minY + 20, box.width - 8, box.height - 24, r: 6, fill: hex("#1C232B"))
             var x = c.clipped(box.minX + 4, box.minY + 20, box.width - 8, box.height - 24)
-            x.group(translate: CGPoint(x: box.midX - 205 * 0.72, y: box.minY + 62 - 170 * 0.72), scale: 0.72) { g in
+            let k = 0.86
+            x.group(translate: CGPoint(x: box.midX - 232 * k, y: box.minY + 54 - 172 * k), scale: k) { g in
                 drawForearmBones(&g, o: o, kid: age == 0, old: age == 2, xray: true)
                 drawCallus(&g, healing(weeks / speed), weeks: weeks, xray: true)
                 if o > 0.08 { g.path("M 182 153 L 185 160 L 181 167 L 185 174 L 182 180", stroke: Anat.red, lw: 2) }
@@ -297,7 +302,7 @@ extension Illustrations {
             let ok = o < 0.08
             c.cardNote(ok ? (scene == 4 ? "callus bridges the gap" : "lined up") : "not lined up",
                        ok ? (scene == 4 ? "骨痂连接断端" : "已对齐") : "未对齐",
-                       box.midX, box.maxY - 12, width: 96, size: 8, color: ok ? hex("#8FE3B0") : hex("#FF9C9C"), bold: true)
+                       box.midX, box.maxY - 12, width: 150, size: 8.5, color: ok ? hex("#8FE3B0") : hex("#FF9C9C"), bold: true)
         }
     }
 }

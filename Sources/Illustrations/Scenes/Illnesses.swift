@@ -97,7 +97,10 @@ extension Illustrations {
             let up = atan2(e.x - sh.x, e.y - sh.y) * 180 / .pi, fore = atan2(c.x - e.x, c.y - e.y) * 180 / .pi
             v.near = .init(shoulder: up - v.lean, elbow: (fore - up + 540).truncatingRemainder(dividingBy: 360) - 180, hand: .fist)
             v.drawBack(&s)
-            v.drawArm(&s, near: true)
+            // the fist ends up on the far side of the head: clip it so it can't peek out behind the neck
+            var arm = s
+            arm.ctx.clip(to: Path(CGRect(x: v.headCentre.x - v.headR * 0.2, y: 0, width: 400, height: 400)))
+            v.drawArm(&arm, near: true)
             v.drawBody(&s)
             let e2 = v.elbow()
             s.limb([lerp(sh, e2, 0.3), e2, lerp(e2, v.palm(), 0.3)], w: v.build.armW * v.h, fill: v.look.top, line: v.look.topLine)
@@ -587,6 +590,6 @@ extension Illustrations {
         s.callout("valve (LES)", "贲门括约肌", at: world(-12, -3), 196, world(-12, -3).y + 22, color: weak ? hex("#C0721B") : Tone.organLine, size: 8)
         let pooled = world(deepPoint.0 - g.x * 16 - 6, deepPoint.1 - g.y * 16)
         s.label("acid", "胃酸", pooled.x, pooled.y + 3, size: 8.5, color: hex("#7A6A12"), anchor: .middle, bold: true)
-        s.label("stomach", "胃", world(-40, 116).x, world(-40, 116).y, size: 8.5, color: Tone.organLine, anchor: .middle, bold: true)
+        s.label("stomach", "胃", world(22, 62).x, world(22, 62).y, size: 8.5, color: Tone.organLine, anchor: .middle, bold: true)
     }
 }

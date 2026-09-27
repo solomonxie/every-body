@@ -164,8 +164,8 @@ extension Illustrations {
         let rhead = r.headCentre, rr = r.build.headR * rh
         switch st {
         case 0:
-            s.bubble("Are you OK?", "你还好吗？", rhead.x - rr - 58, rhead.y - rr - 14, tip: CGPoint(x: rhead.x - rr * 0.9, y: rhead.y))
-            s.callout("Normal breathing? ≤ 10 s", "有无正常呼吸？≤ 10 秒", 60, 150, to: pt.mouth, color: hex("#333333"))
+            s.bubble("Are you OK?", "你还好吗？", rhead.x - rr - 58, rhead.y - 4, tip: CGPoint(x: rhead.x - rr * 0.85, y: rhead.y + rr * 0.45))
+            s.callout("Normal breathing? ≤ 10 s", "有无正常呼吸？≤ 10 秒", 70, 150, to: pt.mouth, color: hex("#333333"))
         case 1:
             s.phone(30, floor - 30, number: s.t("911", "120"), t: t)
             s.bubble("Get an AED!", "快去拿 AED！", 250, 50, tip: CGPoint(x: rhead.x + rr * 0.9, y: rhead.y + rr * 0.1))
