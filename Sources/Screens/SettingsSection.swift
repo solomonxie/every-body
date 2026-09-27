@@ -18,51 +18,11 @@ struct SettingsSection: View {
                     }
                     .fixedSize()
                 }
-                divider
-                VStack(alignment: .leading, spacing: Space.s) {
-                    label("person.fill", .brandFill, settings.t("Person", "人群"))
-                    Picker(settings.t("Person", "人群"), selection: $settings.age) {
-                        ForEach(AgeGroup.allCases, id: \.self) {
-                            Text(settings.zh ? $0.label.zh : $0.label.en.components(separatedBy: " ")[0]).tag($0)
-                        }
-                    }
-                }
-                .padding(.vertical, Space.m)
-                divider
-                row("figure.dress.line.vertical.figure", .pink, settings.t("Sex", "性别")) {
-                    Picker(settings.t("Sex", "性别"), selection: $settings.female) {
-                        Text(settings.t("Male", "男")).tag(false)
-                        Text(settings.t("Female", "女")).tag(true)
-                    }
-                    .fixedSize()
-                }
-                if settings.female && settings.age == .adult {
-                    divider
-                    row("figure.and.child.holdinghands", Color(hex: "#C77DA0"), settings.t("Pregnant", "怀孕")) {
-                        Toggle(settings.t("Pregnant", "怀孕"), isOn: $settings.pregnant).labelsHidden()
-                    }
-                }
-                // with sex and pregnancy: what the figure wears; children always keep theirs on
-                if !settings.profile.isKid {
-                    divider
-                    row("tshirt.fill", Color(hex: "#6F9BC9"), settings.t("Show underwear", "显示内衣")) {
-                        Toggle(settings.t("Show underwear", "显示内衣"), isOn: $settings.showUnderwear).labelsHidden()
-                    }
-                }
             }
             .adaptivePickerStyle()
-            .animation(.snappy, value: settings.female && settings.age == .adult)
 
             Eyebrow(settings.t("3D viewer", "3D 视图")).padding(.horizontal, Space.xs).padding(.top, Space.s)
             group {
-                row("paintpalette.fill", .orange, settings.t("Appearance", "外貌")) {
-                    Picker(settings.t("Appearance", "外貌"), selection: $settings.heritage) {
-                        ForEach(Heritage.allCases, id: \.self) { Text(settings.t($0.label)).tag($0) }
-                    }
-                    .pickerStyle(.menu)
-                    .fixedSize()
-                }
-                divider
                 row("square.fill", .gray, settings.t("White background", "白色背景")) {
                     Toggle(settings.t("White background", "白色背景"), isOn: $settings.whiteBackground).labelsHidden()
                 }
