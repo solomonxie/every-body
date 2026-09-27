@@ -154,6 +154,12 @@ peel layers, and see what a point connects to — on a phone, free, offline.
 - Switch to real models, converted offline (Blender headless) to USDZ:
   - internals: Z-Anatomy (CC BY-SA 4.0, from BodyParts3D) — skeleton first, then muscles, organs, vessels, nerves;
   - skin figure: MakeHuman export (CC0), male/female.
+    - one topology for every figure → `figure.bin`: per-variant positions as int16 deltas (deflated) instead of
+      USD blend shapes; the app builds the mesh for sex × age × heritage (+ pregnant). ~2.9 MB for 66 variants.
+    - heritage (East / Southeast / South Asian, Hispanic, White, Black) = face (neck up) + skin texture only;
+      body shape fixed per sex (man athletic, woman fuller bust and hips). Textures: MPFB young/old × 3 races, blended.
+    - children: MakeHuman child fitted to the app's age reshape (shorter neck added to the reshape).
+    - underwear: cut from the body mesh along smooth fields, on by default; children always wear it.
 - Budget: app ≤ 50 MB. Levers: decimate + baked normal maps, 1–2K compressed textures, merge tiny parts,
   load layers lazily; over budget → download layers on demand.
 - Status: skeleton + skins (phase 1); muscles, organs, vessels, nerves (phase 2, ~250k tris, ~6 MB, `build_internals.py`).

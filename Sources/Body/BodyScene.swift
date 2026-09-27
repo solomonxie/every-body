@@ -40,6 +40,8 @@ enum Focus {
 final class BodyScene {
     /// set from a everybody://…?yaw= link: start at this angle, no auto-rotate
     static var pinnedYaw: Float?
+    /// skin opacity over inner layers (the Mac renderer raises it to check the fit)
+    static var glassOpacity: Float = 0.12
 
     let root = Entity()
     let camera = PerspectiveCamera()
@@ -65,6 +67,10 @@ final class BodyScene {
     private var skinEntities: [(entity: ModelEntity, material: PhysicallyBasedMaterial)] = []
     /// the real (MakeHuman) skin is one mesh: it can't bend, so it steps aside while a joint is bent
     private var realSkin = false
+    /// acupuncture: points and channels show through hair and underwear
+    private var seeThrough = false
+    /// the real skin: points (every age) and children's channels are dropped onto it
+    private var surface: Figure.Surface?
     private var bentJoints: Set<String> = []
     private var organEntities: [String: Entity] = [:]
     private var jointOuter: [String: Entity] = [:]
@@ -73,6 +79,8 @@ final class BodyScene {
     private var pointColors: [String: UIColor] = [:]
     private var smallPoints: Set<String> = []
     private var meridianEntities: [String: [ModelEntity]] = [:]
+    /// kept across rebuilds so a new body never brings the lines back
+    private var meridianFilter: (visible: Bool, ids: Set<String>?) = (true, nil)
     private var pulseDots: [ModelEntity] = []
     private var pulseCurves: [(SIMD3<Float>, SIMD3<Float>, SIMD3<Float>)] = []
     private var pulseStart: Float = -100
@@ -89,6 +97,9 @@ final class BodyScene {
     private var selected: String?
     private var female = false
     private var skinColor = UIColor(hex: "#F2C9A5")
+    /// outer skin look; set before build
+    var heritage: Heritage = .eastAsian
+    var underwear = true
 
     init() {
         if let yaw = Self.pinnedYaw {
@@ -146,8 +157,11 @@ final class BodyScene {
 
         // before puberty the body shape doesn't differ by sex
         let sex = female && !(age == .infant || age.isChild) ? "female" : "male"
-        let realSkin = ModelLibrary.skin(female: female, pregnant: pregnant, age: age)
+        let look = Figure.Look(female: female, age: age, pregnant: pregnant, heritage: heritage, underwear: underwear)
+        let realSkin = ModelLibrary.skin(look)
+        surface = realSkin == nil ? nil : Figure.surface(look)
         self.realSkin = realSkin != nil
+        seeThrough = !meridians.isEmpty
         for piece in realSkin ?? [] {
             let entity = ModelEntity(mesh: piece.mesh)
             entity.transform = piece.transform
@@ -275,10 +289,23 @@ final class BodyScene {
                 return dot
             }
         }
+        // adult channels already lie on the adult skin; a child's are laid onto its own (a new mesh, not reshaped)
+        let kid = age == .infant || age.isChild
         for meridian in meridians {
             let material = UnlitMaterial(color: meridianColor[meridian.id] ?? .gray)
             meridianEntities[meridian.id] = meridian.pieces(female: adultShape).map { paths in
-                let line = ModelEntity(mesh: Self.mesh(for: Self.meridianShape(paths)), materials: [material])
+                let mesh: MeshResource
+                if kid, let surface {
+                    let laid = paths.map { $0.map { p -> Vec3 in
+                        let q = surface.snap(agePoint(p.simd), lift: 0.0026)
+                        return Vec3(q.x, q.y, q.z)
+                    } }
+                    mesh = Meshes.raw(for: Self.meridianShape(laid))?.resource() ?? Self.unitSphere
+                } else {
+                    mesh = Self.mesh(for: Self.meridianShape(paths))
+                }
+                let line = ModelEntity(mesh: mesh, materials: [material])
+                line.name = kid && surface != nil ? "laid" : ""
                 rig.addChild(line)
                 return line
             }
@@ -312,6 +339,7 @@ final class BodyScene {
         for e in pointEntities.values.joined() { keep(e, centre: e.position) }
         for e in meridianEntities.values.joined() { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
         applyVisibility()
+        applyMeridians()
         applyAge()
     }
 
@@ -330,7 +358,8 @@ final class BodyScene {
 
     /// scene y of the chin; everything above it is "head" for proportions
     private static let chinY: Float = 1.25
-    private static let neckY: Float = 1.19
+    /// the neck (shoulders to chin) shortens in young children; the head sits down on it
+    private static let neckBaseY: Float = 1.05
     /// below this (scene y) a piece belongs to a leg; hips and shoulders are the limb pivots
     private static let legTopY: Float = -0.04
     private static let hip = SIMD3<Float>(0.167, 0.12, 0)
@@ -345,16 +374,17 @@ final class BodyScene {
         var legLength: Float = 1, legGirth: Float = 1
         var armLength: Float = 1, armGirth: Float = 1
         var trunkWidth: Float = 1, trunkDepth: Float = 1
+        var neck: Float = 1
     }
 
     private var proportions: Proportions {
         switch age {
         // ~70 cm, head a quarter of height, legs a third, round belly
-        case .infant: Proportions(body: 0.4, head: 1.85, legLength: 0.72, legGirth: 1.4, armLength: 0.85, armGirth: 1.3, trunkWidth: 1.12, trunkDepth: 1.3)
+        case .infant: Proportions(body: 0.4, head: 1.85, legLength: 0.72, legGirth: 1.4, armLength: 0.85, armGirth: 1.3, trunkWidth: 1.12, trunkDepth: 1.3, neck: 0.3)
         // ~88 cm, head a fifth of height, still chubby
-        case .toddler: Proportions(body: 0.5, head: 1.5, legLength: 0.82, legGirth: 1.25, armLength: 0.9, armGirth: 1.2, trunkWidth: 1.08, trunkDepth: 1.2)
+        case .toddler: Proportions(body: 0.5, head: 1.5, legLength: 0.82, legGirth: 1.25, armLength: 0.9, armGirth: 1.2, trunkWidth: 1.08, trunkDepth: 1.2, neck: 0.45)
         // ~120 cm, head a sixth, limbs nearly adult proportion
-        case .child: Proportions(body: 0.68, head: 1.25, legLength: 0.95, legGirth: 1.05, armLength: 0.97, armGirth: 1.05, trunkWidth: 1.0, trunkDepth: 1.05)
+        case .child: Proportions(body: 0.68, head: 1.25, legLength: 0.95, legGirth: 1.05, armLength: 0.97, armGirth: 1.05, trunkWidth: 1.0, trunkDepth: 1.05, neck: 0.75)
         case .adult, .senior: Proportions()
         }
     }
@@ -372,7 +402,10 @@ final class BodyScene {
             return m
         }
         if c.y > Self.chinY || Self.jawParts.contains(where: { name.hasPrefix($0) }) {
-            return about(SIMD3(0, Self.neckY, 0), SIMD3(repeating: p.head))
+            // scaled about the midline, chin put on top of the shortened neck
+            var m = about(.zero, SIMD3(repeating: p.head))
+            m.columns.3.y = Self.neckBaseY + (Self.chinY - Self.neckBaseY) * p.neck - Self.chinY * p.head
+            return m
         }
         let side: Float = c.x < 0 ? -1 : 1
         // arms first: hands hang lower than the hips
@@ -381,6 +414,9 @@ final class BodyScene {
         }
         if c.y < Self.legTopY {
             return about(Self.hip * SIMD3(side, 1, 1), SIMD3(p.legGirth, p.legLength, p.legGirth))
+        }
+        if c.y > Self.neckBaseY {
+            return about(SIMD3(0, Self.neckBaseY, 0), SIMD3(p.trunkWidth, p.neck, p.trunkDepth))
         }
         return about(.zero, SIMD3(p.trunkWidth, 1, p.trunkDepth))
     }
@@ -416,6 +452,16 @@ final class BodyScene {
         let eyeCentre = Dictionary(rest.filter { $0.entity.name.hasPrefix("skin:eye-") }.map { (String($0.entity.name.suffix(1)), $0.centre) }) { a, _ in a }
         for (entity, matrix, centre) in rest {
             // a feature's own size change happens about its centre, before the region reshape
+            // the real figure is already built for this age, children's channels already laid on it
+            if (realSkin && entity.name.hasPrefix("skin:")) || entity.name == "laid" {
+                entity.transform.matrix = matrix
+                continue
+            }
+            if let surface, entity.name.hasPrefix("point:") {
+                let site = agePoint(SIMD3(matrix.columns.3.x, matrix.columns.3.y, matrix.columns.3.z))
+                entity.transform = Transform(translation: surface.snap(site, lift: smallPoints.contains(String(entity.name.dropFirst(6))) ? 0.0047 : 0.02))
+                continue
+            }
             let f = feature(entity.name)
             var local = matrix_identity_float4x4
             if f != 1 {
@@ -493,15 +539,20 @@ final class BodyScene {
 
     /// Just these channels (nil = all).
     func showMeridians(_ visible: Bool, ids: Set<String>?) {
-        for (id, lines) in meridianEntities {
-            for line in lines { line.isEnabled = visible && (ids?.contains(id) ?? true) }
-        }
+        meridianFilter = (visible, ids)
+        applyMeridians()
     }
 
     /// Meridian lines on or off; with `only`, just that channel.
     func showMeridians(_ visible: Bool, only: String? = nil) {
+        showMeridians(visible, ids: only.map { [$0] })
+    }
+
+    var meridiansVisible: Bool { meridianFilter.visible }
+
+    private func applyMeridians() {
         for (id, lines) in meridianEntities {
-            for line in lines { line.isEnabled = visible && (only == nil || only == id) }
+            for line in lines { line.isEnabled = meridianFilter.visible && (meridianFilter.ids?.contains(id) ?? true) }
         }
     }
 
@@ -522,10 +573,11 @@ final class BodyScene {
     private func applyVisibility() {
         let inner = layers.contains { $0 != .skin }
         // skin alone is solid; over inner layers it's a faint glass
-        let skinOpacity: Float = layers.contains(.skin) ? (inner ? 0.12 : 1) : 0
+        let skinOpacity: Float = layers.contains(.skin) ? (inner ? Self.glassOpacity : 1) : 0
         for (skin, base) in skinEntities {
             skin.isEnabled = skinOpacity > 0 && !(realSkin && !bentJoints.isEmpty)
-            skin.model?.materials = [Self.faded(base, skinOpacity)]
+            let hair = seeThrough && (skin.name == "skin:hair" || skin.name.hasPrefix("skin:underwear"))
+            skin.model?.materials = [Self.faded(base, hair ? min(skinOpacity, 0.35) : skinOpacity)]
         }
         let muscleOpacity: Float = layers.contains(.skeletal) ? 0.55 : 1
         for (id, entity) in partEntities {
