@@ -53,9 +53,16 @@ struct ChartScreen: View {
                             .offset(x: bar.minX, y: bar.minY)
                     }
                 }
+                // zone details pop over the stage; any tap elsewhere closes them
+                .overlay(alignment: .bottom) {
+                    if let zone = selected {
+                        popup(zone)
+                            .padding(12)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .animation(.snappy(duration: 0.25), value: selected?.id)
             }
-            zoneList
-            card
         }
         .navigationTitle(settings.name(chart.title, chart.titleZh))
         .profileToolbar()
@@ -69,19 +76,46 @@ struct ChartScreen: View {
         .onChange(of: settings.showUnderwear) { buildInset() }
     }
 
+    /// One row of compact menus: which view, which zone, what the body shows, and the layout.
     private var controls: some View {
         HStack(spacing: 8) {
-            Picker("Side", selection: Binding(get: { side }, set: { side = $0; clear() })) {
-                Text(settings.t("Left", "左")).tag(Side.left)
-                Text(settings.t("Right", "右")).tag(Side.right)
-            }
-            .pickerStyle(.segmented)
-            if chart.faces.count > 1 {
-                Picker("Face", selection: Binding(get: { face.id }, set: { faceID = $0; clear() })) {
-                    ForEach(chart.faces) { f in Text(settings.name(f.label, f.labelZh)).tag(f.id) }
+            Menu {
+                Picker(settings.t("Side", "左右"), selection: Binding(get: { side }, set: { side = $0; clear() })) {
+                    Text(settings.t("Left", "左")).tag(Side.left)
+                    Text(settings.t("Right", "右")).tag(Side.right)
                 }
-                .pickerStyle(.segmented)
+                if chart.faces.count > 1 {
+                    Picker(settings.t("View", "视图"), selection: Binding(get: { face.id }, set: { faceID = $0; clear() })) {
+                        ForEach(chart.faces) { f in Text(settings.name(f.label, f.labelZh)).tag(f.id) }
+                    }
+                }
+            } label: {
+                menuLabel(settings.t(side == .left ? "Left" : "Right", side == .left ? "左" : "右")
+                          + (chart.faces.count > 1 ? " · " + settings.name(face.label, face.labelZh) : ""), symbol: "hand.raised")
             }
+            Menu {
+                let groups = Array(Set(zones.map(\.group))).sorted()
+                ForEach(groups, id: \.self) { g in
+                    Section(Catalog.charts.groups[g].map { settings.name($0.label, $0.labelZh) } ?? g) {
+                        ForEach(zones.filter { $0.group == g }) { zone in
+                            Button { press(zone) } label: {
+                                Text((Cautions.avoid(zone.id, for: settings.profile) ? "⚠ " : "") + settings.name(zone.name, zone.nameZh))
+                            }
+                        }
+                    }
+                }
+            } label: {
+                menuLabel(selected.map { settings.name($0.name, $0.nameZh) } ?? settings.t("Zones", "反射区"), symbol: "list.bullet")
+            }
+            Spacer(minLength: 0)
+            Menu {
+                ForEach(InsetLayer.allCases, id: \.self) { layer in
+                    Toggle(settings.t(layer.label), isOn: Binding(get: { insetLayers.contains(layer) }, set: { _ in toggle(layer) }))
+                }
+            } label: {
+                iconLabel("square.3.layers.3d")
+            }
+            .accessibilityLabel(settings.t("Body layers", "人体图层"))
             Menu {
                 Picker(settings.t("Layout", "布局"), selection: $layout) {
                     ForEach(ChartLayout.allCases, id: \.self) { l in
@@ -89,12 +123,55 @@ struct ChartScreen: View {
                     }
                 }
             } label: {
-                Image(systemName: layout.symbol)
-                    .frame(width: 32, height: 32)
-                    .background(Color.secondary.opacity(0.12), in: .rect(cornerRadius: 8))
+                iconLabel(layout.symbol)
             }
             .accessibilityLabel(settings.t("Layout", "布局"))
         }
+    }
+
+    private func menuLabel(_ text: String, symbol: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: symbol).font(.footnote)
+            Text(text).font(.subheadline.weight(.semibold)).lineLimit(1)
+            Image(systemName: "chevron.down").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12).frame(height: 34)
+        .background(Color.secondary.opacity(0.12), in: .capsule)
+        .foregroundStyle(.primary)
+    }
+
+    private func iconLabel(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .frame(width: 34, height: 34)
+            .background(Color.secondary.opacity(0.12), in: .circle)
+            .foregroundStyle(.primary)
+    }
+
+    /// Floating explanation for the tapped zone.
+    private func popup(_ zone: ReflexZone) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Circle().fill(Color(hex: Catalog.charts.groups[zone.group]?.color ?? "#999999")).frame(width: 9, height: 9)
+                Text(settings.name(zone.name, zone.nameZh)).font(.headline)
+                Spacer(minLength: 8)
+                Button { press(zone) } label: { Image(systemName: "arrow.counterclockwise") }
+                    .accessibilityLabel(settings.t("Replay", "重播"))
+                Button { clear() } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
+                    .accessibilityLabel(settings.t("Close", "关闭"))
+            }
+            let organs = zone.organIds.compactMap { Catalog.organ($0)?.names }.map { settings.name($0[0], $0[1]) }
+            if !organs.isEmpty {
+                Text("→ " + organs.joined(separator: settings.zh ? "、" : ", ")).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            }
+            CautionList(warnings: Array(Cautions.warnings(zone.id, for: settings.profile).prefix(1)))
+            Text(settings.name(zone.effect, zone.effectZh)).font(.subheadline)
+            Text(settings.t("Traditional claim — not medical advice.", "传统说法，非医疗建议。")).font(.caption2).foregroundStyle(.secondary)
+        }
+        .padding(14)
+        .frame(maxWidth: 520, alignment: .leading)
+        .background(.regularMaterial, in: .rect(cornerRadius: 18))
+        .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+        .buttonStyle(.plain)
     }
 
     private var chartPane: some View {
@@ -107,7 +184,7 @@ struct ChartScreen: View {
                         .gesture(SpatialTapGesture().onEnded { value in
                             let hit = ChartCanvas.hitTest(value.location, size: geo.size, chart: chart, face: face, side: side,
                                                           zones: zones, zoom: zoom, pan: pan)
-                            if let hit { press(hit) }
+                            if let hit { press(hit) } else { clear() }
                         })
                         .gesture(MagnifyGesture()
                             .onChanged { zoom = max(1, min(4, zoomBase * $0.magnification)) }
@@ -200,36 +277,10 @@ struct ChartScreen: View {
         applyInsetLayers()
     }
 
-    /// Layer chips over the 3D body: what helps explain how the chart is said to work.
-    private var insetChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(InsetLayer.allCases, id: \.self) { layer in
-                    let on = insetLayers.contains(layer)
-                    Button { toggle(layer) } label: {
-                        HStack(spacing: 4) {
-                            Circle().fill(layer.color).frame(width: 7, height: 7)
-                            Text(settings.t(layer.label)).font(.caption2.weight(.semibold))
-                        }
-                        .padding(.horizontal, 9).padding(.vertical, 6)
-                        .background(on ? AnyShapeStyle(layer.color.opacity(0.25)) : AnyShapeStyle(.ultraThinMaterial), in: .capsule)
-                        .overlay(Capsule().stroke(on ? layer.color : .clear, lineWidth: 1))
-                        .foregroundStyle(Color(hex: "#2B2250"))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(on ? .isSelected : [])
-                    .sensoryFeedback(.selection, trigger: on)
-                }
-            }
-            .padding(.horizontal, 8)
-        }
-        .padding(.bottom, 8)
-    }
-
     private var bodyPane: some View {
         ZStack(alignment: .top) {
             BodyView(scene: inset, compact: true)
-            insetChips.frame(maxHeight: .infinity, alignment: .bottom)
+                .simultaneousGesture(TapGesture().onEnded { clear() })
             Text(selected.map { z in
                 let organs = z.organIds.compactMap { Catalog.organ($0)?.names }.map { settings.name($0[0], $0[1]) }
                     .joined(separator: settings.zh ? "、" : ", ")
@@ -249,68 +300,6 @@ struct ChartScreen: View {
         .padding(.vertical, 4)
     }
 
-    /// Every zone by name; tapping one lights it on the chart, tapping the chart scrolls here.
-    private var zoneList: some View {
-        let groups = Array(Set(zones.map(\.group))).sorted()
-        return ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(groups, id: \.self) { g in
-                        let info = Catalog.charts.groups[g]
-                        let color = Color(hex: info?.color ?? "#999999")
-                        FlowLayout(spacing: 6) {
-                            ForEach(zones.filter { $0.group == g }) { zone in
-                                let on = zone.id == selected?.id
-                                Button { press(zone) } label: {
-                                    HStack(spacing: 4) {
-                                        if Cautions.avoid(zone.id, for: settings.profile) { Text("⚠").font(.caption2) }
-                                        Circle().fill(on ? .white : color).frame(width: 7, height: 7)
-                                        Text(settings.name(zone.name, zone.nameZh)).font(.caption)
-                                    }
-                                    .padding(.horizontal, 9).padding(.vertical, 5)
-                                    .background(on ? color : color.opacity(0.14), in: .capsule)
-                                    .foregroundStyle(on ? .white : .primary)
-                                }
-                                .buttonStyle(.plain)
-                                .id(zone.id)
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal, 12).padding(.vertical, 8)
-            }
-            .frame(height: 96)
-            .onChange(of: selected?.id) { _, id in
-                if let id { withAnimation { proxy.scrollTo(id, anchor: .center) } }
-            }
-        }
-    }
-
-    private var card: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if let zone = selected {
-                Text(settings.name(zone.name, zone.nameZh)).font(.subheadline.weight(.semibold))
-                CautionList(warnings: Array(Cautions.warnings(zone.id, for: settings.profile).prefix(1)))
-                Group {
-                    Text(settings.name(zone.effect, zone.effectZh)).font(.caption)
-                    HStack {
-                        Text(settings.t("Traditional claim — not medical advice.", "传统说法，非医疗建议。")).font(.caption2).foregroundStyle(.secondary)
-                        Spacer()
-                        Button(settings.t("↻ Replay", "↻ 重播")) { press(zone) }.font(.caption.weight(.semibold))
-                    }
-                }
-                .opacity(effectVisible ? 1 : 0)
-            } else {
-                Text(settings.t("Tap a zone — the pulse on the figure shows where it acts.", "点按区域，人体上会显示对应器官。"))
-                    .font(.footnote).foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(.horizontal, 16).padding(.vertical, 10)
-        .background(Color(uiColor: .secondarySystemBackground))
-    }
-
     private func setUp() {
         guard !ready else { return }
         ready = true
@@ -325,6 +314,7 @@ struct ChartScreen: View {
     }
 
     private func clear() {
+        guard selected != nil else { return }
         selected = nil
         effectVisible = false
     }
