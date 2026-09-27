@@ -95,6 +95,7 @@ struct ViewerScreen: View {
 
     private func setUp() {
         guard !built else { return }
+        settings.resetViewOptions()
         built = true
         var base = Set(Catalog.body.defaultLayers[systemID] ?? [.skin, .organs])
         if let part = initialPart, let layer = Catalog.part(part)?.layer { base.insert(layer) }
