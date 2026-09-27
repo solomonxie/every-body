@@ -2,12 +2,12 @@ import SwiftUI
 
 /// Shared palette for the anatomy scenes (bones, joints, organs), so they read as one set.
 enum Anat {
-    static let bone = hex("#F3ECDC"), boneShade = hex("#DCCFB2"), boneEdge = hex("#A8946F")
+    static let bone = hex("#F3ECDC"), boneShade = hex("#DCCFB2"), boneEdge = hex("#B3A07C")
     static let marrow = hex("#E6D7B8")
     static let cartilage = hex("#D9ECF2"), cartilageEdge = hex("#8DB9C8")
     static let ligament = hex("#C9584F"), ligamentLight = hex("#E79A8F")
     static let tendon = hex("#E9DDC4"), tendonEdge = hex("#BBA77F")
-    static let skin = hex("#F8E4D6"), skinShade = hex("#EFCDB8"), skinEdge = hex("#D4A98E")
+    static let skin = hex("#F8E4D6"), skinShade = hex("#EFCDB8"), skinEdge = hex("#DDB39A")
     static let ink = hex("#3A3530"), text = hex("#6B5F4E"), muted = hex("#9A8F80")
     static let red = hex("#D8434B"), green = hex("#2E9E5B"), blue = hex("#3F87C6"), amber = hex("#D99A2B")
     static let purple = hex("#6C4F9E"), pink = hex("#C9788A")
@@ -63,9 +63,9 @@ extension Sketch {
         let ex = target.x < x0 ? x0 - 2 : target.x > x0 + m.width ? x0 + m.width + 2 : target.x
         let ey = abs(target.x - ex) < 1 ? (target.y < y ? y - m.height * 0.8 : y + 3) : y - m.height * 0.3
         if hypot(target.x - ex, target.y - ey) > 4 {
-            line(target.x, target.y, ex, ey, stroke: color, lw: 0.7, opacity: 0.75)
+            line(target.x, target.y, ex, ey, stroke: color, lw: 0.7, opacity: 0.65)
         }
-        if dot { circle(target.x, target.y, 1.7, fill: color) }
+        if dot { circle(target.x, target.y, 2, fill: color, stroke: .white, lw: 0.8) }
         rect(x0 - 2, y - m.height * 0.82, m.width + 4, m.height * 0.95, r: 3, fill: .white, opacity: 0.72)
         let txt = Text(s).font(.system(size: size, weight: bold ? .semibold : .medium)).foregroundStyle(color)
         ctx.draw(txt, at: CGPoint(x: x0, y: y + size * 0.25), anchor: .bottomLeading)
@@ -75,9 +75,10 @@ extension Sketch {
     mutating func stateChip(_ en: String, _ zh: String, _ x: Double, _ y: Double, color: Color, anchor: Anchor = .start) {
         let s = t(en, zh), m = measureText(s, size: 11, bold: true)
         let w = m.width + 28, x0 = anchor == .start ? x : anchor == .middle ? x - w / 2 : x - w
-        rect(x0 + 1, y + 1.5, w, 24, r: 12, fill: .black.opacity(0.06))
-        rect(x0, y, w, 24, r: 12, fill: .white, stroke: color.opacity(0.9), lw: 1.5)
-        circle(x0 + 12, y + 12, 4, fill: color)
+        rect(x0, y + 2, w, 24, r: 12, fill: Palette.shadow)
+        rect(x0, y, w, 24, r: 12, fill: .white)
+        rect(x0, y, w, 24, r: 12, fill: color.opacity(0.13))
+        circle(x0 + 12, y + 12, 3.5, fill: color)
         ctx.draw(Text(s).font(.system(size: 11, weight: .semibold)).foregroundStyle(color), at: CGPoint(x: x0 + 21, y: y + 12), anchor: .leading)
     }
 

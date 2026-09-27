@@ -39,20 +39,20 @@ struct Sketch {
     enum Anchor { case start, middle, end }
 
     /// Text in the chosen language.
-    mutating func label(_ en: String, _ zh: String, _ x: Double, _ y: Double, size: Double = 10, color: Color = Color(hex: "#555555"),
+    mutating func label(_ en: String, _ zh: String, _ x: Double, _ y: Double, size: Double = 10, color: Color = Color(hex: "#4A4552"),
                         anchor: Anchor = .start, bold: Bool = false) {
         // already one language: skip the legacy mixed-string split, which would cut "X 光复查" to "光复查"
         draw(self.zh ? zh : en, x, y, size: size, color: color, anchor: anchor, bold: bold)
     }
 
     /// `y` is the baseline, like SVG text.
-    mutating func text(_ s: String, _ x: Double, _ y: Double, size: Double = 10, color: Color = Color(hex: "#555555"),
+    mutating func text(_ s: String, _ x: Double, _ y: Double, size: Double = 10, color: Color = Color(hex: "#4A4552"),
                        anchor: Anchor = .start, bold: Bool = false) {
         draw(Bilingual.pick(mixed: s, zh: zh), x, y, size: size, color: color, anchor: anchor, bold: bold)
     }
 
     private mutating func draw(_ s: String, _ x: Double, _ y: Double, size: Double, color: Color, anchor: Anchor, bold: Bool) {
-        let t = Text(s).font(.system(size: size, weight: bold ? .bold : .regular)).foregroundStyle(color)
+        let t = Text(s).font(.system(size: size, weight: bold ? .semibold : .regular)).foregroundStyle(color)
         let unit: UnitPoint = switch anchor { case .start: .bottomLeading; case .middle: .bottom; case .end: .bottomTrailing }
         ctx.draw(t, at: CGPoint(x: x, y: y + size * 0.25), anchor: unit)
     }
