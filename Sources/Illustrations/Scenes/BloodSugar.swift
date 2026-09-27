@@ -107,7 +107,7 @@ extension Illustrations {
 
         // left: the person at the table, organs seen through the body; or out for a walk
         let seat = 1 - ex
-        s.circle(92, 160, 86, fill: seat > 0.5 ? hex("#F4EEE6") : hex("#EAF2E4"))
+        s.circle(92, 160, 86, fill: seat > 0.5 ? Palette.blob : hex("#EAF2E4"))
         if seat > 0.01 {
             s.group(opacity: seat) { w in drawMealTable(&w, p, t, meal: meal, ins: ins, type1: type1, kid: kid, sugarHigh: g > 11) }
         }
@@ -248,9 +248,9 @@ extension Illustrations {
         }
         func at(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: org.x + x * k, y: org.y + y * k) }
         // table, bowl and spoon
-        w.shade(Path(roundedRect: CGRect(x: 0, y: tableY, width: 186, height: 10), cornerRadius: 3), hex("#D5B08A"), hex("#B98D62"))
-        w.shade(Path(CGRect(x: 0, y: tableY + 10, width: 186, height: 300 - tableY - 10)), hex("#E6D6C2"), hex("#D8C4AA"), vertical: true)
-        w.line(0, tableY + 10, 186, tableY + 10, stroke: hex("#A77E57"), lw: 1)
+        w.shade(Path(roundedRect: CGRect(x: 0, y: tableY, width: 186, height: 10), cornerRadius: 3), hex("#E6CFB2"), hex("#D8BC9A"))
+        w.shade(Path(CGRect(x: 0, y: tableY + 10, width: 186, height: 300 - tableY - 10)), hex("#F0E6DA"), hex("#E8DCCC"), vertical: true)
+        w.line(0, tableY + 10, 186, tableY + 10, stroke: hex("#D8BC9A"), lw: 1)
         if meal > 0.5 {
             w.card(40, tableY + 26, 104, 26, r: 7)
             w.label("rice bowl ≈ 50 g carbs", "一碗米饭 ≈ 50 克碳水", 92, tableY + 43, size: 8, color: Tone.sub, anchor: .middle, bold: true)
@@ -294,7 +294,7 @@ extension Illustrations {
         w.circle(29, 118, 22, fill: hex("#A9CF9A"))
         w.circle(42, 134, 14, fill: hex("#BCDDB0"))
         var walker = SideFigure(Casualty(p, adult: 196), lean: 4)
-        if walker.bump == 0 && p[v: "kid"] < 0.5 && p[v: "senior"] < 0.5 { walker.look.top = hex("#8FC8A0"); walker.look.topLine = hex("#4F8F63") }
+        if walker.bump == 0 && p[v: "kid"] < 0.5 && p[v: "senior"] < 0.5 { walker.look.top = hex("#7DBF9A"); walker.look.topLine = Look.edge(walker.look.top) }
         walker.look.longSleeves = false
         func leg(_ a: Double, _ bend: Double) -> SideFigure.Leg {
             let knee = 4 + 26 * max(0, bend)

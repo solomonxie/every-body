@@ -63,7 +63,7 @@ extension Illustrations {
         var b = Bust(c)
         b.h = kid ? h * 0.94 : h
         b.head *= 1.15
-        if !kid && !senior && !female && !pregnant { b.look.top = hex("#8FB3E0"); b.look.topLine = hex("#5F87B8") }
+        if !kid && !senior && !female && !pregnant { b.look.top = hex("#7FA0E4"); b.look.topLine = Look.edge(b.look.top) }
         b.waist = 0.62
         return b
     }
@@ -71,7 +71,7 @@ extension Illustrations {
     /// person in a round backdrop: body cut off by the circle, arms free; `between` draws over the body, under the arms
     @MainActor static func portrait(_ s: inout Sketch, _ person: Bust, at o: CGPoint, between: (inout Sketch) -> Void = { _ in }) {
         let c = CGPoint(x: o.x, y: o.y + 0.22 * person.h), r = 0.35 * person.h
-        s.circle(c.x, c.y, r, fill: hex("#F2ECE3"))
+        s.circle(c.x, c.y, r, fill: Palette.blob)
         var clip = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r))
         clip.addRect(CGRect(x: c.x - r, y: 0, width: 2 * r, height: c.y))
         var inside = s.clipped(to: clip)
