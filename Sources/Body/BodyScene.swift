@@ -62,7 +62,10 @@ final class BodyScene {
     private var partEntities: [String: ModelEntity] = [:]
     private var partLayer: [String: LayerID] = [:]
     private var baseMaterials: [String: PhysicallyBasedMaterial] = [:]
-    private var skinEntities: [(entity: ModelEntity, color: UIColor, texture: TextureResource?)] = []
+    private var skinEntities: [(entity: ModelEntity, material: PhysicallyBasedMaterial)] = []
+    /// the real (MakeHuman) skin is one mesh: it can't bend, so it steps aside while a joint is bent
+    private var realSkin = false
+    private var bentJoints: Set<String> = []
     private var organEntities: [String: Entity] = [:]
     private var jointOuter: [String: Entity] = [:]
     private var jointInner: [String: Entity] = [:]
@@ -118,6 +121,7 @@ final class BodyScene {
         let pregnant = pregnant && female && age == .adult
         rig.children.removeAll()
         partEntities = [:]; skinEntities = []; organEntities = [:]; jointOuter = [:]; pointEntities = [:]; pointColors = [:]; smallPoints = []; meridianEntities = [:]
+        bentJoints = []
 
         // joint pivots: outer at the pivot (rotates), inner offset back so children use body coords
         var inner: [String: Entity] = [:]
@@ -142,16 +146,24 @@ final class BodyScene {
 
         // before puberty the body shape doesn't differ by sex
         let sex = female && !(age == .infant || age.isChild) ? "female" : "male"
+        let realSkin = ModelLibrary.skin(female: female, pregnant: pregnant, age: age)
+        self.realSkin = realSkin != nil
+        for piece in realSkin ?? [] {
+            let entity = ModelEntity(mesh: piece.mesh)
+            entity.transform = piece.transform
+            entity.name = "skin:\(piece.id)"
+            skinEntities.append((entity, Self.skinMaterial(piece)))
+            rig.addChild(entity)
+        }
         // a pregnant body swaps the female torso for one with the bump
-        for part in Catalog.body.parts where part.layer == .skin && Self.skinWanted(part, sex: sex, pregnant: pregnant) {
+        for part in Catalog.body.parts where realSkin == nil && part.layer == .skin && Self.skinWanted(part, sex: sex, pregnant: pregnant) {
             let entity = Self.entity(for: part.shape)
             // eyes, lips and brows keep their own colour; everything else takes the skin tone
             let color = part.color == "#F2C9A5" ? skinColor : UIColor(hex: part.color)
             entity.name = "skin:\(part.id)"
             let texture = part.id.hasPrefix("hair") ? Textures.hair : nil
-            entity.model?.materials = [Self.material(color, opacity: 0.3, texture: texture)]
             parent(of: part.id).addChild(entity)
-            skinEntities.append((entity, color, texture))
+            skinEntities.append((entity, Self.material(color, opacity: 1, texture: texture)))
         }
 
         for organ in Catalog.body.organs where organ.onlyPregnant != true || pregnant {
@@ -182,9 +194,27 @@ final class BodyScene {
             organEntities[organ.id] = container
         }
 
+        // real bones replace the generated skeleton; each still turns with its joint
+        let realBones = ModelLibrary.hasSkeleton
+        for piece in realBones ? ModelLibrary.bones : [] {
+            guard let part = ModelLibrary.part(piece.id) else { continue }
+            let entity = ModelEntity(mesh: piece.mesh)
+            entity.transform = piece.transform
+            entity.name = part.id
+            baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1)
+            entity.model?.materials = [baseMaterials[part.id]!]
+            entity.components.set(InputTargetComponent())
+            Task { @MainActor in
+                if let shape = await ModelLibrary.collision(for: piece) { entity.components.set(CollisionComponent(shapes: [shape])) }
+            }
+            (part.joint.flatMap { Catalog.joint($0) }.map(container(for:)) ?? rig).addChild(entity)
+            partEntities[part.id] = entity
+            partLayer[part.id] = part.layer
+        }
+
         // internal sex-specific parts (ovaries, testes) exist at every age
         let organSex = female ? "female" : "male"
-        for part in Catalog.body.parts where part.layer != .skin && (part.sex == nil || part.sex == organSex) {
+        for part in Catalog.body.parts where part.layer != .skin && !(realBones && part.layer == .skeletal) && (part.sex == nil || part.sex == organSex) {
             let entity = Self.entity(for: part.shape)
             entity.name = part.id
             baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1, texture: Textures.for(part.layer))
@@ -246,7 +276,7 @@ final class BodyScene {
         rest = []
         func keep(_ e: Entity, centre: SIMD3<Float>) { rest.append((e, e.transform.matrix, centre)) }
         for e in partEntities.values { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
-        for (e, _, _) in skinEntities { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
+        for (e, _) in skinEntities { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
         for e in organEntities.values { keep(e, centre: e.position) }
         for e in pointEntities.values.joined() { keep(e, centre: e.position) }
         for e in meridianEntities.values.joined() { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
@@ -396,6 +426,9 @@ final class BodyScene {
     func setJoint(_ id: String, degrees: Float) {
         guard let joint = Catalog.joint(id), let outer = jointOuter[id] else { return }
         outer.orientation = simd_quatf(angle: degrees * .pi / 180, axis: simd_normalize(joint.axis.simd))
+        let wasBent = !bentJoints.isEmpty
+        if abs(degrees) > 0.5 { bentJoints.insert(id) } else { bentJoints.remove(id) }
+        if realSkin && wasBent != !bentJoints.isEmpty { applyVisibility() }
         // the working muscle shortens and thickens
         let bulge = 1 + 0.6 * min(1, degrees / joint.maxDeg)
         for mover in joint.movers {
@@ -459,9 +492,9 @@ final class BodyScene {
         let inner = layers.contains { $0 != .skin }
         // skin alone is solid; over inner layers it's a faint glass
         let skinOpacity: Float = layers.contains(.skin) ? (inner ? 0.12 : 1) : 0
-        for (skin, color, texture) in skinEntities {
-            skin.isEnabled = skinOpacity > 0
-            skin.model?.materials = [Self.material(color, opacity: skinOpacity, texture: texture)]
+        for (skin, base) in skinEntities {
+            skin.isEnabled = skinOpacity > 0 && !(realSkin && !bentJoints.isEmpty)
+            skin.model?.materials = [Self.faded(base, skinOpacity)]
         }
         let muscleOpacity: Float = layers.contains(.skeletal) ? 0.55 : 1
         for (id, entity) in partEntities {
@@ -617,6 +650,25 @@ final class BodyScene {
         return m
     }
 
+    /// The model's own textured material, lit like the rest of the body.
+    private static func skinMaterial(_ piece: ModelLibrary.Piece) -> PhysicallyBasedMaterial {
+        var m = piece.material as? PhysicallyBasedMaterial ?? material(UIColor(hex: "#F2C9A5"), opacity: 1)
+        m.faceCulling = piece.id == "body" ? .back : .none
+        m.metallic = .init(floatLiteral: 0)
+        return m
+    }
+
+    /// Skin at this opacity; hair, brows and lashes keep their alpha texture.
+    private static func faded(_ base: PhysicallyBasedMaterial, _ opacity: Float) -> PhysicallyBasedMaterial {
+        var m = base
+        if case let .transparent(o) = base.blending, let texture = o.texture {
+            m.blending = .transparent(opacity: .init(scale: opacity, texture: texture))
+        } else if opacity < 1 {
+            m.blending = .transparent(opacity: .init(floatLiteral: opacity))
+        }
+        return m
+    }
+
     private static func makeTappable(_ entity: ModelEntity, shape: PartShape) {
         entity.components.set(InputTargetComponent())
         if let cached = collisionCache[shape] {
@@ -690,7 +742,8 @@ final class BodyScene {
     static func prepare() async {
         if let warming { return await warming.value }
         let task = Task { @MainActor in
-            var shapes = Catalog.body.parts.map(\.shape)
+            await ModelLibrary.prepare()
+            var shapes = Catalog.body.parts.filter { !(ModelLibrary.hasSkeleton && $0.layer == .skeletal) }.map(\.shape)
             for organ in Catalog.body.organs { shapes += organ.shapes + (organ.male?.shapes ?? []) }
             for m in Catalog.points.values.flatMap({ $0.meridians ?? [] }) {
                 shapes += (m.pieces + (m.femalePieces ?? [])).map(meridianShape)
