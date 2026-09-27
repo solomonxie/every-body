@@ -166,6 +166,12 @@ struct ViewerScreen: View {
                         if layers.contains(layer.id) { layers.remove(layer.id) } else { layers.insert(layer.id) }
                     }
                 }
+                // what the figure wears, next to the layers; children always keep theirs on
+                if layers.contains(.skin) && !settings.profile.isKid {
+                    Pill(label: settings.t("Clothes", "衣服"), selected: settings.showUnderwear, symbol: "tshirt") {
+                        settings.showUnderwear.toggle()
+                    }
+                }
                 if parts.changedCount > 0 {
                     Pill(label: settings.t("Show all (\(parts.changedCount))", "全部显示（\(parts.changedCount)）"), symbol: "eye") { change(PartState()) }
                 }
