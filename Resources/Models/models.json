@@ -1,4 +1,2809 @@
 {
+ "internals": {
+  "files": {
+   "muscular": "muscles.usdz",
+   "organs": "organs.usdz",
+   "circulatory": "vessels.usdz",
+   "nervous": "nerves.usdz"
+  },
+  "source": "Z-Anatomy",
+  "license": "CC BY-SA 4.0",
+  "triangles": 249236,
+  "replaces": [
+   "deep-finger-index-l",
+   "deep-finger-index-r",
+   "deep-finger-little-l",
+   "deep-finger-little-r",
+   "deep-finger-middle-l",
+   "deep-finger-middle-r",
+   "deep-finger-ring-l",
+   "deep-finger-ring-r",
+   "deep-foot-l",
+   "deep-foot-r",
+   "deep-forearm-l",
+   "deep-forearm-r",
+   "deep-head",
+   "deep-neck",
+   "deep-shin-l",
+   "deep-shin-r",
+   "deep-thigh-l",
+   "deep-thigh-r",
+   "deep-thumb-l",
+   "deep-thumb-r",
+   "deep-trunk",
+   "deep-upper-arm-l",
+   "deep-upper-arm-r",
+   "finger-tendons-l",
+   "finger-tendons-r",
+   "intercostal-l",
+   "intercostal-r"
+  ],
+  "parts": [
+   {
+    "id": "achilles-l",
+    "name": "Achilles tendon (L)",
+    "nameZh": "左跟腱",
+    "layer": "muscular",
+    "color": "#E6D3C3",
+    "joint": "knee-l",
+    "tris": 269,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "achilles-r",
+    "name": "Achilles tendon (R)",
+    "nameZh": "右跟腱",
+    "layer": "muscular",
+    "color": "#E6D3C3",
+    "joint": "knee-r",
+    "tris": 269,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "adductors-l",
+    "name": "Adductors (L)",
+    "nameZh": "左内收肌群",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1472,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "adductors-r",
+    "name": "Adductors (R)",
+    "nameZh": "右内收肌群",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1472,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "biceps-l",
+    "name": "Biceps (L)",
+    "nameZh": "左肱二头肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "shoulder-l",
+    "tris": 634,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "biceps-r",
+    "name": "Biceps (R)",
+    "nameZh": "右肱二头肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "shoulder-r",
+    "tris": 634,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "brachialis-l",
+    "name": "Brachialis (L)",
+    "nameZh": "左肱肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "shoulder-l",
+    "tris": 412,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "brachialis-r",
+    "name": "Brachialis (R)",
+    "nameZh": "右肱肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "shoulder-r",
+    "tris": 412,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "brachioradialis-l",
+    "name": "Brachioradialis (L)",
+    "nameZh": "左肱桡肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 386,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "brachioradialis-r",
+    "name": "Brachioradialis (R)",
+    "nameZh": "右肱桡肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 386,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "coracobrachialis-l",
+    "name": "Coracobrachialis (L)",
+    "nameZh": "左喙肱肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "shoulder-l",
+    "tris": 164,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "coracobrachialis-r",
+    "name": "Coracobrachialis (R)",
+    "nameZh": "右喙肱肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "shoulder-r",
+    "tris": 164,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "deltoid-l",
+    "name": "Deltoid (L)",
+    "nameZh": "左三角肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 942,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "deltoid-r",
+    "name": "Deltoid (R)",
+    "nameZh": "右三角肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 942,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "diaphragm",
+    "name": "Diaphragm",
+    "nameZh": "膈肌",
+    "layer": "muscular",
+    "color": "#B8544C",
+    "tris": 2698,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "epicranial-aponeurosis",
+    "name": "Epicranial aponeurosis",
+    "nameZh": "帽状腱膜",
+    "layer": "muscular",
+    "color": "#E6D3C3",
+    "tris": 942,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "erector-spinae-l",
+    "name": "Erector spinae (L)",
+    "nameZh": "左竖脊肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1476,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "erector-spinae-r",
+    "name": "Erector spinae (R)",
+    "nameZh": "右竖脊肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1534,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "external-oblique-l",
+    "name": "External oblique (L)",
+    "nameZh": "左腹外斜肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1836,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "external-oblique-r",
+    "name": "External oblique (R)",
+    "nameZh": "右腹外斜肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1836,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "facial-muscles-l",
+    "name": "Facial expression muscles (L)",
+    "nameZh": "左面部表情肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 214,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "facial-muscles-r",
+    "name": "Facial expression muscles (R)",
+    "nameZh": "右面部表情肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 214,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "flexor-carpi-ulnaris-l",
+    "name": "Flexor carpi ulnaris (L)",
+    "nameZh": "左尺侧腕屈肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "elbow-l",
+    "tris": 388,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "flexor-carpi-ulnaris-r",
+    "name": "Flexor carpi ulnaris (R)",
+    "nameZh": "右尺侧腕屈肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 388,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "foot-muscles-l",
+    "name": "Foot muscles (L)",
+    "nameZh": "左足部肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "knee-l",
+    "tris": 784,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "foot-muscles-r",
+    "name": "Foot muscles (R)",
+    "nameZh": "右足部肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "knee-r",
+    "tris": 784,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "forearm-extensors-l",
+    "name": "Forearm extensors (L)",
+    "nameZh": "左前臂伸肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1180,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "forearm-extensors-r",
+    "name": "Forearm extensors (R)",
+    "nameZh": "右前臂伸肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1180,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "forearm-flexors-l",
+    "name": "Forearm flexors (L)",
+    "nameZh": "左前臂屈肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1266,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "forearm-flexors-r",
+    "name": "Forearm flexors (R)",
+    "nameZh": "右前臂屈肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1266,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "frontalis-l",
+    "name": "Frontalis (L)",
+    "nameZh": "左额肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 198,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "frontalis-r",
+    "name": "Frontalis (R)",
+    "nameZh": "右额肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 198,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gastrocnemius-lateral-l",
+    "name": "Calf (gastrocnemius) (L)",
+    "nameZh": "左腓肠肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 542,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gastrocnemius-lateral-r",
+    "name": "Calf (gastrocnemius) (R)",
+    "nameZh": "右腓肠肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 542,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gastrocnemius-medial-l",
+    "name": "Calf (gastrocnemius) (L)",
+    "nameZh": "左腓肠肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 648,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gastrocnemius-medial-r",
+    "name": "Calf (gastrocnemius) (R)",
+    "nameZh": "右腓肠肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 648,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gluteus-maximus-l",
+    "name": "Gluteus maximus (L)",
+    "nameZh": "左臀大肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 868,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gluteus-maximus-r",
+    "name": "Gluteus maximus (R)",
+    "nameZh": "右臀大肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 868,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gluteus-medius-l",
+    "name": "Gluteus medius (L)",
+    "nameZh": "左臀中肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 536,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gluteus-medius-r",
+    "name": "Gluteus medius (R)",
+    "nameZh": "右臀中肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 536,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gluteus-minimus-l",
+    "name": "Gluteus minimus (L)",
+    "nameZh": "左臀小肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 334,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gluteus-minimus-r",
+    "name": "Gluteus minimus (R)",
+    "nameZh": "右臀小肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 334,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gracilis-l",
+    "name": "Gracilis (L)",
+    "nameZh": "左股薄肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 534,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "gracilis-r",
+    "name": "Gracilis (R)",
+    "nameZh": "右股薄肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 534,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "hamstrings-lateral-l",
+    "name": "Hamstrings (L)",
+    "nameZh": "左腘绳肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 938,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "hamstrings-lateral-r",
+    "name": "Hamstrings (R)",
+    "nameZh": "右腘绳肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 938,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "hamstrings-medial-l",
+    "name": "Hamstrings (L)",
+    "nameZh": "左腘绳肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1084,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "hamstrings-medial-r",
+    "name": "Hamstrings (R)",
+    "nameZh": "右腘绳肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1084,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "hand-muscles-l",
+    "name": "Hand muscles (L)",
+    "nameZh": "左手部肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "elbow-l",
+    "tris": 529,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "hand-muscles-r",
+    "name": "Hand muscles (R)",
+    "nameZh": "右手部肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "elbow-r",
+    "tris": 529,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "hip-rotators-l",
+    "name": "Deep hip rotators (L)",
+    "nameZh": "左髋深部外旋肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 604,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "hip-rotators-r",
+    "name": "Deep hip rotators (R)",
+    "nameZh": "右髋深部外旋肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 604,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "iliopsoas-l",
+    "name": "Iliopsoas (L)",
+    "nameZh": "左髂腰肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 920,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "iliopsoas-r",
+    "name": "Iliopsoas (R)",
+    "nameZh": "右髂腰肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 920,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "infrahyoid-l",
+    "name": "Infrahyoid muscles (L)",
+    "nameZh": "左舌骨下肌群",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 252,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "infrahyoid-r",
+    "name": "Infrahyoid muscles (R)",
+    "nameZh": "右舌骨下肌群",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 252,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "infraspinatus-l",
+    "name": "Infraspinatus (L)",
+    "nameZh": "左冈下肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 366,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "infraspinatus-r",
+    "name": "Infraspinatus (R)",
+    "nameZh": "右冈下肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 366,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "intercostals-l",
+    "name": "External intercostals (L)",
+    "nameZh": "左肋间外肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1410,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "intercostals-r",
+    "name": "External intercostals (R)",
+    "nameZh": "右肋间外肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1410,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "internal-oblique-l",
+    "name": "Internal oblique (L)",
+    "nameZh": "左腹内斜肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1555,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "internal-oblique-r",
+    "name": "Internal oblique (R)",
+    "nameZh": "右腹内斜肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1555,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "it-band-l",
+    "name": "Iliotibial band (L)",
+    "nameZh": "左髂胫束",
+    "layer": "muscular",
+    "color": "#E6D3C3",
+    "tris": 1054,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "it-band-r",
+    "name": "Iliotibial band (R)",
+    "nameZh": "右髂胫束",
+    "layer": "muscular",
+    "color": "#E6D3C3",
+    "tris": 1054,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "latissimus-l",
+    "name": "Latissimus dorsi (L)",
+    "nameZh": "左背阔肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1728,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "latissimus-r",
+    "name": "Latissimus dorsi (R)",
+    "nameZh": "右背阔肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1728,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "leg-deep-flexors-l",
+    "name": "Deep calf muscles (L)",
+    "nameZh": "左小腿深层屈肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 830,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "leg-deep-flexors-r",
+    "name": "Deep calf muscles (R)",
+    "nameZh": "右小腿深层屈肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 830,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "levator-scapulae-l",
+    "name": "Levator scapulae (L)",
+    "nameZh": "左肩胛提肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 182,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "levator-scapulae-r",
+    "name": "Levator scapulae (R)",
+    "nameZh": "右肩胛提肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 182,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "linea-alba",
+    "name": "Linea alba",
+    "nameZh": "白线",
+    "layer": "muscular",
+    "color": "#E6D3C3",
+    "tris": 338,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "masseter-l",
+    "name": "Masseter (L)",
+    "nameZh": "左咬肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "masseter-r",
+    "name": "Masseter (R)",
+    "nameZh": "右咬肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "occipitalis-l",
+    "name": "Occipitalis (L)",
+    "nameZh": "左枕肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "occipitalis-r",
+    "name": "Occipitalis (R)",
+    "nameZh": "右枕肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "orbicularis-oculi-l",
+    "name": "Orbicularis oculi (L)",
+    "nameZh": "左眼轮匝肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "orbicularis-oculi-r",
+    "name": "Orbicularis oculi (R)",
+    "nameZh": "右眼轮匝肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "orbicularis-oris",
+    "name": "Orbicularis oris",
+    "nameZh": "口轮匝肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "pectoralis-clavicular-l",
+    "name": "Pectoralis major (L)",
+    "nameZh": "左胸大肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 292,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "pectoralis-clavicular-r",
+    "name": "Pectoralis major (R)",
+    "nameZh": "右胸大肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 292,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "pectoralis-l",
+    "name": "Pectoralis major (L)",
+    "nameZh": "左胸大肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1008,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "pectoralis-minor-l",
+    "name": "Pectoralis minor (L)",
+    "nameZh": "左胸小肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 244,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "pectoralis-minor-r",
+    "name": "Pectoralis minor (R)",
+    "nameZh": "右胸小肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 244,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "pectoralis-r",
+    "name": "Pectoralis major (R)",
+    "nameZh": "右胸大肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1008,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "pelvic-floor",
+    "name": "Pelvic floor (levator ani)",
+    "nameZh": "盆底肌（肛提肌）",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 628,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "peroneus-l",
+    "name": "Peroneus longus (L)",
+    "nameZh": "左腓骨长肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "knee-l",
+    "tris": 474,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "peroneus-r",
+    "name": "Peroneus longus (R)",
+    "nameZh": "右腓骨长肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "knee-r",
+    "tris": 474,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "plantaris-l",
+    "name": "Plantaris (L)",
+    "nameZh": "左跖肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 270,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "plantaris-r",
+    "name": "Plantaris (R)",
+    "nameZh": "右跖肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 270,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "popliteus-l",
+    "name": "Popliteus (L)",
+    "nameZh": "左腘肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "popliteus-r",
+    "name": "Popliteus (R)",
+    "nameZh": "右腘肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "quadratus-lumborum-l",
+    "name": "Quadratus lumborum (L)",
+    "nameZh": "左腰方肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 324,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "quadratus-lumborum-r",
+    "name": "Quadratus lumborum (R)",
+    "nameZh": "右腰方肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 324,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rectus-abdominis-1-l",
+    "name": "Rectus abdominis (L)",
+    "nameZh": "左腹直肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 394,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rectus-abdominis-2-l",
+    "name": "Rectus abdominis (L)",
+    "nameZh": "左腹直肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 174,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rectus-abdominis-3-l",
+    "name": "Rectus abdominis (L)",
+    "nameZh": "左腹直肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 144,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rectus-abdominis-4-l",
+    "name": "Rectus abdominis (L)",
+    "nameZh": "左腹直肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 178,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rectus-abdominis-1-r",
+    "name": "Rectus abdominis (R)",
+    "nameZh": "右腹直肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 394,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rectus-abdominis-2-r",
+    "name": "Rectus abdominis (R)",
+    "nameZh": "右腹直肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 175,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rectus-abdominis-3-r",
+    "name": "Rectus abdominis (R)",
+    "nameZh": "右腹直肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 143,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rectus-abdominis-4-r",
+    "name": "Rectus abdominis (R)",
+    "nameZh": "右腹直肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 178,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rectus-femoris-l",
+    "name": "Rectus femoris (L)",
+    "nameZh": "左股直肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 826,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rectus-femoris-r",
+    "name": "Rectus femoris (R)",
+    "nameZh": "右股直肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 826,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rhomboids-l",
+    "name": "Rhomboids (L)",
+    "nameZh": "左菱形肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 334,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "rhomboids-r",
+    "name": "Rhomboids (R)",
+    "nameZh": "右菱形肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 334,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "sartorius-l",
+    "name": "Sartorius (L)",
+    "nameZh": "左缝匠肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 564,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "sartorius-r",
+    "name": "Sartorius (R)",
+    "nameZh": "右缝匠肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 564,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "scalenes-l",
+    "name": "Scalene muscles (L)",
+    "nameZh": "左斜角肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 166,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "scalenes-r",
+    "name": "Scalene muscles (R)",
+    "nameZh": "右斜角肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 166,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "serratus-l",
+    "name": "Serratus anterior (L)",
+    "nameZh": "左前锯肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1002,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "serratus-posterior-l",
+    "name": "Serratus posterior (L)",
+    "nameZh": "左后锯肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 652,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "serratus-posterior-r",
+    "name": "Serratus posterior (R)",
+    "nameZh": "右后锯肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 652,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "serratus-r",
+    "name": "Serratus anterior (R)",
+    "nameZh": "右前锯肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1002,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "soleus-l",
+    "name": "Soleus (L)",
+    "nameZh": "左比目鱼肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "knee-l",
+    "tris": 692,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "soleus-r",
+    "name": "Soleus (R)",
+    "nameZh": "右比目鱼肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "knee-r",
+    "tris": 692,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "splenius-l",
+    "name": "Splenius (L)",
+    "nameZh": "左夹肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 460,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "splenius-r",
+    "name": "Splenius (R)",
+    "nameZh": "右夹肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 460,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "sternocleidomastoid-l",
+    "name": "Sternocleidomastoid (L)",
+    "nameZh": "左胸锁乳突肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 272,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "sternocleidomastoid-r",
+    "name": "Sternocleidomastoid (R)",
+    "nameZh": "右胸锁乳突肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 272,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "subscapularis-l",
+    "name": "Subscapularis (L)",
+    "nameZh": "左肩胛下肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 348,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "subscapularis-r",
+    "name": "Subscapularis (R)",
+    "nameZh": "右肩胛下肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 348,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "suprahyoid-l",
+    "name": "Suprahyoid muscles (L)",
+    "nameZh": "左舌骨上肌群",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "suprahyoid-r",
+    "name": "Suprahyoid muscles (R)",
+    "nameZh": "右舌骨上肌群",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "supraspinatus-l",
+    "name": "Supraspinatus (L)",
+    "nameZh": "左冈上肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 198,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "supraspinatus-r",
+    "name": "Supraspinatus (R)",
+    "nameZh": "右冈上肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 198,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "temporalis-l",
+    "name": "Temporalis (L)",
+    "nameZh": "左颞肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 334,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "temporalis-r",
+    "name": "Temporalis (R)",
+    "nameZh": "右颞肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 334,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "tensor-fasciae-latae-l",
+    "name": "Tensor fasciae latae (L)",
+    "nameZh": "左阔筋膜张肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 248,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "tensor-fasciae-latae-r",
+    "name": "Tensor fasciae latae (R)",
+    "nameZh": "右阔筋膜张肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 248,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "teres-major-l",
+    "name": "Teres major (L)",
+    "nameZh": "左大圆肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "teres-major-r",
+    "name": "Teres major (R)",
+    "nameZh": "右大圆肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "teres-minor-l",
+    "name": "Teres minor (L)",
+    "nameZh": "左小圆肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 198,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "teres-minor-r",
+    "name": "Teres minor (R)",
+    "nameZh": "右小圆肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 198,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "thenar-muscles-l",
+    "name": "Hand muscles (L)",
+    "nameZh": "左手部肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "elbow-l",
+    "tris": 204,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "thenar-muscles-r",
+    "name": "Hand muscles (R)",
+    "nameZh": "右手部肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "elbow-r",
+    "tris": 204,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "tibialis-l",
+    "name": "Tibialis anterior (L)",
+    "nameZh": "左胫骨前肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "knee-l",
+    "tris": 416,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "tibialis-r",
+    "name": "Tibialis anterior (R)",
+    "nameZh": "右胫骨前肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "knee-r",
+    "tris": 416,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "toe-extensors-l",
+    "name": "Long toe extensors (L)",
+    "nameZh": "左趾长伸肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 489,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "toe-extensors-r",
+    "name": "Long toe extensors (R)",
+    "nameZh": "右趾长伸肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 489,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "transversospinales-l",
+    "name": "Semispinalis & multifidus (L)",
+    "nameZh": "左半棘肌与多裂肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 704,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "transversospinales-r",
+    "name": "Semispinalis & multifidus (R)",
+    "nameZh": "右半棘肌与多裂肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 704,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "trapezius-l",
+    "name": "Trapezius (L)",
+    "nameZh": "左斜方肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1254,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "trapezius-r",
+    "name": "Trapezius (R)",
+    "nameZh": "右斜方肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 1254,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "triceps-l",
+    "name": "Triceps (L)",
+    "nameZh": "左肱三头肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "shoulder-l",
+    "tris": 970,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "triceps-r",
+    "name": "Triceps (R)",
+    "nameZh": "右肱三头肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "joint": "shoulder-r",
+    "tris": 970,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "vastus-intermedius-l",
+    "name": "Vastus intermedius (L)",
+    "nameZh": "左股中间肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 662,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "vastus-intermedius-r",
+    "name": "Vastus intermedius (R)",
+    "nameZh": "右股中间肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 662,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "vastus-lateralis-l",
+    "name": "Vastus lateralis (L)",
+    "nameZh": "左股外侧肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 916,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "vastus-lateralis-r",
+    "name": "Vastus lateralis (R)",
+    "nameZh": "右股外侧肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 916,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "vastus-medialis-l",
+    "name": "Vastus medialis (L)",
+    "nameZh": "左股内侧肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 670,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "vastus-medialis-r",
+    "name": "Vastus medialis (R)",
+    "nameZh": "右股内侧肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 670,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "zygomaticus-l",
+    "name": "Zygomaticus (L)",
+    "nameZh": "左颧肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "zygomaticus-r",
+    "name": "Zygomaticus (R)",
+    "nameZh": "右颧肌",
+    "layer": "muscular",
+    "color": "#C1443C",
+    "tris": 160,
+    "file": "muscles.usdz"
+   },
+   {
+    "id": "appendix",
+    "name": "Appendix",
+    "nameZh": "阑尾",
+    "layer": "organs",
+    "color": "#D9A77A",
+    "organ": "appendix",
+    "tris": 300,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "bladder",
+    "name": "Bladder",
+    "nameZh": "膀胱",
+    "layer": "organs",
+    "color": "#E0C35A",
+    "organ": "bladder",
+    "tris": 896,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "brain",
+    "name": "Brain",
+    "nameZh": "脑",
+    "layer": "organs",
+    "color": "#E8A0B4",
+    "organ": "brain",
+    "tris": 12000,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "bronchus-r",
+    "name": "Bronchi",
+    "nameZh": "支气管",
+    "layer": "organs",
+    "color": "#E8C4B0",
+    "tris": 2363,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "esophagus",
+    "name": "Esophagus",
+    "nameZh": "食管",
+    "layer": "organs",
+    "color": "#E0A080",
+    "tris": 984,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "gallbladder",
+    "name": "Gallbladder",
+    "nameZh": "胆囊",
+    "layer": "organs",
+    "color": "#5E8C3A",
+    "organ": "gallbladder",
+    "tris": 299,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "heart",
+    "name": "Heart",
+    "nameZh": "心脏",
+    "layer": "organs",
+    "color": "#C8323C",
+    "organ": "heart",
+    "tris": 3064,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "intestines",
+    "name": "Intestines",
+    "nameZh": "肠",
+    "layer": "organs",
+    "color": "#D9A77A",
+    "organ": "intestines",
+    "tris": 5999,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "liver",
+    "name": "Liver",
+    "nameZh": "肝",
+    "layer": "organs",
+    "color": "#8C3B2E",
+    "organ": "liver",
+    "tris": 2951,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "lung-l",
+    "name": "Left lung",
+    "nameZh": "左肺",
+    "layer": "organs",
+    "color": "#E5868F",
+    "organ": "lung-l",
+    "tris": 4299,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "lung-r",
+    "name": "Right lung",
+    "nameZh": "右肺",
+    "layer": "organs",
+    "color": "#E5868F",
+    "organ": "lung-r",
+    "tris": 4863,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "pancreas",
+    "name": "Pancreas",
+    "nameZh": "胰腺",
+    "layer": "organs",
+    "color": "#E8C07A",
+    "organ": "pancreas",
+    "tris": 606,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "prostate",
+    "name": "Prostate",
+    "nameZh": "前列腺",
+    "layer": "organs",
+    "color": "#C98A8A",
+    "organ": "uterus",
+    "sex": "male",
+    "tris": 324,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "salivary-glands-l",
+    "name": "Salivary glands (L)",
+    "nameZh": "左唾液腺",
+    "layer": "organs",
+    "color": "#D9A88A",
+    "tris": 300,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "salivary-glands-r",
+    "name": "Salivary glands (R)",
+    "nameZh": "右唾液腺",
+    "layer": "organs",
+    "color": "#D9A88A",
+    "tris": 300,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "spermatic-cord-l",
+    "name": "Spermatic cord",
+    "nameZh": "精索",
+    "layer": "organs",
+    "color": "#C9A0B0",
+    "sex": "male",
+    "tris": 299,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "spermatic-cord-r",
+    "name": "Spermatic cord",
+    "nameZh": "精索",
+    "layer": "organs",
+    "color": "#C9A0B0",
+    "sex": "male",
+    "tris": 299,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "spleen",
+    "name": "Spleen",
+    "nameZh": "脾",
+    "layer": "organs",
+    "color": "#7A2C4A",
+    "organ": "spleen",
+    "tris": 712,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "stomach",
+    "name": "Stomach",
+    "nameZh": "胃",
+    "layer": "organs",
+    "color": "#E39B4B",
+    "organ": "stomach",
+    "tris": 1441,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "testis-l",
+    "name": "Testis",
+    "nameZh": "睾丸",
+    "layer": "organs",
+    "color": "#D9A0B0",
+    "sex": "male",
+    "tris": 300,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "testis-r",
+    "name": "Testis",
+    "nameZh": "睾丸",
+    "layer": "organs",
+    "color": "#D9A0B0",
+    "sex": "male",
+    "tris": 300,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "thymus",
+    "name": "Thymus",
+    "nameZh": "胸腺",
+    "layer": "organs",
+    "color": "#D9B8A0",
+    "tris": 330,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "thyroid",
+    "name": "Thyroid",
+    "nameZh": "甲状腺",
+    "layer": "organs",
+    "color": "#C0506A",
+    "organ": "thyroid",
+    "tris": 300,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "trachea",
+    "name": "Trachea & bronchi",
+    "nameZh": "气管与支气管",
+    "layer": "organs",
+    "color": "#E8C4B0",
+    "tris": 574,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "ureter-l",
+    "name": "Ureter",
+    "nameZh": "输尿管",
+    "layer": "organs",
+    "color": "#E0C35A",
+    "tris": 300,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "ureter-r",
+    "name": "Ureter",
+    "nameZh": "输尿管",
+    "layer": "organs",
+    "color": "#E0C35A",
+    "tris": 299,
+    "file": "organs.usdz"
+   },
+   {
+    "id": "anterior-tibial-l",
+    "name": "Anterior tibial & dorsalis pedis (L)",
+    "nameZh": "左胫前动脉与足背动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "knee-l",
+    "tris": 864,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "anterior-tibial-r",
+    "name": "Anterior tibial & dorsalis pedis (R)",
+    "nameZh": "右胫前动脉与足背动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "knee-r",
+    "tris": 864,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "aorta",
+    "name": "Aorta",
+    "nameZh": "主动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1156,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "arm-artery-l",
+    "name": "Arm arteries (L)",
+    "nameZh": "左上肢动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1258,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "arm-artery-2-l",
+    "name": "Arm arteries (L)",
+    "nameZh": "左上肢动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "shoulder-l",
+    "tris": 498,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "arm-artery-r",
+    "name": "Arm arteries (R)",
+    "nameZh": "右上肢动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1334,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "arm-artery-2-r",
+    "name": "Arm arteries (R)",
+    "nameZh": "右上肢动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "shoulder-r",
+    "tris": 498,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "arm-vein-l",
+    "name": "Arm veins (L)",
+    "nameZh": "左上肢静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 780,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "arm-vein-2-l",
+    "name": "Arm veins (L)",
+    "nameZh": "左上肢静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "shoulder-l",
+    "tris": 372,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "arm-vein-r",
+    "name": "Arm veins (R)",
+    "nameZh": "右上肢静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 748,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "arm-vein-2-r",
+    "name": "Arm veins (R)",
+    "nameZh": "右上肢静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "shoulder-r",
+    "tris": 372,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "azygos-veins",
+    "name": "Azygos veins",
+    "nameZh": "奇静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 1480,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "basilic-vein-l",
+    "name": "Basilic vein (L)",
+    "nameZh": "左贵要静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 180,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "basilic-vein-r",
+    "name": "Basilic vein (R)",
+    "nameZh": "右贵要静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 180,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "cardiac-veins",
+    "name": "Cardiac veins",
+    "nameZh": "心静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 1500,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "carotid-l",
+    "name": "Carotid artery (L)",
+    "nameZh": "左颈动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 472,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "carotid-r",
+    "name": "Carotid artery (R)",
+    "nameZh": "右颈动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 440,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "celiac-trunk",
+    "name": "Celiac trunk",
+    "nameZh": "腹腔干",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1588,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "cephalic-vein-2-l",
+    "name": "Cephalic vein (L)",
+    "nameZh": "左头静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 39,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "cephalic-vein-l",
+    "name": "Cephalic vein (L)",
+    "nameZh": "左头静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "elbow-l",
+    "tris": 249,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "cephalic-vein-2-r",
+    "name": "Cephalic vein (R)",
+    "nameZh": "右头静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 39,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "cephalic-vein-r",
+    "name": "Cephalic vein (R)",
+    "nameZh": "右头静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "elbow-r",
+    "tris": 249,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "cerebral-arteries",
+    "name": "Cerebral arteries",
+    "nameZh": "脑动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 3500,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "coronary-l",
+    "name": "Coronary artery (L)",
+    "nameZh": "左冠状动脉",
+    "layer": "circulatory",
+    "color": "#F2D060",
+    "tris": 968,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "coronary-r",
+    "name": "Coronary artery (R)",
+    "nameZh": "右冠状动脉",
+    "layer": "circulatory",
+    "color": "#F2D060",
+    "tris": 768,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "deep-femoral-l",
+    "name": "Deep femoral artery (L)",
+    "nameZh": "左股深动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 272,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "deep-femoral-r",
+    "name": "Deep femoral artery (R)",
+    "nameZh": "右股深动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 208,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "dural-sinuses",
+    "name": "Dural venous sinuses",
+    "nameZh": "硬脑膜静脉窦",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 1499,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "external-carotid-l",
+    "name": "External carotid & facial artery (L)",
+    "nameZh": "左颈外动脉与面动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 2608,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "external-carotid-r",
+    "name": "External carotid & facial artery (R)",
+    "nameZh": "右颈外动脉与面动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 2608,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "external-jugular-l",
+    "name": "External jugular & facial veins (L)",
+    "nameZh": "左颈外静脉与面静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 780,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "external-jugular-r",
+    "name": "External jugular & facial veins (R)",
+    "nameZh": "右颈外静脉与面静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 780,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "foot-veins-l",
+    "name": "Foot veins (L)",
+    "nameZh": "左足部静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "knee-l",
+    "tris": 888,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "foot-veins-r",
+    "name": "Foot veins (R)",
+    "nameZh": "右足部静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "knee-r",
+    "tris": 888,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "hand-arteries-l",
+    "name": "Palmar arch & digital arteries (L)",
+    "nameZh": "左掌弓与指动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "elbow-l",
+    "tris": 2112,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "hand-arteries-r",
+    "name": "Palmar arch & digital arteries (R)",
+    "nameZh": "右掌弓与指动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "elbow-r",
+    "tris": 2112,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "hand-veins-l",
+    "name": "Hand veins (L)",
+    "nameZh": "左手部静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "elbow-l",
+    "tris": 1376,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "hand-veins-r",
+    "name": "Hand veins (R)",
+    "nameZh": "右手部静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "elbow-r",
+    "tris": 1376,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "inferior-mesenteric-artery",
+    "name": "Inferior mesenteric artery",
+    "nameZh": "肠系膜下动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 512,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "intercostal-arteries-l",
+    "name": "Intercostal arteries (L)",
+    "nameZh": "左肋间动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1888,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "intercostal-arteries-r",
+    "name": "Intercostal arteries (R)",
+    "nameZh": "右肋间动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 2096,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "intercostal-veins-l",
+    "name": "Intercostal veins (L)",
+    "nameZh": "左肋间静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 1792,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "intercostal-veins-r",
+    "name": "Intercostal veins (R)",
+    "nameZh": "右肋间静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 2368,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "internal-iliac-l",
+    "name": "Internal iliac artery (L)",
+    "nameZh": "左髂内动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1452,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "internal-iliac-r",
+    "name": "Internal iliac artery (R)",
+    "nameZh": "右髂内动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1452,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "jugular-l",
+    "name": "Jugular vein (L)",
+    "nameZh": "左颈静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 492,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "jugular-r",
+    "name": "Jugular vein (R)",
+    "nameZh": "右颈静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 492,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "leg-artery-l",
+    "name": "Leg arteries (L)",
+    "nameZh": "左下肢动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 470,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "leg-artery-2-l",
+    "name": "Leg arteries (L)",
+    "nameZh": "左下肢动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1050,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "leg-artery-r",
+    "name": "Leg arteries (R)",
+    "nameZh": "右下肢动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 502,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "leg-artery-2-r",
+    "name": "Leg arteries (R)",
+    "nameZh": "右下肢动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1050,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "leg-vein-l",
+    "name": "Leg veins (L)",
+    "nameZh": "左下肢静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 694,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "leg-vein-2-l",
+    "name": "Leg veins (L)",
+    "nameZh": "左下肢静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "knee-l",
+    "tris": 2310,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "leg-vein-r",
+    "name": "Leg veins (R)",
+    "nameZh": "右下肢静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 662,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "leg-vein-2-r",
+    "name": "Leg veins (R)",
+    "nameZh": "右下肢静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "knee-r",
+    "tris": 2310,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "median-cubital-vein-l",
+    "name": "Median cubital vein (L)",
+    "nameZh": "左肘正中静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "elbow-l",
+    "tris": 192,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "median-cubital-vein-r",
+    "name": "Median cubital vein (R)",
+    "nameZh": "右肘正中静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "joint": "elbow-r",
+    "tris": 192,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "mesenteric-artery",
+    "name": "Superior mesenteric artery",
+    "nameZh": "肠系膜上动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1116,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "pelvic-veins-l",
+    "name": "Internal iliac veins (L)",
+    "nameZh": "左髂内静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 668,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "pelvic-veins-r",
+    "name": "Internal iliac veins (R)",
+    "nameZh": "右髂内静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 668,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "portal-vein",
+    "name": "Hepatic portal vein",
+    "nameZh": "肝门静脉",
+    "layer": "circulatory",
+    "color": "#5B4FB0",
+    "tris": 1532,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "posterior-tibial-l",
+    "name": "Posterior tibial artery (L)",
+    "nameZh": "左胫后动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "knee-l",
+    "tris": 1456,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "posterior-tibial-r",
+    "name": "Posterior tibial artery (R)",
+    "nameZh": "右胫后动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "knee-r",
+    "tris": 1456,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "pulmonary-arteries",
+    "name": "Pulmonary arteries",
+    "nameZh": "肺动脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 2999,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "pulmonary-veins-l",
+    "name": "Pulmonary veins (L)",
+    "nameZh": "左肺静脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1680,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "pulmonary-veins-r",
+    "name": "Pulmonary veins (R)",
+    "nameZh": "右肺静脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 2000,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "radial-artery-l",
+    "name": "Radial artery (L)",
+    "nameZh": "左桡动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "elbow-l",
+    "tris": 104,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "radial-artery-r",
+    "name": "Radial artery (R)",
+    "nameZh": "右桡动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "elbow-r",
+    "tris": 104,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "renal-artery-l",
+    "name": "Renal artery (L)",
+    "nameZh": "左肾动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 44,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "renal-artery-r",
+    "name": "Renal artery (R)",
+    "nameZh": "右肾动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 108,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "renal-vein-l",
+    "name": "Renal vein (L)",
+    "nameZh": "左肾静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 172,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "renal-vein-r",
+    "name": "Renal vein (R)",
+    "nameZh": "右肾静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 108,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "small-saphenous-l",
+    "name": "Small saphenous vein (L)",
+    "nameZh": "左小隐静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 240,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "small-saphenous-r",
+    "name": "Small saphenous vein (R)",
+    "nameZh": "右小隐静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 240,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "temporal-artery-l",
+    "name": "Superficial temporal artery (L)",
+    "nameZh": "左颞浅动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1220,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "temporal-artery-r",
+    "name": "Superficial temporal artery (R)",
+    "nameZh": "右颞浅动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 1220,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "ulnar-artery-l",
+    "name": "Ulnar artery (L)",
+    "nameZh": "左尺动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "elbow-l",
+    "tris": 56,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "ulnar-artery-r",
+    "name": "Ulnar artery (R)",
+    "nameZh": "右尺动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "joint": "elbow-r",
+    "tris": 56,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "vena-cava",
+    "name": "Vena cava",
+    "nameZh": "腔静脉",
+    "layer": "circulatory",
+    "color": "#3A5BD9",
+    "tris": 436,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "vertebral-artery-l",
+    "name": "Vertebral artery (L)",
+    "nameZh": "左椎动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 136,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "vertebral-artery-r",
+    "name": "Vertebral artery (R)",
+    "nameZh": "右椎动脉",
+    "layer": "circulatory",
+    "color": "#D23A3A",
+    "tris": 136,
+    "file": "vessels.usdz"
+   },
+   {
+    "id": "arm-nerve-l",
+    "name": "Brachial plexus & median nerve (L)",
+    "nameZh": "左臂丛与正中神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 1154,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "arm-nerve-2-l",
+    "name": "Brachial plexus & median nerve (L)",
+    "nameZh": "左臂丛与正中神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "joint": "elbow-l",
+    "tris": 878,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "arm-nerve-r",
+    "name": "Brachial plexus & median nerve (R)",
+    "nameZh": "右臂丛与正中神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 1153,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "arm-nerve-2-r",
+    "name": "Brachial plexus & median nerve (R)",
+    "nameZh": "右臂丛与正中神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "joint": "elbow-r",
+    "tris": 879,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "common-peroneal-l",
+    "name": "Common peroneal nerve (L)",
+    "nameZh": "左腓总神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 824,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "common-peroneal-r",
+    "name": "Common peroneal nerve (R)",
+    "nameZh": "右腓总神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 824,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "cranial-nerves-l",
+    "name": "Cranial nerves (L)",
+    "nameZh": "左脑神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 2499,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "cranial-nerves-r",
+    "name": "Cranial nerves (R)",
+    "nameZh": "右脑神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 2499,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "facial-nerve-l",
+    "name": "Facial nerve (L)",
+    "nameZh": "左面神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 752,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "facial-nerve-r",
+    "name": "Facial nerve (R)",
+    "nameZh": "右面神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 752,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "femoral-nerve-l",
+    "name": "Femoral nerve (L)",
+    "nameZh": "左股神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 144,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "femoral-nerve-2-l",
+    "name": "Femoral nerve (L)",
+    "nameZh": "左股神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "joint": "knee-l",
+    "tris": 224,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "femoral-nerve-r",
+    "name": "Femoral nerve (R)",
+    "nameZh": "右股神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 144,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "femoral-nerve-2-r",
+    "name": "Femoral nerve (R)",
+    "nameZh": "右股神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "joint": "knee-r",
+    "tris": 224,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "intercostal-nerves-l",
+    "name": "Intercostal nerves (L)",
+    "nameZh": "左肋间神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 1432,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "intercostal-nerves-r",
+    "name": "Intercostal nerves (R)",
+    "nameZh": "右肋间神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 1432,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "lumbar-plexus-l",
+    "name": "Lumbar plexus nerves (L)",
+    "nameZh": "左腰丛神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 424,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "lumbar-plexus-r",
+    "name": "Lumbar plexus nerves (R)",
+    "nameZh": "右腰丛神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 424,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "obturator-nerve-l",
+    "name": "Obturator nerve (L)",
+    "nameZh": "左闭孔神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 176,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "obturator-nerve-r",
+    "name": "Obturator nerve (R)",
+    "nameZh": "右闭孔神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 176,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "radial-nerve-l",
+    "name": "Radial nerve (L)",
+    "nameZh": "左桡神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 880,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "radial-nerve-r",
+    "name": "Radial nerve (R)",
+    "nameZh": "右桡神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 880,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "sacral-plexus-l",
+    "name": "Gluteal & pudendal nerves (L)",
+    "nameZh": "左臀神经与阴部神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 584,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "sacral-plexus-r",
+    "name": "Gluteal & pudendal nerves (R)",
+    "nameZh": "右臀神经与阴部神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 584,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "sciatic-l",
+    "name": "Sciatic nerve (L)",
+    "nameZh": "左坐骨神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 462,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "sciatic-2-l",
+    "name": "Sciatic nerve (L)",
+    "nameZh": "左坐骨神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 118,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "sciatic-r",
+    "name": "Sciatic nerve (R)",
+    "nameZh": "右坐骨神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 462,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "sciatic-2-r",
+    "name": "Sciatic nerve (R)",
+    "nameZh": "右坐骨神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 118,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "spinal-cord",
+    "name": "Spinal cord",
+    "nameZh": "脊髓",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 1998,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "spinal-nerves-l",
+    "name": "Spinal nerves (L)",
+    "nameZh": "左脊神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 2032,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "spinal-nerves-r",
+    "name": "Spinal nerves (R)",
+    "nameZh": "右脊神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 2032,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "sympathetic-trunk-l",
+    "name": "Sympathetic trunk (L)",
+    "nameZh": "左交感干",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 1500,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "sympathetic-trunk-r",
+    "name": "Sympathetic trunk (R)",
+    "nameZh": "右交感干",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 1500,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "tibial-nerve-l",
+    "name": "Tibial nerve (L)",
+    "nameZh": "左胫神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "joint": "knee-l",
+    "tris": 728,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "tibial-nerve-r",
+    "name": "Tibial nerve (R)",
+    "nameZh": "右胫神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "joint": "knee-r",
+    "tris": 680,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "ulnar-nerve-l",
+    "name": "Ulnar nerve (L)",
+    "nameZh": "左尺神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 584,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "ulnar-nerve-r",
+    "name": "Ulnar nerve (R)",
+    "nameZh": "右尺神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 584,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "vagus-l",
+    "name": "Vagus nerve (L)",
+    "nameZh": "左迷走神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 400,
+    "file": "nerves.usdz"
+   },
+   {
+    "id": "vagus-r",
+    "name": "Vagus nerve (R)",
+    "nameZh": "右迷走神经",
+    "layer": "nervous",
+    "color": "#E8B923",
+    "tris": 1264,
+    "file": "nerves.usdz"
+   }
+  ]
+ },
  "skeleton": {
   "file": "skeleton.usdz",
   "source": "Z-Anatomy",
