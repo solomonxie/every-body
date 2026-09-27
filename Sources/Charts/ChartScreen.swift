@@ -65,6 +65,8 @@ struct ChartScreen: View {
             inset.setAge(settings.age)
             buildInset()
         }
+        .onChange(of: settings.heritage) { buildInset() }
+        .onChange(of: settings.showUnderwear) { buildInset() }
     }
 
     private var controls: some View {
@@ -172,6 +174,8 @@ struct ChartScreen: View {
     }
 
     private func buildInset() {
+        inset.heritage = settings.heritage
+        inset.underwear = settings.showUnderwear
         inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, pregnant: settings.profile.isPregnant,
                     points: [], flowStops: [], meridians: Catalog.points["acupuncture"]?.meridians ?? [])
         applyInsetLayers()

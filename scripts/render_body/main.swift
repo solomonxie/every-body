@@ -30,6 +30,13 @@ final class Renderer: NSObject, NSApplicationDelegate {
         Task { @MainActor in
             await BodyScene.prepare()
             scene.setAge(age)
+            // GLASS=0.4 makes the skin over inner layers less see-through
+            if let glass = ProcessInfo.processInfo.environment["GLASS"].flatMap(Float.init) { BodyScene.glassOpacity = glass }
+            // HERITAGE=black, UNDERWEAR=0 change the outer figure
+            scene.heritage = ProcessInfo.processInfo.environment["HERITAGE"].flatMap(Heritage.init(rawValue:)) ?? .eastAsian
+            scene.underwear = ProcessInfo.processInfo.environment["UNDERWEAR"] != "0"
+            // MERIDIANS=0 switches the lines off before the build: it must survive rebuilds
+            if ProcessInfo.processInfo.environment["MERIDIANS"] == "0" { scene.showMeridians(false) }
             // POINTS=acupoint-reflex-map shows that system's points
             let system = ProcessInfo.processInfo.environment["POINTS"].flatMap { Catalog.points[$0] }
             scene.build(skinColor: NSColor(hex: "#F2C9A5"), female: female, pregnant: ProcessInfo.processInfo.environment["PREGNANT"] == "1", points: system?.points ?? [], flowStops: [],
