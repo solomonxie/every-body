@@ -22,7 +22,7 @@ The app's only root page (no tab bar). Code: `Sources/Screens/ExploreView.swift`
  ├────────────────┼────────────────┼────────────────┤
  │ Nervous        │ Organs         │ Digestive      │
  └────────────────┴────────────────┴────────────────┘
- Pregnancy                          (first on home when the profile is Pregnant)
+ Pregnancy                          (after Illustrations, before Settings)
  ╭──────────────────────────────────────────────────╮
  │ ▣ Baby’s growth, week by week                 ›  │
  │ ▣ Labour · Points to avoid · BP & pre-eclampsia  │
