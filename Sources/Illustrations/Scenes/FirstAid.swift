@@ -404,8 +404,8 @@ extension Illustrations {
         let red = hex("#D8434B")
         switch st {
         case 0:
-            s.callout("scald on the forearm", "前臂烫伤", 250, 40, to: burn, color: red)
-            s.tag("move away from the heat", "先远离热源", 250, 64, size: 9, bold: true)
+            s.callout("scald on the forearm", "前臂烫伤", 250, 66, to: burn, color: red)
+            s.tag("move away from the heat", "先远离热源", 250, 42, size: 9, bold: true)
         case 1:
             s.callout("cool running water", "流动的凉水", 290, 70, to: CGPoint(x: burn.x + 2, y: burn.y - 12), color: hex("#3F7FA8"))
         case 2:
