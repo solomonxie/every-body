@@ -59,9 +59,9 @@ struct ChartScreen: View {
         .profileToolbar()
         .navigationBarTitleDisplayMode(.inline)
         .onAppear(perform: setUp)
-        .onChange(of: settings.age) {
+        .onChange(of: settings.profile) {
             inset.setAge(settings.age)
-            inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, points: [], flowStops: [])
+            inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, pregnant: settings.profile.isPregnant, points: [], flowStops: [])
             inset.setLayers([.skin, .organs])
         }
     }
@@ -258,7 +258,7 @@ struct ChartScreen: View {
         Task {
             await BodyScene.prepare()
             inset.setAge(settings.age)
-            inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, points: [], flowStops: [])
+            inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, pregnant: settings.profile.isPregnant, points: [], flowStops: [])
             inset.setLayers([.skin, .organs])
             if let id = initialZone, let zone = face.zones.first(where: { $0.id == id }) { press(zone) }
         }
