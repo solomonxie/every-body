@@ -256,7 +256,9 @@ struct SideFigure {
         let line = look.onePiece ? look.topLine : darker(look.bottom)
         drawShoe(&g, ankle: an, dir: fd, shin: shin, len: build.foot * h, w: lw, look: look)
         let ws = [lw * 1.12, lw * 0.84, lw * 0.64]
-        g.taper([.zero, k, an], ws, fill: look.bottom, line: line)
+        // hem stops at the ankle, so its round end can't poke out under the shoe
+        let hem = look.bareFeet ? an : CGPoint(x: an.x - shin.x * lw * 0.3, y: an.y - shin.y * lw * 0.3)
+        g.taper([.zero, k, hem], ws, fill: look.bottom, line: line)
         // knee crease on the back of a bent leg
         if l.knee > 25 {
             let bk = unit(CGPoint(x: -k.x / T + shin.x, y: -k.y / T + shin.y))
@@ -264,7 +266,7 @@ struct SideFigure {
                    cap: .round, opacity: 0.8)
         }
         if shade {
-            g.taper([.zero, k, an], ws, fill: .black.opacity(0.13), line: nil)
+            g.taper([.zero, k, hem], ws, fill: .black.opacity(0.13), line: nil)
             let toe = CGPoint(x: an.x + fd.x * build.foot * h * 0.8, y: an.y + fd.y * build.foot * h * 0.8)
             g.limb([an, toe], w: lw * 0.45, fill: .black.opacity(0.13), line: nil)
         }
@@ -627,8 +629,23 @@ func dressedArm(_ g: inout Sketch, _ s: CGPoint, _ e: CGPoint, _ w: CGPoint, aw:
         }
     } else {
         g.taper([s, e, w], [aw * 0.92, aw * 0.76, aw * 0.58], fill: look.skin, line: look.skinLine)
-        g.taper([s, lerp(s, e, 0.6)], [aw * 1.14, aw * 1.04], fill: look.top, line: look.topLine)
+        shortSleeve(&g, s, e, aw: aw, look: look)
     }
+}
+
+/// short sleeve: round over the shoulder, slightly flared, cut straight at the hem
+func shortSleeve(_ g: inout Sketch, _ s: CGPoint, _ e: CGPoint, aw: Double, look: Look) {
+    let hem = lerp(s, e, 0.45), d = unit(CGPoint(x: e.x - s.x, y: e.y - s.y)), n = CGPoint(x: -d.y, y: d.x)
+    let r0 = aw * 0.56, r1 = aw * 0.62
+    var tube = Path()
+    tube.addLines([CGPoint(x: s.x + n.x * r0, y: s.y + n.y * r0), CGPoint(x: hem.x + n.x * r1, y: hem.y + n.y * r1),
+                   CGPoint(x: hem.x - n.x * r1, y: hem.y - n.y * r1), CGPoint(x: s.x - n.x * r0, y: s.y - n.y * r0)])
+    tube.closeSubpath()
+    let cap = Path(ellipseIn: CGRect(x: s.x - r0, y: s.y - r0, width: 2 * r0, height: 2 * r0))
+    for p in [tube, cap] { g.ctx.stroke(p, with: .color(look.topLine), style: StrokeStyle(lineWidth: 2.2, lineJoin: .round)) }
+    var sleeve = tube
+    sleeve.addPath(cap)
+    g.ctx.fill(sleeve, with: .color(look.top))
 }
 
 /// Side-view shoe (or bare foot) from the ankle along `dir`; `shin` points down the lower leg.
