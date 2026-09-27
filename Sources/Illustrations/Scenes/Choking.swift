@@ -78,7 +78,7 @@ extension Illustrations {
         let zh = cleared ? "气道通畅" : st == 1 ? "梗阻 · 拍背 \(n)/5" : st == 2 ? "梗阻 · 冲击 \(n)/5" : "气道梗阻"
         let txt = s.ctx.resolve(Text(s.t(en, zh)).font(.system(size: 11, weight: .bold)))
         let w = txt.measure(in: CGSize(width: 300, height: 40)).width + 28
-        s.rect(8, 8, w, 26, r: 13, fill: .white, stroke: status, lw: 2)
+        s.tonal(8, 8, w, 26, r: 13, color: status)
         s.circle(21, 21, 4, fill: status)
         s.label(en, zh, 30, 21, size: 11, color: status, bold: true)
     }
