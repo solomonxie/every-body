@@ -48,6 +48,17 @@ struct FacingPerson {
         return twoBone(s, target, 0.17 * h, 0.15 * h, bend: CGPoint(x: side, y: 0.6))
     }
 
+    /// the same person as a `Look`, for the shared drawing kit
+    var look: Look {
+        var l = Look(skin: skin, hair: hair, style: longHair ? .long : .short, top: shirt, bottom: trousers, female: longHair)
+        (l.skinLine, l.topLine) = (line, shirtLine)
+        return l
+    }
+
+    private var expr: Expr {
+        switch face { case .calm: .calm; case .smile: .smile; case .pain: .pain; case .sneeze: .sneeze; case .worried: .worried }
+    }
+
     func draw(_ s: inout Sketch, at origin: CGPoint) {
         drawBody(&s, at: origin)
         drawArms(&s, at: origin)
@@ -61,72 +72,36 @@ struct FacingPerson {
     func drawArms(_ s: inout Sketch, at origin: CGPoint) {
         s.group(translate: origin) { g in
             for side in [-1.0, 1.0] {
-                let s0 = shoulderPoint(side), (e, hd) = arm(side)
-                g.line(s0.x, s0.y, e.x, e.y, stroke: shirt, lw: 0.05 * h, cap: .round)
-                g.line(e.x, e.y, hd.x, hd.y, stroke: skin, lw: 0.036 * h, cap: .round)
-                g.circle(hd.x, hd.y, 0.024 * h, fill: skin)
+                let (e, hd) = arm(side)
+                limb(&g, side, elbow: e, hand: hd)
             }
         }
+    }
+
+    /// one arm from the shoulder via `e` to the palm centre `hd` (local frame)
+    func limb(_ g: inout Sketch, _ side: Double, elbow e: CGPoint, hand hd: CGPoint, sleeve: Color? = nil) {
+        var l = look
+        if let sleeve { l.top = sleeve }
+        let d = unit(CGPoint(x: hd.x - e.x, y: hd.y - e.y)), L = 0.068 * h
+        let wrist = CGPoint(x: hd.x - d.x * L * 0.4, y: hd.y - d.y * L * 0.4)
+        dressedArm(&g, shoulderPoint(side), e, wrist, aw: 0.05 * h, look: l)
+        drawHand(&g, at: hd, dir: d, len: L, shape: .open, look: l, thumb: side)
     }
 
     private func body(_ g: inout Sketch) {
-        let c = headCenter, rx = headRx, ry = headRy
+        let c = headCenter, rx = headRx, ry = headRy, l = look
+        faceOnHairBack(&g, c: c, rx: rx, ry: ry, look: l)
         if legs {
             for side in [-1.0, 1.0] {
-                g.line(side * 0.05 * h, 0.34 * h, side * 0.055 * h, 0.8 * h, stroke: trousers, lw: 0.075 * h, cap: .round)
-                g.ellipse(side * 0.065 * h, 0.83 * h, 0.045 * h, 0.018 * h, fill: hex("#2A2D3A"))
+                let hip = CGPoint(x: side * 0.052 * h, y: 0.36 * h), knee = CGPoint(x: side * 0.054 * h, y: 0.58 * h), ankle = CGPoint(x: side * 0.056 * h, y: 0.8 * h)
+                g.ellipse(side * 0.066 * h, 0.822 * h, 0.042 * h, 0.018 * h, fill: hex("#2A2D3A"))
+                var p = segmentPath(hip, 0.042 * h, knee, 0.032 * h, bulge: 0.004 * h * side, -0.004 * h * side)
+                p.addPath(segmentPath(knee, 0.031 * h, ankle, 0.024 * h, bulge: 0.004 * h * side, 0.004 * h * side, peak: 0.3))
+                g.shape(p, fill: side > 0 ? dim(trousers, 0.92) : trousers)
             }
         }
-        if longHair { g.path("M \(-rx * 1.05) \(c.y) C \(-rx * 1.2) \(c.y + ry * 1.2) \(-rx * 0.9) \(c.y + ry * 1.5) \(-rx * 0.4) \(c.y + ry * 1.3) L \(rx * 0.4) \(c.y + ry * 1.3) C \(rx * 0.9) \(c.y + ry * 1.5) \(rx * 1.2) \(c.y + ry * 1.2) \(rx * 1.05) \(c.y) Z", fill: hair) }
-        // torso: shoulders, waist, hips
-        let w = 0.115 * h
-        g.path("M \(-w) \(0.02 * h) C \(-w - 0.02 * h) \(0.06 * h) \(-0.1 * h) \(0.2 * h) \(-0.09 * h) \(0.3 * h) L \(-0.1 * h) \(0.37 * h) L \(0.1 * h) \(0.37 * h) L \(0.09 * h) \(0.3 * h) "
-               + "C \(0.1 * h) \(0.2 * h) \(w + 0.02 * h) \(0.06 * h) \(w) \(0.02 * h) C \(0.06 * h) \(-0.005 * h) \(-0.06 * h) \(-0.005 * h) \(-w) \(0.02 * h) Z",
-               fill: shirt, stroke: shirtLine, lw: 0.9)
-        if bump { g.ellipse(0, 0.3 * h, 0.085 * h, 0.07 * h, fill: shirt, stroke: shirtLine, lw: 1) }
-        g.path("M \(-0.03 * h) \(c.y + ry * 0.7) L \(-0.032 * h) \(0.01 * h) Q 0 \(0.035 * h) \(0.032 * h) \(0.01 * h) L \(0.03 * h) \(c.y + ry * 0.7) Z", fill: dim(skin, 0.92))
-        // head
-        for side in [-1.0, 1.0] { g.ellipse(side * rx * 0.98, c.y + ry * 0.05, rx * 0.15, ry * 0.19, fill: dim(skin, 0.95)) }
-        g.ellipse(c.x, c.y, rx, ry, fill: skin, stroke: line, lw: 0.9)
-        g.path("M \(-rx * 1.02) \(c.y + ry * 0.05) C \(-rx * 1.1) \(c.y - ry * 1.25) \(rx * 1.1) \(c.y - ry * 1.25) \(rx * 1.02) \(c.y + ry * 0.05) "
-               + "C \(rx * 0.9) \(c.y - ry * 0.4) \(rx * 0.3) \(c.y - ry * 0.62) \(-rx * 0.2) \(c.y - ry * 0.5) C \(-rx * 0.6) \(c.y - ry * 0.45) \(-rx * 0.9) \(c.y - ry * 0.3) \(-rx * 1.02) \(c.y + ry * 0.05) Z",
-               fill: hair)
-        faceDetails(&g, c, rx, ry)
-        if sweat {
-            for (dx, dy) in [(-0.85, -0.25), (0.8, -0.1), (0.6, 0.35)] {
-                let x = c.x + dx * rx, y = c.y + dy * ry
-                g.path("M \(x) \(y - 4) Q \(x + 2.5) \(y + 1) \(x) \(y + 2) Q \(x - 2.5) \(y + 1) \(x) \(y - 4) Z", fill: hex("#8CC4EC"))
-            }
-        }
-    }
-
-    private func faceDetails(_ g: inout Sketch, _ c: CGPoint, _ rx: Double, _ ry: Double) {
-        let ink = Ink.ink, ey = c.y + ry * 0.02
-        for side in [-1.0, 1.0] {
-            let sag = side < 0 ? droop : 0
-            let x = c.x + side * rx * 0.4, y = ey + sag * ry * 0.06
-            if face == .sneeze || face == .pain {
-                g.path("M \(x - rx * 0.14) \(y) Q \(x) \(y + ry * 0.07) \(x + rx * 0.14) \(y)", stroke: ink, lw: 1.4, cap: .round)
-            } else {
-                g.ellipse(x, y, rx * 0.1, ry * 0.09 * (1 - 0.5 * sag), fill: ink)
-                if sag > 0.1 { g.path("M \(x - rx * 0.17) \(y - ry * 0.06) L \(x + rx * 0.17) \(y - ry * 0.04)", stroke: skin, lw: ry * 0.08 * sag) }
-            }
-            let inner = face == .pain || face == .worried ? -ry * 0.1 : 0
-            g.line(x - side * rx * 0.2, ey - ry * 0.29 + inner + sag * ry * 0.04, x + side * rx * 0.2, ey - ry * 0.26 + sag * ry * 0.08,
-                   stroke: hair, lw: 1.3, cap: .round, opacity: 0.85)
-            g.circle(c.x + side * rx * 0.56, c.y + ry * 0.36, rx * 0.15, fill: Ink.blush, opacity: 0.25)
-        }
-        g.path("M \(c.x) \(c.y + ry * 0.1) Q \(c.x - rx * 0.14) \(c.y + ry * 0.3) \(c.x + rx * 0.06) \(c.y + ry * 0.32)", stroke: line, lw: 1, cap: .round)
-        let my = c.y + ry * 0.55, mw = rx * 0.3, lip = Ink.lip
-        let leftY = my + droop * ry * 0.2
-        switch face {
-        case .smile: g.path("M \(-mw) \(leftY - ry * 0.04) Q 0 \(my + ry * 0.16) \(mw) \(my - ry * 0.04)", stroke: lip, lw: 1.6, cap: .round)
-        case .calm: g.path("M \(-mw) \(leftY) Q 0 \(my + ry * 0.06) \(mw) \(my)", stroke: lip, lw: 1.6, cap: .round)
-        case .worried: g.path("M \(-mw) \(leftY + ry * 0.03) Q 0 \(my - ry * 0.06) \(mw) \(my + ry * 0.03)", stroke: lip, lw: 1.6, cap: .round)
-        case .pain:
-            g.path("M \(-mw) \(leftY + ry * 0.05) Q 0 \(my - ry * 0.1) \(mw) \(my + ry * 0.05) Q 0 \(my + ry * 0.04) \(-mw) \(leftY + ry * 0.05) Z",
-                   fill: .white, stroke: lip, lw: 1.4)
-        case .sneeze: g.ellipse(0, my, mw * 0.7, ry * 0.12, fill: Ink.mouth)
-        }
+        frontTorso(&g, h: h, look: l, shoulderW: 0.115 * h, waist: legs ? 0.44 : 0.4, bump: bump)
+        faceOnHead(&g, c: c, rx: rx, ry: ry, look: l, expr: expr, droop: droop)
+        if sweat { sweatDrops(&g, c, rx, ry) }
     }
 }
