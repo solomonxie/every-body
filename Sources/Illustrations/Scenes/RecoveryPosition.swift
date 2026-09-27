@@ -125,8 +125,10 @@ extension Illustrations {
         let elbow = CGPoint(x: wrist.x - d.x * 44 * k, y: wrist.y - d.y * 44 * k)
         s.ellipse(at.x + 4 * k, at.y + 5 * k, L * 0.5, L * 0.3, fill: .black.opacity(0.08))
         s.taper([elbow, wrist], [aw, aw * 0.7], fill: look.skin, line: look.skinLine)
-        let cuff = lerp(elbow, wrist, 0.3), back = CGPoint(x: elbow.x - d.x * 12 * k, y: elbow.y - d.y * 12 * k)
-        s.taper([back, cuff], [aw * 1.4, aw * 1.25], fill: look.top, line: look.topLine)
+        // sleeve runs on out of the bottom edge, toward you, so the arm isn't cut off mid-air
+        let run = d.y < -0.2 ? (312 - elbow.y) / -d.y : 60 * k
+        let cuff = lerp(elbow, wrist, 0.3), back = CGPoint(x: elbow.x - d.x * run, y: elbow.y - d.y * run)
+        s.taper([back, elbow, cuff], [aw * 1.7, aw * 1.3, aw * 1.25], fill: look.top, line: look.topLine)
         drawHand(&s, at: at, dir: d, len: L, shape: shape, look: look, thumb: -1)
     }
 
@@ -232,19 +234,21 @@ struct RecoveryLayout: Sendable {
         func P(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: x, y: y) }
 
         let ns = P(xs + 0.02 * h, yc + half * 0.85), fs = P(xs + 0.02 * h, yc - half * 0.85)
-        let restE = P(ns.x + U, ns.y + 3), outE = P(ns.x - 0.01 * h, ns.y + U)
+        // relaxed, not ruler-straight: elbows a little out from the body, hands turned in slightly
+        let restE = P(ns.x + U * 0.98, ns.y + 0.018 * h), outE = P(ns.x - 0.01 * h, ns.y + U)
         let ne = lerp(restE, outE, arm)
-        let np = lerp(P(restE.x + F, restE.y + 2), P(outE.x - F, outE.y), arm)
+        let np = lerp(P(restE.x + F * 0.98, restE.y - 0.006 * h), P(outE.x - F, outE.y), arm)
 
         let cheek = roll < 0.5 ? P(head.x + 0.2 * r, head.y + 0.75 * r) : headSpot(head, up: up, r: r, 0.55, 0.7, side: -1)
-        let fp = lerp(P(fs.x + U + F, fs.y - 3), cheek, hand)
+        let fp = lerp(P(fs.x + (U + F) * 0.985, fs.y - 0.01 * h), cheek, hand)
         let (e1, _) = twoBone(fs, fp, U, F, 1), (e2, _) = twoBone(fs, fp, U, F, -1)
         let fe = e1.x > e2.x ? e1 : e2
 
         let nh = P(xh, yc + half * 0.42)
-        let nk = P(nh.x + T, nh.y + roll * 2), na = P(nk.x + S, nk.y)
+        // legs lie a little apart, feet falling outward
+        let nk = P(nh.x + T, nh.y + 0.008 * h + roll * 2), na = P(nk.x + S * 0.995, nk.y + 0.02 * h * (1 - roll))
         let fh = P(xh, yc - half * 0.42 * (1 - roll))
-        let flat = [fh, P(fh.x + T, fh.y), P(fh.x + T + S, fh.y)]
+        let flat = [fh, P(fh.x + T, fh.y - 0.008 * h), P(fh.x + T + S * 0.995, fh.y - 0.02 * h)]
         let raised = [fh, P(fh.x + T * 0.55, fh.y - 3), P(fh.x + T * 0.92, fh.y + 1)]
         let rolled = [fh, P(fh.x + T * 0.25, fh.y + T * 0.95), P(fh.x + T * 0.25 + S * 0.95, fh.y + T * 0.95 + 4)]
         let far = (0..<3).map { lerp(lerp(flat[$0], raised[$0], knee), rolled[$0], roll) }

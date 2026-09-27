@@ -34,14 +34,22 @@ func renderAll() {
     let profile = env == "pregnant" ? Profile(age: .adult, female: true, pregnant: true) : Profile(age: AgeGroup(rawValue: env) ?? .adult)
     for scenario in Illustrations.builders.map({ $0(profile) }) where only.isEmpty || only.contains(scenario.id) {
         let images = scenario.steps.indices.compactMap { render(scenario, step: $0, t: 1.3) }
+        // SPLIT=1 also writes one PNG per step
+        if ProcessInfo.processInfo.environment["SPLIT"] == "1" {
+            for (i, img) in images.enumerated() { writePNG(img, out.appendingPathComponent("\(scenario.id)-\(i).png")) }
+        }
         let sheet = NSImage(size: NSSize(width: 360 * images.count, height: 300))
         sheet.lockFocus()
         for (i, img) in images.enumerated() { img.draw(in: NSRect(x: 360 * i, y: 0, width: 360, height: 300)) }
         sheet.unlockFocus()
-        if let tiff = sheet.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff), let png = rep.representation(using: .png, properties: [:]) {
-            try? png.write(to: out.appendingPathComponent("\(scenario.id).png"))
-        }
+        writePNG(sheet, out.appendingPathComponent("\(scenario.id).png"))
         print(scenario.id)
+    }
+}
+
+func writePNG(_ img: NSImage, _ url: URL) {
+    if let tiff = img.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff), let png = rep.representation(using: .png, properties: [:]) {
+        try? png.write(to: url)
     }
 }
 

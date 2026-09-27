@@ -204,10 +204,10 @@ extension Illustrations {
 
         // legend
         let ly = 289.0
-        s.circle(196, ly - 3, 2.6, fill: Tone.sugar); s.label("glucose", "葡萄糖", 202, ly, size: 8, color: Tone.sub)
-        insulinKey(&s, 250, ly - 3, scale: 0.9); s.label("insulin", "胰岛素", 258, ly, size: 8, color: Tone.sub)
-        s.rect(304, ly - 7, 3, 8, r: 1, fill: hex("#4E9A5E")); s.rect(309, ly - 7, 3, 8, r: 1, fill: hex("#4E9A5E"))
-        s.label("sugar door", "糖门", 316, ly, size: 8, color: Tone.sub)
+        s.circle(192, ly - 3, 2.6, fill: Tone.sugar); s.label("glucose", "葡萄糖", 198, ly, size: 8, color: Tone.sub)
+        insulinKey(&s, 244, ly - 3, scale: 0.9); s.label("insulin", "胰岛素", 252, ly, size: 8, color: Tone.sub)
+        s.rect(296, ly - 7, 3, 8, r: 1, fill: hex("#4E9A5E")); s.rect(301, ly - 7, 3, 8, r: 1, fill: hex("#4E9A5E"))
+        s.label("sugar door", "糖门", 308, ly, size: 8, color: Tone.sub)
     }
 
     @MainActor static func insulinKey(_ s: inout Sketch, _ x: Double, _ y: Double, scale k: Double = 1, opacity o: Double = 1) {
