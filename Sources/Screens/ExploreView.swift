@@ -38,7 +38,7 @@ struct HomeContent: View {
                 SearchSuggestions(query: $query)
             } else {
                 TileGrid(title: settings.t("Acupuncture & reflexology", "针灸与反射区"), tiles: Tile.reflex, expanded: nil)
-                TileGrid(title: settings.t("Human body", "人体"), tiles: Tile.body, expanded: $showAllBody)
+                TileGrid(title: settings.t("Human body", "人体"), tiles: Tile.body, expanded: $showAllBody, rows: 1)
                 IllustrationsSection()
                 PregnancySection()
                 ChildrenSection()
@@ -87,12 +87,14 @@ private struct TileGrid: View {
     let title: String
     let tiles: [Tile]
     let expanded: Binding<Bool>?
+    /// rows shown before "Show more"
+    var rows = 2
     @Environment(Settings.self) private var settings
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         let columns = typeSize.isAccessibilitySize ? 2 : 3
-        let limit = columns * 2
+        let limit = columns * rows
         let open = expanded?.wrappedValue ?? true
         let shown = open ? tiles : Array(tiles.prefix(limit))
         VStack(alignment: .leading, spacing: Space.m) {
