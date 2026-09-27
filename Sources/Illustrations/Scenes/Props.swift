@@ -34,67 +34,111 @@ extension SideFigure {
     }
 }
 
+/// Shared surfaces and neutrals for every scene.
+enum Palette {
+    static let wall = hex("#F6F4F1"), blob = hex("#ECE8F3"), floor = hex("#EAE5DE"), floorEdge = hex("#DDD6CC")
+    static let shadow = Color(red: 0.2, green: 0.17, blue: 0.3).opacity(0.08)
+    static let ink = hex("#2F2B36"), sub = hex("#8A8494"), line = hex("#E6E2EA")
+}
+
 /// Everyday objects, rooms and close-up insets shared by the first-aid scenes.
 extension Sketch {
-    /// plain wall, skirting board and wooden floor
-    mutating func room(floor: Double) {
-        rect(0, 0, 360, floor, fill: hex("#F5F2ED"))
-        rect(0, floor - 7, 360, 7, fill: hex("#EAE3D8"))
-        rect(0, floor, 360, 300 - floor, fill: hex("#E4D6C3"))
-        for i in 0..<6 { line(Double(i) * 72 - 30, 300, Double(i) * 72 + 6, floor, stroke: hex("#D5C4AD"), lw: 1) }
-        line(0, floor, 360, floor, stroke: hex("#C9B79E"), lw: 1.5)
+    /// Soft backdrop: pale wall, one big background blob, a plain rounded floor. `blob` = its centre x.
+    mutating func room(floor: Double, blob: Double = 180, tint: Color = Palette.blob) {
+        backdrop()
+        ellipse(blob, floor - 40, 150, 120, fill: tint)
+        floorBand(floor)
+    }
+
+    /// whole-scene pale wash
+    mutating func backdrop(_ c: Color = Palette.wall) { rect(0, 0, 360, 300, fill: c) }
+
+    /// plain floor from `y` down, soft top edge
+    mutating func floorBand(_ y: Double) {
+        rect(-20, y, 400, 320 - y, r: 18, fill: Palette.floor)
+        rect(-20, y, 400, 3, r: 1.5, fill: Palette.floorEdge)
+    }
+
+    /// soft disc behind a standing figure, sitting on a short floor strip
+    mutating func stage(_ cx: Double, floor: Double, r: Double = 90, width: Double? = nil) {
+        ellipse(cx, floor - r, r, r, fill: Palette.blob)
+        let w = width ?? r * 2.4
+        rect(cx - w / 2, floor, w, 5, r: 2.5, fill: Palette.floor)
+    }
+
+    /// soft contact shadow on the floor
+    mutating func groundShadow(_ x: Double, _ y: Double, _ w: Double) {
+        ellipse(x, y, w / 2, max(2, w * 0.07), fill: Palette.shadow)
     }
 
     /// Text in the chosen language on a white pill, so it reads over a scene.
     mutating func tag(_ en: String, _ zh: String, _ x: Double, _ y: Double, size: Double = 10, color: Color = hex("#444444"),
                       anchor: Anchor = .middle, bold: Bool = false, width: Double = 170) {
-        let txt = ctx.resolve(Text(t(en, zh)).font(.system(size: size, weight: bold ? .bold : .medium)).foregroundStyle(color))
+        let txt = ctx.resolve(Text(t(en, zh)).font(.system(size: size, weight: bold ? .semibold : .medium)).foregroundStyle(color))
         let m = txt.measure(in: CGSize(width: width, height: 200))
         let x0 = anchor == .start ? x : anchor == .middle ? x - m.width / 2 : x - m.width
-        rect(x0 - 4, y - m.height / 2 - 2, m.width + 8, m.height + 4, r: 5, fill: .white, opacity: 0.88)
+        let hh = m.height + 4
+        rect(x0 - 5, y - hh / 2 + 1, m.width + 10, hh, r: hh / 2, fill: Palette.shadow)
+        rect(x0 - 5, y - hh / 2, m.width + 10, hh, r: hh / 2, fill: .white, opacity: 0.95)
         ctx.draw(txt, in: CGRect(x: x0, y: y - m.height / 2, width: m.width + 1, height: m.height + 1))
     }
 
     /// Label on a pill with a thin leader line to `to` (dot at the end).
     mutating func callout(_ en: String, _ zh: String, _ x: Double, _ y: Double, to: CGPoint, size: Double = 9,
                           color: Color = hex("#444444"), anchor: Anchor = .middle, bold: Bool = true, width: Double = 170) {
-        line(x, y, to.x, to.y, stroke: color, lw: 1, opacity: 0.8)
-        circle(to.x, to.y, 2, fill: color, stroke: .white, lw: 0.8)
+        line(x, y, to.x, to.y, stroke: color, lw: 0.8, opacity: 0.7)
+        circle(to.x, to.y, 2.2, fill: color, stroke: .white, lw: 1)
         tag(en, zh, x, y, size: size, color: color, anchor: anchor, bold: bold, width: width)
     }
 
     /// Speech bubble centred at (x, y) with its tail at `tip`.
     mutating func bubble(_ en: String, _ zh: String, _ x: Double, _ y: Double, tip: CGPoint, size: Double = 11,
-                         color: Color = hex("#333333"), border: Color = hex("#999999")) {
+                         color: Color = Palette.ink, border: Color = Palette.line) {
         let txt = ctx.resolve(Text(t(en, zh)).font(.system(size: size, weight: .semibold)).foregroundStyle(color))
         let m = txt.measure(in: CGSize(width: 150, height: 200))
         let w = m.width + 16, hh = m.height + 10
         var tail = Path()
         tail.addLines([CGPoint(x: x - 6, y: y), tip, CGPoint(x: x + 6, y: y)])
-        shape(tail, fill: .white, stroke: border, lw: 1.2)
-        rect(x - w / 2, y - hh / 2, w, hh, r: min(12, hh / 2), fill: .white, stroke: border, lw: 1.2)
+        tail.closeSubpath()
+        rect(x - w / 2, y - hh / 2 + 2, w, hh, r: hh / 2, fill: Palette.shadow)
+        shape(tail, fill: .white, stroke: border, lw: 0.8)
+        rect(x - w / 2, y - hh / 2, w, hh, r: hh / 2, fill: .white, stroke: border, lw: 0.8)
         shape(tail, fill: .white)
         ctx.draw(txt, in: CGRect(x: x - m.width / 2, y: y - m.height / 2, width: m.width + 1, height: m.height + 1))
     }
 
     /// White close-up card with a small title.
     mutating func inset(_ x: Double, _ y: Double, _ w: Double, _ h: Double, _ en: String, _ zh: String) {
-        rect(x + 1.5, y + 2, w, h, r: 9, fill: .black.opacity(0.08))
-        rect(x, y, w, h, r: 9, fill: .white, stroke: hex("#D6D0C6"), lw: 1)
-        label(en, zh, x + 8, y + 13, size: 9, color: hex("#8A8378"), bold: true)
+        softCard(x, y, w, h)
+        label(en, zh, x + 9, y + 14, size: 9, color: Palette.sub, bold: true)
+    }
+
+    /// rounded white card with a soft, layered shadow
+    mutating func softCard(_ x: Double, _ y: Double, _ w: Double, _ h: Double, r: Double = 12, fill: Color = .white) {
+        rect(x, y + 3, w, h, r: r, fill: Palette.shadow)
+        rect(x - 0.5, y + 1, w + 1, h + 0.5, r: r, fill: Palette.shadow)
+        rect(x, y, w, h, r: r, fill: fill)
+    }
+
+    /// status panel: white card washed with its state colour, hairline edge
+    mutating func tonal(_ x: Double, _ y: Double, _ w: Double, _ h: Double, r: Double = 12, color: Color) {
+        rect(x, y + 2, w, h, r: r, fill: Palette.shadow)
+        rect(x, y, w, h, r: r, fill: .white)
+        rect(x, y, w, h, r: r, fill: color.opacity(0.1), stroke: color.opacity(0.4), lw: 1)
     }
 
     /// copy that only draws inside the rect (for inset contents)
     func clipped(_ x: Double, _ y: Double, _ w: Double, _ h: Double) -> Sketch {
         var g = self
-        g.ctx.clip(to: Path(roundedRect: CGRect(x: x, y: y, width: w, height: h), cornerRadius: 9))
+        g.ctx.clip(to: Path(roundedRect: CGRect(x: x, y: y, width: w, height: h), cornerRadius: 12))
         return g
     }
 
     /// Mobile phone on a call; `number` shown big on the screen.
     mutating func phone(_ x: Double, _ y: Double, number: String, speaker: Bool = true, t: Double = 0) {
-        rect(x - 13, y - 23, 26, 46, r: 5, fill: hex("#2B2D33"))
-        rect(x - 11, y - 19, 22, 38, r: 2, fill: hex("#EAF6EE"))
+        rect(x - 13, y - 21, 26, 46, r: 7, fill: Palette.shadow)
+        rect(x - 13, y - 23, 26, 46, r: 7, fill: hex("#2C2F3D"))
+        rect(x - 11, y - 20, 22, 40, r: 5, fill: hex("#EEF5F1"))
         text(number, x, y - 3, size: 10, color: hex("#1F2A24"), anchor: .middle, bold: true)
         circle(x, y + 11, 4.5, fill: hex("#D8434B"))
         line(x - 2.5, y + 11, x + 2.5, y + 11, stroke: .white, lw: 1.5, cap: .round)
