@@ -157,11 +157,7 @@ extension Sketch {
 extension FacingPerson {
     /// One arm drawn from explicit joints (local frame), outlined, for poses `arm(_:)` can't reach.
     func drawArm(_ s: inout Sketch, at o: CGPoint, side: Double, elbow e: CGPoint, hand w: CGPoint, sleeve: Color? = nil) {
-        let sh = shoulderPoint(side)
-        func q(_ p: CGPoint) -> CGPoint { CGPoint(x: o.x + p.x, y: o.y + p.y) }
-        s.limb([q(sh), q(e)], w: 0.05 * h, fill: sleeve ?? shirt, line: shirtLine)
-        s.limb([q(e), q(w)], w: 0.034 * h, fill: skin, line: line)
-        s.circle(q(w).x, q(w).y, 0.023 * h, fill: skin, stroke: line)
+        s.group(translate: o) { g in limb(&g, side, elbow: e, hand: w, sleeve: sleeve) }
     }
 
     /// Triangular sling cradling a forearm from `e` to `w` (local), strap round the neck.
