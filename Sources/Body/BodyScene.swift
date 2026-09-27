@@ -62,7 +62,7 @@ final class BodyScene {
     private var partEntities: [String: ModelEntity] = [:]
     private var partLayer: [String: LayerID] = [:]
     private var baseMaterials: [String: PhysicallyBasedMaterial] = [:]
-    private var skinEntities: [(entity: ModelEntity, color: UIColor)] = []
+    private var skinEntities: [(entity: ModelEntity, color: UIColor, texture: TextureResource?)] = []
     private var organEntities: [String: Entity] = [:]
     private var jointOuter: [String: Entity] = [:]
     private var jointInner: [String: Entity] = [:]
@@ -148,9 +148,10 @@ final class BodyScene {
             // eyes, lips and brows keep their own colour; everything else takes the skin tone
             let color = part.color == "#F2C9A5" ? skinColor : UIColor(hex: part.color)
             entity.name = "skin:\(part.id)"
-            entity.model?.materials = [Self.material(color, opacity: 0.3)]
+            let texture = part.id.hasPrefix("hair") ? Textures.hair : nil
+            entity.model?.materials = [Self.material(color, opacity: 0.3, texture: texture)]
             parent(of: part.id).addChild(entity)
-            skinEntities.append((entity, color))
+            skinEntities.append((entity, color, texture))
         }
 
         for organ in Catalog.body.organs where organ.onlyPregnant != true || pregnant {
@@ -245,7 +246,7 @@ final class BodyScene {
         rest = []
         func keep(_ e: Entity, centre: SIMD3<Float>) { rest.append((e, e.transform.matrix, centre)) }
         for e in partEntities.values { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
-        for (e, _) in skinEntities { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
+        for (e, _, _) in skinEntities { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
         for e in organEntities.values { keep(e, centre: e.position) }
         for e in pointEntities.values.joined() { keep(e, centre: e.position) }
         for e in meridianEntities.values.joined() { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
@@ -258,7 +259,8 @@ final class BodyScene {
         switch part.sex {
         case nil: true
         case "pregnant": pregnant
-        case "female": sex == "female" && !(pregnant && part.id == "torso-female")
+        // a female part with a pregnant twin (torso, head, hair) gives way to it
+        case "female": sex == "female" && !(pregnant && Catalog.part(part.id.replacingOccurrences(of: "female", with: "pregnant")) != nil)
         default: part.sex == sex
         }
     }
@@ -298,7 +300,7 @@ final class BodyScene {
 
     /// Body-coordinate reshaping for whatever region `c` falls in.
     /// the jaw hangs below the chin line but moves with the head
-    private static let jawParts = ["mandible", "chin", "lower-teeth", "masseter", "skin:chin", "skin:lip", "deep-head", "skin:head"]
+    private static let jawParts = ["mandible", "chin", "lower-teeth", "masseter", "skin:chin", "skin:lip", "deep-head", "skin:head", "skin:hair"]
 
     private func reshape(_ c: SIMD3<Float>, name: String = "") -> float4x4 {
         let p = proportions
@@ -328,6 +330,7 @@ final class BodyScene {
         let young: Float = switch age { case .infant: 1; case .toddler: 0.75; case .child: 0.4; default: 0 }
         guard young > 0 else { return 1 }
         if id.hasPrefix("breast") || id == "adams-apple" { return 0.0001 }
+        if id.hasPrefix("hair-long") && young >= 0.75 { return 0.0001 }
         if id == "nose" || id.hasPrefix("nostril") { return 1 - 0.35 * young }
         if id.hasPrefix("eye-") || id.hasPrefix("iris") || id.hasPrefix("pupil") || id.hasPrefix("eyelid") { return 1 + 0.2 * young }
         if id.hasPrefix("brow") { return 1 - 0.4 * young }
@@ -456,9 +459,9 @@ final class BodyScene {
         let inner = layers.contains { $0 != .skin }
         // skin alone is solid; over inner layers it's a faint glass
         let skinOpacity: Float = layers.contains(.skin) ? (inner ? 0.12 : 1) : 0
-        for (skin, color) in skinEntities {
+        for (skin, color, texture) in skinEntities {
             skin.isEnabled = skinOpacity > 0
-            skin.model?.materials = [Self.material(color, opacity: skinOpacity)]
+            skin.model?.materials = [Self.material(color, opacity: skinOpacity, texture: texture)]
         }
         let muscleOpacity: Float = layers.contains(.skeletal) ? 0.55 : 1
         for (id, entity) in partEntities {
