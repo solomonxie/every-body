@@ -7,7 +7,7 @@ cd "$(dirname "$0")/../.."
 BIN=build/render-body
 mkdir -p build
 SRC="scripts/render_body/Shim.swift scripts/render_body/main.swift \
-  Sources/Body/BodyScene.swift Sources/Body/Meshes.swift Sources/Body/Textures.swift Sources/Body/ModelLibrary.swift Sources/Body/Figure.swift \
+  Sources/Body/BodyScene.swift Sources/Body/Meshes.swift Sources/Body/Textures.swift Sources/Body/ModelLibrary.swift Sources/Body/Figure.swift Sources/Body/InternalModels.swift \
   Sources/Data/Models.swift Sources/Data/Catalog.swift Sources/Data/Profile.swift"
 # rebuild only when a source changed
 if [ ! -x "$BIN" ] || [ -n "$(find $SRC -newer "$BIN" 2>/dev/null)" ]; then
