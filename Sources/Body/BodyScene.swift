@@ -424,6 +424,13 @@ final class BodyScene {
         }
     }
 
+    /// Just these channels (nil = all).
+    func showMeridians(_ visible: Bool, ids: Set<String>?) {
+        for (id, lines) in meridianEntities {
+            for line in lines { line.isEnabled = visible && (ids?.contains(id) ?? true) }
+        }
+    }
+
     /// Meridian lines on or off; with `only`, just that channel.
     func showMeridians(_ visible: Bool, only: String? = nil) {
         for (id, lines) in meridianEntities {
