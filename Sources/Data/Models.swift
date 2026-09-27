@@ -162,6 +162,41 @@ struct BodyPoint: Codable, Sendable, Identifiable {
     let region: String?
     let position: Vec3
     let target: ReflexTarget?
+    let acu: Acupoint?
+}
+
+/// An acupuncture point (WHO 2008): `description` holds its location.
+struct Acupoint: Codable, Sendable {
+    let code: String
+    let meridian: String
+    let pinyin: String
+    let uses: String
+    let usesZh: String
+    let needling: String
+    let needlingZh: String
+    let organIds: [String]
+    /// among the points most often needled in practice
+    let common: Bool
+    /// outward direction of the skin at the point — the camera turns to face it
+    let normal: Vec3
+    /// left (and right, for paired points) on the male / child body
+    let sites: [Vec3]
+    let femaleSites: [Vec3]?
+    let aliases: [String]?
+
+    func sites(female: Bool) -> [Vec3] { female ? femaleSites ?? sites : sites }
+}
+
+/// A channel drawn on the skin; each piece is one region's paths (so it follows that region's age scaling).
+struct Meridian: Codable, Sendable, Identifiable {
+    let id: String
+    let name: String
+    let nameZh: String
+    let color: String
+    let pieces: [[[Vec3]]]
+    let femalePieces: [[[Vec3]]]?
+
+    func pieces(female: Bool) -> [[[Vec3]]] { female ? femalePieces ?? pieces : pieces }
 }
 
 struct SystemPoints: Codable, Sendable {
@@ -171,6 +206,7 @@ struct SystemPoints: Codable, Sendable {
     }
     let points: [BodyPoint]
     let flow: Flow?
+    let meridians: [Meridian]?
 }
 
 // MARK: - Charts

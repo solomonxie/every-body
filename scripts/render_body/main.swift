@@ -31,8 +31,9 @@ final class Renderer: NSObject, NSApplicationDelegate {
             await BodyScene.prepare()
             scene.setAge(age)
             // POINTS=acupoint-reflex-map shows that system's points
-            let pts = ProcessInfo.processInfo.environment["POINTS"].flatMap { Catalog.points[$0]?.points } ?? []
-            scene.build(skinColor: NSColor(hex: "#F2C9A5"), female: female, points: pts, flowStops: [])
+            let system = ProcessInfo.processInfo.environment["POINTS"].flatMap { Catalog.points[$0] }
+            scene.build(skinColor: NSColor(hex: "#F2C9A5"), female: female, points: system?.points ?? [], flowStops: [],
+                        meridians: system?.meridians ?? [])
             scene.setLayers(layers)
             scene.touched = true
             scene.yaw = yaw
@@ -41,7 +42,17 @@ final class Renderer: NSObject, NSApplicationDelegate {
             }
             scene.focusY = scene.goalFocusY; scene.distance = scene.goalDistance
             // PANX=0.45 slides the camera sideways (hands sit off the midline)
-            if let pan = ProcessInfo.processInfo.environment["PANX"].flatMap(Float.init) { scene.panX = pan }
+            if let pan = ProcessInfo.processInfo.environment["PANX"].flatMap(Float.init) { scene.panX = pan; scene.goalPanX = pan }
+            scene.panX = scene.goalPanX
+            // PITCH=0.8 tilts the body toward the camera (tops of the feet, crown)
+            if let pitch = ProcessInfo.processInfo.environment["PITCH"].flatMap(Float.init) { scene.pitch = pitch }
+            // FOCUS=acu-li11 turns the camera to that point, as tapping it does
+            if let id = ProcessInfo.processInfo.environment["FOCUS"], let p = system?.points.first(where: { $0.id == id }), let acu = p.acu {
+                scene.setActivePoint(id)
+                scene.focus(on: acu.sites(female: female)[0].simd, normal: acu.normal.simd)
+                scene.yaw = scene.goalYaw ?? scene.yaw
+                scene.focusY = scene.goalFocusY; scene.distance = scene.goalDistance; scene.panX = scene.goalPanX
+            }
             let anchor = AnchorEntity(world: .zero)
             anchor.addChild(scene.root)
             view.scene.addAnchor(anchor)

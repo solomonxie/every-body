@@ -37,7 +37,7 @@ struct HomeContent: View {
             } else if searching {
                 SearchSuggestions(query: $query)
             } else {
-                TileGrid(title: settings.t("Reflex & acupressure", "反射区与穴位"), tiles: Tile.reflex, expanded: nil)
+                TileGrid(title: settings.t("Acupuncture & reflexology", "针灸与反射区"), tiles: Tile.reflex, expanded: nil)
                 TileGrid(title: settings.t("Human body", "人体"), tiles: Tile.body, expanded: $showAllBody)
                 ChildrenSection()
                 IllustrationsSection()
@@ -57,17 +57,23 @@ struct Tile: Identifiable {
 
     /// anatomy: the body systems
     @MainActor static var body: [Tile] {
-        Catalog.systems.filter { $0.id != "acupoint-reflex-map" }.map {
+        Catalog.systems.filter { !Tile.pointSystems.contains($0.id) }.map {
             Tile(id: $0.id, name: Bilingual($0.name, $0.nameZh), color: $0.color, route: .viewer(system: $0.id))
         }
     }
 
-    /// acupressure: the 3D point map and the three 2D reflex charts
+    /// systems shown as point maps, not anatomy
+    static let pointSystems: Set<String> = ["acupoint-reflex-map", "acupuncture"]
+
+    /// acupuncture, the 3D reflex point map and the three 2D reflex charts
     @MainActor static var reflex: [Tile] {
-        let map = Catalog.systems.first { $0.id == "acupoint-reflex-map" }.map {
+        let acupuncture = Catalog.system("acupuncture").map {
+            Tile(id: $0.id, name: Bilingual("Acupuncture", "针灸穴位"), color: $0.color, route: .viewer(system: $0.id))
+        }
+        let map = Catalog.system("acupoint-reflex-map").map {
             Tile(id: $0.id, name: Bilingual("3D point map", "3D 穴位图"), color: $0.color, route: .viewer(system: $0.id))
         }
-        return (map.map { [$0] } ?? []) + [
+        return [acupuncture, map].compactMap { $0 } + [
             Tile(id: "hand-chart", name: Bilingual("Hand chart", "手部反射区"), color: "#E8A87C", route: .chart(id: "hand"), chart: "hand"),
             Tile(id: "foot-chart", name: Bilingual("Foot chart", "足底反射区"), color: "#C9A06A", route: .chart(id: "foot"), chart: "foot"),
             Tile(id: "ear-chart", name: Bilingual("Ear points", "耳穴"), color: "#D98BA8", route: .chart(id: "ear"), chart: "ear"),
@@ -156,6 +162,8 @@ private struct TileView: View {
                 .padding(Space.s)
         } else if tile.id == "acupoint-reflex-map" {
             ReflexMapThumb()
+        } else if tile.id == "acupuncture" {
+            AcupunctureThumb()
         } else if UIImage(named: "tile-\(tile.id)") != nil {
             Image("tile-\(tile.id)").resizable().scaledToFill()
         } else {
@@ -186,6 +194,51 @@ struct ReflexMapThumb: View {
                 Circle().fill(Color(hex: "#4ECB71")).frame(width: s * 0.13)
                     .overlay(Circle().stroke(.white.opacity(0.8), lineWidth: max(1, s * 0.012)))
                     .position(organ)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// A figure with meridian lines and points, and a needle at the elbow.
+struct AcupunctureThumb: View {
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height, s = min(w, h)
+            let line = max(1.2, s * 0.018)
+            let elbow = CGPoint(x: w * 0.66, y: h * 0.5)
+            ZStack {
+                LinearGradient(colors: [Color(hex: "#2A9384"), Color(hex: "#0F4D46")], startPoint: .top, endPoint: .bottom)
+                Image(systemName: "figure.stand")
+                    .resizable().scaledToFit()
+                    .foregroundStyle(.white.opacity(0.92))
+                    .frame(height: s * 0.82)
+                // two channels down the body, dotted with points
+                ForEach(Array(zip([Color(hex: "#F2A20C"), Color(hex: "#5B8DEF")], [0.46, 0.54])), id: \.1) { color, x in
+                    Path { p in
+                        p.move(to: CGPoint(x: w * x, y: h * 0.3))
+                        p.addCurve(to: CGPoint(x: w * x, y: h * 0.86), control1: CGPoint(x: w * (x + (x - 0.5) * 0.6), y: h * 0.5),
+                                   control2: CGPoint(x: w * x, y: h * 0.7))
+                    }
+                    .stroke(color, style: StrokeStyle(lineWidth: line, lineCap: .round))
+                    ForEach([0.36, 0.52, 0.7], id: \.self) { y in
+                        Circle().fill(color).frame(width: s * 0.055).position(x: w * x + (x - 0.5) * w * 0.12 * (y < 0.6 ? 1 : 0.4), y: h * y)
+                    }
+                }
+                // the needle: a thin shaft into a lit point, a coiled handle above
+                Path { p in
+                    p.move(to: elbow)
+                    p.addLine(to: CGPoint(x: w * 0.86, y: h * 0.2))
+                }
+                .stroke(Color(hex: "#E6E9EE"), style: StrokeStyle(lineWidth: max(1, s * 0.012), lineCap: .round))
+                Path { p in
+                    p.move(to: CGPoint(x: w * 0.8, y: h * 0.285))
+                    p.addLine(to: CGPoint(x: w * 0.9, y: h * 0.14))
+                }
+                .stroke(Color(hex: "#FFD166"), style: StrokeStyle(lineWidth: max(2, s * 0.045), lineCap: .round))
+                Circle().fill(Color(hex: "#FFD166")).frame(width: s * 0.1)
+                    .overlay(Circle().stroke(.white.opacity(0.85), lineWidth: max(1, s * 0.012)))
+                    .position(elbow)
             }
         }
         .accessibilityHidden(true)
