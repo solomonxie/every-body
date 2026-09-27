@@ -22,7 +22,7 @@ struct Bust {
     init(_ c: Casualty) {
         h = c.h
         look = c.look
-        head = min(1.6, c.build.headR / 0.064)
+        head = min(1.5, c.build.headR / 0.064)
         bump = c.bump > 0
     }
 
@@ -90,26 +90,28 @@ struct Bust {
         // torso
         let torso = "M \(-W) \(0.035 * h) C \(-W - 0.025 * h) \(0.08 * h) \(-0.105 * h) \(0.22 * h) \(-0.098 * h) \(wb) L \(0.098 * h) \(wb) "
             + "C \(0.105 * h) \(0.22 * h) \(W + 0.025 * h) \(0.08 * h) \(W) \(0.035 * h) C \(0.07 * h) \(0.0) \(-0.07 * h) \(0.0) \(-W) \(0.035 * h) Z"
-        g.shade(torso, dim(look.top, 1.04), dim(look.top, 0.86), stroke: look.topLine, lw: 1.3, vertical: true)
+        g.shade(torso, dim(look.top, 1.03), dim(look.top, 0.9), stroke: look.topLine, lw: 0.9, vertical: true)
         if bump {
             let c = CGPoint(x: 0.005 * h, y: 0.33 * h), rx = 0.1 * h, ry = 0.09 * h
             let belly = Path(ellipseIn: CGRect(x: c.x - rx, y: c.y - ry, width: 2 * rx, height: 2 * ry))
             g.ctx.fill(belly, with: .radialGradient(Gradient(colors: [dim(look.top, 1.08), look.top]), center: CGPoint(x: c.x - rx * 0.2, y: c.y - ry * 0.3),
                                                     startRadius: 0, endRadius: rx))
             g.path("M \(c.x - rx * 0.95) \(c.y + ry * 0.3) C \(c.x - rx * 0.7) \(c.y + ry * 1.05) \(c.x + rx * 0.7) \(c.y + ry * 1.05) \(c.x + rx * 0.95) \(c.y + ry * 0.3)",
-                   stroke: look.topLine, lw: 0.9, opacity: 0.7)
+                   stroke: look.topLine, lw: 0.8, opacity: 0.6)
         }
-        // fold lines
-        g.path("M \(-0.06 * h) \(0.3 * h) Q \(-0.04 * h) \(0.34 * h) \(-0.065 * h) \(0.38 * h)", stroke: look.topLine, lw: 0.8, opacity: 0.5)
-        g.path("M \(0.07 * h) \(0.14 * h) Q \(0.05 * h) \(0.18 * h) \(0.075 * h) \(0.22 * h)", stroke: look.topLine, lw: 0.8, opacity: 0.4)
         // neck with a shadow under the chin
         g.shade("M \(-0.024 * h) \(c.y + ry * 0.6) L \(-0.027 * h) \(0.012 * h) Q 0 \(0.04 * h) \(0.027 * h) \(0.012 * h) L \(0.024 * h) \(c.y + ry * 0.6) Z",
-                darker(look.skin), look.skin, stroke: look.skinLine, lw: 1, vertical: true)
-        g.path("M \(-0.045 * h) \(0.012 * h) Q 0 \(0.05 * h) \(0.045 * h) \(0.012 * h)", stroke: look.topLine, lw: 1.3)
+                dim(look.skin, 0.88), look.skin, vertical: true)
+        g.path("M \(-0.045 * h) \(0.012 * h) Q 0 \(0.05 * h) \(0.045 * h) \(0.012 * h)", stroke: look.topLine, lw: 1)
         // ears, head
-        for side in [-1.0, 1.0] { g.ellipse(side * rx * 0.97, c.y + ry * 0.08, rx * 0.16, ry * 0.19, fill: look.skin, stroke: look.skinLine) }
+        if look.style == .curly {
+            for (x, y, rr) in [(-0.62, -0.6, 0.44), (0.62, -0.6, 0.44), (-0.2, -0.92, 0.44), (0.25, -0.92, 0.44), (-0.92, -0.08, 0.32), (0.92, -0.08, 0.32)] {
+                g.circle(c.x + x * rx, c.y + y * ry, rr * rx, fill: look.hair)
+            }
+        }
+        for side in [-1.0, 1.0] { g.ellipse(side * rx * 0.97, c.y + ry * 0.08, rx * 0.15, ry * 0.18, fill: dim(look.skin, 0.95)) }
         let headPath = Path(ellipseIn: CGRect(x: c.x - rx, y: c.y - ry, width: 2 * rx, height: 2 * ry))
-        g.shade(headPath, dim(look.skin, 1.03), dim(look.skin, 0.9), stroke: look.skinLine, lw: 1.2)
+        g.shade(headPath, dim(look.skin, 1.02), dim(look.skin, 0.94), stroke: look.skinLine, lw: 0.9)
         hair(&g, c, rx, ry)
         faceDetails(&g, c, rx, ry)
         if sweat {
@@ -121,14 +123,16 @@ struct Bust {
     }
 
     private func hair(_ g: inout Sketch, _ c: CGPoint, _ rx: Double, _ ry: Double) {
-        let hc = look.hair, hl = darker(look.hair)
+        let hc = look.hair
         switch look.style {
+        case .curly:
+            break
         case .baby:
             g.path("M \(-rx * 0.2) \(c.y - ry * 0.98) Q \(0) \(c.y - ry * 1.2) \(rx * 0.15) \(c.y - ry * 0.95)", stroke: hc, lw: 1.5, cap: .round)
         case .thin:
             for side in [-1.0, 1.0] {
                 g.path("M \(side * rx * 1.0) \(c.y + ry * 0.1) C \(side * rx * 1.08) \(c.y - ry * 0.5) \(side * rx * 0.8) \(c.y - ry * 0.85) \(side * rx * 0.4) \(c.y - ry * 0.95) "
-                       + "C \(side * rx * 0.7) \(c.y - ry * 0.7) \(side * rx * 0.86) \(c.y - ry * 0.4) \(side * rx * 0.88) \(c.y + ry * 0.05) Z", fill: hc, stroke: hl, lw: 0.6)
+                       + "C \(side * rx * 0.7) \(c.y - ry * 0.7) \(side * rx * 0.86) \(c.y - ry * 0.4) \(side * rx * 0.88) \(c.y + ry * 0.05) Z", fill: hc)
             }
         default:
             var p = Path()
@@ -140,8 +144,8 @@ struct Bust {
             p.addCurve(to: CGPoint(x: c.x - rx * 1.02, y: c.y - ry * 0.02), control1: CGPoint(x: c.x - rx * 0.6, y: c.y - ry * 0.45),
                        control2: CGPoint(x: c.x - rx * 0.92, y: c.y - ry * 0.3))
             p.closeSubpath()
-            g.shade(p, hc, hl, stroke: hl, lw: 0.6)
-            if look.style == .bun { g.circle(c.x, c.y - ry * 1.1, rx * 0.32, fill: hc, stroke: hl, lw: 0.6) }
+            g.shade(p, hc, dim(hc, 0.9))
+            if look.style == .bun { g.circle(c.x, c.y - ry * 1.1, rx * 0.32, fill: hc) }
             if look.style == .long {
                 g.path("M \(-rx * 1.03) \(c.y + ry * 0.1) C \(-rx * 1.1) \(c.y + ry * 0.6) \(-rx * 1.05) \(c.y + ry * 1.0) \(-rx * 0.95) \(c.y + ry * 1.25) L \(-rx * 0.82) \(c.y + ry * 0.3) Z", fill: hc)
                 g.path("M \(rx * 1.03) \(c.y + ry * 0.1) C \(rx * 1.1) \(c.y + ry * 0.6) \(rx * 1.05) \(c.y + ry * 1.0) \(rx * 0.95) \(c.y + ry * 1.25) L \(rx * 0.82) \(c.y + ry * 0.3) Z", fill: hc)
@@ -150,27 +154,26 @@ struct Bust {
     }
 
     private func faceDetails(_ g: inout Sketch, _ c: CGPoint, _ rx: Double, _ ry: Double) {
-        let ink = hex("#3A3038"), brow = look.style == .thin ? hex("#9A9A9A") : darker(look.hair)
+        let ink = Ink.ink, brow = look.style == .thin ? hex("#A8A4A0") : look.hair
         let ey = c.y + ry * 0.04
         let squint = face == .pain || face == .distress
         for side in [-1.0, 1.0] {
             let sag = side < 0 ? droop : 0
             let x = c.x + side * rx * 0.4, y = ey + sag * ry * 0.07
             if squint {
-                g.path("M \(x - rx * 0.15) \(y - ry * 0.02) Q \(x) \(y + ry * 0.08) \(x + rx * 0.15) \(y - ry * 0.02)", stroke: ink, lw: 1.5, cap: .round)
+                g.path("M \(x - rx * 0.14) \(y - ry * 0.02) Q \(x) \(y + ry * 0.08) \(x + rx * 0.14) \(y - ry * 0.02)", stroke: ink, lw: 1.3, cap: .round)
             } else {
-                g.ellipse(x, y, rx * 0.12, ry * 0.11 * (1 - 0.45 * sag), fill: ink)
-                g.circle(x + rx * 0.04, y - ry * 0.04, rx * 0.035, fill: .white, opacity: 0.9)
+                g.ellipse(x, y, rx * 0.1, ry * 0.095 * (1 - 0.45 * sag), fill: ink)
                 if sag > 0.1 { g.path("M \(x - rx * 0.17) \(y - ry * 0.07) Q \(x) \(y - ry * 0.02) \(x + rx * 0.17) \(y - ry * 0.05)", stroke: look.skin, lw: ry * 0.09 * sag) }
             }
             let worried = face == .worried || face == .pain || face == .distress
             let inner = worried ? -ry * 0.1 : 0
             g.line(x - side * rx * 0.2, ey - ry * 0.27 + inner + sag * ry * 0.06, x + side * rx * 0.2, ey - ry * 0.25 + sag * ry * 0.1,
-                   stroke: brow, lw: 1.7, cap: .round)
-            g.glow(c.x + side * rx * 0.55, c.y + ry * 0.38 + sag * ry * 0.05, rx * 0.22, hex("#E88A8A"), opacity: 0.22)
+                   stroke: brow, lw: 1.4, cap: .round, opacity: 0.85)
+            g.circle(c.x + side * rx * 0.56, c.y + ry * 0.36 + sag * ry * 0.05, rx * 0.15, fill: Ink.blush, opacity: 0.25)
         }
-        g.path("M \(c.x) \(c.y + ry * 0.12) Q \(c.x - rx * 0.13) \(c.y + ry * 0.33) \(c.x + rx * 0.06) \(c.y + ry * 0.35)", stroke: look.skinLine, lw: 1.1, cap: .round)
-        let my = c.y + ry * 0.58, mw = rx * 0.32, lip = hex("#B5585F")
+        g.path("M \(c.x - rx * 0.02) \(c.y + ry * 0.22) Q \(c.x - rx * 0.08) \(c.y + ry * 0.33) \(c.x + rx * 0.04) \(c.y + ry * 0.34)", stroke: look.skinLine, lw: 1, cap: .round)
+        let my = c.y + ry * 0.58, mw = rx * 0.28, lip = Ink.lip
         let ly = my + droop * ry * 0.22
         switch face {
         case .smile: g.path("M \(-mw) \(ly - ry * 0.04) Q 0 \(my + ry * 0.17) \(mw) \(my - ry * 0.04)", stroke: lip, lw: 1.6, cap: .round)
@@ -179,7 +182,7 @@ struct Bust {
         case .pain:
             g.path("M \(-mw) \(ly + ry * 0.05) Q 0 \(my - ry * 0.1) \(mw) \(my + ry * 0.05) Q 0 \(my + ry * 0.06) \(-mw) \(ly + ry * 0.05) Z",
                    fill: .white, stroke: lip, lw: 1.4)
-        case .distress: g.ellipse(0, my + ry * 0.02, mw * 0.55, ry * 0.12, fill: hex("#7A2E34"))
+        case .distress: g.ellipse(0, my + ry * 0.02, mw * 0.55, ry * 0.12, fill: Ink.mouth)
         }
     }
 }

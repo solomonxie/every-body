@@ -189,7 +189,7 @@ extension Illustrations {
         case 3:
             let perfusion = taps > 0 ? min(1, rate / 110) * (rate > 130 ? 0.8 : 1) : 0
             let rateColor = rate == 0 ? hex("#777777") : rate < 100 ? hex("#E39B4B") : rate > 120 ? red : hex("#2E9E5B")
-            s.rect(8, 8, 134, 62, r: 9, fill: .white, stroke: rateColor, lw: 2)
+            s.tonal(8, 8, 134, 62, r: 12, color: rateColor)
             s.label("Compressions \(Int(taps.rounded()))/30", "按压 \(Int(taps.rounded()))/30", 18, 26, size: 11, color: hex("#333333"), bold: true)
             s.label(rate > 0 ? "\(Int(rate.rounded())) /min" : "aim 100–120 /min", rate > 0 ? "\(Int(rate.rounded())) 次/分" : "目标 100–120 次/分",
                     18, 43, size: 12, color: rateColor, bold: true)
@@ -218,8 +218,8 @@ extension Illustrations {
     private static func drawBabyCPR(_ s: inout Sketch, _ p: Params, _ t: Double) {
         let st = Int(p[v: "stage"].rounded()), press = p[v: "press"], taps = p[v: "taps"], rate = p[v: "rate"]
         let top = 252.0, bh = 290.0
-        s.rect(0, 0, 360, 300, fill: hex("#F5F2ED"))
-        s.rect(0, 150, 360, 2, fill: hex("#EAE3D8"))
+        s.backdrop()
+        s.ellipse(170, top - 30, 170, 110, fill: Palette.blob)
         var b = SideFigure(h: bh, build: .infant, look: .baby, hip: .zero, rotation: -90, face: .closed)
         b.near = .init(shoulder: 14, elbow: 50)
         b.far = .init(shoulder: -6, elbow: 40)
@@ -234,9 +234,8 @@ extension Illustrations {
 
         // far hand behind the chest (only its forearm shows), then the table and the baby
         if st == 2 || st == 3 { reachIn(&s, from: CGPoint(x: push.x + 110, y: -10), palm: CGPoint(x: push.x + 6, y: push.y + L * 0.4), dir: unit(CGPoint(x: -0.35, y: 1)), len: L, shape: .encircle, thumb: -1) }
-        s.rect(0, top, 360, 300 - top, fill: hex("#C9A77F"))
-        s.rect(0, top, 360, 6, fill: hex("#DDBE96"))
-        s.line(0, top + 6, 360, top + 6, stroke: hex("#A8865F"), lw: 1)
+        s.rect(-20, top, 400, 320 - top, r: 14, fill: hex("#DCC3A2"))
+        s.rect(-20, top, 400, 6, r: 3, fill: hex("#E9D6BC"))
         s.ellipse(b.hip.x - 30, top + 1, 110, 4, fill: .black.opacity(0.08))
         if st == 5 {
             // onesie off, nappy on
@@ -273,7 +272,7 @@ extension Illustrations {
                 s.callout("fingers round the back", "其余手指环抱背部", 84, 196, to: CGPoint(x: push.x - 14, y: push.y + 34), color: hex("#555555"), width: 120)
             } else {
                 let rateColor = rate == 0 ? hex("#777777") : rate < 100 ? hex("#E39B4B") : rate > 120 ? red : hex("#2E9E5B")
-                s.rect(8, 8, 138, 46, r: 9, fill: .white, stroke: rateColor, lw: 2)
+                s.tonal(8, 8, 138, 46, r: 12, color: rateColor)
                 s.label("Compressions \(Int(taps.rounded()))/30", "按压 \(Int(taps.rounded()))/30", 18, 26, size: 11, color: hex("#333333"), bold: true)
                 s.label(rate > 0 ? "\(Int(rate.rounded())) /min" : "aim 100–120 /min", rate > 0 ? "\(Int(rate.rounded())) 次/分" : "目标 100–120 次/分",
                         18, 43, size: 12, color: rateColor, bold: true)
@@ -393,7 +392,7 @@ extension Illustrations {
         let ground = y + h - 5
         let pc = CGPoint(x: x + 60, y: ground - pr * (baby ? 1.0 : 1.06))
         let look: Look = baby ? .baby : .man
-        g.rect(x, ground, w, 8, fill: hex("#E4D6C3"))
+        g.rect(x, ground, w, 8, fill: Palette.floor)
         let neck = headSpot(pc, up: up, r: pr, -0.05, 0.8)
         g.taper([neck, CGPoint(x: neck.x + 34, y: neck.y + 2)], [pr * 0.8, pr * 0.9], fill: look.skin, line: look.skinLine)
         g.shape(smoothPath([CGPoint(x: neck.x + 24, y: neck.y - pr * 0.55), CGPoint(x: x + w + 10, y: neck.y - pr * 0.7),

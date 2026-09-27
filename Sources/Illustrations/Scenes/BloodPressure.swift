@@ -85,10 +85,10 @@ extension Illustrations {
         let hip = v.hip, seat = hip.y + b.legW * h * 0.5
         let table = v.front(0.72).y + 0.05 * h
         v.near = .init(reach: CGPoint(x: hip.x + 0.3 * h, y: table - b.hand * h * 0.22), hand: .open, handAngle: 0)
-        s.rect(0, floor, 200, 3, r: 1.5, fill: hex("#E4DDD2"))
+        s.stage(100, floor: floor, r: 92, width: 200)
         // chair
         let back = v.back(0.4).x - 5
-        let wood = hex("#B08A64"), woodLo = hex("#8E6A48")
+        let wood = hex("#CFA97F"), woodLo = hex("#B48D66")
         s.rect(back - 6, hip.y - 0.3 * h, 7, seat - hip.y + 0.3 * h + 6, r: 2.5, fill: wood)
         s.line(back - 2, seat + 6, back - 2, floor, stroke: woodLo, lw: 4)
         s.line(hip.x + 0.16 * h, seat + 6, hip.x + 0.16 * h, floor, stroke: woodLo, lw: 4)
