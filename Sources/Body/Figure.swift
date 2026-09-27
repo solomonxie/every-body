@@ -23,8 +23,8 @@ enum Figure {
     private struct Header: Decodable {
         struct Piece: Decodable { let vertices: Int; let render: Int; let triangles: Int; let uv: Int; let vmap: Int; let index: Int }
         struct Block: Decodable { let ref: Int?; let offset: Int; let count: Int; let lo: [Float]; let step: [Float] }
-        /// vertices lie on body edges: mix(ab.0, ab.1, t)
-        struct Garment: Decodable { let vertices: Int; let triangles: Int; let ab: Int; let t: Int; let index: Int; let lift: Float; let color: String }
+        /// vertices lie in body triangles abc (weights w of a and b); f: distance to the garment edge
+        struct Garment: Decodable { let vertices: Int; let triangles: Int; let abc: Int; let w: Int; let f: Int; let index: Int; let lift: Float; let color: String }
         let pieces: [String: Piece]
         let blocks: [Block]
         let variants: [String: [String: Int]]
@@ -78,7 +78,7 @@ enum Figure {
             })
             d.primitives = .triangles(index)
             guard let mesh = try? MeshResource.generate(from: [d]) else { continue }
-            let id = name.hasPrefix("brows") ? "brows" : name.hasPrefix("hair") ? "hair" : name
+            let id = name.hasPrefix("brows") ? "brows" : name.hasPrefix("lashes") ? "lashes" : name.hasPrefix("hair") ? "hair" : name
             out.append(.init(id: id, mesh: mesh, transform: .identity, material: material(name, look: look, kid: kid)))
         }
 
@@ -93,8 +93,10 @@ enum Figure {
                 guard let g = header.garments[name] else { continue }
                 if let mesh = garment(g, reader: reader, body: body) {
                     var m = PhysicallyBasedMaterial()
-                    m.baseColor = .init(tint: UIColor(hex: g.color))
-                    m.roughness = .init(floatLiteral: 0.85)
+                    m.baseColor = .init(tint: UIColor(hex: g.color), texture: texture("fabric.png", semantic: .color).map { .init($0) })
+                    m.roughness = .init(floatLiteral: 0.9)
+                    // soft cotton: a faint sheen at grazing angles
+                    m.sheen = .init(tint: UIColor(white: 0.35, alpha: 1))
                     m.metallic = .init(floatLiteral: 0)
                     out.append(.init(id: "underwear-\(name)", mesh: mesh, transform: .identity, material: m))
                 }
@@ -127,6 +129,28 @@ enum Figure {
 
         private static func key(_ p: SIMD3<Float>) -> SIMD3<Int32> { SIMD3<Int32>((p / cell).rounded(.down)) }
 
+        /// how far `q` lies outside the skin (negative: inside), against the nearest skin vertex's normal
+        func depth(_ q: SIMD3<Float>) -> Float { depthNormal(q).depth }
+
+        /// depth and the nearest skin vertex's normal (zero when no skin is near). Where two surfaces are close (an arm
+        /// by the trunk) the nearest one may be the wrong one: inside either of the near ones counts as inside.
+        func depthNormal(_ q: SIMD3<Float>) -> (depth: Float, normal: SIMD3<Float>) {
+            let k = Self.key(q)
+            let cells = (-1...1).flatMap { dx in (-1...1).flatMap { dy in (-1...1).compactMap { dz in grid[k &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))] } } }
+            var best = -1, bestD = Float.infinity
+            for cell in cells { for i in cell {
+                let d = simd_distance_squared(positions[Int(i)], q)
+                if d < bestD { bestD = d; best = Int(i) }
+            } }
+            guard best >= 0 else { return (-1, .zero) }
+            let reach = 1.5 * bestD.squareRoot() + 0.005
+            var depth = Float.infinity
+            for cell in cells { for i in cell where simd_distance_squared(positions[Int(i)], q) <= reach * reach {
+                depth = min(depth, simd_dot(q - positions[Int(i)], normals[Int(i)]))
+            } }
+            return (depth, normals[best])
+        }
+
         /// onto the tangent plane of the nearest skin vertex, then `lift` out along its normal
         func snap(_ q: SIMD3<Float>, lift: Float) -> SIMD3<Float> {
             let k = Self.key(q)
@@ -158,20 +182,28 @@ enum Figure {
         return n.map { simd_length($0) > 0 ? simd_normalize($0) : SIMD3(0, 1, 0) }
     }
 
-    /// A thin shell on the body, pushed out along the skin's normal.
+    /// hem width (scene units) the fabric texture spans, from the garment's edge inward
+    private static let hem: Float = 0.025
+
+    /// A thin shell on the body, pushed out along the skin's normal; its edge hugs the skin.
     private static func garment(_ g: Header.Garment, reader: Reader, body: (positions: [SIMD3<Float>], normals: [SIMD3<Float>])) -> MeshResource? {
-        let ab: [UInt32] = reader.array(g.ab, count: g.vertices * 2)
-        let t: [Float] = reader.array(g.t, count: g.vertices)
-        var positions: [SIMD3<Float>] = [], normals: [SIMD3<Float>] = []
+        let abc: [UInt32] = reader.array(g.abc, count: g.vertices * 3)
+        let w: [Float] = reader.array(g.w, count: g.vertices * 2)
+        let f: [Float] = reader.array(g.f, count: g.vertices)
+        var positions: [SIMD3<Float>] = [], normals: [SIMD3<Float>] = [], uv: [SIMD2<Float>] = []
         for v in 0..<g.vertices {
-            let a = Int(ab[2 * v]), b = Int(ab[2 * v + 1])
-            let n = simd_normalize(simd_mix(body.normals[a], body.normals[b], SIMD3(repeating: t[v])))
-            positions.append(simd_mix(body.positions[a], body.positions[b], SIMD3(repeating: t[v])) + n * g.lift)
+            let a = Int(abc[3 * v]), b = Int(abc[3 * v + 1]), c = Int(abc[3 * v + 2])
+            let wa = w[2 * v], wb = w[2 * v + 1], wc = max(0, 1 - wa - wb)
+            let n = simd_normalize(wa * body.normals[a] + wb * body.normals[b] + wc * body.normals[c])
+            let edge = min(f[v] / 0.01, 1)
+            positions.append(wa * body.positions[a] + wb * body.positions[b] + wc * body.positions[c] + n * g.lift * (0.8 + 0.2 * edge))
             normals.append(n)
+            uv.append(SIMD2(min(f[v] / hem, 0.97), 0.5))  // not 1: the sampler wraps
         }
         var d = MeshDescriptor(name: "underwear")
         d.positions = MeshBuffers.Positions(positions)
         d.normals = MeshBuffers.Normals(normals)
+        d.textureCoordinates = MeshBuffers.TextureCoordinates(uv)
         d.primitives = .triangles(reader.array(g.index, count: g.triangles * 3) as [UInt32])
         return try? MeshResource.generate(from: [d])
     }
@@ -185,20 +217,37 @@ enum Figure {
         var alpha: String?
         switch piece {
         case "body":
-            // children wear the young female skin: no stubble or body hair
-            let sex = kid || look.female ? "female" : "male"
-            file = "skin-\(look.heritage.rawValue)-\(sex)-\(look.age == .senior ? "old" : "young").jpg"
+            // children's skin is the young female one (no stubble or body hair) with their own scalp
+            let skin = kid ? "kid" : "\(look.female ? "female" : "male")-\(look.age == .senior ? "old" : "young")"
+            file = "skin-\(look.heritage.rawValue)-\(skin).jpg"
         case "eyes": file = "eyes.jpg"
         default:
-            file = "\(piece)\(grey && piece.hasPrefix("hair") ? "-grey" : "").jpg"
+            file = "\(piece).jpg"
             alpha = "\(piece)-alpha.png"
         }
-        m.baseColor = .init(tint: .white, texture: texture(file, semantic: .color).map { .init($0) })
+        // hair and brows are grey strands, coloured here; a senior's brows stay a shade darker than the hair
+        let tint = piece.hasPrefix("hair") ? hairColor(look.heritage, grey: grey)
+            : piece.hasPrefix("brows") ? (grey ? UIColor(hex: "#B8B4AE") : hairColor(look.heritage, grey: false)) : .white
+        m.baseColor = .init(tint: tint, texture: texture(file, semantic: .color).map { .init($0) })
         if let alpha, let t = texture(alpha, semantic: .raw) {
             m.blending = .transparent(opacity: .init(scale: 1, texture: .init(t)))
-            m.opacityThreshold = 0.05
+            // hair cards fade out in wide see-through margins: cut them, or they haze the forehead
+            m.opacityThreshold = piece.hasPrefix("hair") ? 0.3 : 0.05
+            // a faint sheen only: see-through hair (acupuncture) keeps its specular and would read as a grey film
+            m.specular = .init(floatLiteral: 0.15)
         }
         return m
+    }
+
+    /// Hair textures are light grey strands; this is the colour they take.
+    private static func hairColor(_ heritage: Heritage, grey: Bool) -> UIColor {
+        if grey { return UIColor(hex: "#FFFEFA") }
+        return switch heritage {
+        case .white: UIColor(hex: "#86674F")
+        case .hispanic: UIColor(hex: "#4F3B2E")
+        case .southAsian, .southeastAsian: UIColor(hex: "#362B26")
+        case .eastAsian, .black: UIColor(hex: "#2E2622")
+        }
     }
 
     private static func texture(_ file: String, semantic: TextureResource.Semantic) -> TextureResource? {
