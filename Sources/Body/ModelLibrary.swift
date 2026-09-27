@@ -1,7 +1,7 @@
 import Foundation
 import RealityKit
 
-/// Real anatomy models from Resources/Models: the Z-Anatomy skeleton and MakeHuman skin figures,
+/// Real anatomy models from Resources/Models: the Z-Anatomy skeleton and MakeHuman skin figures (Figure),
 /// already fitted to body coordinates by scripts/models/build_models.py. Loaded once per launch.
 @MainActor
 enum ModelLibrary {
@@ -27,9 +27,7 @@ enum ModelLibrary {
 
     private struct Index: Decodable, Sendable {
         struct Skeleton: Decodable, Sendable { let file: String; let parts: [Part] }
-        struct Skin: Decodable, Sendable { let file: String }
         let skeleton: Skeleton?
-        let skins: [String: Skin]?
     }
 
     nonisolated private static let index: Index? = {
@@ -41,14 +39,13 @@ enum ModelLibrary {
     nonisolated static func part(_ id: String) -> Part? { partsByID[id] }
 
     private(set) static var bones: [Piece] = []
-    private static var skins: [String: [Piece]] = [:]
     private static var collisions: [String: ShapeResource] = [:]
     private static var loading: Task<Void, Never>?
 
-    /// Skin figure for this body, or nil to use the generated one (children, or not built).
-    static func skin(female: Bool, pregnant: Bool, age: AgeGroup) -> [Piece]? {
-        guard enabled, age == .adult || age == .senior else { return nil }
-        return skins[female ? (pregnant ? "female-pregnant" : "female") : "male"]
+    /// Skin figure for this body, or nil to use the generated one (not built).
+    static func skin(_ look: Figure.Look) -> [Piece]? {
+        guard enabled else { return nil }
+        return Figure.pieces(look)
     }
 
     static var hasSkeleton: Bool { enabled && !bones.isEmpty }
@@ -59,9 +56,6 @@ enum ModelLibrary {
         let task = Task { @MainActor in
             if let file = index.skeleton?.file {
                 bones = await pieces(file).filter { partsByID[$0.id] != nil }
-            }
-            for (variant, skin) in index.skins ?? [:] {
-                skins[variant] = await pieces(skin.file)
             }
         }
         loading = task

@@ -11,10 +11,10 @@ correct positions and cause → effect (see `docs/design/mvp/DESIGN.md`). Every 
 
 ## What's in it
 
-- **Body** — real skeleton (Z-Anatomy, ~200 tappable bones) and textured skin figures (MakeHuman: male, female,
-  pregnant) in `Resources/Models/`; muscles, vessels, nerves and organs still math-built
-  (`Resources/Data/body.json`, meshes in `Sources/Body/`). Layers, tap to name, Hide / Fade / Isolate / Undo, bend shoulder, elbow
-  and knee (muscles bulge), male / female variant. Children use the generated skin.
+- **Body** — real skeleton (Z-Anatomy, ~200 tappable bones) and textured skin figures (MakeHuman: male / female ×
+  infant, toddler, child, adult, 65+, pregnant × six appearances, modest underwear) in `Resources/Models/`; muscles,
+  vessels, nerves and organs still math-built (`Resources/Data/body.json`, meshes in `Sources/Body/`). Layers, tap to
+  name, Hide / Fade / Isolate / Undo, bend shoulder, elbow and knee (muscles bulge). Settings → Appearance / Show underwear.
 - **Reflex Map 穴位反射图** — hand, foot and ear charts with zones per the standard maps
   (GB/T 13734 ear points, WHO acupoints). Press a zone → a pulse travels to the organ it's
   said to act on. Tapping an organ lists its zones.
@@ -55,10 +55,13 @@ scripts/screenshot.sh viewer/skeletal /tmp/shot.png   # open a screen via everyb
 Data lives in `Resources/Data/*.json` (body parts, organs, joints, points, charts, systems).
 App icon: `venv/bin/python scripts/make_icons.py` (needs Pillow in `venv/`).
 Body: `venv/bin/python scripts/gen_body.py` regenerates `body.json` and point positions; acupoints and meridian
-courses live in `scripts/acupuncture.py` (cast onto the skin mesh). Check placement with
+courses live in `scripts/acupuncture.py` (cast onto the skin lofts, then `scripts/models/snap_points.py` moves them onto
+the real skin figure). Check placement with
 `POINTS=acupuncture [FOCUS=acu-li11] [PANX=0.42] [PITCH=0.9] scripts/render_body/render.sh out.png skin <yaw> <focusY> <distance>`.
 Real models: `scripts/models/build.sh` (Blender 4.5 headless + MPFB2, raw downloads in gitignored `tools/`) rebuilds
 `Resources/Models/` and prints a size table; `REAL_MODELS=0` (env) falls back to the generated skeleton and skin.
+Skin figures: `scripts/models/build.sh fit` (MPFB humans → `build/models/figure`) then `build.sh pack` (→ `figure.bin`,
+textures); `scripts/render_body/grid.sh /tmp/grid` renders heritage / age / underwear / inside contact sheets.
 Third-party licences: `LICENSES/THIRD_PARTY.md` (Z-Anatomy CC BY-SA 4.0, MakeHuman CC0), also in Settings → Credits.
 Illustrations: `scripts/render_scenes/render.sh /tmp/scenes` renders every step to PNG on the Mac.
 Reflex charts: `venv/bin/python scripts/render_charts/gen_charts.py` regenerates `charts.json` (needs shapely);

@@ -17,6 +17,22 @@ enum AgeGroup: String, CaseIterable, Sendable {
     }
 }
 
+/// Look of the 3D figure's outer skin (face and skin tone); the anatomy inside never changes.
+enum Heritage: String, CaseIterable, Sendable {
+    case eastAsian = "east-asian", southeastAsian = "southeast-asian", southAsian = "south-asian", hispanic, white, black
+
+    var label: Bilingual {
+        switch self {
+        case .eastAsian: Bilingual("East Asian", "东亚")
+        case .southeastAsian: Bilingual("Southeast Asian", "东南亚")
+        case .southAsian: Bilingual("South Asian", "南亚")
+        case .hispanic: Bilingual("Hispanic / Latino", "拉丁裔")
+        case .white: Bilingual("White", "白人")
+        case .black: Bilingual("Black", "黑人")
+        }
+    }
+}
+
 /// Who the content is about; topics that differ by age or sex adapt to it.
 struct Profile: Sendable, Hashable {
     var age: AgeGroup = .adult

@@ -87,3 +87,9 @@ struct PartState: Equatable {
 }
 
 enum Focus { case all, foot, hand, ear, head, arm, front, back, leg }
+
+/// the real-model index needs RealityKit; screens only ask it for names
+enum ModelLibrary {
+    struct Part { let name: String; let nameZh: String; let layer: LayerID }
+    static func part(_ id: String) -> Part? { nil }
+}

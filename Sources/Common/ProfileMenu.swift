@@ -17,6 +17,10 @@ struct ProfileMenu: View {
             if settings.female && settings.age == .adult {
                 Toggle(settings.t("Pregnant", "怀孕"), isOn: $settings.pregnant)
             }
+            Picker(settings.t("Appearance", "外貌"), selection: $settings.heritage) {
+                ForEach(Heritage.allCases, id: \.self) { Text(settings.t($0.label)).tag($0) }
+            }
+            .pickerStyle(.menu)
         } label: {
             Label(label, systemImage: settings.age == .infant || settings.age.isChild ? "figure.child" : "figure.stand")
                 .labelStyle(.titleAndIcon)
