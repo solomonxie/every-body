@@ -112,9 +112,10 @@ final class BodyScene {
 
     // MARK: build
 
-    func build(skinColor: UIColor, female: Bool, points: [BodyPoint], flowStops: [BodyPoint], meridians: [Meridian] = []) {
+    func build(skinColor: UIColor, female: Bool, pregnant: Bool = false, points: [BodyPoint], flowStops: [BodyPoint], meridians: [Meridian] = []) {
         self.skinColor = skinColor
         self.female = female
+        let pregnant = pregnant && female && age == .adult
         rig.children.removeAll()
         partEntities = [:]; skinEntities = []; organEntities = [:]; jointOuter = [:]; pointEntities = [:]; pointColors = [:]; smallPoints = []; meridianEntities = [:]
 
@@ -141,7 +142,8 @@ final class BodyScene {
 
         // before puberty the body shape doesn't differ by sex
         let sex = female && !(age == .infant || age.isChild) ? "female" : "male"
-        for part in Catalog.body.parts where part.layer == .skin && (part.sex == nil || part.sex == sex) {
+        // a pregnant body swaps the female torso for one with the bump
+        for part in Catalog.body.parts where part.layer == .skin && Self.skinWanted(part, sex: sex, pregnant: pregnant) {
             let entity = Self.entity(for: part.shape)
             // eyes, lips and brows keep their own colour; everything else takes the skin tone
             let color = part.color == "#F2C9A5" ? skinColor : UIColor(hex: part.color)
@@ -151,21 +153,30 @@ final class BodyScene {
             skinEntities.append((entity, color))
         }
 
-        for organ in Catalog.body.organs {
-            let variant = (!female ? organ.male : nil) ?? Organ.Variant(position: organ.position, color: organ.color, shapes: organ.shapes)
+        for organ in Catalog.body.organs where organ.onlyPregnant != true || pregnant {
+            let variant = (!female ? organ.male : nil) ?? (pregnant ? organ.pregnant : nil)
+                ?? Organ.Variant(position: organ.position, color: organ.color, shapes: organ.shapes)
             // container sits on the pulse target so it scales about it
             let container = Entity()
             container.position = variant.position.simd
             for shape in variant.shapes {
                 let piece = Self.entity(for: shape)
                 piece.position -= variant.position.simd
-                piece.model?.materials = [Self.material(UIColor(hex: variant.color), opacity: organ.region == true ? 0.45 : 1,
+                // the pregnant womb is see-through so the baby shows
+                let see = organ.region == true ? 0.45 : pregnant && organ.id == "uterus" ? 0.35 : 1
+                piece.model?.materials = [Self.material(UIColor(hex: variant.color), opacity: Float(see),
                                                         texture: organ.region == true ? nil : organ.id == "brain" ? Textures.brain : Textures.organ)]
                 piece.name = organ.names == nil ? "" : organ.id
                 if organ.names != nil { Self.makeTappable(piece, shape: shape) }
                 container.addChild(piece)
             }
             container.isEnabled = organ.region != true
+            // late pregnancy crowds the gut up and to the sides of the womb
+            if pregnant && organ.id == "intestines" {
+                container.scale = SIMD3(1.1, 0.55, 0.7)
+                container.position.y += 0.2
+                container.position.z -= 0.05
+            }
             rig.addChild(container)
             organEntities[organ.id] = container
         }
@@ -240,6 +251,16 @@ final class BodyScene {
         for e in meridianEntities.values.joined() { keep(e, centre: e.visualBounds(relativeTo: rig).center) }
         applyVisibility()
         applyAge()
+    }
+
+    /// Skin part for this body: sex-specific parts match the sex; the pregnant torso replaces the female one.
+    private static func skinWanted(_ part: SchematicPart, sex: String, pregnant: Bool) -> Bool {
+        switch part.sex {
+        case nil: true
+        case "pregnant": pregnant
+        case "female": sex == "female" && !(pregnant && part.id == "torso-female")
+        default: part.sex == sex
+        }
     }
 
     // MARK: age — infants and toddlers are not small adults: big head, short chubby limbs, round belly
