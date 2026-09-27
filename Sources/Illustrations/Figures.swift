@@ -466,7 +466,7 @@ func drawSideHead(_ s: inout Sketch, at c: CGPoint, up: CGPoint, side: Double = 
         p.closeSubpath()
         g.shape(p, fill: dim(hc, 0.9))
     case .curly:
-        for (x, y, rr) in [(-0.35, -0.8, 0.55), (0.25, -0.92, 0.45), (-0.85, -0.35, 0.5), (-0.85, 0.25, 0.4), (0.62, -0.7, 0.3)] {
+        for (x, y, rr) in [(-0.35, -0.8, 0.52), (0.25, -0.9, 0.44), (-0.72, -0.4, 0.46), (-0.74, 0.2, 0.38), (0.62, -0.7, 0.3)] {
             g.circle(x, y, rr, fill: hc)
         }
     default: break
@@ -639,13 +639,14 @@ func faceOnHead(_ s: inout Sketch, c: CGPoint, rx: Double, ry: Double, look: Loo
             s.shape(p, fill: hc)
         }
     default:
-        // bold cap with volume on top, fringe swept up from the parting and down to the left temple
+        // bold cap with volume on top; the fringe lifts off the forehead from a side parting
         var p = Path()
-        p.move(to: P(-1.02, 0.0))
-        p.addCurve(to: P(0.2, -1.3), control1: P(-1.12, -0.96), control2: P(-0.6, -1.34))
-        p.addCurve(to: P(1.02, 0.0), control1: P(0.98, -1.3), control2: P(1.12, -0.7))
-        p.addCurve(to: P(0.3, fr - 0.16), control1: P(0.96, fr + 0.04), control2: P(0.62, fr - 0.24))
-        p.addCurve(to: P(-1.02, 0.0), control1: P(-0.3, fr - 0.06), control2: P(-0.9, fr + 0.1))
+        p.move(to: P(-1.0, -0.12))
+        p.addCurve(to: P(0.15, -1.32), control1: P(-1.14, -1.0), control2: P(-0.62, -1.36))
+        p.addCurve(to: P(1.0, -0.12), control1: P(0.96, -1.3), control2: P(1.14, -0.7))
+        p.addCurve(to: P(0.42, fr - 0.3 + bow * 0.1), control1: P(0.92, fr - 0.06), control2: P(0.7, fr - 0.3))
+        p.addCurve(to: P(-0.62, fr - 0.06), control1: P(0.1, fr - 0.22), control2: P(-0.3, fr - 0.1))
+        p.addCurve(to: P(-1.0, -0.12), control1: P(-0.84, fr - 0.02), control2: P(-0.94, -0.24))
         s.shape(p, fill: hc)
         if look.style == .bun { s.circle(c.x, c.y - 1.12 * ry, 0.36 * rx, fill: hc) }
     }

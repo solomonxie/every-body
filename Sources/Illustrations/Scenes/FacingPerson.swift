@@ -44,7 +44,7 @@ struct FacingPerson {
     /// −1 = image left (person's right)
     func arm(_ side: Double) -> (elbow: CGPoint, hand: CGPoint) {
         let s = shoulderPoint(side)
-        let target = (side < 0 ? rightHand : leftHand) ?? CGPoint(x: s.x + side * 0.03 * h, y: s.y + 0.31 * h)
+        let target = (side < 0 ? rightHand : leftHand) ?? CGPoint(x: s.x + side * 0.01 * h, y: s.y + 0.295 * h)
         return twoBone(s, target, 0.17 * h, 0.15 * h, bend: CGPoint(x: side, y: 0.6))
     }
 
