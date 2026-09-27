@@ -714,7 +714,8 @@ def region(p):
         return "arm"
     if p[1] < -0.04:
         return "leg"
-    return "trunk"
+    # shoulders to chin: children's necks are shorter
+    return "neck" if p[1] > 1.05 else "trunk"
 
 
 def as_spec(item):
@@ -815,7 +816,7 @@ def build(parts):
                 for course in COURSES[mid]:
                     for reg, piece in split(trace(course, skin, sex, side)):
                         if len(piece) > 1:
-                            key = reg if reg in ("head", "trunk") else f"{reg}-{side}"
+                            key = reg if reg in ("head", "neck", "trunk") else f"{reg}-{side}"
                             out.setdefault(key, []).append([rnd(q) for q in piece])
             return [out[k] for k in sorted(out)]
         male = pieces("male")

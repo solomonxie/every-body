@@ -1180,6 +1180,10 @@ def main():
         for p in sp["points"]:
             p["position"] = U(*POINTS[p["id"]])
     points["acupuncture"] = acupuncture.build(PARTS)
+    # then onto the real skin figure (scripts/models/build_figure.py), when it's built
+    sys.path.insert(0, str(Path(__file__).resolve().parent / "models"))
+    import snap_points
+    points = snap_points.snap(points)
     write(DATA / "points.json", points)
 
     charts = json.loads((DATA / "charts.json").read_text())
