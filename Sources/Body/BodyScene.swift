@@ -171,8 +171,21 @@ final class BodyScene {
                 ?? Organ.Variant(position: organ.position, color: organ.color, shapes: organ.shapes)
             // container sits on the pulse target so it scales about it
             let container = Entity()
-            container.position = variant.position.simd
-            for shape in variant.shapes {
+            let real = pregnant && organ.id == "uterus" ? nil : InternalModels.organ(organ.id, female: female)
+            container.position = real?.centre ?? variant.position.simd
+            if let real {
+                let piece = ModelEntity(mesh: real.piece.mesh)
+                piece.transform = real.piece.transform
+                piece.position -= real.centre
+                piece.model?.materials = [Self.material(UIColor(hex: real.part.color), opacity: 1, texture: Textures.organ)]
+                piece.name = organ.id
+                piece.components.set(InputTargetComponent())
+                Task { @MainActor in
+                    if let shape = await ModelLibrary.collision(for: real.piece) { piece.components.set(CollisionComponent(shapes: [shape])) }
+                }
+                container.addChild(piece)
+            }
+            for shape in real == nil ? variant.shapes : [] {
                 let piece = Self.entity(for: shape)
                 piece.position -= variant.position.simd
                 // the pregnant womb is see-through so the baby shows
@@ -212,9 +225,27 @@ final class BodyScene {
             partLayer[part.id] = part.layer
         }
 
+        // real muscles, vessels and nerves: bone-fitted meshes, limb pieces turn with their joint
+        for (part, piece) in InternalModels.parts(female: female) {
+            let entity = ModelEntity(mesh: piece.mesh)
+            entity.transform = piece.transform
+            entity.name = part.id
+            let texture = part.layer == .muscular ? Textures.muscle : part.layer == .organs ? Textures.organ : nil
+            baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1, texture: texture)
+            entity.model?.materials = [baseMaterials[part.id]!]
+            entity.components.set(InputTargetComponent())
+            Task { @MainActor in
+                if let shape = await ModelLibrary.collision(for: piece) { entity.components.set(CollisionComponent(shapes: [shape])) }
+            }
+            (part.joint.flatMap { Catalog.joint($0) }.map(container(for:)) ?? rig).addChild(entity)
+            partEntities[part.id] = entity
+            partLayer[part.id] = part.layer
+        }
+
         // internal sex-specific parts (ovaries, testes) exist at every age
         let organSex = female ? "female" : "male"
-        for part in Catalog.body.parts where part.layer != .skin && !(realBones && part.layer == .skeletal) && (part.sex == nil || part.sex == organSex) {
+        for part in Catalog.body.parts where part.layer != .skin && !(realBones && part.layer == .skeletal) && !InternalModels.replaces(part.id)
+            && (part.sex == nil || part.sex == organSex) {
             let entity = Self.entity(for: part.shape)
             entity.name = part.id
             baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1, texture: Textures.for(part.layer))
@@ -431,7 +462,7 @@ final class BodyScene {
         if realSkin && wasBent != !bentJoints.isEmpty { applyVisibility() }
         // the working muscle shortens and thickens
         let bulge = 1 + 0.6 * min(1, degrees / joint.maxDeg)
-        for mover in joint.movers {
+        for mover in joint.movers where !InternalModels.replaces(mover) {
             guard let entity = partEntities[mover], let shape = Catalog.part(mover)?.shape else { continue }
             switch shape {
             case let .spindle(from, to, radius):
@@ -743,7 +774,8 @@ final class BodyScene {
         if let warming { return await warming.value }
         let task = Task { @MainActor in
             await ModelLibrary.prepare()
-            var shapes = Catalog.body.parts.filter { !(ModelLibrary.hasSkeleton && $0.layer == .skeletal) }.map(\.shape)
+            await InternalModels.prepare()
+            var shapes = Catalog.body.parts.filter { !(ModelLibrary.hasSkeleton && $0.layer == .skeletal) && !InternalModels.replaces($0.id) }.map(\.shape)
             for organ in Catalog.body.organs { shapes += organ.shapes + (organ.male?.shapes ?? []) }
             for m in Catalog.points.values.flatMap({ $0.meridians ?? [] }) {
                 shapes += (m.pieces + (m.femalePieces ?? [])).map(meridianShape)
