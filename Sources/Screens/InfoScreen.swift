@@ -57,13 +57,15 @@ struct InfoContent: View {
     var body: some View {
         let system = Catalog.system(systemID)
         let color = Color(hex: system?.color ?? "#999999")
-        let parts = systemID == "acupoint-reflex-map" ? [] : systemParts(systemID)
+        let parts = Tile.pointSystems.contains(systemID) ? [] : systemParts(systemID)
         VStack(alignment: .leading, spacing: Space.xl) {
             HStack(spacing: Space.l) {
                 ZStack {
                     LinearGradient(colors: [color.opacity(0.18), color.opacity(0.42)], startPoint: .top, endPoint: .bottom)
                     if systemID == "acupoint-reflex-map" {
                         ReflexMapThumb()
+                    } else if systemID == "acupuncture" {
+                        AcupunctureThumb()
                     } else if UIImage(named: "tile-\(systemID)") != nil {
                         Image("tile-\(systemID)").resizable().scaledToFill()
                     }
