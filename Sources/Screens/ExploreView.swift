@@ -58,7 +58,9 @@ struct Tile: Identifiable {
 
     /// anatomy: the body systems
     @MainActor static var body: [Tile] {
-        Catalog.systems.filter { !Tile.pointSystems.contains($0.id) }.map {
+        // the full-body figure comes last, after the systems
+        let systems = Catalog.systems.filter { !Tile.pointSystems.contains($0.id) }
+        return (systems.filter { $0.id != "body" } + systems.filter { $0.id == "body" }).map {
             Tile(id: $0.id, name: Bilingual($0.name, $0.nameZh), color: $0.color, route: .viewer(system: $0.id))
         }
     }
