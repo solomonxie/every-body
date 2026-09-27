@@ -20,3 +20,6 @@ __pycache__/
 # local env files (team id, bundle id)
 .env*.local
 .claude/worktrees/
+
+# downloaded tools and raw assets (scripts/models/build.sh)
+tools/
