@@ -37,8 +37,12 @@ struct HomeContent: View {
             } else if searching {
                 SearchSuggestions(query: $query)
             } else {
+                // a pregnant user sees her section first
+                if settings.profile.isPregnant { PregnancySection() }
                 TileGrid(title: settings.t("Reflex & acupressure", "反射区与穴位"), tiles: Tile.reflex, expanded: nil)
                 TileGrid(title: settings.t("Human body", "人体"), tiles: Tile.body, expanded: $showAllBody)
+                if !settings.profile.isPregnant { PregnancySection() }
+                ChildrenSection()
                 IllustrationsSection()
                 SettingsSection()
             }
