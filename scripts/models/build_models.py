@@ -143,13 +143,15 @@ JOINT = {"uparm": "shoulder", "forearm": "elbow", "hand": "elbow", "shin": "knee
 # ------------------------------------------------------------------ fitting (numpy, scene coords)
 
 
-def fitter(np, src, top_src, sole_src, kind, gen=None, top=None, sole=None, widths=None):
+def fitter(np, src, top_src, sole_src, kind, gen=None, top=None, sole=None, widths=None, head_even=0.0):
     """Maps source points (raw scene axes, metres) onto the generated body.
 
     Trunk: piecewise-linear heights through hip / shoulder / neck / top, depth re-centred on the same
     landmarks, uniform width. Limbs: each segment maps its two joints exactly (rotate + stretch).
     gen / top / sole replace the adult landmarks (a child's reshaped body); widths = (x, z) scale at
-    hip, shoulder, neck and crown heights instead of the uniform one."""
+    hip, shoulder, neck and crown heights instead of the uniform one.
+    head_even (0..1) blends the heights above the shoulders toward one straight shoulder→crown map: a face
+    split at the neck landmark gets a stretched brow and a squashed mouth and chin."""
     V = lambda t: np.array(t, dtype=float)
     GEN_ = gen or GEN
     top_t = TOP[kind] if top is None else top
@@ -166,6 +168,9 @@ def fitter(np, src, top_src, sole_src, kind, gen=None, top=None, sole=None, widt
     def height(y):
         out = np.interp(y, ys, yt)
         out = np.where(y < ys[0], yt[0] + (y - ys[0]) * s, out)
+        if head_even:
+            even = yt[1] + (y - ys[1]) * (yt[3] - yt[1]) / (ys[3] - ys[1])
+            out = np.where((y > ys[1]) & (y <= ys[3]), (1 - head_even) * out + head_even * even, out)
         return np.where(y > ys[-1], yt[-1] + (y - ys[-1]) * s, out)
 
     def trunk(p):
