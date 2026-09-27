@@ -19,6 +19,21 @@ Only the files in `Resources/Models/` come from third parties. Built by `scripts
   Parts Z-Anatomy marks as non-commercial (inner ear, kidney) are **not** used.
 - **The adapted model files in `Resources/Models/skeleton.usdz` are released under CC BY-SA 4.0.**
 
+## Muscles, organs, vessels, nerves — Z-Anatomy (CC BY-SA 4.0)
+
+- Files: `Resources/Models/muscles.usdz`, `organs.usdz`, `vessels.usdz`, `nerves.usdz` (and `internals` in `models.json`)
+- Source, authors and attribution: as for the skeleton above (same `Startup.blend`). Z-Anatomy also credits, for parts used here:
+  - brain surface: "Brainder" (Anderson M. Winkler, https://brainder.org, CC BY-SA 3.0) and "White matter" (University of Washington);
+    only the cortex, cerebellum and brainstem surfaces are used, no white-matter model;
+  - cranial nerves: **"Cranial Nerves and Foramina - by University of Dundee, CAHID - CC-BY 4.0"**.
+- Changes (`scripts/models/build_internals.py`): objects renamed to this app's ids, merged per muscle / organ / vessel group,
+  muscles and organs decimated (brain voxel-remeshed first), vessels and nerves re-meshed as thin tubes, warped onto the fitted
+  skeleton, muscles pulled under the skin figures (plus a female-fitted copy), fibre UVs added.
+- **Not used**, because Z-Anatomy marks them non-commercial: the kidney (Lissie Cowley, CC BY-NC 4.0) incl. renal pelvis,
+  intrarenal vessels and suprarenal glands, and the inner ear (University of Dundee, CC BY-NC-SA 4.0). The app keeps its own
+  generated kidneys, adrenals and ears.
+- **The adapted model files are released under CC BY-SA 4.0.**
+
 ## Skin figures — MakeHuman via MPFB2 (CC0 1.0)
 
 - Files: `Resources/Models/skin-male.usdz`, `skin-female.usdz`, `skin-female-pregnant.usdz`

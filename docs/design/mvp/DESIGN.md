@@ -156,7 +156,10 @@ peel layers, and see what a point connects to — on a phone, free, offline.
   - skin figure: MakeHuman export (CC0), male/female.
 - Budget: app ≤ 50 MB. Levers: decimate + baked normal maps, 1–2K compressed textures, merge tiny parts,
   load layers lazily; over budget → download layers on demand.
-- Generated engine kept as fallback (`deprecated/`), still drives parts not yet replaced.
+- Status: skeleton + skins (phase 1); muscles, organs, vessels, nerves (phase 2, ~250k tris, ~6 MB, `build_internals.py`).
+  Still generated: kidneys, adrenals, ears (NC in Z-Anatomy), larynx, female reproductive organs, womb/fetus/placenta, eyes,
+  great saphenous vein.
+- Generated engine kept as fallback (`deprecated/`, `REAL_MODELS=0` / `REAL_INTERNALS=0`), still drives parts not yet replaced.
 - Licence: credits in app (Settings → Credits & licences) and `LICENSES/THIRD_PARTY.md`;
   adapted model files stay CC BY-SA 4.0. App code unaffected.
 

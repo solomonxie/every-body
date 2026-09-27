@@ -76,7 +76,7 @@ enum ModelLibrary {
         return shape
     }
 
-    private static func pieces(_ file: String) async -> [Piece] {
+    static func pieces(_ file: String) async -> [Piece] {
         guard let url = url(for: file), let root = try? await Entity(contentsOf: url) else { return [] }
         var out: [Piece] = []
         func walk(_ e: Entity) {
@@ -91,7 +91,7 @@ enum ModelLibrary {
         return out
     }
 
-    nonisolated private static func url(for file: String) -> URL? {
+    nonisolated static func url(for file: String) -> URL? {
         // BODY_ATLAS_MODELS lets the Mac render tool read the repo's folder
         if let dir = ProcessInfo.processInfo.environment["BODY_ATLAS_MODELS"] {
             let url = URL(fileURLWithPath: dir).appendingPathComponent(file)
