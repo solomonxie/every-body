@@ -554,7 +554,9 @@ extension Illustrations {
         s.path("M 114 222 C 114 252, 128 278, 148 300 M 146 222 C 150 248, 164 268, 180 294", stroke: hex("#D9A0AE"), lw: 3)
 
         // womb: wall thickens with each contraction; its lower part is drawn down around the head as it descends; after the birth it shrinks
-        let shrink = 1 - 0.3 * placenta, follow = pt(8 * sin(.pi * descent), 34 * sin(.pi * descent))
+        // an emptied womb contracts to about half its size, then more once the placenta is out
+        let emptied = min(1, max(0, (descent - 0.85) / 0.15))
+        let shrink = 1 - 0.38 * emptied - 0.14 * placenta, follow = pt(8 * sin(.pi * descent), 34 * sin(.pi * descent))
         let gap = cm / 10 * 32, lip = 14 * (1 - min(cm, 4) / 4) + 4
         let wall = 7 + sq * 6 + 6 * placenta
         s.group(translate: pt(130 * (1 - shrink) + follow.x, 218 * (1 - shrink) + follow.y), scale: shrink) { g in
