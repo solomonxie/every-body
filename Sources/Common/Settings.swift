@@ -15,6 +15,10 @@ final class Settings {
     var female: Bool { didSet { save() } }
     var age: AgeGroup { didSet { save() } }
     var pregnant: Bool { didSet { save() } }
+    /// the 3D figure's face and skin tone
+    var heritage: Heritage { didSet { save() } }
+    /// adults only; children always wear it
+    var showUnderwear: Bool { didSet { save() } }
     private(set) var recentSearches: [String] { didSet { save() } }
 
     private let store = UserDefaults.standard
@@ -27,6 +31,9 @@ final class Settings {
         female = store.bool(forKey: "female")
         age = AgeGroup(rawValue: store.string(forKey: "age") ?? "") ?? .adult
         pregnant = store.bool(forKey: "pregnant")
+        heritage = Heritage(rawValue: store.string(forKey: "heritage") ?? "")
+            ?? (Locale.preferredLanguages.first?.hasPrefix("zh") == true ? .eastAsian : .white)
+        showUnderwear = store.object(forKey: "showUnderwear") as? Bool ?? true
         recentSearches = store.stringArray(forKey: "recentSearches") ?? []
     }
 
@@ -37,6 +44,8 @@ final class Settings {
         store.set(female, forKey: "female")
         store.set(age.rawValue, forKey: "age")
         store.set(pregnant, forKey: "pregnant")
+        store.set(heritage.rawValue, forKey: "heritage")
+        store.set(showUnderwear, forKey: "showUnderwear")
         store.set(recentSearches, forKey: "recentSearches")
     }
 
