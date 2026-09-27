@@ -68,7 +68,7 @@ struct Bust {
             g.limb([s0, e, lerp(e, wrist, 0.8)], w: aw, fill: look.top, line: look.topLine)
         } else {
             g.limb([s0, e, wrist], w: aw * 0.78, fill: look.skin, line: look.skinLine)
-            g.limb([s0, lerp(s0, e, 0.55)], w: aw * 1.05, fill: look.top, line: look.topLine)
+            shortSleeve(&g, s0, e, aw: aw, look: look)
         }
         drawHand(&g, at: hand, dir: d, len: L, shape: fist ? .fist : .open, look: look, thumb: side)
     }
