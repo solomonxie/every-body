@@ -1,6 +1,7 @@
 # Third-party assets
 
-Only the files in `Resources/Models/` come from third parties. Built by `scripts/models/build.sh`.
+Third-party material: the files in `Resources/Models/` (built by `scripts/models/build.sh`) and the character-art
+path data in `Sources/Illustrations/Art/PeopleArtData.swift` (built by `scripts/art/build_art.py`).
 
 ## Skeleton — Z-Anatomy (CC BY-SA 4.0)
 
@@ -49,6 +50,22 @@ Only the files in `Resources/Models/` come from third parties. Built by `scripts
   heritage limited to the head; Southeast Asian, South Asian and Hispanic skins are pixel blends of the Asian, African and
   Caucasian skins; hair recoloured (dark brown `bob02`, grey for 65+); textures resized/recompressed, iris toned;
   underwear cut from the base mesh by the app's pipeline (no third-party garment).
+
+## Illustration people — Humaaans (CC0 1.0; earlier releases CC BY 4.0)
+
+- File: `Sources/Illustrations/Art/PeopleArtData.swift` (used by the CPR illustration)
+- Source: "Humaaans" by Pablo Stanley, https://www.humaaans.com — SVG "Single Pieces" as mirrored in
+  https://github.com/Calinou/humaaans (`Flat Assets/Single Pieces`, © 2019 Pablo Stanley).
+- Licence: humaaans.com now states "Free for commercial or personal use. CC0 Public Domain License. Made by Pablo Stanley"
+  (checked 2026-09-26, https://creativecommons.org/publicdomain/zero/1.0/). The mirrored release carries
+  CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/); to satisfy either, we attribute:
+  **"Humaaans by Pablo Stanley (humaaans.com), CC BY 4.0 / CC0 — modified"**.
+- Used parts: profile heads (Short 1, Short 2, Caesar, Long, Pony, Top, Curly, Afro, No Hair, Short Beard, Wavy),
+  the hand from Body/Long Sleeve, shoes Flat Pointy and Flat Sneaker.
+- Changes: normalised into part frames, colours turned into recolourable tokens (skin, hair, clothes, shoes);
+  new parts drawn in the same style (face-on heads and hair, baby head, fist / laced / two-finger / encircling / thumb hands),
+  arms, legs and torsos drawn by the app in the library's flat style and posed per scene.
+- Open Peeps (Pablo Stanley, CC0) was compared and not used: its hand-drawn outlines clash with the app's flat scenes.
 
 ## Tools
 
