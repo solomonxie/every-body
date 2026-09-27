@@ -11,6 +11,13 @@ enum Textures {
         let v = Double(y) / 63, tendon = max(0, 1 - min(v, 1 - v) / 0.1)
         return 0.82 + 0.18 * stripe + tendon * 0.6
     }
+    /// fine strands running from crown to hairline, with a soft sheen band
+    static let hair = make { x, y in
+        let u = Double(x) / 64 * 2 * .pi, v = Double(y) / 63
+        let strands = 0.5 + 0.5 * sin(u * 23 + 0.9 * sin(u * 5)) * (0.7 + 0.3 * sin(u * 61))
+        let sheen = exp(-pow((v - 0.55) / 0.12, 2)) * 0.25
+        return 0.72 + 0.2 * strands + sheen
+    }
     static let bone = make { x, y in 0.9 + 0.1 * noise(x, y, 11) }
     static let organ = make { x, y in 0.9 + 0.1 * smooth(x, y, 8) }
     /// winding grooves for the brain's folds (gyri and sulci)
