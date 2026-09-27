@@ -55,42 +55,29 @@ Card fades in only after the target flash — the effect "lands" with the animat
 
 ## Hand, foot & ear charts
 
-Stack page — from Explore tiles, or Reflex Map › Foot/Hand/Ear filter › "Open … chart".
-Layout button [▤] in the controls row (remembered): **Up/down** (default, drawn below),
-**Left/right** (chart left, body right), **Body + chart box** (full body, chart in a
-bottom-right box ≈ 46 %). Split layouts have a draggable bar (body 15–80 %). Each half
-pinch-zooms on its own and starts fitted. Zones carry no labels; names live in a list below,
-linked both ways.
+One compact menu row on top, the stage fills the rest; zone details pop over it.
 
 ```
- ‹ Back          Hand reflex zones           [👤 Adult M ▾]
- [ Left | RIGHT ]  [ PALM | Back ]
+ ‹ Back            Foot reflex zones            [👤 ▾]
+ (✋ Right · Sole ▾) (☰ Zones ▾)          (▦) (▤)
 ┌──────────────────────────────────────────────────┐
-│          Kidney → Left kidney, Right kidney      │ ← caption
-│                        ◯                         │
-│                       /█\   ✦ lit organ          │  3D body ≈ 42 %
-│                        █    1 finger spin, pinch │
-│                       ▐ ▌                        │
+│            Kidney → Left kidney …   (caption)     │
+│                 3D body  ✦                        │  layers menu (▦): organs,
+│                                                  │  meridians, nerves, vessels, bones
 └──────────────────────────────────────────────────┘
-                     ━━━━━━  ← drag to resize
+                    ━━━━━━  drag to resize
 ┌──────────────────────────────────────────────────┐
-│        ___ ___         ┌──────┐                  │
-│       |   |   |        │Kidney│ ← tag on selected │  chart, pinch + pan
-│      (  ◯   ◯  )        └──◉───┘                  │  ⟲ 1× when zoomed
-│        (  ◯  )   ◯                               │
-└──────────────────────────────────────────────────┘
- ● Brain ● Pituitary  ● Neck   ● Eye ● Ear  ⚠ Gonads │ ← name list, 96 pt, scrolls;
- ● Lung  ◉ KIDNEY ◉   ● Bladder …                    │   tap ↔ chart both ways
-├──────────────────────────────────────────────────┤
-│ Kidney                                 ↻ Replay  │
-│ ⚠ caution for the chosen person (if any)         │
-│ Middle of the palm. …                            │
+│        chart (pinch + pan, ⟲ 1×)                  │
+│  ╭────────────────────────────────────────────╮  │
+│  │ ● Kidney                         ↻   ⓧ      │  │ ← pop-up on tap; tap elsewhere
+│  │ → Left kidney, Right kidney                │  │   (chart or body) closes it
+│  │ ⚠ caution for the chosen person            │  │
+│  │ Centre of the sole. …                      │  │
+│  ╰────────────────────────────────────────────╯  │
 └──────────────────────────────────────────────────┘
 ```
-- One drawing per face (left palm, back of right hand, left sole/top, left ear); the other
-  side mirrors. Side-only zones (心 left / 肝 right) filter by side.
-- Tap zone → others dim, pulse leaves the body's hand/foot/ear → organs light → card.
-- ⟲ 1× appears only when the chart is zoomed or panned.
+- (✋ ▾) side left/right + face (palm/back, sole/top); (☰ ▾) every zone by group, ⚠ flags;
+  (▤) layout: up/down, left/right, body + chart box.
 
 ## Blood flow (Circulation)
 
