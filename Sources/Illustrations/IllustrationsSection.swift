@@ -23,9 +23,17 @@ struct IllustrationsSection: View {
                 Text(settings.t("Watch each step, then try it yourself.", "先看每一步，再动手试一试。"))
                     .font(.subheadline).foregroundStyle(.secondary)
             }
-            ForEach(IllustrationGroup.allCases, id: \.self) { group in
+            // pregnancy topics live in one card with the 孕产 group; a pregnant user sees it first
+            let groups = settings.profile.isPregnant
+                ? [.pregnancy] + IllustrationGroup.allCases.filter { $0 != .pregnancy }
+                : IllustrationGroup.allCases
+            ForEach(groups, id: \.self) { group in
                 let items = Illustrations.all.filter { $0.group == group }
-                if !items.isEmpty { GroupCard(group: group, items: items) }
+                if group == .pregnancy {
+                    PregnancySection(embedded: true)
+                } else if !items.isEmpty {
+                    GroupCard(group: group, items: items)
+                }
             }
         }
     }

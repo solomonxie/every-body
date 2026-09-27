@@ -11,6 +11,8 @@ private struct AudienceItem: Identifiable {
 
 /// Home section for pregnant women: each topic opens in its pregnancy version.
 struct PregnancySection: View {
+    /// inside the illustrations list: shown as the 孕产 group card
+    var embedded = false
     @Environment(Settings.self) private var settings
     private let color = Color(hex: "#C77DA0")
 
@@ -34,9 +36,9 @@ struct PregnancySection: View {
     ]
 
     var body: some View {
-        AudienceCard(title: settings.t("Pregnancy", "孕期"),
+        AudienceCard(title: settings.t(embedded ? IllustrationGroup.pregnancy.title : Bilingual("Pregnancy", "孕期")),
                      subtitle: settings.t("Opens each topic for a pregnant woman.", "每个主题都按孕妇版本打开。"),
-                     symbol: "figure.and.child.holdinghands", color: color, items: items) {
+                     symbol: IllustrationGroup.pregnancy.symbol, color: IllustrationGroup.pregnancy.color, items: items, embedded: embedded) {
             // these topics are about her: switch the person type so every page adapts
             settings.female = true
             settings.age = .adult
@@ -63,7 +65,7 @@ struct ChildrenSection: View {
     var body: some View {
         AudienceCard(title: settings.t("Children", "儿童"),
                      subtitle: settings.t("Coming soon.", "即将推出。"),
-                     symbol: "figure.and.child.holdinghands", color: Color(hex: "#3F95D6"), items: items, onOpen: nil)
+                     symbol: "figure.and.child.holdinghands", color: Color(hex: "#3F95D6"), items: items, embedded: false, onOpen: nil)
     }
 }
 
@@ -74,16 +76,36 @@ private struct AudienceCard: View {
     let symbol: String
     let color: Color
     let items: [AudienceItem]
+    var embedded = false
     let onOpen: (() -> Void)?
     @Environment(Settings.self) private var settings
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.m) {
-            VStack(alignment: .leading, spacing: Space.xxs) {
-                SectionHeader(title)
-                Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
+            if !embedded {
+                VStack(alignment: .leading, spacing: Space.xxs) {
+                    SectionHeader(title)
+                    Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
+                }
             }
             VStack(alignment: .leading, spacing: 0) {
+                if embedded {
+                    // same header row as the other illustration group cards
+                    HStack(spacing: Space.m) {
+                        IconBadge(symbol: symbol, color: color)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(title).font(.headline)
+                            Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: Space.s)
+                        Text("\(items.count)").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, Space.l)
+                    .padding(.vertical, Space.m)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(.isHeader)
+                    Divider().padding(.leading, Space.l)
+                }
                 ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
                     if i > 0 { Divider().padding(.leading, Space.l + 30 + Space.m) }
                     if let route = item.route {
