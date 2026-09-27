@@ -37,19 +37,23 @@ path data in `Sources/Illustrations/Art/PeopleArtData.swift` (built by `scripts/
 
 ## Skin figures — MakeHuman via MPFB2 (CC0 1.0)
 
-- Files: `Resources/Models/figure.bin` (meshes), `skin-<heritage>-<sex>-<young|old>.jpg`, `hair-*.jpg/png`,
-  `brows-*`, `lashes*`, `eyes.jpg` (built by `scripts/models/build_figure.py`)
+- Files: `Resources/Models/figure.bin` (meshes), `skin-<heritage>-<male|female>-<young|old>.jpg`, `skin-<heritage>-kid.jpg`,
+  `hair-*.jpg/png`, `brows-*`, `lashes-*`, `eyes.jpg`, `fabric.png` (built by `scripts/models/build_figure.py`)
 - Made headless with MPFB 2.0.17 (https://github.com/makehumancommunity/mpfb2) in Blender 4.5 LTS.
 - Assets: MakeHuman base mesh and targets — macros (sex, age, race, muscle, weight, proportions, cup size), torso,
-  hip, buttocks and `stomach-pregnant` targets (bundled with MPFB, CC0 per `LICENSE.ASSETS.md`), and
+  hip, buttocks, `stomach-pregnant` / `stomach-navel` and face targets (head, forehead, eyebrows, eyes, nose, mouth, cheek,
+  chin, neck; bundled with MPFB, CC0 per `LICENSE.ASSETS.md`), and
   `makehuman_system_assets` (CC0, https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html):
   skins `young_*` / `old_*` × `asian` / `caucasian` / `african` × `male` / `female`, eyes `low-poly` + `brown`,
-  eyebrows `eyebrow001` / `eyebrow009`, eyelashes `eyelashes01`, hair `short02` / `ponytail01` / `bob02`.
+  eyebrows `eyebrow006` / `eyebrow010` / `eyebrow012`, eyelashes `eyelashes01` / `02` / `03`,
+  hair `short01` / `short04` / `long01` / `ponytail01`.
 - Licence: CC0 1.0 (public domain dedication), https://creativecommons.org/publicdomain/zero/1.0/ — no attribution required; credited anyway.
 - Changes: posed into the anatomical position and fitted to the app's landmarks (children to the app's age proportions);
-  heritage limited to the head; Southeast Asian, South Asian and Hispanic skins are pixel blends of the Asian, African and
-  Caucasian skins; hair recoloured (dark brown `bob02`, grey for 65+); textures resized/recompressed, iris toned;
-  underwear cut from the base mesh by the app's pipeline (no third-party garment).
+  face targets per sex and heritage; heritage limited to the head; Southeast Asian, South Asian and Hispanic skins are
+  pixel blends of the Asian, African and Caucasian skins; nipples toned to a brown areola; scalp under the hair tinted
+  with the hair colour; hair and brows reduced to grey strands and tinted per heritage (silver for 65+); pregnant bump
+  scaled to term; textures resized/recompressed, iris toned; underwear cut from the base mesh by the app's pipeline
+  (no third-party garment).
 
 ## Illustration people — Humaaans (CC0 1.0; earlier releases CC BY 4.0)
 
