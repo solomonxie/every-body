@@ -35,6 +35,7 @@ final class Renderer: NSObject, NSApplicationDelegate {
             scene.build(skinColor: NSColor(hex: "#F2C9A5"), female: female, pregnant: ProcessInfo.processInfo.environment["PREGNANT"] == "1", points: system?.points ?? [], flowStops: [],
                         meridians: system?.meridians ?? [])
             scene.setLayers(layers)
+            if ProcessInfo.processInfo.environment["LINES"] == "0" { scene.showMeridians(false) }
             scene.touched = true
             scene.yaw = yaw
             if let focus {
