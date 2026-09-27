@@ -70,14 +70,14 @@ extension Illustrations {
                    px + pw / 2, 140, width: pw - 16, size: 8, color: good ? Tone.green : Tone.red, bold: true)
 
         if p[v: "advice"] > 0.5 {
-            s.rect(px, 164, pw, 130, r: 10, fill: hex("#F3F9F4"), stroke: Anat.green, lw: 1.3)
+            s.tonal(px, 164, pw, 130, color: Anat.green)
             s.label("From 28 weeks", "孕 28 周起", px + pw / 2, 182, size: 10, color: Anat.green, anchor: .middle, bold: true)
             let tips: [(String, String)] = [("go to sleep on your side", "入睡时侧卧"), ("naps too", "午睡也一样"),
-                                            ("woke on your back? turn over", "醒来平躺？翻身即可"), ("pillows: knees + bump", "枕头：夹膝 + 托腹")]
+                                            ("woke on your back? roll over", "醒来平躺？翻身即可"), ("pillows: knees + bump", "枕头：夹膝 + 托腹")]
             for (i, tip) in tips.enumerated() {
                 let y = 202 + Double(i) * 16
                 s.circle(px + 12, y - 3, 2.2, fill: Anat.green)
-                s.label(tip.0, tip.1, px + 20, y, size: 8.5, color: Tone.ink)
+                s.label(tip.0, tip.1, px + 19, y, size: 8, color: Tone.ink)
             }
             s.cardNote("Going to sleep on the back late in pregnancy is linked to a 2–3× higher stillbirth risk",
                        "孕晚期仰卧入睡与死产风险升高 2–3 倍相关", px + pw / 2, 276, width: pw - 14, size: 7.5, color: Tone.sub)

@@ -51,8 +51,8 @@ extension Illustrations {
     private static func drawRecovery(_ s: inout Sketch, _ p: Params, _ t: Double, _ who: Profile, _ lay: RecoveryLayout) {
         let st = Int(p[v: "stage"].rounded())
         // seen from above, you kneel at the bottom edge; pregnant: mirrored so she ends up on her left side
-        s.rect(0, 0, 360, 300, fill: hex("#E4D6C3"))
-        for i in 0..<8 { s.line(0, Double(i) * 42 + 12, 360, Double(i) * 42 + 12, stroke: hex("#D5C4AD"), lw: 1) }
+        s.backdrop(Palette.floor)
+        s.rect(14, 30, 332, 250, r: 48, fill: Palette.wall, opacity: 0.55)
         let her = who.isPregnant
         func mx(_ q: CGPoint) -> CGPoint { her ? CGPoint(x: 360 - q.x, y: q.y) : q }
         var g = s
@@ -111,7 +111,7 @@ extension Illustrations {
         }
         if st >= 1 && st <= 6 {
             let x0 = her ? 206.0 : 8
-            s.rect(x0, 8, 146, 30, r: 8, fill: .white, stroke: green, lw: 2)
+            s.tonal(x0, 8, 146, 30, r: 12, color: green)
             s.label("Breathing normally ✓", "呼吸正常 ✓", x0 + 73, 27, size: 11, color: green, anchor: .middle, bold: true)
         }
     }
@@ -295,7 +295,7 @@ extension Illustrations {
         if st <= 1 {
             // close-up: baby on the bed, your hand and head come in from above
             let top = 250.0, bh = 290.0
-            s.rect(0, 0, 360, 300, fill: hex("#F5F2ED"))
+            s.backdrop()
             s.rect(0, top, 360, 300 - top, fill: hex("#DCE6F0"))
             s.rect(0, top, 360, 6, fill: hex("#EEF3F8"))
             s.line(0, top + 6, 360, top + 6, stroke: hex("#BCCADA"), lw: 1)
@@ -334,13 +334,13 @@ extension Illustrations {
                 s.path("M \(mouth.x + 6) \(mouth.y - 6) q 4 -4 0 -8 M \(mouth.x + 11) \(mouth.y - 4) q 6 -6 0 -12", stroke: blue, lw: 1.4, cap: .round)
                 s.tag("look · listen · feel ≤ 10 s", "看 · 听 · 感觉 ≤ 10 秒", 270, 110, size: 10, bold: true)
                 s.tag("head level", "头保持水平", 100, top + 24, size: 10, bold: true)
-                s.rect(210, top + 10, 142, 28, r: 8, fill: .white, stroke: green, lw: 2)
+                s.tonal(210, top + 10, 142, 28, r: 12, color: green)
                 s.label("Breathing normally ✓", "呼吸正常 ✓", 281, top + 24, size: 11, color: green, anchor: .middle, bold: true)
             }
             return
         }
         // held face down along the forearm, close-up
-        s.rect(0, 0, 360, 300, fill: hex("#F5F2ED"))
+        s.backdrop()
         let rh = 440.0
         var r = SideFigure(h: rh, look: .helper, hip: CGPoint(x: 84, y: 246), lean: 6, headTilt: 24)
         r.nearLeg = .init(hip: 2, knee: 0)

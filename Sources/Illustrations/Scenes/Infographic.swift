@@ -51,10 +51,9 @@ extension Sketch {
 
     /// white card with a soft drop shadow; optional coloured strip on the left
     mutating func card(_ x: Double, _ y: Double, _ w: Double, _ h: Double, r: Double = 10, accent: Color? = nil, fill: Color = .white) {
-        rect(x, y + 1.5, w, h, r: r, fill: .black, opacity: 0.07)
-        rect(x, y, w, h, r: r, fill: fill, stroke: Tone.rule, lw: 0.8)
+        softCard(x, y, w, h, r: max(r, 12), fill: fill)
         if let accent {
-            var g = clipped(to: Path(roundedRect: CGRect(x: x, y: y, width: w, height: h), cornerRadius: r))
+            var g = clipped(to: Path(roundedRect: CGRect(x: x, y: y, width: w, height: h), cornerRadius: max(r, 12)))
             g.rect(x, y, 4, h, fill: accent)
         }
     }
@@ -81,8 +80,8 @@ extension Sketch {
         }
         // white halo keeps the leader readable where it crosses a busy drawing
         path(d, stroke: .white, lw: 2.2, opacity: 0.6)
-        path(d, stroke: color.opacity(0.85), lw: 0.9)
-        if dot { circle(p.x, p.y, 1.9, fill: color, stroke: .white, lw: 0.7) }
+        path(d, stroke: color.opacity(0.75), lw: 0.8)
+        if dot { circle(p.x, p.y, 2.1, fill: color, stroke: .white, lw: 0.9) }
         label(en, zh, x, y, size: size, color: color, anchor: anchor, bold: bold)
     }
 
@@ -92,7 +91,7 @@ extension Sketch {
         let m = txt.measure(in: CGSize(width: 300, height: 100))
         let w = m.width + 12, hh = m.height + 3
         let x0 = anchor == .start ? x : anchor == .middle ? x - w / 2 : x - w
-        rect(x0, y - hh / 2, w, hh, r: hh / 2, fill: filled ? color : color.opacity(0.1), stroke: filled ? nil : color, lw: 0.8)
+        rect(x0, y - hh / 2, w, hh, r: hh / 2, fill: filled ? color : color.opacity(0.12))
         ctx.draw(txt, at: CGPoint(x: x0 + w / 2, y: y), anchor: .center)
     }
 
@@ -104,7 +103,7 @@ extension Sketch {
     // MARK: zoom lens
 
     /// magnifier: a ring on the body at `from`, a soft cone, and a big white circle; returns a sketch clipped to it
-    mutating func lens(_ c: CGPoint, _ r: Double, from f: CGPoint, _ fr: Double, fill: Color = .white, ring: Color = hex("#B9B1A8")) -> Sketch {
+    mutating func lens(_ c: CGPoint, _ r: Double, from f: CGPoint, _ fr: Double, fill: Color = .white, ring: Color = hex("#C4BCCB")) -> Sketch {
         let d = CGPoint(x: c.x - f.x, y: c.y - f.y), dist = max(1, hypot(d.x, d.y)), u = CGPoint(x: d.x / dist, y: d.y / dist)
         let n = CGPoint(x: -u.y, y: u.x)
         var cone = Path()
@@ -113,13 +112,13 @@ extension Sketch {
         cone.closeSubpath()
         shape(cone, fill: ring, opacity: 0.16)
         circle(f.x, f.y, fr, stroke: ring, lw: 1.2)
-        circle(c.x, c.y + 1.5, r, fill: .black, opacity: 0.07)
+        circle(c.x, c.y + 3, r, fill: Palette.shadow)
         circle(c.x, c.y, r, fill: fill)
         return clipped(to: Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r)))
     }
 
-    mutating func lensRing(_ c: CGPoint, _ r: Double, ring: Color = hex("#B9B1A8")) {
-        circle(c.x, c.y, r, stroke: ring, lw: 2)
+    mutating func lensRing(_ c: CGPoint, _ r: Double, ring: Color = hex("#C4BCCB")) {
+        circle(c.x, c.y, r, stroke: ring, lw: 1.5)
     }
 
     // MARK: readouts
