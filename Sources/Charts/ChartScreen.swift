@@ -20,6 +20,8 @@ struct ChartScreen: View {
     @State private var split: CGFloat = 0.42
     @State private var splitStart: CGFloat?
     @AppStorage("chartLayout") private var layout: ChartLayout = .stacked
+    /// what the 3D body shows besides the skin, remembered across charts
+    @AppStorage("chartInsetLayers") private var insetLayersRaw = "organs"
     @State private var ready = false
 
     private var chart: ReflexChart { Catalog.chart(chartID) ?? Catalog.charts.charts[0] }
@@ -61,8 +63,7 @@ struct ChartScreen: View {
         .onAppear(perform: setUp)
         .onChange(of: settings.profile) {
             inset.setAge(settings.age)
-            inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, pregnant: settings.profile.isPregnant, points: [], flowStops: [])
-            inset.setLayers([.skin, .organs])
+            buildInset()
         }
     }
 
@@ -166,9 +167,65 @@ struct ChartScreen: View {
             .accessibilityLabel(settings.t("Resize body and chart", "调整人体与图的大小"))
     }
 
+    private var insetLayers: Set<InsetLayer> {
+        Set(insetLayersRaw.split(separator: ",").compactMap { InsetLayer(rawValue: String($0)) })
+    }
+
+    private func buildInset() {
+        inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, pregnant: settings.profile.isPregnant,
+                    points: [], flowStops: [], meridians: Catalog.points["acupuncture"]?.meridians ?? [])
+        applyInsetLayers()
+    }
+
+    private func applyInsetLayers() {
+        let on = insetLayers
+        var layers: Set<LayerID> = [.skin]
+        if on.contains(.organs) { layers.insert(.organs) }
+        if on.contains(.nerves) { layers.insert(.nervous) }
+        if on.contains(.vessels) { layers.insert(.circulatory) }
+        if on.contains(.bones) { layers.insert(.skeletal) }
+        inset.setLayers(layers)
+        // the channels that run through this chart's region
+        inset.showMeridians(on.contains(.meridians), ids: InsetLayer.meridians(for: chartID))
+    }
+
+    private func toggle(_ layer: InsetLayer) {
+        var on = insetLayers
+        if on.contains(layer) { on.remove(layer) } else { on.insert(layer) }
+        insetLayersRaw = on.map(\.rawValue).sorted().joined(separator: ",")
+        applyInsetLayers()
+    }
+
+    /// Layer chips over the 3D body: what helps explain how the chart is said to work.
+    private var insetChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(InsetLayer.allCases, id: \.self) { layer in
+                    let on = insetLayers.contains(layer)
+                    Button { toggle(layer) } label: {
+                        HStack(spacing: 4) {
+                            Circle().fill(layer.color).frame(width: 7, height: 7)
+                            Text(settings.t(layer.label)).font(.caption2.weight(.semibold))
+                        }
+                        .padding(.horizontal, 9).padding(.vertical, 6)
+                        .background(on ? AnyShapeStyle(layer.color.opacity(0.25)) : AnyShapeStyle(.ultraThinMaterial), in: .capsule)
+                        .overlay(Capsule().stroke(on ? layer.color : .clear, lineWidth: 1))
+                        .foregroundStyle(Color(hex: "#2B2250"))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                    .sensoryFeedback(.selection, trigger: on)
+                }
+            }
+            .padding(.horizontal, 8)
+        }
+        .padding(.bottom, 8)
+    }
+
     private var bodyPane: some View {
         ZStack(alignment: .top) {
             BodyView(scene: inset, compact: true)
+            insetChips.frame(maxHeight: .infinity, alignment: .bottom)
             Text(selected.map { z in
                 let organs = z.organIds.compactMap { Catalog.organ($0)?.names }.map { settings.name($0[0], $0[1]) }
                     .joined(separator: settings.zh ? "、" : ", ")
@@ -258,8 +315,7 @@ struct ChartScreen: View {
         Task {
             await BodyScene.prepare()
             inset.setAge(settings.age)
-            inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, pregnant: settings.profile.isPregnant, points: [], flowStops: [])
-            inset.setLayers([.skin, .organs])
+            buildInset()
             if let id = initialZone, let zone = face.zones.first(where: { $0.id == id }) { press(zone) }
         }
     }
@@ -298,6 +354,40 @@ enum ChartLayout: String, CaseIterable {
         case .stacked: "rectangle.split.1x2"
         case .sideBySide: "rectangle.split.2x1"
         case .overlay: "rectangle.inset.bottomright.filled"
+        }
+    }
+}
+
+/// Extra layers for the chart page's 3D body. No muscles: they hide what the chart is about.
+enum InsetLayer: String, CaseIterable {
+    case organs, meridians, nerves, vessels, bones
+
+    var label: Bilingual {
+        switch self {
+        case .organs: Bilingual("Organs", "器官")
+        case .meridians: Bilingual("Meridians", "经络")
+        case .nerves: Bilingual("Nerves", "神经")
+        case .vessels: Bilingual("Blood vessels", "血管")
+        case .bones: Bilingual("Bones", "骨骼")
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .organs: Color(hex: "#C77DA0")
+        case .meridians: Color(hex: "#3F95D6")
+        case .nerves: Color(hex: "#E8B923")
+        case .vessels: Color(hex: "#D23A3A")
+        case .bones: Color(hex: "#B8A58A")
+        }
+    }
+
+    /// hand: the six arm channels; foot: the six leg channels; ear: all of them
+    static func meridians(for chart: String) -> Set<String>? {
+        switch chart {
+        case "hand": ["LU", "LI", "HT", "SI", "PC", "TE"]
+        case "foot": ["ST", "SP", "BL", "KI", "GB", "LR"]
+        default: nil
         }
     }
 }
