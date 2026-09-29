@@ -3,8 +3,15 @@ import SwiftUI
 extension Illustrations {
     /// fraction of the channel blocked
     static func plaque(_ p: Params) -> Double { min(0.85, p[v: "ldl"] * p[v: "years"] / 40) }
-    /// Poiseuille: at the same pressure, flow ∝ r⁴
-    static func fatsFlow(_ p: Params) -> Double { p[v: "rupture"] > 0.5 ? 0 : pow(1 - plaque(p), 4) }
+    /// resting flow vs % diameter narrowed: the small vessels downstream widen to compensate until ~70%, then flow falls steeply
+    static func fatsFlow(_ p: Params) -> Double {
+        if p[v: "rupture"] > 0.5 { return 0 }
+        let curve: [(Double, Double)] = [(0, 1), (0.5, 0.98), (0.7, 0.8), (0.8, 0.6), (0.9, 0.3), (1, 0)]
+        let x = plaque(p)
+        guard let i = curve.indices.dropFirst().first(where: { curve[$0].0 >= x }) else { return 0 }
+        let (x0, y0) = curve[i - 1], (x1, y1) = curve[i]
+        return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+    }
     /// lipid panel, mmol/L
     static func ldlLevel(_ p: Params) -> Double { 1.8 + 3.4 * p[v: "ldl"] }
 
@@ -18,18 +25,20 @@ extension Illustrations {
                    "血液中低密度脂蛋白（“坏”胆固醇）过多，渗入动脉内膜下，滞留并引发炎症。", set: ["ldl": 0.9, "years": 8]),
             .watch("Over decades it builds a fatty plaque under a thin cap. The channel narrows — usually with no symptoms.",
                    "几十年间形成粥样斑块，表面只有一层薄帽，管腔变窄——通常没有任何症状。", set: ["years": 28]),
-            .tryIt("Drag the years. Halve the radius and flow drops to 1/16 — flow ∝ r⁴.", "拖动年数。半径减半，血流降为 1/16——血流与半径的四次方成正比。",
-                   TryStep(mode: .scrub([Scrub(param: "years", label: "Years 年", min: 0, max: 40, digits: 0)]), success: { plaque($0) >= 0.5 },
-                           ok: Bilingual("Half-blocked: only ~6% of the flow at the same pressure.", "堵塞一半：同样压力下仅约 6% 的血流。"), demo: ["years": 30])),
+            .tryIt("Drag the years. At rest, flow barely drops until the artery is ~70% narrowed — then it falls fast.",
+                   "拖动年数。静息时，狭窄到约 70% 之前血流几乎不减——之后迅速下降。",
+                   TryStep(mode: .scrub([Scrub(param: "years", label: "Years 年", min: 0, max: 40, digits: 0)]), success: { plaque($0) >= 0.7 },
+                           ok: Bilingual("Past 70%, resting flow drops (about 30% left at 90%). During exercise it runs short from ~50% — chest pain on exertion.",
+                                         "超过 70%，静息血流开始下降（90% 狭窄时约剩 30%）。运动时约 50% 狭窄就供血不足——活动后胸痛。"), demo: ["years": 34])),
             .tryIt("Lower LDL (less saturated fat, exercise, statins) and the plaque stops growing. Get LDL under 3.4.",
                    "降低 LDL（少吃饱和脂肪、运动、他汀类药物），斑块停止增长。把 LDL 降到 3.4 以下。",
                    TryStep(mode: .scrub([Scrub(param: "ldl", label: "LDL 低密度脂蛋白", min: 0, max: 1)]), success: { ldlLevel($0) < 3.4 },
                            ok: Bilingual("LDL in range — slower build-up.", "LDL 达标——斑块增长减慢。"), demo: ["ldl": 0.25])),
-            .watch("If the cap cracks, a clot forms on it within minutes and can block the artery — a heart attack or stroke. Call 120/911.",
+            .watch("If the cap cracks, a clot forms on it within minutes and can block the artery — a heart attack or stroke. Call 911.",
                    "斑块帽破裂，几分钟内形成血栓，完全堵塞血管——心梗或中风。立即拨打 120。", set: ["ldl": 1, "years": 30, "rupture": 1]),
         ],
         draw: { s, p, t in drawBloodFats(&s, p, t) },
-        sources: ["WHO cardiovascular diseases fact sheet; 2023 Chinese lipid management guideline (LDL-C < 3.4 mmol/L); Poiseuille’s law"]
+        sources: ["WHO cardiovascular diseases fact sheet; 2023 Chinese lipid management guideline (LDL-C < 3.4 mmol/L); Gould & Lipscomb 1974 (stenosis vs coronary flow)"]
     )
 
     static func bloodFats(for p: Profile) -> Scenario {
@@ -82,9 +91,10 @@ extension Illustrations {
         s.text("\(Int((pl * 100).rounded()))%", 244, 60, size: 8.5, color: narrowColor, anchor: .end, bold: true)
         s.meterBar(172, 64, 72, pl, color: narrowColor, h: 5)
         let flowColor = flow < 0.3 ? Tone.red : flow < 0.7 ? Tone.amber : Tone.green
-        s.label("blood flow", "血流", 172, 84, size: 7.5, color: Tone.sub)
+        s.label("flow at rest", "静息血流", 172, 84, size: 7.5, color: Tone.sub)
         s.text("\(Int((flow * 100).rounded()))%", 244, 84, size: 8.5, color: flowColor, anchor: .end, bold: true)
         s.meterBar(172, 88, 72, flow, color: flowColor, h: 5)
+        s.label("exercise: short ≥50%", "运动时 ≥50% 即不足", 172, 102, size: 6, color: Tone.faint)
 
         // top right: the heart, and which artery we are looking into
         let hk = 0.42, ho = CGPoint(x: 268, y: 10)
@@ -190,6 +200,8 @@ extension Illustrations {
         if pl > 0.15 && !ruptured {
             let py = (lumenTop + edge(180)) / 2
             if edge(180) - lumenTop > 26 {
+                let m = s.measureText(s.t("fatty core", "脂质核心"), size: 8, bold: true)
+                s.rect(180 - m.width / 2 - 3, py + 3 - m.height * 0.8, m.width + 6, m.height * 0.95, r: 3, fill: .white, opacity: 0.6)
                 s.label("fatty core", "脂质核心", 180, py + 3, size: 8, color: hex("#7A5A12"), anchor: .middle, bold: true)
                 s.callout("thin cap", "薄纤维帽", at: CGPoint(x: 236, y: edge(236) - 1), 258, edge(236) + 14, color: hex("#8A6A1B"), size: 8)
             } else {

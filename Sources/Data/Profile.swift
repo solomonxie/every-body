@@ -19,7 +19,7 @@ enum AgeGroup: String, CaseIterable, Sendable {
 
 /// Look of the 3D figure's outer skin (face and skin tone); the anatomy inside never changes.
 enum Heritage: String, CaseIterable, Sendable {
-    case eastAsian = "east-asian", southeastAsian = "southeast-asian", southAsian = "south-asian", hispanic, white, black
+    case white, black, hispanic, southAsian = "south-asian", southeastAsian = "southeast-asian", eastAsian = "east-asian"
 
     var label: Bilingual {
         switch self {
@@ -29,6 +29,41 @@ enum Heritage: String, CaseIterable, Sendable {
         case .hispanic: Bilingual("Hispanic / Latino", "拉丁裔")
         case .white: Bilingual("White", "白人")
         case .black: Bilingual("Black", "黑人")
+        }
+    }
+}
+
+/// Adult female body shape: the chest size, with the lower body following it.
+enum BodySize: String, CaseIterable, Sendable {
+    case small, medium, large, xlarge, xxlarge
+
+    /// the lower body that goes with each shape (it has three sizes)
+    var lower: BodySize {
+        switch self {
+        case .small: .small
+        case .medium: .medium
+        default: .large
+        }
+    }
+
+    var label: Bilingual {
+        switch self {
+        case .small: Bilingual("Small build", "小尺寸")
+        case .medium: Bilingual("Medium build", "中尺寸")
+        case .large: Bilingual("Large build", "大尺寸")
+        case .xlarge: Bilingual("Extra large build", "特大尺寸")
+        case .xxlarge: Bilingual("Extra extra large build", "超大尺寸")
+        }
+    }
+
+    /// sizes as letters: S … XXL
+    var letter: Bilingual {
+        switch self {
+        case .small: Bilingual("S", "S")
+        case .medium: Bilingual("M", "M")
+        case .large: Bilingual("L", "L")
+        case .xlarge: Bilingual("XL", "XL")
+        case .xxlarge: Bilingual("XXL", "XXL")
         }
     }
 }

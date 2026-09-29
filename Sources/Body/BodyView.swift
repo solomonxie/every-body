@@ -6,7 +6,7 @@ enum Pick {
     case part(String)
 }
 
-/// Full-bleed 3D body: one finger moves it, two fingers turn it, pinch zooms, tap a part or point, double-tap to reset.
+/// Full-bleed 3D body: one finger moves it, two fingers turn it, pinch zooms, tap a part or point (again to let go).
 struct BodyView: View {
     let scene: BodyScene
     var compact = false
@@ -35,8 +35,11 @@ struct BodyView: View {
             .gesture(PanRecognizer(touches: 1, onChange: move, onEnd: { panStart = nil }))
             .gesture(PanRecognizer(touches: 2, onChange: rotate, onEnd: { dragStart = nil }))
             .gesture(PinchRecognizer(onChange: zoom, onEnd: { zoomStart = nil }))
-            .gesture(SpatialTapGesture(count: 2).onEnded { _ in scene.resetView() })
-            .gesture(tap)
+            .gesture(TapRecognizer { point, size in
+                firstTouch()
+                guard let name = scene.pick(at: point, in: size), !name.isEmpty else { return }
+                onPick(name.hasPrefix("point:") ? .point(String(name.dropFirst(6))) : .part(name))
+            })
 
             if !compact {
                 rail
@@ -105,19 +108,6 @@ struct BodyView: View {
         scene.distance = next
     }
 
-    private var tap: some Gesture {
-        SpatialTapGesture()
-            .targetedToAnyEntity()
-            .onEnded { value in
-                firstTouch()
-                let name = value.entity.name
-                if name.hasPrefix("point:") {
-                    onPick(.point(String(name.dropFirst(6))))
-                } else if !name.isEmpty {
-                    onPick(.part(name))
-                }
-            }
-    }
 }
 
 struct RailButton: View {
@@ -169,6 +159,24 @@ struct PanRecognizer: UIGestureRecognizerRepresentable {
         case .ended, .cancelled, .failed: onEnd()
         default: break
         }
+    }
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Simultaneous { Simultaneous() }
+}
+
+/// A tap, hit-tested by the scene itself (a SwiftUI tap on entities dropped taps once a part was selected).
+struct TapRecognizer: UIGestureRecognizerRepresentable {
+    let onTap: (CGPoint, CGSize) -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UITapGestureRecognizer {
+        let g = UITapGestureRecognizer()
+        g.delegate = context.coordinator
+        return g
+    }
+
+    func handleUIGestureRecognizerAction(_ g: UITapGestureRecognizer, context: Context) {
+        guard g.state == .ended, let v = g.view else { return }
+        onTap(g.location(in: v), v.bounds.size)
     }
 
     func makeCoordinator(converter: CoordinateSpaceConverter) -> Simultaneous { Simultaneous() }

@@ -73,7 +73,10 @@ struct ChartScreen: View {
             buildInset()
         }
         .onChange(of: settings.heritage) { buildInset() }
+        .onChange(of: layout) { placeBody() }
         .onChange(of: settings.showUnderwear) { buildInset() }
+        .onChange(of: settings.chest) { buildInset() }
+        .onChange(of: settings.hips) { buildInset() }
     }
 
     /// One row of compact menus: which view, which zone, what the body shows, and the layout.
@@ -250,12 +253,23 @@ struct ChartScreen: View {
         Set(insetLayersRaw.split(separator: ",").compactMap { InsetLayer(rawValue: String($0)) })
     }
 
+    /// In the body + box layout the body stands left of centre, a little closer, so the box never covers it.
+    private func placeBody() {
+        let overlay = layout == .overlay
+        inset.basePanX = overlay ? 0.62 : 0
+        inset.baseZoom = overlay ? 0.88 : 1
+        inset.focus(.all)
+    }
+
     private func buildInset() {
         inset.heritage = settings.heritage
         inset.underwear = settings.showUnderwear
+        inset.chest = settings.chest
+        inset.hips = settings.hips
         inset.build(skinColor: UIColor(hex: "#F2C9A5"), female: settings.female, pregnant: settings.profile.isPregnant,
                     points: [], flowStops: [], meridians: Catalog.points["acupuncture"]?.meridians ?? [])
         applyInsetLayers()
+        placeBody()
     }
 
     private func applyInsetLayers() {

@@ -84,7 +84,9 @@ extension Illustrations {
         v.hip = CGPoint(x: 52, y: floor - b.shin * h - b.legW * h * 0.3)
         let hip = v.hip, seat = hip.y + b.legW * h * 0.5
         let table = v.front(0.72).y + 0.05 * h
-        v.near = .init(reach: CGPoint(x: hip.x + 0.3 * h, y: table - b.hand * h * 0.22), hand: .open, handAngle: 0)
+        // a bump needs the table to start further forward
+        let gap = v.bump > 0 ? 0.3 : 0.2
+        v.near = .init(reach: CGPoint(x: hip.x + gap * h + 0.1 * h, y: table - b.hand * h * 0.22), hand: .open, handAngle: 0)
         s.stage(100, floor: floor, r: 92, width: 200)
         // chair
         let back = v.back(0.4).x - 5
@@ -96,7 +98,7 @@ extension Illustrations {
         v.drawBack(&s, farArm: false)
         v.drawBody(&s)
         // table with the monitor, and what's on it
-        let tx0 = hip.x + 0.2 * h
+        let tx0 = hip.x + gap * h
         s.shade(Path(roundedRect: CGRect(x: tx0, y: table, width: 200 - tx0, height: 8), cornerRadius: 2), hex("#D5B08A"), hex("#B98D62"))
         s.line(192, table + 8, 192, floor, stroke: woodLo, lw: 5)
         v.drawArm(&s, near: true)

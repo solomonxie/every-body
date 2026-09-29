@@ -147,6 +147,7 @@ struct InfoContent: View {
         case let .illustration(id): ("play.fill", Illustrations.find(id)?.group.color ?? .brandFill)
         case .viewer: ("cube.fill", .brandFill)
         case .info: ("info", .blue)
+        case .posture: ("figure.seated.side", Color(hex: "#2E8B7A"))
         case .search: ("magnifyingglass", .gray)
         }
         return HStack(spacing: Space.m) {

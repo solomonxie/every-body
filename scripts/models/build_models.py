@@ -143,7 +143,8 @@ JOINT = {"uparm": "shoulder", "forearm": "elbow", "hand": "elbow", "shin": "knee
 # ------------------------------------------------------------------ fitting (numpy, scene coords)
 
 
-def fitter(np, src, top_src, sole_src, kind, gen=None, top=None, sole=None, widths=None, head_even=0.0):
+def fitter(np, src, top_src, sole_src, kind, gen=None, top=None, sole=None, widths=None, head_even=0.0, head=None, skull=None, girth=None,
+           soften=None):
     """Maps source points (raw scene axes, metres) onto the generated body.
 
     Trunk: piecewise-linear heights through hip / shoulder / neck / top, depth re-centred on the same
@@ -151,7 +152,13 @@ def fitter(np, src, top_src, sole_src, kind, gen=None, top=None, sole=None, widt
     gen / top / sole replace the adult landmarks (a child's reshaped body); widths = (x, z) scale at
     hip, shoulder, neck and crown heights instead of the uniform one.
     head_even (0..1) blends the heights above the shoulders toward one straight shoulder→crown map: a face
-    split at the neck landmark gets a stretched brow and a squashed mouth and chin."""
+    split at the neck landmark gets a stretched brow and a squashed mouth and chin.
+    head = (base_src_y, eye_src_y, eye_y, dz[, scale]): the head above base_src_y moves as one piece (uniform scale, its
+    eyes at eye_y, dz back/forward); the neck between the shoulders and base takes up the difference.
+    skull (bones, default SKULL): the Z-Anatomy head reshaped onto the MakeHuman one, see skull_warp.
+    girth: segment name (uparm, thigh…) → extra scale across the limb (a child's arm and leg girth).
+    soften = (at the shoulders, at the head base): half-bands (source metres) over which the height map's slope changes
+    smoothly instead of kinking (a child's short neck zone would print a shelf across the chest and back)."""
     V = lambda t: np.array(t, dtype=float)
     GEN_ = gen or GEN
     top_t = TOP[kind] if top is None else top
@@ -165,7 +172,28 @@ def fitter(np, src, top_src, sole_src, kind, gen=None, top=None, sole=None, widt
     wx = [w[0] for w in widths] if widths else [s] * 4
     wz = [w[1] for w in widths] if widths else [s] * 4
 
+    head_k = head[4] if head and len(head) > 4 else s
+
+    def rigid(y):
+        return head[2] + (y - head[1]) * head_k
+
+    def round_kink(y, y1, dm, b):
+        """dm * max(y - y1, 0) made C1 over y1 ± b (a quadratic ramp), minus the kinked version"""
+        u = np.clip(y - y1, -b, b)
+        return dm * ((u + b) ** 2 / (4 * b) - np.maximum(u, 0))
+
     def height(y):
+        if head:
+            out = np.interp(y, ys, yt)
+            out = np.where(y < ys[0], yt[0] + (y - ys[0]) * s, out)
+            m_neck = (rigid(head[0]) - yt[1]) / (head[0] - ys[1])
+            neck = yt[1] + (y - ys[1]) * m_neck
+            out = np.where(y > ys[1], neck, out)
+            out = np.where(y > head[0], rigid(y), out)
+            if soften:
+                m_trunk = (yt[1] - yt[0]) / (ys[1] - ys[0])
+                out = out + round_kink(y, ys[1], m_neck - m_trunk, soften[0]) + round_kink(y, head[0], head_k - m_neck, soften[1])
+            return out
         out = np.interp(y, ys, yt)
         out = np.where(y < ys[0], yt[0] + (y - ys[0]) * s, out)
         if head_even:
@@ -178,6 +206,11 @@ def fitter(np, src, top_src, sole_src, kind, gen=None, top=None, sole=None, widt
         y2 = height(p[:, 1])
         zc = np.interp(p[:, 1], ys[:3], zs)
         zc2 = np.interp(y2, yt[:3], zt)
+        if head:
+            # the head keeps its own depth centre (no shear between chin and brow)
+            k = np.clip((p[:, 1] - ys[1]) / (head[0] - ys[1]), 0, 1)
+            zc = np.where(p[:, 1] > ys[1], zs[1] + k * (zs[2] - zs[1]), zc)
+            zc2 = np.where(p[:, 1] > ys[1], zt[1] + k * (zt[2] + head[3] - zt[1]), zc2)
         sx, sz = np.interp(p[:, 1], ys, wx), np.interp(p[:, 1], ys, wz)
         return np.stack([p[:, 0] * sx, y2, (p[:, 2] - zc) * sz + zc2], axis=1)
 
@@ -223,16 +256,66 @@ def fitter(np, src, top_src, sole_src, kind, gen=None, top=None, sole=None, widt
         A, un, k, a2, R, u2, twist = segs[key]
         d = np.atleast_2d(p) - A
         along = d @ un
-        d = d * s + np.outer(along, un) * (k - s)
+        sg = s * (girth or {}).get(key.split("-")[0], 1.0)
+        d = d * sg + np.outer(along, un) * (k - sg)
         m = R
         if twist:
             m = about(u2, twist) @ R
         return d @ m.T + a2
 
+    if skull is None and kind == "bone":
+        skull = SKULL
+
     def apply(p, key):
-        return trunk(p) if key == "trunk" else limb(p, key)
+        out = trunk(p) if key == "trunk" else limb(p, key)
+        return skull_warp(np, out, skull) if skull else out
 
     return apply, s
+
+
+# The Z-Anatomy skull is taller above the orbits than the MakeHuman heads and deeper behind them: fitted like the rest
+# of the body its crown and occiput poke through the skin and the orbits sit ~2 cm under the skin's eyes. The head
+# (and the brain, eyes, face muscles… that follow the same map) is scaled about the eyeball centre so the orbits hold
+# the skin's eyes and the cranium sits under the scalp; each half-axis has its own scale, blended smoothly across the
+# eye. Below the chin the change fades out down the neck. Units: body coords after the plain fit.
+SKULL = {
+    "eye": (0.0592, 1.428, 0.138),   # Z-Anatomy eyeball centre (lens / cornea), plain fit
+    "to": (0.0527, 1.45, 0.132),     # MakeHuman man's eyeball centre (all heritages)
+    "x": 0.89, "up": 0.785, "down": 0.98, "back": 0.895, "front": 0.85,
+    "band": 0.04,                    # half-width of the blend between the two scales of an axis
+    "neck": (1.1, 1.24),             # below the first height nothing changes, above the second all of it
+}
+
+
+# the other heads, applied by the app (BodyScene.headFit) to every inner piece of the head: scale about HEAD_PIVOT, then shift
+HEAD_PIVOT = (0.0, 1.45, 0.132)
+HEAD_FIT = {"female": ((1.03, 0.98, 0.87), (0.0, -0.001, -0.006))}
+# the app's head pieces: centre above its chin line, or hanging below it with the jaw (BodyScene.jawParts)
+HEAD_CHIN_Y, JAW_PARTS = 1.25, ("mandible", "chin", "lower-teeth", "masseter", "deep-head")
+
+
+def skull_warp(np, p, k):
+    """body point after the plain fit → reshaped head (SKULL)"""
+    ex, ey, ez = k["eye"]
+    tx, ty, tz = k["to"]
+    w = k["band"]
+    u = np.linspace(-0.6, 0.6, 1201)
+
+    def axis(lo, hi, d):
+        t = np.clip((u + w) / (2 * w), 0, 1)
+        sc = lo + (hi - lo) * t * t * (3 - 2 * t)
+        f = np.concatenate([[0], np.cumsum((sc[1:] + sc[:-1]) / 2 * np.diff(u))])
+        f -= np.interp(0, u, f)
+        return np.interp(d, u, f)
+
+    q = np.empty_like(p)
+    q[:, 0] = p[:, 0] * k["x"]
+    q[:, 1] = ty + axis(k["down"], k["up"], p[:, 1] - ey)
+    q[:, 2] = tz + axis(k["back"], k["front"], p[:, 2] - ez)
+    y0, y1 = k["neck"]
+    t = np.clip((p[:, 1] - y0) / (y1 - y0), 0, 1)
+    t = (t * t * (3 - 2 * t))[:, None]
+    return p + (q - p) * t
 
 
 def to_scene(np, co):

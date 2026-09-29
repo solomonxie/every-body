@@ -12,7 +12,7 @@ extension Illustrations {
                            ok: Bilingual("Most droplets stay in the sleeve. Wash hands often too.", "大部分飞沫留在袖子上。也要勤洗手。"), demo: ["elbow": 1])),
             .watch("Inside: a cold virus infects the lining of the nose and throat — runny nose, sore throat. It comes on slowly and stays mild.",
                    "在体内：感冒病毒感染鼻咽部黏膜——流涕、咽痛。起病缓慢，症状较轻。", set: ["inside": 1, "flu": 0]),
-            .watch("Flu goes deeper, down the windpipe towards the lungs, and hits suddenly — high fever, aches, exhaustion.",
+            .watch("Flu goes deeper, down the windpipe toward the lungs, and hits suddenly — high fever, aches, exhaustion.",
                    "流感侵入更深，沿气管到达肺部，起病急——高热、全身酸痛、极度乏力。", set: ["flu": 1]),
             .tryIt("Switch between them and watch the symptoms change.", "试一试：切换对比，观察症状变化。",
                    TryStep(mode: .compare(param: "flu", options: [("Cold 感冒", 0), ("Flu 流感", 1)]), success: { _ in true },
@@ -31,18 +31,18 @@ extension Illustrations {
         var s = coldFlu
         switch p.age {
         case .infant:
-            s.profileNote = Bilingual("Baby under 3 months with 38 °C or more: see a doctor now. Any baby: fast or hard breathing, not feeding, few wet nappies, very sleepy → urgent care.",
+            s.profileNote = Bilingual("Baby under 3 months with 38 °C or more: see a doctor now. Any baby: fast or hard breathing, not feeding, few wet diapers, very sleepy → urgent care.",
                                       "3 个月以下婴儿体温 ≥38 °C：立即就医。任何婴儿出现呼吸急促费力、拒奶、尿布很少湿、异常嗜睡 → 急诊。")
             return s.rebased(["kid": 1])
         case .toddler, .child:
-            s.profileNote = Bilingual("Children: never give aspirin. Dose paracetamol or ibuprofen by weight. Flu vaccine every year from 6 months.",
+            s.profileNote = Bilingual("Children: never give aspirin. Dose acetaminophen or ibuprofen by weight. Flu vaccine every year from 6 months.",
                                       "儿童：禁用阿司匹林。对乙酰氨基酚或布洛芬按体重给药。6 月龄起每年接种流感疫苗。")
             return s.rebased(["kid": 1])
         case .senior:
-            s.profileNote = Bilingual("65+: flu can turn into pneumonia. Get the flu vaccine every autumn and see a doctor early for antivirals.",
+            s.profileNote = Bilingual("65+: flu can turn into pneumonia. Get the flu vaccine every fall and see a doctor early for antivirals.",
                                       "65 岁以上：流感易并发肺炎。每年秋季接种流感疫苗，出现症状尽早就医用抗病毒药。")
         case .adult where p.isPregnant:
-            s.profileNote = Bilingual("Pregnant: flu hits harder. The flu vaccine is safe in any trimester and protects the newborn. Paracetamol for fever.",
+            s.profileNote = Bilingual("Pregnant: flu hits harder. The flu vaccine is safe in any trimester and protects the newborn. Acetaminophen for fever.",
                                       "孕妇：流感更易重症。流感疫苗在孕期任何阶段都安全，还能保护新生儿。发热可用对乙酰氨基酚。")
         case .adult: break
         }
@@ -76,8 +76,8 @@ extension Illustrations {
         // the other person, facing back
         let other = p[v: "kid"] > 0.5 ? Casualty(Profile(age: .child), adult: 176) : Casualty(Profile.standard, adult: 172, adultLook: .helper)
         var o = SideFigure(other, facing: -1)
-        o.nearLeg = .init(hip: 3, knee: 2)
-        o.farLeg = .init(hip: -4, knee: 2)
+        o.nearLeg = .init(hip: 11, knee: 20)
+        o.farLeg = .init(hip: -4, knee: 1)
         o.near = .init(shoulder: 6, elbow: 12)
         o.far = .init(shoulder: -4, elbow: 10)
         o.hip = CGPoint(x: 302, y: o.hipY(onFloor: floor))
@@ -85,8 +85,8 @@ extension Illustrations {
         // the sneezer, jerking forward
         var v = SideFigure(Casualty(Profile.standard, adult: 180), lean: elbow ? 20 : 12, face: elbow ? .closed : .distress)
         v.headTilt = elbow ? 14 : 4
-        v.nearLeg = .init(hip: 6, knee: 3)
-        v.farLeg = .init(hip: -6, knee: 2)
+        v.nearLeg = .init(hip: 10, knee: 14)
+        v.farLeg = .init(hip: -8, knee: 4)
         v.hip = CGPoint(x: 70, y: v.hipY(onFloor: floor))
         v.far = .init(shoulder: -8, elbow: 16)
         let mouth = v.mouth
@@ -116,7 +116,7 @@ extension Illustrations {
             let r = 1.1 + Double(i % 3) * 0.7
             s.circle(x, y, r, fill: blue, opacity: 0.75 * (1 - u * 0.5))
             if r > 2 { s.circle(x - r * 0.3, y - r * 0.3, r * 0.35, fill: .white, opacity: 0.6 * (1 - u * 0.5)) }
-            if i % 12 == 0 && !elbow { virus(&s, x, y - 6, 2) }
+            if i % 12 == 0 && !elbow && x < 282 { virus(&s, x, y - 6, 2) }
         }
         if !elbow {
             let a = mouth.x + 10, b = 292.0, y = floor + 16
@@ -124,7 +124,7 @@ extension Illustrations {
             s.path("M \(a + 6) \(y - 4) L \(a) \(y) L \(a + 6) \(y + 4) M \(b - 6) \(y - 4) L \(b) \(y) L \(b - 6) \(y + 4)", stroke: hex("#8A7A66"), lw: 1)
             s.tag("droplets fly 1–2 m", "飞沫可达 1–2 米", (a + b) / 2, y + 12, size: 9.5, color: Tone.ink, bold: true)
         } else {
-            s.tag("caught in the sleeve", "被袖子挡住", mouth.x + 66, mouth.y - 16, size: 9.5, color: Tone.green, bold: true)
+            s.tag("caught in the sleeve", "被袖子挡住", mouth.x + 80, mouth.y - 14, size: 9.5, color: Tone.green, bold: true)
         }
         s.label("Achoo!", "阿嚏！", mouth.x + 8, mouth.y - 38, size: 13, color: Tone.purple, bold: true)
         let ok = elbow ? Tone.green : Tone.red
@@ -170,7 +170,7 @@ extension Illustrations {
         let care = p[v: "care"] > 0.5
         s.line(206, 252, 342, 252, stroke: Tone.rule, lw: 0.8)
         if care {
-            s.label("✓ rest · fluids · paracetamol", "✓ 休息 · 多饮水 · 退热药", 206, 266, size: 8, color: Tone.green, bold: true)
+            s.label("✓ rest · fluids · acetaminophen", "✓ 休息 · 多饮水 · 退热药", 206, 266, size: 8, color: Tone.green, bold: true)
             s.label("flu: antivirals within 48 h", "流感：48 小时内用抗病毒药", 206, 280, size: 8, color: Tone.purple, bold: true)
         } else {
             virus(&s, 211, 264, 3)
@@ -268,8 +268,8 @@ extension Illustrations {
             .tryIt("Use the blue reliever inhaler through a spacer: shake, 1 puff into the spacer, 4–6 slow breaths. Get peak flow back into the green zone.",
                    "试一试：用蓝色缓解吸入剂接储雾罐：摇匀，按 1 喷进储雾罐，慢慢吸 4–6 口。让峰流速回到绿区。",
                    TryStep(mode: .scrub([Scrub(param: "inhaler", label: "Inhaler 吸入剂", min: 0, max: 1)]), success: { peakFlow($0) >= 80 },
-                           ok: Bilingual("Breathing eases. If it doesn’t within minutes, call 120.", "呼吸缓解。几分钟内不缓解请拨打 120。"), demo: ["inhaler": 1])),
-            .watch("Attack plan: sit upright, 1 puff every 30–60 s up to 10. Can’t speak in sentences or lips turn blue → 120.",
+                           ok: Bilingual("Breathing eases. If it doesn’t within minutes, call 911.", "呼吸缓解。几分钟内不缓解请拨打 120。"), demo: ["inhaler": 1])),
+            .watch("Attack plan: sit upright, 1 puff every 30–60 s up to 10. Can’t speak in sentences or lips turn blue → 911.",
                    "发作处理：坐直，每 30–60 秒吸 1 喷，最多 10 喷。说话不成句或嘴唇发紫 → 拨打 120。", set: ["inhaler": 1]),
         ],
         draw: { s, p, t in drawAsthma(&s, p, t) },
@@ -278,26 +278,27 @@ extension Illustrations {
 
     static func asthma(for p: Profile) -> Scenario {
         var s = asthma
+        let f: Double = p.female ? 1 : 0
         switch p.age {
         case .infant:
             s.profileNote = Bilingual("Babies: wheeze under 1 is often bronchiolitis from a virus — see a doctor. Inhalers go through a spacer with a soft face mask.",
                                       "婴儿：1 岁内喘息多为病毒性毛细支气管炎——需就医。吸入药要用带软面罩的储雾罐。")
-            return s.rebased(["kid": 1])
+            return s.rebased(["kid": 1, "female": f])
         case .toddler, .child:
             s.profileNote = Bilingual("Children: always use a spacer; under about 5, one with a face mask held on for 5–6 breaths per puff.",
                                       "儿童：一定要用储雾罐；约 5 岁以下用带面罩的，每喷扣紧面罩呼吸 5–6 次。")
-            return s.rebased(["kid": 1])
+            return s.rebased(["kid": 1, "female": f])
         case .senior:
             s.profileNote = Bilingual("65+: a spacer helps if pressing and breathing in together is hard. Asthma and COPD can overlap — review inhalers yearly.",
                                       "65 岁以上：按压与吸气难以同步时，储雾罐很有帮助。哮喘与慢阻肺可能并存——每年复查用药。")
-            return s.rebased(["senior": 1])
+            return s.rebased(["senior": 1, "female": f])
         case .adult where p.isPregnant:
             s.profileNote = Bilingual("Pregnant: keep using your asthma inhalers — an uncontrolled attack is the bigger risk to the baby.",
                                       "孕妇：继续使用哮喘吸入药——发作失控对胎儿的风险更大。")
             return s.rebased(["pregnant": 1])
         case .adult: break
         }
-        return s
+        return s.rebased(["female": f])
     }
 
     @MainActor private static func drawAsthma(_ s: inout Sketch, _ p: Params, _ t: Double) {
@@ -321,17 +322,17 @@ extension Illustrations {
         s.text("\(Int(pef.rounded()))%", 286, 40, size: 22, color: zone.2, anchor: .end, bold: true)
         s.label("of your best", "个人最佳值", 290, 30, size: 7.5, color: Tone.sub)
         s.pill(zone.0, zone.1, 290, 43, color: zone.2, size: 7.5)
-        s.label(pef >= 80 ? "breathing well" : pef >= 50 ? "use your reliever" : "reliever now; no better → 120",
+        s.label(pef >= 80 ? "breathing well" : pef >= 50 ? "use your reliever" : "reliever now; no better → 911",
                 pef >= 80 ? "呼吸良好" : pef >= 50 ? "使用缓解药" : "立即用缓解药；不缓解 → 120", 206, 57, size: 7.5, color: zone.2, bold: true)
 
         // left: the person, using a spacer when the reliever is in
         let floor = 290.0
-        let who = kid ? Casualty(Profile(age: .child), adult: 210) : Casualty(p, adult: 200)
+        let who = kid ? Casualty(Profile(age: .child, female: p[v: "female"] > 0.5), adult: 210) : Casualty(p, adult: 200)
         let using = inh > 0.2
         var v = SideFigure(who, lean: using ? 6 : 10 * attack, face: attack > 0.5 && !using ? .distress : .calm)
         if !kid && p[v: "senior"] < 0.5 && p[v: "pregnant"] < 0.5 { v.look.top = hex("#9CCB9E"); v.look.topLine = Look.edge(v.look.top) }
-        v.nearLeg = .init(hip: 4, knee: 2)
-        v.farLeg = .init(hip: -5, knee: 2)
+        v.nearLeg = .init(hip: 12, knee: 22)
+        v.farLeg = .init(hip: -3, knee: 1)
         v.hip = CGPoint(x: 66, y: v.hipY(onFloor: floor))
         let h = v.h, mouth = v.mouth
         let spacerEnd = CGPoint(x: mouth.x + 0.24 * h, y: mouth.y + 2)
@@ -349,15 +350,21 @@ extension Illustrations {
         s.stage(v.hip.x + 30, floor: floor, r: 84, width: 190)
         v.drawBack(&s)
         v.drawBody(&s)
-        // airway tree through the chest
-        let top = v.torso(0.12, 1.0), fork = v.torso(0.05, 0.68)
-        let lobe1 = v.torso(-0.2, 0.42), lobe2 = v.torso(0.28, 0.45), lobe3 = v.torso(0.05, 0.9)
-        s.path("M \(top.x) \(top.y) L \(fork.x) \(fork.y) M \(fork.x) \(fork.y) L \(lobe1.x) \(lobe1.y) M \(fork.x) \(fork.y) L \(lobe2.x) \(lobe2.y) "
-               + "M \(lerp(fork, lobe1, 0.5).x) \(lerp(fork, lobe1, 0.5).y) L \(lerp(fork, lobe1, 0.5).x - 6) \(lerp(fork, lobe1, 0.5).y + 10) "
-               + "M \(lerp(fork, lobe2, 0.6).x) \(lerp(fork, lobe2, 0.6).y) L \(lerp(fork, lobe2, 0.6).x + 7) \(lerp(fork, lobe2, 0.6).y + 8) "
-               + "M \(lerp(top, fork, 0.6).x) \(lerp(top, fork, 0.6).y) L \(lobe3.x + 8) \(lobe3.y + 12)",
-               stroke: squeeze > 0.4 ? Tone.red : hex("#D98A80"), lw: 1.6, opacity: 0.75, cap: .round)
+        // airway tree through the chest, seen through the arm
+        let top = v.torso(0.16, 1.02), fork = v.torso(0.06, 0.74)
+        let lobe1 = v.torso(-0.14, 0.44), lobe2 = v.torso(0.24, 0.46)
         let ring = lerp(fork, lobe2, 0.8)
+        let tree = { (g: inout Sketch) in
+            let col = squeeze > 0.4 ? Tone.red : hex("#D98A80")
+            let lung = v.torso(0.05, 0.6), dh = v.build.depth * v.h, th = v.build.torso * v.h
+            g.ellipse(lung.x, lung.y, dh * 0.42, th * 0.26, fill: hex("#F2A7A0"), opacity: 0.35)
+            g.line(top.x, top.y, fork.x, fork.y, stroke: col, lw: 1.8, cap: .round, opacity: 0.75)
+            for (end, k) in [(lobe1, 1.0), (lobe2, -1.0)] {
+                g.line(fork.x, fork.y, end.x, end.y, stroke: col, lw: 1.3, cap: .round, opacity: 0.75)
+                let q = lerp(fork, end, 0.6)
+                g.line(q.x, q.y, q.x - k * 4, q.y + 5, stroke: col, lw: 0.9, cap: .round, opacity: 0.7)
+            }
+        }
         if using {
             if kid {
                 s.path("M \(mouth.x - 3) \(mouth.y - 11) L \(mouth.x + 12) \(mouth.y - tubeH / 2) L \(mouth.x + 12) \(mouth.y + tubeH / 2) L \(mouth.x - 3) \(mouth.y + 10) Z",
@@ -385,6 +392,7 @@ extension Illustrations {
             s.label("wheeze, tight chest", "喘鸣、胸闷", mouth.x + 6, mouth.y - 16, size: 9, color: Tone.red, bold: true)
         }
         v.drawArm(&s, near: true)
+        tree(&s)
 
         // right: a small airway, cut across
         let c = CGPoint(x: 280, y: 184), R = 62.0
@@ -460,14 +468,14 @@ extension Illustrations {
         case .senior:
             s.profileNote = Bilingual("65+: new heartburn after 60, trouble swallowing or weight loss — get checked (endoscopy). Some medicines worsen reflux.",
                                       "65 岁以上：60 岁后新出现烧心、吞咽困难或消瘦——需做胃镜检查。部分药物会加重反流。")
-            return s.rebased(["senior": 1])
+            return s.rebased(["senior": 1, "female": p.female ? 1 : 0])
         case .adult where p.isPregnant:
             s.profileNote = Bilingual("Pregnant: hormones relax the valve and the growing womb pushes on the stomach — heartburn is very common. Small meals; ask before antacids.",
                                       "孕妇：激素使括约肌松弛，增大的子宫挤压胃——烧心很常见。少食多餐；用抗酸药前先咨询医生。")
             return s.rebased(["pregnant": 1])
         case .toddler, .child, .adult: break
         }
-        return s
+        return s.rebased(["female": p.female ? 1 : 0])
     }
 
     @MainActor private static func drawReflux(_ s: inout Sketch, _ p: Params, _ t: Double) {
@@ -483,8 +491,8 @@ extension Illustrations {
         let who = Casualty(p, adult: 120)
         if pose == 0 {
             room.rect(8, 104, 176, 14, fill: hex("#EFE8DE"))
-            var v = SideFigure(Casualty(p, adult: 100), face: hurt ? .distress : .calm)
-            v.nearLeg = .init(hip: 2, knee: 1)
+            var v = SideFigure(Casualty(p, adult: 90), face: hurt ? .distress : .calm)
+            v.nearLeg = .init(hip: 12, knee: 22)
             v.farLeg = .init(hip: -3, knee: 1)
             v.hip = CGPoint(x: 50, y: v.hipY(onFloor: 106))
             v.near = hurt ? .init(reach: v.front(0.72), hand: .open, handAngle: 200) : .init(shoulder: 4, elbow: 10)
@@ -586,7 +594,7 @@ extension Illustrations {
             }
         }
         s.callout("gullet", "食管", at: world(8, -110), 352, world(8, -110).y + 4, anchor: .end, color: Tone.label, size: 8)
-        s.callout("diaphragm", "膈肌", at: world(-120, -18), 196, world(-120, -18).y - 16, color: hex("#A8443C"), size: 8)
+        s.callout("diaphragm", "膈肌", at: world(-120, -18), max(218, world(-120, -18).x), world(-120, -18).y - 16, anchor: .middle, color: hex("#A8443C"), size: 8)
         s.callout("valve (LES)", "贲门括约肌", at: world(-12, -3), 196, world(-12, -3).y + 22, color: weak ? hex("#C0721B") : Tone.organLine, size: 8)
         let pooled = world(deepPoint.0 - g.x * 16 - 6, deepPoint.1 - g.y * 16)
         s.label("acid", "胃酸", pooled.x, pooled.y + 3, size: 8.5, color: hex("#7A6A12"), anchor: .middle, bold: true)

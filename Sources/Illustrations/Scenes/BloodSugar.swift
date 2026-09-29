@@ -65,6 +65,7 @@ extension Illustrations {
         var s = bloodSugar
         var steps = s.steps
         var base = s.params
+        base["female"] = p.female ? 1 : 0
         switch p.age {
         case .infant, .toddler, .child:
             base["kid"] = 1
@@ -309,8 +310,8 @@ extension Illustrations {
         let thigh = walker.legPoint(near: true, 0.5), calf = walker.legPoint(near: true, 1.4)
         w.glow(thigh.x, thigh.y, 16, Tone.amber, opacity: 0.55)
         w.glow(calf.x, calf.y, 12, Tone.amber, opacity: 0.45)
-        w.callout("leg muscles", "腿部肌肉", at: thigh, 122, thigh.y - 14, anchor: .start, color: hex("#3F7F53"))
-        w.label("take in sugar", "摄取葡萄糖", 122, thigh.y - 3, size: 8.5, color: hex("#3F7F53"), bold: true)
+        w.callout("leg muscles", "腿部肌肉", at: thigh, 126, thigh.y + 30, anchor: .start, color: hex("#3F7F53"))
+        w.label("take in sugar", "摄取葡萄糖", 126, thigh.y + 41, size: 8.5, color: hex("#3F7F53"), bold: true)
         w.label("brisk walk, 15–30 min", "快走 15–30 分钟", 92, 274, size: 8.5, color: Tone.sub, anchor: .middle)
     }
 }
