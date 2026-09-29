@@ -311,6 +311,24 @@ def subset(np, v, f, keep):
     return v[used], remap[f]
 
 
+def main_parts(np, v, f, share=0.01):
+    """drops loose specks (under `share` of the faces): the app places an organ by its bounds"""
+    parent = np.arange(len(v))
+
+    def root(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    for a, b in np.concatenate([f[:, [0, 1]], f[:, [1, 2]]]):
+        ra, rb = root(a), root(b)
+        if ra != rb:
+            parent[ra] = rb
+    comp = np.array([root(i) for i in f[:, 0]])
+    ids, counts = np.unique(comp, return_counts=True)
+    return subset(np, v, f, np.isin(comp, ids[counts >= share * len(f)]))
+
+
 def fibre_uv(np, v, f):
     """Cylindrical UVs about the part's long axis: u around (stripes = fibres along the length), v along."""
     c = v.mean(0)
@@ -405,6 +423,7 @@ class SkinClamp:
     pectorals and serratus show through the glass skin. Outside vertices slide horizontally towards their
     part's bone line (trunk: the body's vertical axis); the move is spread over everything nearby so layered
     muscles move together.
+    The head is clamped into every heritage's head (the face muscles are shared by all of them).
     Re-run after the skins change."""
 
     MARGIN = 0.006  # scene units (~3 mm)
@@ -414,7 +433,7 @@ class SkinClamp:
     def __init__(self, np):
         from mathutils.bvhtree import BVHTree
         from build_figure import FIGURE, read_figure
-        self.np, self.trees = np, {}
+        self.np, self.trees, self.heads, self.fitted_heads = np, {}, {}, {}
         if not FIGURE.exists():
             return
         header, block, piece = read_figure(np)
@@ -424,7 +443,20 @@ class SkinClamp:
             # heritage only changes the head, which isn't clamped
             v = header["variants"].get(f"{sex}.adult.east-asian")
             if v:
-                self.trees[sex] = BVHTree.FromPolygons(block(v["body"]).tolist(), polys)
+                body = block(v["body"])
+                # the woman's smallest body options: inside that, inside them all
+                if sex == "female":
+                    for shape in ("chest-small", "hips-small"):
+                        if shape in header.get("shapes", {}):
+                            body = body + block(header["shapes"][shape])
+                self.trees[sex] = BVHTree.FromPolygons(body.tolist(), polys)
+            heads = [block(v["body"]) for k, v in sorted(header["variants"].items()) if k.startswith(f"{sex}.adult.")]
+            self.heads[sex] = [BVHTree.FromPolygons(h.tolist(), polys) for h in heads]
+            # the app fits the head pieces to this head (build_models.HEAD_FIT): clamp them into it undone
+            if sex in bm.HEAD_FIT:
+                scale, shift = (np.array(a) for a in bm.HEAD_FIT[sex])
+                c = np.array(bm.HEAD_PIVOT)
+                self.fitted_heads[sex] = [BVHTree.FromPolygons(((h - shift - c) / scale + c).tolist(), polys) for h in heads]
 
     @staticmethod
     def inside(tree, p):
@@ -455,23 +487,78 @@ class SkinClamp:
             lo, hi = (lo, mid) if self.inside(tree, p + (q - p) * mid) else (mid, hi)
         return (q - p) * min(1.0, hi + self.MARGIN / span)
 
-    def __call__(self, sex, parts, axes):
-        """parts: [vertex arrays], axes: [(a, b)] each part's bone line → parts moved inside this sex's skin"""
-        from mathutils.kdtree import KDTree
+    def __call__(self, sex, parts, axes, ids=()):
+        """parts: [vertex arrays], axes: [(a, b)] each part's bone line, ids → parts moved inside this sex's skin"""
         np = self.np
         tree = self.trees.get(sex)
         if tree is None or not parts:
             return parts
         v = np.concatenate(parts)
         owner = np.concatenate([np.full(len(p), k) for k, p in enumerate(parts)])
-        # face, hands and feet hug the skin and the figures' fingers differ: only the body and limbs are clamped
+        # hands and feet hug the skin and the figures' fingers differ: they aren't clamped
         x, y = np.abs(v[:, 0]), v[:, 1]
-        region = np.nonzero((y < 1.2) & (y > -1.4) & ~((x > 0.36) & (y < 0.1)))[0]
+        body = np.nonzero((y < 1.2) & (y > -1.4) & ~((x > 0.36) & (y < 0.1)))[0]
+        v = self.clamp(tree, v, body, lambda i: axes[owner[i]], sex)
+        fitted = np.zeros(len(v), bool)
+        if sex in self.fitted_heads:
+            for k, (pid, p) in enumerate(zip(ids, parts)):
+                if p[:, 1].mean() > bm.HEAD_CHIN_Y or pid.startswith(bm.JAW_PARTS):
+                    fitted[owner == k] = True
+        for heads, sel in ((self.heads.get(sex, []), ~fitted), (self.fitted_heads.get(sex, []), fitted)):
+            region = np.nonzero((y >= 1.2) & sel)[0]
+            for h in heads:
+                v = self.shrink(h, v, region, sex)
+        out, n = [], 0
+        for p in parts:
+            out.append(v[n:n + len(p)])
+            n += len(p)
+        return out
+
+    HEAD_RADIUS, HEAD_SPREAD = 0.02, 0.01
+
+    def shrink(self, tree, v, region, sex):
+        """head parts outside the skin drawn just under it along the way to its nearest point (thin face muscles keep
+        their shape: moving them towards an axis crushed them together); neighbours within a couple of cm follow"""
+        from mathutils import Vector
+        from mathutils.kdtree import KDTree
+        np = self.np
+        for step in range(3):
+            idx, disp = [], []
+            for i in region:
+                if not self.inside(tree, v[i]):
+                    loc, n, _, _ = tree.find_nearest(Vector(v[i]))
+                    if loc is None:
+                        continue
+                    n = np.array(n)
+                    if self.inside(tree, np.array(loc) + n * self.MARGIN):
+                        n = -n
+                    idx.append(i)
+                    disp.append(np.array(loc) - n * self.MARGIN - v[i])
+            print(f"INTERNALS head {sex} pass {step}: {len(idx)} vertices outside")
+            if not idx:
+                break
+            kd = KDTree(len(idx))
+            for k, i in enumerate(idx):
+                kd.insert(v[i], k)
+            kd.balance()
+            disp = np.array(disp)
+            move = np.zeros_like(v)
+            for i in region:
+                hits = kd.find_range(v[i], self.HEAD_RADIUS)
+                if hits:
+                    w = np.exp(-(np.array([h[2] for h in hits]) / self.HEAD_SPREAD) ** 2)
+                    move[i] = (w[:, None] * disp[[h[1] for h in hits]]).sum(0) / (w.sum() + 0.05)
+            v = v + move
+        return v
+
+    def clamp(self, tree, v, region, axis, sex):
+        from mathutils.kdtree import KDTree
+        np = self.np
         for step in range(4):
             idx, disp = [], []
             for i in region:
                 if not self.inside(tree, v[i]):
-                    d = self.push(tree, v[i], *axes[owner[i]])
+                    d = self.push(tree, v[i], *axis(i))
                     if d is not None:
                         idx.append(i)
                         disp.append(d)
@@ -490,11 +577,7 @@ class SkinClamp:
                     w = np.exp(-(np.array([h[2] for h in hits]) / self.SPREAD) ** 2)
                     move[i] = (w[:, None] * disp[[h[1] for h in hits]]).sum(0) / (w.sum() + 0.25)
             v = v + move
-        out, n = [], 0
-        for p in parts:
-            out.append(v[n:n + len(p)])
-            n += len(p)
-        return out
+        return v
 
 
 JOINT_OF = {"uparm": "shoulder", "forearm": "elbow", "hand": "elbow", "shin": "knee", "foot": "knee"}
@@ -672,7 +755,7 @@ def build():
             for pid, (v, f) in meshes.items():
                 if pid == "brain":
                     # the cortex comes as ~150 gyrus / sulcus patches: remesh them into one surface first
-                    meshes[pid] = decimate(bpy, np, *remesh(bpy, np, v, f, 0.0012), BRAIN_TRIS)
+                    meshes[pid] = main_parts(np, *decimate(bpy, np, *remesh(bpy, np, v, f, 0.0012), BRAIN_TRIS))
                     continue
                 target = int(min(6000, max(160 if layer == "muscular" else 300, BUDGET[layer] * areas[pid] / whole)))
                 meshes[pid] = decimate(bpy, np, v, f, target)
@@ -689,10 +772,10 @@ def build():
         if layer == "muscular":
             axes = [segment_axis(np, share[pid]) for pid in order]
             male = clamp("male", [fitted[pid] for pid in order], axes)
-            female = clamp("female", male, axes)
+            female = clamp("female", male, axes, order)
             for pid, vm, vf in zip(order, male, female):
                 variants[pid] = {"": vm}
-                # the female figure is slimmer (chest, flanks): parts it moves get their own copy
+                # the female figure differs (chest, flanks): parts it moves get their own copy
                 if np.abs(vf - vm).max() > 0.002:
                     variants[pid]["--female"] = vf
         for pid in order:

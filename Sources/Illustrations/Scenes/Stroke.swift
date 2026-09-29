@@ -8,16 +8,16 @@ extension Illustrations {
 
     static let stroke = Scenario(
         id: "stroke", group: .illness, title: Bilingual("Stroke", "脑卒中（中风）"),
-        params: ["clot": 0, "minutes": 0, "treated": 0, "fast": 0, "senior": 0, "kid": 0],
+        params: ["clot": 0, "minutes": 0, "treated": 0, "fast": 0, "senior": 0, "kid": 0, "female": 0],
         steps: [
             .watch("Arteries carry oxygen to every part of the brain. The left side of the brain moves the right side of the body and makes speech.",
                    "动脉为大脑各处输送氧气。左脑控制右侧身体，并负责语言。", set: ["clot": 0, "minutes": 0, "treated": 0, "fast": 0]),
-            .watch("Ischaemic stroke: a clot blocks a brain artery. Suddenly one side of the face droops, one arm drifts down, speech slurs.",
+            .watch("Ischemic stroke: a clot blocks a brain artery. Suddenly one side of the face droops, one arm drifts down, speech slurs.",
                    "缺血性卒中：血栓堵塞脑动脉。突然一侧口角歪斜、一侧手臂无力下垂、说话含糊。", set: ["clot": 1, "minutes": 5]),
             .tryIt("Drag the clock. About 1.9 million brain cells die every minute — the dead core spreads.", "试一试：拖动时间。每分钟约 190 万个脑细胞死亡——坏死区不断扩大。",
                    TryStep(mode: .scrub([Scrub(param: "minutes", label: "Minutes 分钟", min: 0, max: 360, digits: 0)]), success: { $0[v: "minutes"] >= 120 },
                            ok: Bilingual("Time is brain.", "时间就是大脑。"), demo: ["minutes": 180])),
-            .watch("Spot it — F.A.S.T.: Face uneven, Arm weak, Speech slurred → Time to call 120/911. Note when it started.",
+            .watch("Spot it — F.A.S.T.: Face uneven, Arm weak, Speech slurred → Time to call 911. Note when it started.",
                    "识别“中风120”：1 看脸不对称，2 查两臂一侧无力，0 聆听言语不清 → 立即拨打 120，记下发病时间。", set: ["fast": 1]),
             .tryIt("Compare: clot dissolved or pulled out at hospital within an hour vs. no treatment.", "对比：1 小时内在医院溶栓/取栓 vs. 未治疗。",
                    set: ["minutes": 240, "fast": 0],
@@ -35,18 +35,17 @@ extension Illustrations {
         case .senior:
             s.profileNote = Bilingual("65+: risk doubles every decade after 55. An irregular pulse (atrial fibrillation) is a major cause — get it checked. Sudden loss of balance or vision counts too.",
                                       "65 岁以上：55 岁后每 10 年风险翻倍。心律不齐（房颤）是重要原因——要检查。突然失去平衡或视物不清也要警惕。")
-            return s.rebased(["senior": 1])
+            return s.rebased(["senior": 1, "female": p.female ? 1 : 0])
         case .infant, .toddler, .child:
-            s.profileNote = Bilingual("Rare in children, but real: sudden weakness on one side, a seizure, or the worst headache — call 120, don't wait.",
+            s.profileNote = Bilingual("Rare in children, but real: sudden weakness on one side, a seizure, or the worst headache — call 911, don't wait.",
                                       "儿童少见但会发生：突然一侧无力、抽搐或剧烈头痛——立即拨打 120，不要等待。")
-            return s.rebased(["kid": 1])
+            return s.rebased(["kid": 1, "female": p.female ? 1 : 0])
         case .adult where p.isPregnant:
-            s.profileNote = Bilingual("Pregnancy and the 6 weeks after birth raise stroke risk. Severe headache, vision changes or very high blood pressure → call 120.",
+            s.profileNote = Bilingual("Pregnancy and the 6 weeks after birth raise stroke risk. Severe headache, vision changes or very high blood pressure → call 911.",
                                       "孕期及产后 6 周中风风险升高。剧烈头痛、视物异常或血压很高 → 拨打 120。")
             return s.rebased(["pregnant": 1])
-        case .adult: break
+        case .adult: return s.rebased(["female": p.female ? 1 : 0])
         }
-        return s
     }
 
     /// round letter badge for F.A.S.T. / 中风120
@@ -59,6 +58,7 @@ extension Illustrations {
     /// the person for the stroke and heart-attack scenes (adult men in a blue shirt)
     static func patient(_ p: Params, female: Bool = false, h: Double = 240) -> Bust {
         let kid = p[v: "kid"] > 0.5, senior = p[v: "senior"] > 0.5, pregnant = p[v: "pregnant"] > 0.5
+        let female = female || p[v: "female"] > 0.5
         let c = Casualty(Profile(age: kid ? .child : senior ? .senior : .adult, female: female || pregnant, pregnant: pregnant), adult: h)
         var b = Bust(c)
         b.h = kid ? h * 0.94 : h
@@ -69,7 +69,8 @@ extension Illustrations {
     }
 
     /// person in a round backdrop: body cut off by the circle, arms free; `between` draws over the body, under the arms
-    @MainActor static func portrait(_ s: inout Sketch, _ person: Bust, at o: CGPoint, between: (inout Sketch) -> Void = { _ in }) {
+    @MainActor static func portrait(_ s: inout Sketch, _ person: Bust, at o: CGPoint, between: (inout Sketch) -> Void = { _ in },
+                                    arms: ((inout Sketch) -> Void)? = nil) {
         let c = CGPoint(x: o.x, y: o.y + 0.22 * person.h), r = 0.35 * person.h
         s.circle(c.x, c.y, r, fill: Palette.blob)
         var clip = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r))
@@ -77,7 +78,18 @@ extension Illustrations {
         var inside = s.clipped(to: clip)
         person.drawBody(&inside, at: o)
         between(&s)
-        person.drawArms(&s, at: o)
+        if let arms { arms(&s) } else { person.drawArms(&s, at: o) }
+    }
+
+    /// arm reaching toward the viewer: shoulder → palm in a near-straight, foreshortened line; `sag` drops the elbow
+    @MainActor static func forwardArm(_ s: inout Sketch, _ person: Bust, at o: CGPoint, side: Double, hand: CGPoint, sag: Double) {
+        let h = person.h, sh = person.shoulder(side)
+        let a = CGPoint(x: o.x + sh.x, y: o.y + sh.y), b = CGPoint(x: o.x + hand.x, y: o.y + hand.y)
+        let e = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + (0.012 + sag) * h)
+        let d = unit(CGPoint(x: b.x - e.x, y: b.y - e.y)), L = 0.075 * h
+        let wrist = CGPoint(x: b.x - d.x * L * 0.4, y: b.y - d.y * L * 0.4)
+        dressedArm(&s, a, e, wrist, aw: 0.048 * h, look: person.look)
+        drawHand(&s, at: b, dir: d, len: L, shape: .open, look: person.look, thumb: -side)
     }
 
     /// status strip across the top: stopwatch, headline, detail
@@ -102,23 +114,44 @@ extension Illustrations {
                             : String(format: "缺血 %.0f 分钟 · 约 %.0f 万脑细胞死亡", minutes, lost * 100))
             timeCard(&s, minutes: minutes, alarm: true, head,
                      treated ? ("Clot cleared within the hour — the at-risk area is saved", "1 小时内开通血管——半暗带得救")
-                         : ("Every minute counts — call 120 and note the time it started", "分秒必争——拨打 120，记下发病时间"), color: Tone.red)
+                         : ("Every minute counts — call 911 and note the time it started", "分秒必争——拨打 120，记下发病时间"), color: Tone.red)
         } else {
             timeCard(&s, minutes: 0, alarm: false, ("Normal blood supply", "供血正常"),
                      ("Arteries feed every part of the brain with oxygen", "动脉为大脑各处输送氧气"), color: Tone.red)
         }
 
         // the person: right side of the face droops, right arm drifts down (image left = the person's right)
-        var person = patient(p)
+        let female = p[v: "female"] > 0.5
+        var person = patient(p, female: female)
         person.face = blocked && !treated ? .worried : .calm
         person.droop = weak
         let o = CGPoint(x: 92, y: 136)
-        let armY = 0.2 * person.h, reach = 0.31 * person.h
+        // both arms held out in front, palms up; the weak one sinks and drifts in
+        let armY = 0.12 * person.h, reach = 0.28 * person.h
         person.leftHand = CGPoint(x: reach, y: armY)
-        person.rightHand = CGPoint(x: -reach + weak * 0.12 * person.h, y: armY + weak * 0.12 * person.h)
-        portrait(&s, person, at: o)
-        let head = CGPoint(x: o.x, y: o.y + person.headCenter.y)
-        let hand = CGPoint(x: o.x + person.rightHand!.x, y: o.y + person.rightHand!.y)
+        person.rightHand = CGPoint(x: -reach + weak * 0.07 * person.h, y: armY + weak * 0.19 * person.h)
+        let v = p[v: "kid"] > 0.5 ? (female ? "girl" : "child") : p[v: "pregnant"] > 0.5 ? "pregnant" : p[v: "senior"] > 0.5 ? (female ? "senior_woman" : "senior") : female ? "woman" : "adult"
+        let fade = ((weak - 0.35) / 0.2).clamped(0, 1)
+        var head = CGPoint(x: o.x, y: o.y + person.headCenter.y)
+        var hand = CGPoint(x: o.x + person.rightHand!.x, y: o.y + person.rightHand!.y)
+        if SceneArt.image("stroke-\(v)-0") != nil {
+            // rendered person inside the round backdrop (body cut by the disc, head free above it)
+            let c = CGPoint(x: o.x, y: o.y + 0.22 * person.h), r = 0.35 * person.h
+            s.circle(c.x, c.y, r, fill: Palette.blob)
+            var clip = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r))
+            clip.addRect(CGRect(x: c.x - r, y: 0, width: 2 * r, height: c.y))
+            var inside = s.clipped(to: clip)
+            inside.art([("stroke-\(v)-0", 1 - fade), ("stroke-\(v)-1", fade)])
+            let m = SceneMarks.at("stroke-\(v)-\(fade > 0.5 ? 1 : 0)")
+            head = m["head"].map { CGPoint(x: $0.x, y: $0.y + 22) } ?? head
+            hand = m["hand_r"] ?? hand
+        } else {
+            let arms = person
+            portrait(&s, person, at: o, arms: { g in
+                forwardArm(&g, arms, at: o, side: -1, hand: arms.rightHand!, sag: 0.03 * weak)
+                forwardArm(&g, arms, at: o, side: 1, hand: arms.leftHand!, sag: 0)
+            })
+        }
         if blocked {
             s.bubble(treated ? "I feel better now" : "I… c-can’t… say it", treated ? "我好多了" : "我…说…不…清", 96, 70, tip: CGPoint(x: o.x + 6, y: head.y - person.headRy - 2),
                      size: 8.5, color: treated ? Tone.ink : Tone.red, border: treated ? Tone.faint : Tone.red)
@@ -129,12 +162,12 @@ extension Illustrations {
         if fast > 0.05 {
             s.group(opacity: fast) { g in
                 let en = ["F", "A", "S", "T"], zh = ["1", "2", "0", "☎"]
-                let spots = [CGPoint(x: head.x - person.headRx - 14, y: head.y + 4), CGPoint(x: hand.x + 2, y: hand.y + 18),
+                let spots = [CGPoint(x: head.x - person.headRx - 14, y: head.y + 4), CGPoint(x: max(16, hand.x - 24), y: hand.y + 6),
                              CGPoint(x: 160, y: 70), CGPoint(x: 18, y: 280)]
                 for i in 0..<4 { badge(&g, spots[i].x, spots[i].y, g.zh ? zh[i] : en[i], Tone.red) }
-                g.label("face", "看脸", spots[0].x - 10, spots[0].y + 3, size: 7.5, color: Tone.red, anchor: .end, bold: true)
-                g.label("arm", "查臂", spots[1].x + 12, spots[1].y + 3, size: 7.5, color: Tone.red, bold: true)
-                g.label("speech", "听语言", spots[2].x + 12, spots[2].y + 3, size: 7.5, color: Tone.red, bold: true)
+                g.tag("face", "看脸", spots[0].x - 12, spots[0].y, size: 7.5, color: Tone.red, anchor: .end, bold: true)
+                g.tag("arm", "查臂", spots[1].x, spots[1].y + 18, size: 7.5, color: Tone.red, bold: true)
+                g.tag("speech", "听语言", spots[2].x + 14, spots[2].y, size: 7.5, color: Tone.red, anchor: .start, bold: true)
                 g.callChip(30, 270)
             }
         }
@@ -182,7 +215,7 @@ extension Illustrations {
             .tryIt("Drag the clock: muscle starts dying after ~20 min and keeps dying for hours.", "试一试：拖动时间：约 20 分钟后心肌开始坏死，并持续数小时。",
                    TryStep(mode: .scrub([Scrub(param: "minutes", label: "Minutes 分钟", min: 0, max: 360, digits: 0)]), success: { $0[v: "minutes"] >= 180 },
                            ok: Bilingual("Time is muscle — lost heart muscle doesn’t grow back.", "时间就是心肌——坏死心肌无法再生。"), demo: ["minutes": 240])),
-            .watch("Signs: chest pressure over 15 min, spreading to the left arm, jaw or back; cold sweat, breathless, sick. Call 120 — don’t drive yourself. Chew aspirin if told to.",
+            .watch("Signs: chest pressure over 15 min, spreading to the left arm, jaw or back; cold sweat, breathless, sick. Call 911 — don’t drive yourself. Chew aspirin if told to.",
                    "信号：胸口压迫感超过 15 分钟，放射至左臂、下颌或后背；冷汗、气短、恶心。拨打 120，不要自己开车；遵医嘱嚼服阿司匹林。", set: ["signs": 1]),
             .tryIt("Compare: artery reopened with a stent within 90 min vs. left blocked.", "对比：90 分钟内支架开通血管 vs. 持续堵塞。", set: ["minutes": 300, "signs": 0],
                    TryStep(mode: .compare(param: "opened", options: [("Blocked 未开通", 0), ("Stent at 90 min 支架", 1)]), success: { $0[v: "opened"] > 0.5 },
@@ -204,7 +237,7 @@ extension Illustrations {
             timeCard(&s, minutes: m, alarm: true,
                      dead < 0.005 ? (String(format: "%.0f min blocked · the muscle is starving", m), String(format: "堵塞 %.0f 分钟 · 心肌缺血中", m))
                          : (String(format: "%.0f min blocked · %.0f%% of the starved muscle lost", m, dead * 100), String(format: "堵塞 %.0f 分钟 · 缺血心肌坏死 %.0f%%", m, dead * 100)),
-                     opened ? ("Stent opened the artery — blood flows again", "支架开通血管——恢复供血") : ("Time is muscle — call 120 now", "时间就是心肌——立即拨打 120"), color: Tone.red)
+                     opened ? ("Stent opened the artery — blood flows again", "支架开通血管——恢复供血") : ("Time is muscle — call 911 now", "时间就是心肌——立即拨打 120"), color: Tone.red)
         } else {
             timeCard(&s, minutes: 0, alarm: false, ("Normal supply", "供血正常"), ("Coronary arteries on its surface feed the heart muscle", "心脏表面的冠状动脉滋养心肌"), color: Tone.red)
         }
@@ -221,17 +254,42 @@ extension Illustrations {
         }
 
         let throb = 0.75 + 0.25 * sin(t * 5)
-        portrait(&s, person, at: o) { g in
-            guard pain > 0.5 else { return }
-            let chest = CGPoint(x: o.x + 0.01 * person.h, y: o.y + 0.13 * person.h)
-            if !silent { g.glow(chest.x, chest.y, (female ? 22 : 30) * (0.9 + 0.1 * throb), Tone.red, opacity: 0.6) }
-            if !silent || signs > 0.5 {
-                let sh = person.shoulder(1), el = person.arm(1).elbow
-                g.line(o.x + sh.x, o.y + sh.y, o.x + el.x, o.y + el.y, stroke: Tone.red, lw: 14, cap: .round, opacity: 0.2 * throb)
-                g.glow(o.x, o.y + person.chin.y - 2, 16, Tone.red, opacity: 0.45 * throb)
+        let v = p[v: "pregnant"] > 0.5 ? "pregnant" : p[v: "senior"] > 0.5 ? (female ? "senior_woman" : "senior") : female ? "woman" : "adult"
+        var marks: [String: CGPoint] = [:]
+        if SceneArt.image("heart-\(v)-0") != nil {
+            // rendered person in the round backdrop; the pain glows sit on top
+            let pic = pain > 0.5 && !silent ? 1 : 0
+            let c = CGPoint(x: o.x, y: o.y + 0.22 * person.h), r = 0.35 * person.h
+            s.circle(c.x, c.y, r, fill: Palette.blob)
+            var clip = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r))
+            clip.addRect(CGRect(x: c.x - r, y: 0, width: 2 * r, height: c.y))
+            var inside = s.clipped(to: clip)
+            inside.art([("heart-\(v)-\(pic)", 1)])
+            marks = SceneMarks.at("heart-\(v)-\(pic)")
+            if pain > 0.5 {
+                let chest = marks["chest"] ?? CGPoint(x: o.x, y: o.y + 0.13 * person.h)
+                if !silent { s.glow(chest.x, chest.y, (female ? 22 : 30) * (0.9 + 0.1 * throb), Tone.red, opacity: 0.6) }
+                if !silent || signs > 0.5, let sh = marks["shoulder_l"], let el = marks["elbow_l"] {
+                    s.line(sh.x, sh.y, el.x, el.y, stroke: Tone.red, lw: 14, cap: .round, opacity: 0.2 * throb)
+                    if let jaw = marks["jaw"] { s.glow(jaw.x, jaw.y, 16, Tone.red, opacity: 0.45 * throb) }
+                }
             }
+        } else {
+            portrait(&s, person, at: o, between: { g in
+                guard pain > 0.5 else { return }
+                let chest = CGPoint(x: o.x + 0.01 * person.h, y: o.y + 0.13 * person.h)
+                if !silent { g.glow(chest.x, chest.y, (female ? 22 : 30) * (0.9 + 0.1 * throb), Tone.red, opacity: 0.6) }
+                if !silent || signs > 0.5 {
+                    let sh = person.shoulder(1), el = person.arm(1).elbow
+                    g.line(o.x + sh.x, o.y + sh.y, o.x + el.x, o.y + el.y, stroke: Tone.red, lw: 14, cap: .round, opacity: 0.2 * throb)
+                    g.glow(o.x, o.y + person.chin.y - 2, 16, Tone.red, opacity: 0.45 * throb)
+                }
+            })
         }
-        let head = CGPoint(x: o.x, y: o.y + person.headCenter.y)
+        let head = marks["head"].map { CGPoint(x: $0.x, y: $0.y + 22) } ?? CGPoint(x: o.x, y: o.y + person.headCenter.y)
+        let jaw = marks["jaw"] ?? CGPoint(x: o.x + 6, y: o.y + person.chin.y - 2)
+        let chestPt = marks["chest"].map { CGPoint(x: $0.x + 10, y: $0.y) } ?? CGPoint(x: o.x + 16, y: o.y + 0.12 * person.h)
+        let elbowL = marks["elbow_l"] ?? CGPoint(x: o.x + person.arm(1).elbow.x, y: o.y + person.arm(1).elbow.y)
         if signs > 0.05 {
             s.group(opacity: signs) { g in
                 var rows: [(String, String, CGPoint, Double, Bool)] = []
@@ -241,10 +299,10 @@ extension Illustrations {
                             ("little or no pain", "可能不痛", CGPoint(x: o.x + 14, y: o.y + 0.13 * person.h), 150, false)]
                 } else {
                     rows = [("cold sweat", "冷汗", CGPoint(x: head.x - person.headRx * 0.8, y: head.y - 4), 92, true),
-                            ("jaw", "下颌", CGPoint(x: o.x + 6, y: o.y + person.chin.y - 2), 104, false),
-                            ("crushing chest", "胸口压榨感", CGPoint(x: o.x + 16, y: o.y + 0.12 * person.h), 150, false),
-                            ("left arm", "左臂", CGPoint(x: o.x + person.arm(1).elbow.x, y: o.y + person.arm(1).elbow.y), 186, false)]
-                    if female { rows += [("breathless, sick", "气短、恶心", .zero, 204, false), ("back pain", "背痛", .zero, 216, false)] }
+                            ("jaw", "下颌", jaw, 104, false),
+                            ("crushing chest", "胸口压榨感", chestPt, 150, false),
+                            ("left arm", "左臂", elbowL, 186, false)]
+                    if female { rows += [("breathless, sick", "气短、恶心", .zero, 226, false), ("back pain", "背痛", .zero, 238, false)] }
                 }
                 for r in rows {
                     let x = r.4 ? 6.0 : 144

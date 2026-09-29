@@ -31,8 +31,11 @@ func renderAll() {
     try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
     // PROFILE=infant|toddler|child|adult|senior|pregnant renders that person type's version
     let env = ProcessInfo.processInfo.environment["PROFILE"] ?? "adult"
-    let profile = env == "pregnant" ? Profile(age: .adult, female: true, pregnant: true) : Profile(age: AgeGroup(rawValue: env) ?? .adult)
+    // FEMALE=1 renders the female version
+    let female = ProcessInfo.processInfo.environment["FEMALE"] == "1"
+    let profile = env == "pregnant" ? Profile(age: .adult, female: true, pregnant: true) : Profile(age: AgeGroup(rawValue: env) ?? .adult, female: female)
     for scenario in Illustrations.builders.map({ $0(profile) }) where only.isEmpty || only.contains(scenario.id) {
+        guard Illustrations.shown(scenario.id, for: profile) else { print("\(scenario.id): hidden for \(env)"); continue }
         let images = scenario.steps.indices.compactMap { render(scenario, step: $0, t: 1.3) }
         // SPLIT=1 also writes one PNG per step
         if ProcessInfo.processInfo.environment["SPLIT"] == "1" {

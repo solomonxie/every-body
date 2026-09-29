@@ -25,7 +25,7 @@ struct PregnancySection: View {
                      note: Bilingual("What helps, the P6 point, and when it’s too much", "缓解方法、内关穴，以及何时需就医"), route: .illustration(id: "morning-sickness")),
         AudienceItem(id: "pregnancy-sleep-position", symbol: "bed.double", title: Bilingual("Sleeping position", "孕期睡姿"),
                      note: Bilingual("Sleep on your side from 28 weeks", "孕 28 周起侧卧睡"), route: .illustration(id: "pregnancy-sleep-position")),
-        AudienceItem(id: "labor", symbol: "clock.badge.checkmark", title: Bilingual("Labour & birth", "分娩过程"),
+        AudienceItem(id: "labor", symbol: "clock.badge.checkmark", title: Bilingual("Labor & birth", "分娩过程"),
                      note: Bilingual("The stages, and when to go to hospital (5-1-1)", "产程分期，何时去医院（5-1-1）"), route: .illustration(id: "labor")),
         AudienceItem(id: "acupressure", symbol: "hand.raised.slash", title: Bilingual("Points to avoid in pregnancy", "孕期禁按穴位"),
                      note: Bilingual("Hegu, Sanyinjiao and reproductive zones are flagged ⚠", "合谷、三阴交与生殖区会标出 ⚠"), route: .viewer(system: "acupoint-reflex-map")),

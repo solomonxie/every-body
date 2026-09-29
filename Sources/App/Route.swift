@@ -6,6 +6,7 @@ enum Route: Hashable {
     case chart(id: String, face: String? = nil, zone: String? = nil, side: Side? = nil)
     case illustration(id: String)
     case info(system: String)
+    case posture(id: String)
     case search
 
     /// "/reflex/foot", "/illustration/stroke" — links stored in systems.json
@@ -18,6 +19,7 @@ enum Route: Hashable {
         case "illustration": self = .illustration(id: parts[1])
         case "viewer": self = .viewer(system: parts[1])
         case "info": self = .info(system: parts[1])
+        case "posture": self = .posture(id: parts[1])
         default: return nil
         }
     }
@@ -29,6 +31,7 @@ enum Route: Hashable {
         case let .chart(id, _, _, _): Catalog.chart(id).map { Bilingual($0.title, $0.titleZh) } ?? Bilingual(id, id)
         case let .illustration(id): Illustrations.find(id)?.title ?? Bilingual(id, id)
         case let .info(system): Catalog.system(system).map { Bilingual($0.name, $0.nameZh) } ?? Bilingual(system, system)
+        case let .posture(id): PostureTopic.find(id)?.title ?? Bilingual(id, id)
         case .search: Bilingual("Search", "搜索")
         }
     }

@@ -41,7 +41,7 @@ enum InternalModels {
     nonisolated static func part(_ id: String) -> Part? { partsByID[id] }
 
     private static var pieces: [String: ModelLibrary.Piece] = [:]
-    /// muscles re-fitted under the slimmer female skin ("<id>--female" in the file)
+    /// muscles re-fitted under the female skin ("<id>--female" in the file)
     private static var femalePieces: [String: ModelLibrary.Piece] = [:]
     private static var loading: Task<Void, Never>?
 

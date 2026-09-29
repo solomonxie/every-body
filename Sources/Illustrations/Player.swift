@@ -67,6 +67,16 @@ struct IllustrationScreen: View {
             if let scenario = Illustrations.find(id, for: settings.profile) {
                 PlayerView(player: Player(scenario))
                     .id(settings.profile)
+            } else if let adult = Illustrations.find(id) {
+                ContentUnavailableView {
+                    Label(settings.t(adult.title), systemImage: "person.fill.questionmark")
+                } description: {
+                    Text(settings.t("This topic is written for adults, so it’s hidden for \(settings.t(settings.age.label)).",
+                                    "此主题面向成人，\(settings.t(settings.age.label))不显示。"))
+                } actions: {
+                    Button(settings.t("Show the adult version", "查看成人版")) { settings.age = .adult }
+                        .buttonStyle(.borderedProminent)
+                }
             } else {
                 ContentUnavailableView(settings.t("Illustration not found", "未找到此图解"), systemImage: "questionmark.square.dashed")
             }
@@ -81,6 +91,7 @@ struct PlayerView: View {
     @State private var tapTimes: [Date] = []
     @State private var heldSeconds: Double = 0
     @State private var holding = false
+    @State private var showTrainer = false
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
@@ -102,6 +113,10 @@ struct PlayerView: View {
             }
         }
         .background(Color.page)
+        .fullScreenCover(isPresented: $showTrainer) {
+            CPRTrainerScreen(heritage: settings.heritage)
+                .environment(settings)
+        }
         .navigationTitle(settings.t(scenario.title))
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: player.stepIndex)
@@ -120,6 +135,12 @@ struct PlayerView: View {
     private func stage(_ scenario: Scenario) -> some View {
         VStack(spacing: Space.s) {
             canvas(scenario)
+            if scenario.id == "cpr" {
+                Button { showTrainer = true } label: {
+                    Label(settings.t("Practice in 3D", "3D 练习"), systemImage: "hand.tap.fill")
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
             if let note = scenario.profileNote {
                 Banner(text: settings.t(note), symbol: "person.fill", ink: .note, fill: .noteFill)
             }

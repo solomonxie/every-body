@@ -12,11 +12,14 @@ final class Settings {
     var names: NameMode { didSet { save() } }
     // view options: not saved, every page starts from these defaults (resetViewOptions)
     var whiteBackground = false
-    var autoRotate = true
+    var autoRotate = false
     // only the language is saved; everything else starts fresh each launch
     var female = false
     var age: AgeGroup = .adult
     var pregnant = false
+    /// adult female figure options
+    var chest: BodySize = .small
+    var hips: BodySize = .small
     /// the 3D figure's face and skin tone
     var heritage: Heritage
     /// adults only; children always wear it
@@ -38,7 +41,7 @@ final class Settings {
     /// Pages don't remember how they were last viewed.
     func resetViewOptions() {
         whiteBackground = false
-        autoRotate = true
+        autoRotate = false
         showUnderwear = true
     }
 

@@ -127,7 +127,7 @@ enum SearchIndex {
         return out
     }()
 
-    static func search(_ query: String) -> [(kind: SearchEntry.Kind, items: [SearchEntry])] {
+    static func search(_ query: String, for profile: Profile = .standard) -> [(kind: SearchEntry.Kind, items: [SearchEntry])] {
         let q = query.lowercased().trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else { return [] }
         let terms = q.split(separator: " ").map(String.init)
@@ -136,6 +136,7 @@ enum SearchIndex {
         let groups = synonyms[q] != nil ? [alternatives(q)] : terms.map(alternatives)
         var scored: [(SearchEntry, Int)] = []
         for e in entries {
+            if case let .illustration(id) = e.route, !Illustrations.shown(id, for: profile) { continue }
             var score = 0
             var all = true
             for alts in groups {
@@ -159,7 +160,7 @@ struct SearchResults: View {
     @Environment(Settings.self) private var settings
 
     var body: some View {
-        let sections = SearchIndex.search(query)
+        let sections = SearchIndex.search(query, for: settings.profile)
         VStack(alignment: .leading, spacing: Space.xl) {
             if sections.isEmpty {
                 NoMatches(query: query)

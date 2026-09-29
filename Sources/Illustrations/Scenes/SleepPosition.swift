@@ -146,7 +146,7 @@ extension Illustrations {
         if side > 0.01 {
             s.group(opacity: side) { g in
                 // curled on her left side, seen from above: her front toward the top of the picture
-                var f = SideFigure(h: 166, look: woman, hip: CGPoint(x: 122, y: 88), rotation: -82, face: .closed, bump: 1)
+                var f = SideFigure(h: 166, look: woman, hip: CGPoint(x: 110, y: 86), rotation: -82, face: .closed, bump: 1)
                 f.headTilt = 14
                 f.nearLeg = .init(hip: 78, knee: 104, point: 20)
                 f.farLeg = .init(hip: 58, knee: 92, point: 20)
@@ -176,11 +176,11 @@ extension Illustrations {
                 if o > 0.5 {
                     let k = lerp(f.legPoint(near: true, 1), f.hip, 0.2)
                     g.leader("pillow between knees", "两膝夹枕", at: CGPoint(x: k.x + 10, y: k.y - 16), 160, 106, anchor: .end, color: hex("#4E6E96"), size: 7.5)
-                    g.leader("pillow under bump", "枕头托腹", at: CGPoint(x: bump.x - 22, y: bump.y - 14), 74, 22, color: hex("#4E6E96"), size: 7.5)
+                    g.leader("pillow under bump", "枕头托腹", at: CGPoint(x: bump.x - 22, y: bump.y - 14), 84, 22, color: hex("#4E6E96"), size: 7.5)
                 }
             }
         }
-        s.label("seen from above", "俯视", bed.minX + 28, bed.minY + 11, size: 7, color: hex("#4E6E96"), anchor: .middle)
+        s.label("seen from above", "俯视", bed.minX + 8, bed.minY + 11, size: 7, color: hex("#4E6E96"))
     }
 
     /// Cross-section of the belly seen from her feet (her right on the left of the picture), turning as she rolls onto her left side.
@@ -258,7 +258,7 @@ extension Illustrations {
         s.leader("aorta", "主动脉", at: q(11, 10), open ? 10 : 204, open ? 214 : 290, anchor: open ? .start : .end, color: Tone.artery, size: 8, bold: true)
         if names > 0.5 {
             s.leader("spine", "脊柱", at: q(0, 44), 10, 262, color: Anat.text, size: 8)
-            s.leader("womb", "子宫", at: q(womb.x, womb.y - 36), 204, 150, anchor: .end, color: hex("#A0506A"), size: 8)
+            s.leader("womb", "子宫", at: q(womb.x - 35, womb.y - 27), 204, 150, anchor: .end, color: hex("#A0506A"), size: 8)
         }
     }
 }

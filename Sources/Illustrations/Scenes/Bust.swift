@@ -32,13 +32,13 @@ struct Bust {
     var mouth: CGPoint { CGPoint(x: 0, y: headCenter.y + headRy * 0.56) }
     var chin: CGPoint { CGPoint(x: 0, y: headCenter.y + headRy) }
     var chest: CGPoint { CGPoint(x: 0.03 * h, y: 0.11 * h) }
-    func shoulder(_ side: Double) -> CGPoint { CGPoint(x: side * 0.108 * h, y: 0.03 * h) }
+    func shoulder(_ side: Double) -> CGPoint { CGPoint(x: side * 0.1 * h, y: 0.042 * h) }
     func eye(_ side: Double) -> CGPoint { CGPoint(x: side * headRx * 0.4, y: headCenter.y + headRy * 0.04) }
 
     /// −1 = image left (person's right)
     func arm(_ side: Double) -> (elbow: CGPoint, hand: CGPoint) {
         let s = shoulder(side)
-        let target = (side < 0 ? rightHand : leftHand) ?? CGPoint(x: s.x + side * 0.012 * h, y: s.y + 0.305 * h)
+        let target = (side < 0 ? rightHand : leftHand) ?? CGPoint(x: s.x + side * 0.03 * h, y: s.y + 0.315 * h)
         return twoBone(s, target, 0.165 * h, 0.16 * h, bend: CGPoint(x: side * 0.6, y: 1))
     }
 
@@ -62,8 +62,11 @@ struct Bust {
         let d = unit(CGPoint(x: hand.x - e.x, y: hand.y - e.y))
         let L = 0.075 * h, wrist = CGPoint(x: hand.x - d.x * L * 0.4, y: hand.y - d.y * L * 0.4)
         let fist = side < 0 ? rightFist : leftFist
-        dressedArm(&g, s0, e, wrist, aw: 0.048 * h, look: look)
-        drawHand(&g, at: hand, dir: d, len: L, shape: fist ? .fist : .open, look: look, thumb: side)
+        // sleeves a shade darker so an arm across the chest still reads
+        var l = look
+        l.top = dim(look.top, 0.92)
+        dressedArm(&g, s0, e, wrist, aw: 0.048 * h, look: l)
+        drawHand(&g, at: hand, dir: d, len: L, shape: fist ? .fist : .open, look: l, thumb: side)
     }
 
     private var expr: Expr {
@@ -96,11 +99,10 @@ func frontTorso(_ g: inout Sketch, h: Double, look: Look, shoulderW W: Double, w
              stroke: .black.opacity(0.07), lw: 0.05 * h)
     if waist > 0.43 { sh.rect(-0.12 * h, wb - 0.018 * h, 0.24 * h, 0.018 * h, fill: .black, opacity: 0.06) }
     if bump {
-        let c = CGPoint(x: 0.005 * h, y: 0.33 * h), rx = 0.1 * h, ry = 0.09 * h
-        g.ellipse(c.x, c.y, rx, ry, fill: look.top)
-        g.path("M \(c.x + rx * 0.2) \(c.y + ry * 0.95) C \(c.x + rx * 0.8) \(c.y + ry * 0.8) \(c.x + rx * 1.02) \(c.y + ry * 0.3) \(c.x + rx * 0.96) \(c.y - ry * 0.2)",
-               stroke: .black, lw: 0.035 * h, opacity: 0.06)
-        g.ellipse(c.x - rx * 0.35, c.y - ry * 0.4, rx * 0.28, ry * 0.2, fill: .white, opacity: 0.18)
+        let c = CGPoint(x: 0.004 * h, y: 0.36 * h), rx = 0.11 * h, ry = 0.092 * h
+        let belly = Path(ellipseIn: CGRect(x: c.x - rx, y: c.y - ry, width: 2 * rx, height: 2 * ry))
+        g.gradFill(belly, [look.top, dim(look.top, 0.9)], from: CGPoint(x: c.x - rx * 0.4, y: c.y - ry), to: CGPoint(x: c.x + rx * 0.3, y: c.y + ry),
+                   stroke: dim(look.top, 0.84), lw: 0.9)
     }
     // neck with a shadow under the chin, then the neckline
     let nw = 0.024 * h

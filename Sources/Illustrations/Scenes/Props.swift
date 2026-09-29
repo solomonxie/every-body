@@ -5,7 +5,7 @@ extension Casualty {
     init(_ p: Params, adult h: Double, adultLook: Look = .man) {
         let age: AgeGroup = p[v: "kid"] > 0.5 ? .child : p[v: "senior"] > 0.5 ? .senior : .adult
         let pregnant = p[v: "pregnant"] > 0.5
-        self.init(Profile(age: age, female: pregnant, pregnant: pregnant), adult: h, adultLook: adultLook)
+        self.init(Profile(age: age, female: pregnant || p[v: "female"] > 0.5, pregnant: pregnant), adult: h, adultLook: adultLook)
     }
 }
 
@@ -187,7 +187,8 @@ extension Sketch {
     /// Front view of the chest in a card: ribs, breastbone, nipples, and where hands or pads go.
     mutating func chestMap(_ x: Double, _ y: Double, _ w: Double, _ h: Double, mark: ChestMark, baby: Bool = false, title: Bilingual) {
         inset(x, y, w, h, title.en, title.zh)
-        let cx = x + w / 2, top = y + 32, sw = baby ? w * 0.26 : w * 0.3, len = h - 42
+        // the trunk stops short of the caption row along the bottom edge
+        let cx = x + w / 2, top = y + 32, sw = baby ? w * 0.26 : w * 0.3, len = h - 54
         let skin = hex("#F6D8BF"), edge = hex("#D1A98A"), bone = hex("#E4DAC3")
         circle(cx, top + (baby ? 2 : 0), baby ? 14 : 10, fill: skin, stroke: edge)
         let body = [CGPoint(x: -0.25, y: 0.12), CGPoint(x: -0.95, y: 0.2), CGPoint(x: -1.02, y: 0.5), CGPoint(x: -0.88, y: 1.0),
@@ -210,7 +211,7 @@ extension Sketch {
         case .twoHands, .oneHand:
             let c = CGPoint(x: cx, y: st + (sb - st) * 0.7)
             ellipse(c.x, c.y, mark == .oneHand ? 7 : 9, 6, fill: red.opacity(0.35), stroke: red, lw: 1.4)
-            tag("heel of hand", "掌根", cx + sw + 4, c.y + 14, size: 8, color: red, anchor: .end)
+            tag("heel of hand", "掌根", cx, y + h - 7, size: 8, color: red)
         case .thumbs, .twoFingers:
             let c = CGPoint(x: cx, y: ny + 5)
             if mark == .thumbs {
@@ -219,15 +220,15 @@ extension Sketch {
                 ellipse(c.x, c.y - 2, 2.2, 3.5, fill: red.opacity(0.4), stroke: red)
                 ellipse(c.x, c.y + 5, 2.2, 3.5, fill: red.opacity(0.4), stroke: red)
             }
-            tag("just below nipple line", "乳头连线下方", cx, y + h - 6, size: 8, color: red)
+            tag("just below nipple line", "乳头连线下方", cx, y + h - 7, size: 8, color: red)
         case .pads:
             rect(cx - sw * 0.75, st - 2, 13, 9, r: 2, fill: .white, stroke: hex("#2E9E5B"), lw: 1.4)
             rect(cx + sw * 0.62, sb - 12, 13, 9, r: 2, fill: .white, stroke: hex("#2E9E5B"), lw: 1.4)
-            label("R", "右", cx - sw * 0.95, y + h - 4, size: 8, color: hex("#8A8378"), anchor: .middle)
-            label("L", "左", cx + sw * 0.95, y + h - 4, size: 8, color: hex("#8A8378"), anchor: .middle)
+            label("R", "右", cx - sw * 0.7, y + h - 5, size: 8, color: hex("#8A8378"), anchor: .middle)
+            label("L", "左", cx + sw * 0.7, y + h - 5, size: 8, color: hex("#8A8378"), anchor: .middle)
         case .padsFrontBack:
             rect(cx - 6.5, ny - 4, 13, 9, r: 2, fill: .white, stroke: hex("#2E9E5B"), lw: 1.4)
-            label("+ one on the back", "+ 背部一片", cx, y + h - 5, size: 8, color: hex("#2E9E5B"), anchor: .middle)
+            label("+ one on the back", "+ 背部一片", cx, y + h - 6, size: 8, color: hex("#2E9E5B"), anchor: .middle)
         case .fist:
             let c = CGPoint(x: cx, y: top + 8 + 0.8 * (len - 8))
             circle(c.x, c.y + 10, 1.8, fill: hex("#C98C7A"))
@@ -246,7 +247,7 @@ extension Sketch {
         rect(c.x - 8, c.y - 31 + d, 16, 6, r: 2, fill: hex("#E9E2CF"), stroke: hex("#B8A58A"))
         circle(c.x, c.y + 26, 6, fill: hex("#E9E2CF"), stroke: hex("#B8A58A"))
         arrow(CGPoint(x: c.x, y: c.y - 44 + d), CGPoint(x: c.x, y: c.y - 34 + d), lw: 2)
-        label("breastbone", "胸骨", x + 6, c.y - 20, size: 8)
+        label("breastbone", "胸骨", c.x - 12, c.y - 20, size: 8, anchor: .end)
         label("heart", "心脏", c.x + 14, c.y + 8, size: 8, color: hex("#C8323C"))
         label("spine", "脊柱", c.x - 44, c.y + 30, size: 8)
         text(depth, x + 110, y + 94, size: 9, color: hex("#D8434B"), anchor: .end, bold: true)

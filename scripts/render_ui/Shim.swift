@@ -93,3 +93,22 @@ enum ModelLibrary {
     struct Part { let name: String; let nameZh: String; let layer: LayerID }
     static func part(_ id: String) -> Part? { nil }
 }
+
+enum InternalModels {
+    struct Part { let name: String; let nameZh: String; let layer: LayerID; let organ: String? }
+    static func part(_ id: String) -> Part? { nil }
+}
+
+// the CPR trainer (RealityKit) isn't rendered here
+struct CPRTrainerScreen: View {
+    let heritage: Heritage
+    var chest: BodySize = .small
+    var hips: BodySize = .medium
+    var body: some View { Color.clear }
+}
+
+extension View {
+    func fullScreenCover<C: View>(isPresented: Binding<Bool>, onDismiss: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> C) -> some View {
+        sheet(isPresented: isPresented, onDismiss: onDismiss, content: content)
+    }
+}

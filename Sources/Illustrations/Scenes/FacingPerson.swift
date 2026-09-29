@@ -34,25 +34,34 @@ struct FacingPerson {
     var leftHand: CGPoint? = nil
     var legs = false
     var bump = false
+    /// hair style and glasses of a cast member; nil = short or long hair from `longHair`
+    var style: Look.Hair? = nil
+    var glasses = false
 
     var headRx: Double { 0.05 * h * head }
     var headRy: Double { 0.064 * h * head }
     var headCenter: CGPoint { CGPoint(x: 0, y: -0.014 * h - headRy * 0.92) }
     var mouth: CGPoint { CGPoint(x: 0, y: headCenter.y + headRy * 0.5) }
     var chin: CGPoint { CGPoint(x: 0, y: headCenter.y + headRy) }
-    func shoulderPoint(_ side: Double) -> CGPoint { CGPoint(x: side * 0.115 * h, y: 0.03 * h) }
+    func shoulderPoint(_ side: Double) -> CGPoint { CGPoint(x: side * 0.102 * h, y: 0.04 * h) }
     /// −1 = image left (person's right)
     func arm(_ side: Double) -> (elbow: CGPoint, hand: CGPoint) {
         let s = shoulderPoint(side)
-        let target = (side < 0 ? rightHand : leftHand) ?? CGPoint(x: s.x + side * 0.01 * h, y: s.y + 0.295 * h)
-        return twoBone(s, target, 0.17 * h, 0.15 * h, bend: CGPoint(x: side, y: 0.6))
+        let target = (side < 0 ? rightHand : leftHand) ?? CGPoint(x: s.x + side * 0.025 * h, y: s.y + 0.31 * h)
+        return twoBone(s, target, 0.17 * h, 0.15 * h, bend: CGPoint(x: side * 0.6, y: 1))
     }
 
     /// the same person as a `Look`, for the shared drawing kit
     var look: Look {
-        var l = Look(skin: skin, hair: hair, style: longHair ? .long : .short, top: shirt, bottom: trousers, female: longHair)
+        var l = Look(skin: skin, hair: hair, style: style ?? (longHair ? .long : .short), top: shirt, bottom: trousers, female: longHair, glasses: glasses)
         (l.skinLine, l.topLine) = (line, shirtLine)
         return l
+    }
+
+    /// dress this person as a cast member (skin, hair, glasses)
+    mutating func wear(_ l: Look) {
+        (skin, line, hair, style, glasses) = (l.skin, l.skinLine, l.hair, l.style, l.glasses)
+        longHair = l.female
     }
 
     private var expr: Expr {
@@ -81,7 +90,7 @@ struct FacingPerson {
     /// one arm from the shoulder via `e` to the palm centre `hd` (local frame)
     func limb(_ g: inout Sketch, _ side: Double, elbow e: CGPoint, hand hd: CGPoint, sleeve: Color? = nil) {
         var l = look
-        if let sleeve { l.top = sleeve }
+        l.top = sleeve ?? dim(shirt, 0.92)
         let d = unit(CGPoint(x: hd.x - e.x, y: hd.y - e.y)), L = 0.068 * h
         let wrist = CGPoint(x: hd.x - d.x * L * 0.4, y: hd.y - d.y * L * 0.4)
         dressedArm(&g, shoulderPoint(side), e, wrist, aw: 0.05 * h, look: l)

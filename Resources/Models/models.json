@@ -8,7 +8,7 @@
   },
   "source": "Z-Anatomy",
   "license": "CC BY-SA 4.0",
-  "triangles": 249236,
+  "triangles": 249066,
   "replaces": [
    "deep-finger-index-l",
    "deep-finger-index-r",
@@ -1466,7 +1466,7 @@
     "layer": "organs",
     "color": "#E8A0B4",
     "organ": "brain",
-    "tris": 12000,
+    "tris": 11830,
     "file": "organs.usdz"
    },
    {
@@ -4557,18 +4557,29 @@
    "male.toddler.white"
   ],
   "triangles": {
-   "hair-short04": 1050,
-   "hair-short01": 3678,
-   "body": 26756,
-   "hair-long01": 4108,
+   "brows-eyebrow002": 192,
+   "body": 52180,
+   "brows-eyebrow001": 192,
    "brows-eyebrow010": 192,
    "brows-eyebrow012": 192,
    "brows-eyebrow006": 192,
    "lashes-eyelashes01": 368,
-   "hair-ponytail01": 5352,
-   "lashes-eyelashes03": 368,
    "lashes-eyelashes02": 368,
-   "eyes": 172
+   "eyes": 172,
+   "hair-man": 20552,
+   "hair-man-coily": 17414,
+   "hair-woman": 21666,
+   "hair-woman-coily": 44260,
+   "hair-woman-curly": 30896,
+   "hair-man-senior": 25446,
+   "hair-man-senior-coily": 15062,
+   "hair-woman-senior": 18222,
+   "hair-boy-toddler": 17698,
+   "hair-boy-toddler-coily": 16044,
+   "hair-girl-toddler": 15718,
+   "hair-boy": 21446,
+   "hair-boy-coily": 18892,
+   "hair-girl": 26038
   }
  }
 }

@@ -25,7 +25,7 @@ struct IllustrationsSection: View {
             }
             // pregnancy topics have their own section further down
             ForEach(IllustrationGroup.allCases.filter { $0 != .pregnancy }, id: \.self) { group in
-                let items = Illustrations.all.filter { $0.group == group }
+                let items = Illustrations.all(for: settings.profile).filter { $0.group == group }
                 if !items.isEmpty { GroupCard(group: group, items: items) }
             }
         }

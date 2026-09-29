@@ -98,7 +98,7 @@ class Loft:
         self.levels = [row[0][self.axis] for row in self.rows]
 
     def _gap(self, i, p):
-        """(distance of p from row i's centre in its plane) − (boundary radius in that direction)."""
+        """(distance of p from row i's center in its plane) − (boundary radius in that direction)."""
         c, side, depth, angles, ring = self.rows[i]
         v = (p[0] - c[0], p[1] - c[1], p[2] - c[2])
         x, y = dot(v, side), dot(v, depth)
@@ -329,7 +329,7 @@ point("GB20", "Fengchi", "风池", "Wind Pool", "head", True, ["brain"], B(0.033
       "Oblique toward the tip of the nose 0.8–1.2 cun. Never deep, upward or inward — the medulla lies beneath.",
       "针尖微下，向鼻尖方向斜刺0.8–1.2寸；深部为延髓，严禁向内上方深刺。")
 point("CV22", "Tiantu", "天突", "Celestial Chimney", "head", False, ["throat", "lung-l", "lung-r"], F(0, 1.442, "neck", "torso"),
-      "At the base of the throat, in the centre of the notch above the breastbone.", "颈前区，胸骨上窝中央，前正中线上。",
+      "At the base of the throat, in the center of the notch above the breastbone.", "颈前区，胸骨上窝中央，前正中线上。",
       "Cough, asthma, sore throat, sudden loss of voice, hiccups, a feeling of a lump in the throat.",
       "咳嗽、哮喘、咽喉肿痛、暴喑、呃逆、梅核气。",
       "Perpendicular 0.2 cun, then turned down behind the breastbone 0.5–1 cun. Specialist technique — trachea, great vessels and lungs lie close.",
@@ -359,7 +359,7 @@ point("LI4", "Hegu", "合谷", "Joining Valley", "arm", True, ["face"], R((0.263
 point("LI10", "Shousanli", "手三里", "Arm Three Li", "arm", True, ["stomach", "intestines"], A(ELBOW_Y - 2 * ARM_CUN, 12, "forearm"),
       "On the back-thumb side of the forearm, 2 cun below the elbow crease on the line from Yangxi (LI5) to Quchi (LI11).",
       "前臂，肘横纹下2寸，阳溪与曲池连线上。",
-      "Elbow and arm pain, tennis elbow, shoulder pain, weak arm, toothache, abdominal pain, diarrhoea.",
+      "Elbow and arm pain, tennis elbow, shoulder pain, weak arm, toothache, abdominal pain, diarrhea.",
       "肘臂疼痛、网球肘、肩痛、上肢不遂、齿痛、腹痛、腹泻。",
       "Perpendicular 1–1.5 cun.", "直刺1–1.5寸。")
 point("LI11", "Quchi", "曲池", "Pool at the Bend", "arm", True, ["intestines"], A(ELBOW_Y, 22, "forearm", "upper-arm"),
@@ -402,7 +402,7 @@ point("PC7", "Daling", "大陵", "Great Mound", "arm", False, ["heart", "stomach
       "Palpitations, chest pain, stomach pain, vomiting, anxiety, wrist pain (carpal tunnel).", "心痛、心悸、胃痛、呕吐、心烦、腕痛。",
       "Perpendicular 0.3–0.5 cun.", "直刺0.3–0.5寸。")
 point("PC8", "Laogong", "劳宫", "Palace of Toil", "arm", False, ["heart"], R((0.246, 0.797, 0.0), (0, 0, 1), "hand"),
-      "In the centre of the palm, between the 2nd and 3rd metacarpals, where the middle fingertip rests in a loose fist.",
+      "In the center of the palm, between the 2nd and 3rd metacarpals, where the middle fingertip rests in a loose fist.",
       "掌区，横平第3掌指关节近端，第2、3掌骨之间偏于第3掌骨（握拳屈指时中指尖处）。",
       "Mouth ulcers, bad breath, anxiety, fainting (first aid), sweaty palms.", "口疮、口臭、心烦、昏迷（急救）、鹅掌风、手汗。",
       "Perpendicular 0.3–0.5 cun.", "直刺0.3–0.5寸。")
@@ -431,7 +431,7 @@ point("LU1", "Zhongfu", "中府", "Central Residence", "front", False, ["lung-l"
       "Cough, asthma, chest fullness and pain, shoulder and upper-back pain.", "咳嗽、气喘、胸满胸痛、肩背痛。",
       "Oblique outward 0.5–0.8 cun. Never deep or toward the chest — risk of collapsed lung (pneumothorax).",
       "向外斜刺0.5–0.8寸；不可向内深刺，以免伤及肺脏引起气胸。")
-point("CV17", "Danzhong", "膻中", "Chest Centre", "front", True, ["heart", "lung-l", "lung-r"], F(0, 1.325),
+point("CV17", "Danzhong", "膻中", "Chest Center", "front", True, ["heart", "lung-l", "lung-r"], F(0, 1.325),
       "On the breastbone at the midline, level with the 4th intercostal space (between the nipples in men).",
       "胸部，横平第4肋间隙，前正中线上（男性约两乳头连线中点）。",
       "Chest tightness, shortness of breath, cough, palpitations, low breast-milk supply, hiccups.",
@@ -444,17 +444,17 @@ point("CV12", "Zhongwan", "中脘", "Middle Cavity", "front", True, ["stomach"],
       "Stomach pain, bloating, nausea, vomiting, acid reflux, poor appetite, indigestion.", "胃痛、腹胀、恶心呕吐、吞酸、纳呆、消化不良。",
       "Perpendicular 1–1.5 cun.", "直刺1–1.5寸。")
 point("CV8", "Shenque", "神阙", "Spirit Gate Tower", "front", False, ["intestines"], F(0, NAVEL),
-      "In the centre of the navel.", "脐区，脐中央。",
-      "Diarrhoea, cold abdominal pain, collapse (moxibustion), prolapse.", "泄泻、腹痛腹冷、虚脱（灸）、脱肛。",
+      "In the center of the navel.", "脐区，脐中央。",
+      "Diarrhea, cold abdominal pain, collapse (moxibustion), prolapse.", "泄泻、腹痛腹冷、虚脱（灸）、脱肛。",
       "Needling is forbidden — moxibustion only (often over salt or ginger).", "禁针；宜灸（常隔盐或隔姜灸）。")
 point("CV6", "Qihai", "气海", "Sea of Qi", "front", True, ["intestines", "uterus"], F(0, NAVEL - 1.5 * LOWER_CUN),
       "On the lower-abdomen midline, 1.5 cun below the navel.", "下腹部，脐中下1.5寸，前正中线上。",
-      "Fatigue and weakness, abdominal pain, diarrhoea, constipation, irregular periods, frequent urination.",
+      "Fatigue and weakness, abdominal pain, diarrhea, constipation, irregular periods, frequent urination.",
       "虚劳乏力、腹痛、泄泻、便秘、月经不调、遗尿尿频。",
       "Perpendicular 1–1.5 cun after emptying the bladder; moxibustion is common.", "排尿后直刺1–1.5寸；多用灸法。")
 point("CV4", "Guanyuan", "关元", "Origin Pass", "front", True, ["bladder", "uterus", "intestines"], F(0, NAVEL - 3 * LOWER_CUN),
       "On the lower-abdomen midline, 3 cun below the navel.", "下腹部，脐中下3寸，前正中线上。",
-      "Weakness, frequent urination, irregular or painful periods, infertility, impotence, diarrhoea; a traditional strengthening point.",
+      "Weakness, frequent urination, irregular or painful periods, infertility, impotence, diarrhea; a traditional strengthening point.",
       "虚劳、尿频、月经不调、痛经、不孕、阳痿、泄泻；传统强壮保健穴。",
       "Perpendicular 1–1.5 cun after emptying the bladder.", "排尿后直刺1–1.5寸。")
 point("CV3", "Zhongji", "中极", "Central Pole", "front", False, ["bladder", "uterus"], F(0, NAVEL - 4 * LOWER_CUN),
@@ -462,8 +462,8 @@ point("CV3", "Zhongji", "中极", "Central Pole", "front", False, ["bladder", "u
       "Urinary retention or frequency, painful urination, irregular periods, vaginal discharge.", "癃闭、尿频、尿痛、月经不调、带下。",
       "Perpendicular 1–1.5 cun after emptying the bladder.", "排尿后直刺1–1.5寸。")
 point("ST25", "Tianshu", "天枢", "Celestial Pivot", "front", True, ["intestines"], F(2 * CHEST_CUN, NAVEL),
-      "On the abdomen, 2 cun to the side of the centre of the navel.", "腹部，横平脐中，前正中线旁开2寸。",
-      "Constipation, diarrhoea, bloating, abdominal pain, irregular periods.", "便秘、泄泻、腹胀、腹痛、月经不调。",
+      "On the abdomen, 2 cun to the side of the center of the navel.", "腹部，横平脐中，前正中线旁开2寸。",
+      "Constipation, diarrhea, bloating, abdominal pain, irregular periods.", "便秘、泄泻、腹胀、腹痛、月经不调。",
       "Perpendicular 1–1.5 cun.", "直刺1–1.5寸。")
 point("LR14", "Qimen", "期门", "Cycle Gate", "front", False, ["liver", "gallbladder"], F(4 * CHEST_CUN, 1.262),
       "On the chest, in the 6th intercostal space, 4 cun from the midline (straight below the nipple).", "胸部，第6肋间隙，前正中线旁开4寸（乳头直下）。",
@@ -471,7 +471,7 @@ point("LR14", "Qimen", "期门", "Cycle Gate", "front", False, ["liver", "gallbl
       "Oblique or transverse 0.5–0.8 cun. Never deep — lung and liver lie beneath.", "斜刺或平刺0.5–0.8寸；不可深刺，以免伤及肺与肝。")
 point("LR13", "Zhangmen", "章门", "Camphorwood Gate", "front", False, ["liver", "spleen"], A(1.215, 18, "torso"),
       "On the side of the abdomen, just below the free end of the 11th rib.", "侧腹部，第11肋游离端的下际。",
-      "Bloating, abdominal pain, indigestion, diarrhoea, rib-side pain.", "腹胀、腹痛、消化不良、泄泻、胁痛。",
+      "Bloating, abdominal pain, indigestion, diarrhea, rib-side pain.", "腹胀、腹痛、消化不良、泄泻、胁痛。",
       "Oblique 0.5–0.8 cun; not deep (liver and spleen).", "斜刺0.5–0.8寸；不可深刺，以免伤及肝脾。")
 
 # back
@@ -483,7 +483,7 @@ point("GV14", "Dazhui", "大椎", "Great Vertebra", "back", True, ["spine", "lun
 point("GB21", "Jianjing", "肩井", "Shoulder Well", "back", True, ["shoulders"], R((0.097, 1.38, -0.035), (0, 1, -0.12), "torso"),
       "On the top of the shoulder, midway between the 7th cervical spinous process and the outer tip of the acromion.",
       "肩胛区，第7颈椎棘突与肩峰最外侧点连线的中点。",
-      "Neck and shoulder pain and stiffness, headache, difficult labour, breast abscess, low milk supply.",
+      "Neck and shoulder pain and stiffness, headache, difficult labor, breast abscess, low milk supply.",
       "颈项强痛、肩背疼痛、头痛、难产、乳痈、乳汁不下。",
       "Perpendicular 0.5–0.8 cun only — the top of the lung lies beneath. Forbidden in pregnancy.",
       "直刺0.5–0.8寸；深部正当肺尖，不可深刺。孕妇禁针。")
@@ -498,11 +498,11 @@ for code, py, zh, en, level, common, organs, loc, loc_zh, uses, uses_zh in (
     ("BL15", "Xinshu", "心俞", "Heart Shu", ("T", 5), False, ["heart"], "5th thoracic", "第5胸椎",
      "Palpitations, chest pain, insomnia, forgetfulness, anxiety, night sweats.", "心悸、胸痛、失眠、健忘、心烦、盗汗。"),
     ("BL17", "Geshu", "膈俞", "Diaphragm Shu", ("T", 7), False, ["heart", "stomach"], "7th thoracic", "第7胸椎",
-     "Hiccups, vomiting, anaemia, coughing blood, hives; traditionally the ‘meeting point of blood’.", "呃逆、呕吐、贫血、咳血、瘾疹；血会。"),
+     "Hiccups, vomiting, anemia, coughing blood, hives; traditionally the ‘meeting point of blood’.", "呃逆、呕吐、贫血、咳血、瘾疹；血会。"),
     ("BL18", "Ganshu", "肝俞", "Liver Shu", ("T", 9), False, ["liver", "gallbladder"], "9th thoracic", "第9胸椎",
      "Rib-side pain, jaundice, red eyes, poor night vision, dizziness, irritability.", "胁痛、黄疸、目赤、夜盲、眩晕、急躁易怒。"),
     ("BL20", "Pishu", "脾俞", "Spleen Shu", ("T", 11), False, ["spleen", "stomach", "pancreas"], "11th thoracic", "第11胸椎",
-     "Bloating, poor appetite, diarrhoea, fatigue, swelling.", "腹胀、纳呆、泄泻、倦怠乏力、水肿。"),
+     "Bloating, poor appetite, diarrhea, fatigue, swelling.", "腹胀、纳呆、泄泻、倦怠乏力、水肿。"),
 ):
     point(code, py, zh, en, "back", common, organs, B(INNER_BL, spinous(*level)),
           f"On the upper back, 1.5 cun to the side of the lower border of the {loc} spinous process.",
@@ -518,12 +518,12 @@ point("BL23", "Shenshu", "肾俞", "Kidney Shu", "back", True, ["kidney-l", "kid
 point("GV4", "Mingmen", "命门", "Gate of Life", "back", False, ["kidney-l", "kidney-r"], B(0, spinous("L", 2)),
       "On the lower-back midline, in the hollow below the 2nd lumbar spinous process (between the two Shenshu).",
       "脊柱区，第2腰椎棘突下凹陷中，后正中线上。",
-      "Low-back pain and stiffness, cold limbs, impotence, frequent urination, chronic diarrhoea.", "腰脊强痛、手足逆冷、阳痿、尿频、久泻。",
+      "Low-back pain and stiffness, cold limbs, impotence, frequent urination, chronic diarrhea.", "腰脊强痛、手足逆冷、阳痿、尿频、久泻。",
       "Oblique upward 0.5–1 cun; moxibustion is common.", "向上斜刺0.5–1寸；多用灸法。")
 point("BL25", "Dachangshu", "大肠俞", "Large Intestine Shu", "back", False, ["intestines"], B(INNER_BL, spinous("L", 4)),
       "On the lower back, 1.5 cun to the side of the lower border of the 4th lumbar spinous process.",
       "脊柱区，第4腰椎棘突下，后正中线旁开1.5寸。",
-      "Low-back pain, sciatica, constipation, diarrhoea, bloating.", "腰腿痛、便秘、泄泻、腹胀。",
+      "Low-back pain, sciatica, constipation, diarrhea, bloating.", "腰腿痛、便秘、泄泻、腹胀。",
       "Perpendicular 0.8–1.2 cun.", "直刺0.8–1.2寸。")
 point("BL32", "Ciliao", "次髎", "Second Crevice", "back", False, ["uterus", "bladder"], B(0.021, 0.953),
       "On the sacrum, over the 2nd posterior sacral foramen.", "骶区，正对第2骶后孔中。",
@@ -550,12 +550,12 @@ point("ST35", "Dubi", "犊鼻", "Calf's Nose", "leg", False, [], A(0.478, 62, "s
       "Below the kneecap, in the hollow on the outer side of the patellar tendon (the outer ‘eye of the knee’).",
       "膝前区，髌韧带外侧凹陷中（外膝眼）。",
       "Knee pain, swelling and stiffness, arthritis of the knee.", "膝痛、膝关节肿胀、屈伸不利。",
-      "With the knee bent, oblique toward the centre of the knee 0.5–1 cun; strict sterility (near the joint space).",
+      "With the knee bent, oblique toward the center of the knee 0.5–1 cun; strict sterility (near the joint space).",
       "屈膝，向膝中斜刺0.5–1寸；邻近关节腔，须严格消毒。", ["Xiyan", "膝眼"])
 point("SP9", "Yinlingquan", "阴陵泉", "Yin Mound Spring", "leg", True, ["spleen", "bladder"], A(0.445, 178, "shin"),
       "On the inner leg, in the hollow where the lower edge of the medial condyle of the tibia meets its inner border.",
       "小腿内侧，胫骨内侧髁下缘与胫骨内侧缘之间的凹陷中。",
-      "Swelling and water retention, difficult urination, diarrhoea, bloating, knee pain.", "水肿、小便不利、泄泻、腹胀、膝痛。",
+      "Swelling and water retention, difficult urination, diarrhea, bloating, knee pain.", "水肿、小便不利、泄泻、腹胀、膝痛。",
       "Perpendicular 1–2 cun.", "直刺1–2寸。")
 point("GB34", "Yanglingquan", "阳陵泉", "Yang Mound Spring", "leg", True, ["gallbladder", "liver"], A(0.435, 24, "shin"),
       "On the outer leg, in the hollow in front of and below the head of the fibula.", "小腿外侧，腓骨头前下方凹陷中。",
@@ -565,7 +565,7 @@ point("GB34", "Yanglingquan", "阳陵泉", "Yang Mound Spring", "leg", True, ["g
 point("ST36", "Zusanli", "足三里", "Leg Three Li", "leg", True, ["stomach", "intestines"], A(0.478 - 3 * LEG_CUN, 66, "shin"),
       "On the front of the leg, 3 cun below Dubi (ST35), one finger-breadth outside the front edge of the tibia.",
       "小腿外侧，犊鼻下3寸，胫骨前嵴外一横指处。",
-      "Stomach pain, nausea, bloating, diarrhoea, constipation, fatigue, knee pain; the classic point for general wellbeing.",
+      "Stomach pain, nausea, bloating, diarrhea, constipation, fatigue, knee pain; the classic point for general well-being.",
       "胃痛、呕吐、腹胀、泄泻、便秘、虚劳乏力、膝痛；强壮保健要穴。",
       "Perpendicular 1–2 cun; moxibustion is common.", "直刺1–2寸；多用灸法。")
 point("BL40", "Weizhong", "委中", "Bend Middle", "leg", True, ["spine", "bladder"], A(KNEE_Y, 270, "thigh", "shin"),
@@ -582,13 +582,13 @@ point("ST40", "Fenglong", "丰隆", "Abundant Bulge", "leg", True, ["lung-l", "l
 point("BL57", "Chengshan", "承山", "Mountain Support", "leg", True, ["intestines"], A((KNEE_Y + LAT_MAL_Y) / 2, 270, "shin"),
       "At the back of the lower leg, in the pointed hollow below the two bellies of the calf muscle that appears on tiptoe.",
       "小腿后区，腓肠肌两肌腹与肌腱交角处（踮脚时出现的尖角凹陷）。",
-      "Calf cramps, low-back and leg pain, sciatica, haemorrhoids, constipation.", "小腿抽筋、腰腿痛、坐骨神经痛、痔疮、便秘。",
+      "Calf cramps, low-back and leg pain, sciatica, hemorrhoids, constipation.", "小腿抽筋、腰腿痛、坐骨神经痛、痔疮、便秘。",
       "Perpendicular 1–2 cun.", "直刺1–2寸。")
 point("SP6", "Sanyinjiao", "三阴交", "Three Yin Intersection", "leg", True, ["uterus", "spleen", "liver", "kidney-l", "kidney-r"],
       A(MED_MAL_Y + 3 * MED_CUN, 188, "shin"),
       "On the inner leg, 3 cun above the tip of the inner ankle bone, just behind the inner edge of the tibia.",
       "小腿内侧，内踝尖上3寸，胫骨内侧缘后际。",
-      "Painful or irregular periods, infertility, insomnia, bloating, diarrhoea, frequent urination; traditionally used to bring on labour.",
+      "Painful or irregular periods, infertility, insomnia, bloating, diarrhea, frequent urination; traditionally used to bring on labor.",
       "痛经、月经不调、不孕、失眠、腹胀、泄泻、尿频；传统用于催产。",
       "Perpendicular 1–1.5 cun. Forbidden in pregnancy.", "直刺1–1.5寸。孕妇禁针。")
 point("GB39", "Xuanzhong", "悬钟", "Suspended Bell", "leg", False, ["spine"], A(LAT_MAL_Y + 3 * LEG_CUN, 14, "shin"),
@@ -603,13 +603,13 @@ point("KI3", "Taixi", "太溪", "Great Stream", "leg", True, ["kidney-l", "kidne
       "Perpendicular 0.5–1 cun; the posterior tibial artery lies close.", "直刺0.5–1寸；邻近胫后动脉。")
 point("BL60", "Kunlun", "昆仑", "Kunlun Mountains", "leg", False, ["spine", "brain"], A(LAT_MAL_Y, 305, "shin"),
       "On the outer ankle, in the hollow between the tip of the outer ankle bone and the Achilles tendon.", "踝区，外踝尖与跟腱之间的凹陷中。",
-      "Headache, stiff neck, low-back pain, heel and ankle pain; traditionally used for difficult labour.",
+      "Headache, stiff neck, low-back pain, heel and ankle pain; traditionally used for difficult labor.",
       "头痛、项强、腰骶疼痛、足跟肿痛；传统用于难产。",
       "Perpendicular 0.5–0.8 cun. Forbidden in pregnancy.", "直刺0.5–0.8寸。孕妇禁针。")
 point("SP4", "Gongsun", "公孙", "Grandfather Grandson", "leg", False, ["stomach", "spleen", "heart"], R((0.088, 0.024, 0.058), (-1, -0.35, 0), "foot"),
-      "On the inner edge of the foot, in the hollow in front of and below the base of the 1st metatarsal, where the skin changes colour.",
+      "On the inner edge of the foot, in the hollow in front of and below the base of the 1st metatarsal, where the skin changes color.",
       "跖区，第1跖骨底的前下缘赤白肉际处。",
-      "Stomach pain, vomiting, bloating, diarrhoea, chest discomfort.", "胃痛、呕吐、腹胀、泄泻、胸闷。",
+      "Stomach pain, vomiting, bloating, diarrhea, chest discomfort.", "胃痛、呕吐、腹胀、泄泻、胸闷。",
       "Perpendicular 0.6–1.2 cun.", "直刺0.6–1.2寸。")
 point("LR3", "Taichong", "太冲", "Great Rush", "leg", True, ["liver"], R((0.077, 0.02, 0.07), (0, 1, 0), "foot"),
       "On the top of the foot, in the hollow between the 1st and 2nd metatarsals, just in front of where their bases meet.",
@@ -618,7 +618,7 @@ point("LR3", "Taichong", "太冲", "Great Rush", "leg", True, ["liver"], R((0.07
       "头痛、眩晕、急躁易怒、目赤、高血压、痛经、胁痛；与合谷合称“四关”，镇静止痛。",
       "Perpendicular 0.5–0.8 cun.", "直刺0.5–0.8寸。")
 point("ST44", "Neiting", "内庭", "Inner Court", "leg", False, ["stomach"], R((0.0935, 0.01, 0.138), (0, 1, 0.15), "foot", "toe-skin-2nd", "toe-skin-3rd"),
-      "On the top of the foot, at the web between the 2nd and 3rd toes, where the skin changes colour.", "足背，第2、3趾间，趾蹼缘后方赤白肉际处。",
+      "On the top of the foot, at the web between the 2nd and 3rd toes, where the skin changes color.", "足背，第2、3趾间，趾蹼缘后方赤白肉际处。",
       "Toothache, sore throat, nosebleed, stomach pain, acid reflux, fever.", "牙痛、咽喉肿痛、鼻衄、胃痛吐酸、热病。",
       "Perpendicular or oblique 0.5–0.8 cun.", "直刺或斜刺0.5–0.8寸。")
 point("KI1", "Yongquan", "涌泉", "Gushing Spring", "leg", True, ["kidney-l", "kidney-r", "brain"], R((0.093, 0.03, 0.072), (0, -1, 0), "foot"),

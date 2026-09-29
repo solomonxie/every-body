@@ -8,6 +8,8 @@ extension Illustrations {
         return CGPoint(x: a * 114 + b * 140 + c * 172, y: a * 142 + b * 222 + c * 168)
     }
 
+    static func shoulder(for p: Profile) -> Scenario { shoulder.rebased(["female": p.female ? 1 : 0]) }
+
     static let shoulder = Scenario(
         id: "shoulder-dislocation", group: .bones, title: Bilingual("Shoulder dislocation", "肩关节脱位与复位"),
         warning: Bilingual("This shows what a clinician does — don’t try it on someone yourself.", "此演示为医生操作——请勿自行复位。"),
@@ -19,7 +21,7 @@ extension Illustrations {
             .watch("A fall on an outstretched hand, or a hard twist with the arm up and out, levers the ball forward and down, under the coracoid. 95% go this way.",
                    "跌倒时手撑地，或手臂外展上举时被猛力扭转，肱骨头被撬向前下方，滑到喙突下。95% 的脱位是这种。",
                    set: ["disloc": 1, "scene": 1]),
-            .watch("Signs: the shoulder looks squared off, with a hollow under the bony tip; the arm is held slightly out and can’t move. Support it as it is, ice it, go to A&E. Don’t pull it back.",
+            .watch("Signs: the shoulder looks squared off, with a hollow under the bony tip; the arm is held slightly out and can’t move. Support it as it is, ice it, go to the ER. Don’t pull it back.",
                    "表现：肩部变“方”，肩峰下凹陷；手臂略外展，不能活动。保持现有姿势托住，冷敷，尽快就医。不要强行拉回。",
                    set: ["scene": 2]),
             .tryIt("How a clinician reduces it, after an X-ray and pain relief: slow traction and turning the forearm out. Drag the ball back along the path into the socket.",
@@ -143,7 +145,7 @@ extension Illustrations {
         } else {
             s.leader("empty socket", "关节盂空了", at: pt(143, 136), 8, 104, color: Anat.red, bold: true)
             s.leader("ball under the coracoid", "肱骨头滑到喙突下", at: pt(head.x + 4, head.y + 24), 244, 222, anchor: .end, color: Anat.red, bold: true)
-            if scene == 2 { s.leader("squared off", "方肩", at: pt(84, 150), 8, 150, color: Anat.red) }
+            if scene == 2 { s.leader("squared off", "方肩", at: pt(98, 150), 8, 150, color: Anat.red) }
         }
         s.leader("humerus", "肱骨", at: local(0, 150), 12, 282)
 
@@ -152,10 +154,17 @@ extension Illustrations {
 
         // real-life card
         let box = CGRect(x: 250, y: 124, width: 104, height: 168)
-        drawShoulderCard(&s, scene: scene, box: box, d: d, t: t)
+        drawShoulderCard(&s, scene: scene, box: box, d: d, t: t, look: p[v: "female"] > 0.5 ? .woman : .man)
     }
 
-    @MainActor private static func drawShoulderCard(_ s: inout Sketch, scene: Int, box: CGRect, d: Double, t: Double) {
+    private static func person(_ look: Look) -> FacingPerson {
+        var f = FacingPerson(h: 150)
+        f.wear(look)
+        if look.female { (f.shirt, f.shirtLine) = (look.top, look.topLine) }
+        return f
+    }
+
+    @MainActor private static func drawShoulderCard(_ s: inout Sketch, scene: Int, box: CGRect, d: Double, t: Double, look: Look) {
         let titles: [(String, String)] = [("Ball & socket", "球窝关节"), ("How it happens", "如何发生"),
                                           ("First aid", "现场处理"), ("Reduction", "复位"), ("Recovery", "恢复")]
         let ti = titles[min(scene, titles.count - 1)]
@@ -179,13 +188,13 @@ extension Illustrations {
         case 1:
             let ground = box.maxY - 12
             c.line(box.minX + 6, ground, box.maxX - 6, ground, stroke: hex("#C9C2B6"), lw: 2)
-            let (shoulderPt, hand) = c.fallOnHand(x: cx + 3, ground: ground, h: 80)
+            let (shoulderPt, hand) = c.fallOnHand(x: cx + 3, ground: ground, h: 80, look: look)
             // force travels up the straight arm into the shoulder
             c.arrow(CGPoint(x: hand.x + 12, y: hand.y - 6), CGPoint(x: shoulderPt.x + 12, y: shoulderPt.y + 4), color: Anat.red, lw: 1.8)
             c.softGlow(shoulderPt, 12, 12, Anat.red, 0.35 + 0.15 * sin(t * 4))
-            c.cardNote("force runs up the arm", "冲击力沿手臂传到肩", cx, top + 30, width: 96, size: 8, color: Anat.red)
+            c.cardNote("force runs up the arm", "冲击力沿手臂传到肩", cx, ground - 96, width: 96, size: 8, color: Anat.red)
         case 2:
-            var f = FacingPerson(h: 150)
+            var f = person(look)
             f.face = .pain
             let o = CGPoint(x: cx + 6, y: top + 64)
             f.drawBody(&c, at: o)
@@ -194,13 +203,15 @@ extension Illustrations {
             f.drawArm(&c, at: o, side: -1, elbow: e, hand: w)
             f.drawArm(&c, at: o, side: 1, elbow: CGPoint(x: 0.12 * f.h, y: 0.21 * f.h), hand: CGPoint(x: -0.1 * f.h, y: 0.235 * f.h))
             // cold pack on the shoulder
-            c.group(rotate: -20, about: CGPoint(x: o.x - 0.12 * f.h, y: o.y + 0.04 * f.h)) { g in
-                g.rect(o.x - 0.12 * f.h - 11, o.y + 0.04 * f.h - 8, 22, 16, r: 4, fill: hex("#CFE8F7"), stroke: Anat.blue, lw: 1.2)
+            let pack = CGPoint(x: o.x - 0.108 * f.h, y: o.y + 0.04 * f.h)
+            c.group(rotate: -24, about: pack) { g in
+                g.rect(pack.x - 10, pack.y - 8, 20, 16, r: 4, fill: hex("#CFE8F7"), stroke: Anat.blue, lw: 1.2)
+                g.shape(Path(roundedRect: CGRect(x: pack.x - 7, y: pack.y - 5, width: 14, height: 10), cornerRadius: 3), stroke: .white, lw: 1, dash: [2, 2])
             }
-            c.cardNote("support it as it is · ice · A&E", "原样托住 · 冷敷 · 急诊", cx, box.maxY - 16, width: 96, size: 8, color: Anat.red, bold: true)
+            c.cardNote("support it as it is\nice · ER", "原样托住 · 冷敷 · 急诊", cx, box.maxY - 16, width: 96, size: 8, color: Anat.red, bold: true)
         case 3:
             // elbow at the side, forearm slowly swung outward as the ball goes home
-            var f = FacingPerson(h: 150)
+            var f = person(look)
             f.face = .calm
             let o = CGPoint(x: cx + 14, y: top + 64)
             f.drawBody(&c, at: o)
@@ -215,7 +226,7 @@ extension Illustrations {
             c.bendArrow(CGPoint(x: ec.x - 6, y: ec.y + 16), via: CGPoint(x: ec.x - 26, y: ec.y + 20), CGPoint(x: ec.x - 30, y: ec.y + 4), color: Anat.blue, lw: 1.6)
             c.cardNote("elbow at the side, turn the forearm out slowly", "肘贴身，缓慢外旋前臂", cx, box.maxY - 18, width: 96, size: 8, color: Anat.blue, bold: true)
         default:
-            var f = FacingPerson(h: 150)
+            var f = person(look)
             f.face = .calm
             let o = CGPoint(x: cx, y: top + 64)
             f.drawBody(&c, at: o)

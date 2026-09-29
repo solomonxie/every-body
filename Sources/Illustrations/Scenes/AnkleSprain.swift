@@ -4,7 +4,7 @@ extension Illustrations {
     static let ankleSprain = ankleSprain(for: .standard)
 
     static func ankleSprain(for p: Profile) -> Scenario {
-        let kid = p.isKid
+        let kid = p.isKid, who = p
         var s = Scenario(
             id: "ankle-sprain", group: .firstAid, title: Bilingual("Sprained ankle", "踝关节扭伤"),
             params: ["injured": 0, "grade": 0, "rice": 0, "scene": 0],
@@ -12,7 +12,7 @@ extension Illustrations {
                 .watch("Your right ankle from the outside. Ligaments are tough straps joining bone to bone; three hold the outer ankle bone (the tip of the fibula) to the foot.",
                        "从外侧看右脚踝。韧带是连接骨与骨的坚韧纤维带；外踝（腓骨下端）靠三条韧带与足骨相连。",
                        set: ["injured": 0, "grade": 0, "rice": 0, "scene": 0]),
-                .watch("Stepping off a kerb or landing on someone’s foot rolls the foot inward and down. The outer ligaments over-stretch — the front one (ATFL) goes first.",
+                .watch("Stepping off a curb or landing on someone’s foot rolls the foot inward and down. The outer ligaments over-stretch — the front one (ATFL) goes first.",
                        "踩空台阶或落地踩到别人脚上，脚向内、向下翻。外侧韧带被过度拉伸——前面的距腓前韧带最先受伤。",
                        set: ["injured": 1, "scene": 1]),
                 .tryIt("Compare the three grades of sprain.", "试一试：对比三种扭伤程度。", set: ["scene": 2],
@@ -25,7 +25,7 @@ extension Illustrations {
                                ok: Bilingual("Swelling down. Then gentle movement as pain allows; most sprains heal in 2–6 weeks.", "肿胀减轻。之后在疼痛允许下逐步活动；多数扭伤 2–6 周恢复。"),
                                demo: ["rice": 1])),
             ],
-            draw: { s, p, t in drawAnkle(&s, p, t, kid: kid) },
+            draw: { s, p, t in drawAnkle(&s, p, t, kid: kid, who: who) },
             sources: ["BJSM / Red Cross acute ankle sprain management (RICE / PEACE & LOVE)", "Ottawa ankle rules"]
         )
         s.profileNote = switch p.age {
@@ -44,11 +44,11 @@ extension Illustrations {
     }
 
     // Right ankle from the outside (lateral view): heel left, toes right.
-    @MainActor private static func drawAnkle(_ s: inout Sketch, _ p: Params, _ t: Double, kid: Bool) {
+    @MainActor private static func drawAnkle(_ s: inout Sketch, _ p: Params, _ t: Double, kid: Bool, who: Profile) {
         let g = p[v: "grade"], gi = Int(g.rounded()), scene = Int(p[v: "scene"].rounded())
         let injured = p[v: "injured"], rice = p[v: "rice"]
         let roll = ankleRoll(scene, t) * injured
-        let pivot = pt(200, 200), angle = 22 * roll
+        let pivot = pt(200, 200), angle = 11 * roll
         func foot(_ q: CGPoint) -> CGPoint {
             let a = angle * .pi / 180, dx = q.x - pivot.x, dy = q.y - pivot.y
             return CGPoint(x: pivot.x + dx * cos(a) - dy * sin(a), y: pivot.y + dx * sin(a) + dy * cos(a))
@@ -119,10 +119,14 @@ extension Illustrations {
         if rice > 0.55 {
             var wrap = s
             // figure-of-eight: turns round the lower leg, crossing over the ankle, round the midfoot; ends cut square
-            wrap.ctx.clip(to: skinPath); wrap.ctx.clip(to: Path(CGRect(x: 118, y: 166, width: 188, height: 140)))
+            wrap.ctx.clip(to: skinPath); wrap.ctx.clip(to: Path(CGRect(x: 118, y: 160, width: 186, height: 140)))
             let k = Anat.ease((rice - 0.55) / 0.2)
-            let turns: [(CGPoint, CGPoint)] = [(pt(110, 176), pt(260, 170)), (pt(110, 262), pt(300, 196)), (pt(110, 196), pt(300, 262)),
-                                               (pt(110, 278), pt(300, 214)), (pt(110, 214), pt(300, 280)), (pt(200, 290), pt(320, 226))]
+            // two turns round the leg, a cross over the ankle, two round the midfoot
+            let turns: [(CGPoint, CGPoint)] = [(pt(110, 170), pt(260, 166)), (pt(110, 184), pt(260, 180)), (pt(150, 198), pt(262, 296)),
+                                               (pt(206, 292), pt(264, 176)), (pt(258, 194), pt(284, 292)), (pt(280, 200), pt(306, 292))]
+            // the layers underneath, heel left open
+            wrap.shape(smoothPath([pt(108, 158), pt(262, 156), pt(302, 196), pt(314, 300), pt(196, 300), pt(150, 238), pt(108, 222)]),
+                       fill: hex("#E9D8B4"), opacity: 0.94 * k)
             for (a, b) in turns {
                 let d = "M \(a.x) \(a.y) L \(b.x) \(b.y)"
                 wrap.path(d, stroke: hex("#B89E6E"), lw: 14, opacity: k)
@@ -159,12 +163,12 @@ extension Illustrations {
             : [("Grade I · stretched", "Ⅰ度 · 拉伤"), ("Grade II · partly torn", "Ⅱ度 · 部分撕裂"), ("Grade III · torn through", "Ⅲ度 · 完全断裂")][min(2, gi)]
         s.stateChip(chip.0, chip.1, 8, 8, color: injured < 0.5 ? Anat.green : scene == 3 && rice > 0.9 ? Anat.blue : Anat.red)
 
-        drawAnkleCard(&s, scene: scene, grade: gi, rice: rice, roll: roll)
+        drawAnkleCard(&s, scene: scene, grade: gi, rice: rice, roll: roll, who: who)
     }
 
-    @MainActor private static func drawAnkleCard(_ s: inout Sketch, scene: Int, grade: Int, rice: Double, roll: Double) {
+    @MainActor private static func drawAnkleCard(_ s: inout Sketch, scene: Int, grade: Int, rice: Double, roll: Double, who: Profile) {
         let box = CGRect(x: 252, y: 8, width: 102, height: 144)
-        let titles: [(String, String)] = [("Viewpoint", "观察角度"), ("From behind", "后面观"), ("Ligament fibres", "韧带纤维"), ("RICE, first 48 h", "伤后 48 小时 RICE")]
+        let titles: [(String, String)] = [("Viewpoint", "观察角度"), ("From behind", "后面观"), ("Ligament fibers", "韧带纤维"), ("RICE, first 48 h", "伤后 48 小时 RICE")]
         let ti = titles[min(3, scene)]
         s.inset(box.minX, box.minY, box.width, box.height, ti.0, ti.1)
         var c = s.clipped(box.minX, box.minY, box.width, box.height)
@@ -233,7 +237,8 @@ extension Illustrations {
             let up = Anat.ease((rice - 0.8) / 0.15)
             let floor = box.maxY - 26
             c.rect(box.minX + 6, floor, box.width - 12, 6, r: 2, fill: hex("#D9C9B0"))
-            var body = SideFigure(h: 72, look: .man, hip: .zero, rotation: -90)
+            let pc = Casualty(who, adult: 72)
+            var body = SideFigure(h: pc.h, build: pc.build, look: pc.look, hip: .zero, rotation: -90, bump: pc.bump)
             body.near = .init(shoulder: 6, elbow: 8)
             body.nearLeg = .init(hip: 2 + 20 * up, knee: 2 + 4 * up, point: 20)
             body.farLeg = .init(hip: 1, knee: 2, point: 20)

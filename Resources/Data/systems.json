@@ -168,7 +168,7 @@
    "summaryZh": "心脏将血液经动脉泵送至全身细胞，再经静脉回流；肺为血液重新充氧。",
    "facts": [
     [
-     "About 5 litres of blood, pumped round in ~1 minute at rest.",
+     "About 5 liters of blood, pumped around in ~1 minute at rest.",
      "全身血液约 5 升，静息时约 1 分钟循环一周。"
     ],
     [
@@ -214,7 +214,7 @@
      "坐骨神经是人体最长、最粗的神经。"
     ],
     [
-     "A stroke kills ~1.9 million neurons a minute — call 120 fast.",
+     "A stroke kills ~1.9 million neurons a minute — call 911 fast.",
      "中风时每分钟约 190 万个神经元死亡——尽快拨打 120。"
     ]
    ],
@@ -240,11 +240,11 @@
      "肝是最大的内脏器官（约 1.5 公斤）。"
     ],
     [
-     "Kidneys filter ~180 litres of blood plasma a day.",
+     "Kidneys filter ~180 liters of blood plasma a day.",
      "肾脏每天过滤约 180 升血浆。"
     ],
     [
-     "The lungs hold about 6 litres of air.",
+     "The lungs hold about 6 liters of air.",
      "肺总容量约 6 升。"
     ]
    ],
@@ -262,7 +262,7 @@
   "name": "Digestive",
   "color": "#D98C3D",
   "info": {
-   "summary": "Food travels mouth → oesophagus → stomach → small intestine (absorption) → large intestine (water) over 1–3 days.",
+   "summary": "Food travels mouth → esophagus → stomach → small intestine (absorption) → large intestine (water) over 1–3 days.",
    "summaryZh": "食物经口→食管→胃→小肠（吸收）→大肠（吸收水分），全程约 1–3 天。",
    "facts": [
     [

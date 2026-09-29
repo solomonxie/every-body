@@ -9,13 +9,16 @@ struct ViewerScreen: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var scene = BodyScene()
     @State private var showCredits = false
-    /// the full-body page always opens as an adult man in underwear; changes there stay on the page
+    /// every 3D page opens as a white adult man in underwear; changes there stay on the page
     @State private var local = LocalFigure()
-    private var isFullBody: Bool { systemID == "body" }
-    private var female: Bool { isFullBody ? local.female : settings.female }
-    private var age: AgeGroup { isFullBody ? local.age : settings.age }
-    private var pregnant: Bool { isFullBody ? local.pregnant && local.female && local.age == .adult : settings.profile.isPregnant }
-    private var underwear: Bool { isFullBody ? local.underwear : settings.showUnderwear }
+    private var female: Bool { local.female }
+    private var age: AgeGroup { local.age }
+    private var pregnant: Bool { local.pregnant && local.female && local.age == .adult }
+    /// only the full-body page lets the figure's clothes come off
+    private var canUndress: Bool { systemID == "body" }
+    private var underwear: Bool { local.underwear || !canUndress }
+    private var chest: BodySize { local.chest }
+    private var hips: BodySize { local.hips }
     private var isKid: Bool { age == .infant || age.isChild }
     @State private var layers: Set<LayerID> = []
     @State private var parts = PartState()
@@ -74,7 +77,7 @@ struct ViewerScreen: View {
                     .accessibilityLabel(settings.t("About this system", "关于此系统"))
             }
             ToolbarItem {
-                if isFullBody { LocalFigureMenu(figure: $local) } else { ProfileMenu() }
+                LocalFigureMenu(figure: $local, canUndress: canUndress)
             }
             ToolbarItem { ViewerOptionsMenu(showCredits: $showCredits) }
         }
@@ -88,6 +91,8 @@ struct ViewerScreen: View {
         .onChange(of: settings.pregnant) { rebuild() }
         .onChange(of: settings.heritage) { rebuild() }
         .onChange(of: settings.showUnderwear) { rebuild() }
+        .onChange(of: settings.chest) { rebuild() }
+        .onChange(of: settings.hips) { rebuild() }
         .onChange(of: local) { rebuild() }
         .onChange(of: bpm) { scene.bpm = bpm }
         .onChange(of: acuFilter) { applyAcuFilter() }
@@ -107,8 +112,10 @@ struct ViewerScreen: View {
 
     private func rebuild() {
         scene.setAge(age)
-        scene.heritage = settings.heritage
+        scene.heritage = local.heritage
         scene.underwear = underwear || isKid
+        scene.chest = chest
+        scene.hips = hips
         scene.build(skinColor: UIColor(hex: "#F2C9A5"), female: female, pregnant: pregnant,
                     points: systemPoints?.points ?? [], flowStops: flowStops, meridians: meridians)
         scene.setLayers(layers)
@@ -182,9 +189,9 @@ struct ViewerScreen: View {
                     }
                 }
                 // what the figure wears, next to the layers; children always keep theirs on
-                if layers.contains(.skin) && !isKid {
+                if layers.contains(.skin) && !isKid && canUndress {
                     Pill(label: settings.t("Clothes", "衣服"), selected: underwear, symbol: "tshirt") {
-                        if isFullBody { local.underwear.toggle() } else { settings.showUnderwear.toggle() }
+                        local.underwear.toggle()
                     }
                 }
                 if parts.changedCount > 0 {
@@ -219,7 +226,8 @@ struct ViewerScreen: View {
                     FlowPanel(stops: flowStops, bpm: $bpm, activeID: activePoint, onStop: press)
                 } else if layers.isEmpty {
                     Hint(symbol: "square.stack.3d.up.slash", text: settings.t("All layers are hidden. Turn one on above.", "所有图层都已隐藏，请在上方打开一个。"))
-                } else if selectedPart == nil {
+                } else if selectedPart == nil && layers.contains(where: { $0 != .skin }) {
+                    // (the skin itself isn't tappable)
                     Hint(symbol: "hand.tap", text: settings.t("Tap any part to name it. Tap an arm or leg bone or muscle to move its joint.", "点击任意部位查看名称。点击手臂或腿部的骨骼、肌肉可活动关节。"))
                 }
             }
@@ -256,7 +264,7 @@ struct ViewerOptionsMenu: View {
             Toggle(settings.t("Auto-rotate on open", "打开时自动旋转"), isOn: $settings.autoRotate)
             Divider()
             Button { showCredits = true } label: {
-                Label(settings.t("Credits & licences", "致谢与许可"), systemImage: "doc.text")
+                Label(settings.t("Credits & licenses", "致谢与许可"), systemImage: "doc.text")
             }
         } label: {
             Image(systemName: "ellipsis.circle")
@@ -271,30 +279,39 @@ struct LocalFigure: Equatable {
     var age: AgeGroup = .adult
     var pregnant = false
     var underwear = true
+    var chest: BodySize = .small
+    var hips: BodySize = .small
+    var heritage: Heritage = .white
 }
 
 /// Profile menu for the full-body page: same choices, kept on the page only.
 struct LocalFigureMenu: View {
     @Binding var figure: LocalFigure
+    var canUndress = true
     @Environment(Settings.self) private var settings
 
     var body: some View {
-        @Bindable var settings = settings
         Menu {
             Picker(settings.t("Age", "年龄"), selection: $figure.age) {
                 ForEach(AgeGroup.allCases, id: \.self) { Text(settings.t($0.label)).tag($0) }
             }
-            Picker(settings.t("Sex", "性别"), selection: $figure.female) {
-                Text(settings.t("Male", "男")).tag(false)
-                Text(settings.t("Female", "女")).tag(true)
+            if figure.age != .infant {
+                Picker(settings.t("Sex", "性别"), selection: $figure.female) {
+                    Text(settings.t("Male", "男")).tag(false)
+                    Text(settings.t("Female", "女")).tag(true)
+                }
             }
             if figure.female && figure.age == .adult {
-                Toggle(settings.t("Pregnant", "怀孕"), isOn: $figure.pregnant)
+                if canUndress {
+                    BodyShapePickers(chest: $figure.chest, hips: $figure.hips, pregnant: $figure.pregnant)
+                } else {
+                    Toggle(settings.t("Pregnant", "怀孕"), isOn: $figure.pregnant)
+                }
             }
-            if !(figure.age == .infant || figure.age.isChild) {
+            if canUndress && !(figure.age == .infant || figure.age.isChild) {
                 Toggle(settings.t("Show underwear", "显示内衣"), isOn: $figure.underwear)
             }
-            Picker(settings.t("Appearance", "外貌"), selection: $settings.heritage) {
+            Picker(settings.t("Appearance", "外貌"), selection: $figure.heritage) {
                 ForEach(Heritage.allCases, id: \.self) { Text(settings.t($0.label)).tag($0) }
             }
             .pickerStyle(.menu)

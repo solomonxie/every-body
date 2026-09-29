@@ -10,15 +10,15 @@ extension Illustrations {
         let steps: [Step]
         if infant {
             steps = [
-                .watch("Baby can’t cry, cough or breathe, and may turn blue? Act now — someone calls 120/911.",
+                .watch("Baby can’t cry, cough or breathe, and may turn blue? Act now — someone calls 911.",
                        "婴儿哭不出、咳不出、无法呼吸，甚至发紫？立即施救，让旁人拨打 120。", set: ["stage": 0, "taps": 0, "dislodge": 0]),
                 .tryIt("Sit, baby face down along your forearm on your thigh, head lower than the chest, jaw held. Up to 5 firm back blows.",
                        "试一试：坐下，让婴儿面朝下趴在你搭在大腿上的前臂上，头低于胸，托住下颌。掌根拍背最多 5 次。",
                        set: ["stage": 1, "taps": 0, "dislodge": 0], blows),
-                .tryIt("Turn baby face up on your other arm, head still low. Heel of one hand on the centre of the chest: up to 5 firm chest thrusts.",
+                .tryIt("Turn baby face up on your other arm, head still low. Heel of one hand on the center of the chest: up to 5 firm chest thrusts.",
                        "试一试：把婴儿翻成面朝上，头仍低。单手掌根放在胸部正中，用力按压最多 5 次。",
                        set: ["stage": 2, "taps": 0, "dislodge": 0.2], thrusts),
-                .watch("Still blocked? Repeat 5 back blows, 5 chest thrusts. Baby goes limp? Call 120/911 and start baby CPR.",
+                .watch("Still blocked? Repeat 5 back blows, 5 chest thrusts. Baby goes limp? Call 911 and start baby CPR.",
                        "仍未排出？重复 5 次拍背、5 次胸部按压。婴儿失去反应？拨打 120 并开始婴儿心肺复苏。", set: ["stage": 3, "dislodge": 1]),
             ]
         } else {
@@ -39,7 +39,7 @@ extension Illustrations {
                              child ? "试一试：跪在孩子身后双臂环腰，拳头放在肚脐稍上方，另一手握拳，快速向内向上冲击，最多 5 次。"
                              : "试一试：站在其身后双臂环腰，拳头放在肚脐稍上方，另一手握拳，快速向内向上冲击，最多 5 次。",
                              set: ["stage": 2, "taps": 0, "dislodge": 0.2], thrusts),
-                .watch("Still blocked? Keep alternating 5 blows and 5 thrusts, and call 120/911. If they go limp: lower to the floor, start CPR.",
+                .watch("Still blocked? Keep alternating 5 blows and 5 thrusts, and call 911. If they go limp: lower to the floor, start CPR.",
                        "仍未排出？交替进行 5 次拍背和 5 次冲击，并拨打 120。若失去反应：放平在地，开始心肺复苏。", set: ["stage": 3, "dislodge": 1]),
             ]
         }
@@ -67,13 +67,24 @@ extension Illustrations {
         return s
     }
 
-    private static func drawChoking(_ s: inout Sketch, _ p: Params, _ t: Double, _ who: Profile) {
+    @MainActor private static func drawChoking(_ s: inout Sketch, _ p: Params, _ t: Double, _ who: Profile) {
         let st = Int(p[v: "stage"].rounded()), out = min(1, p[v: "dislodge"])
-        if who.age == .infant { drawBabyChoking(&s, p, t) } else { drawStandingChoking(&s, p, t, who) }
-        if st == 0 || st == 3 { airwayInset(&s, 244, 8, out: out, baby: who.age == .infant) }
+        let v = artPerson(who)
+        // blows and thrusts: the ready picture, or the contact picture while a tap's press is on
+        let key = { (st: Int) in st == 1 || st == 2 ? "\(st)\(p[v: "press"] > 0.5 ? "b" : "a")" : "\(st)" }
+        let stage = p[v: "stage"].clamped(0, 3), lo = min(2, Int(stage.rounded(.down))), f = stage - Double(lo), k = f * f * (3 - 2 * f)
+        s.backdrop()
+        s.art([("choking-\(v)-\(key(lo))", 1 - k), ("choking-\(v)-\(key(lo + 1))", k)])
+        let m = SceneMarks.at("choking-\(v)-\(st == 1 || st == 2 ? "\(st)a" : "\(st)")")
+        let at = { (key: String) in m[key] ?? CGPoint(x: 150, y: 150) }
+        let calm = max(0, 1 - abs(stage - stage.rounded()) * 4)
+        s.group(opacity: calm) { g in
+            if who.age == .infant { babyChokingLabels(&g, st, p, t, at) } else { chokingLabels(&g, st, p, t, who, at) }
+            if st == 0 || st == 3 { airwayInset(&g, 244, 8, out: out, baby: who.age == .infant) }
+        }
         // status pill
         let cleared = out >= 0.99, status = cleared ? hex("#2E9E5B") : hex("#D8434B")
-        let n = Int(p[v: "taps"].rounded())
+        let n = min(5, Int(p[v: "taps"].rounded()))
         let en = cleared ? "Airway clear" : st == 1 ? "Blocked · back blows \(n)/5" : st == 2 ? "Blocked · thrusts \(n)/5" : "Airway blocked"
         let zh = cleared ? "气道通畅" : st == 1 ? "梗阻 · 拍背 \(n)/5" : st == 2 ? "梗阻 · 冲击 \(n)/5" : "气道梗阻"
         let txt = s.ctx.resolve(Text(s.t(en, zh)).font(.system(size: 11, weight: .bold)))
@@ -83,131 +94,68 @@ extension Illustrations {
         s.label(en, zh, 30, 21, size: 11, color: status, bold: true)
     }
 
-    private static func drawStandingChoking(_ s: inout Sketch, _ p: Params, _ t: Double, _ who: Profile) {
-        let st = Int(p[v: "stage"].rounded()), press = p[v: "press"]
-        let kneel = who.age.isChild, chestThrust = who.isPregnant
-        let floor = 288.0
-        s.room(floor: floor)
-        let rh = kneel ? 300.0 : 238
-        let c = Casualty(who, adult: kneel ? 290 : 232)
-        var v = SideFigure(h: c.h, build: c.build, look: c.look, hip: .zero, face: st == 3 ? .open : .distress, bump: c.bump)
-        v.hip = CGPoint(x: kneel ? 180 : 176, y: floor - SideFigure.hipHeight(c.h, c.build))
-        v.nearLeg = .init(hip: 4, knee: 2)
-        v.farLeg = .init(hip: -4, knee: 2)
-        var r = SideFigure(h: rh, hip: .zero, face: .calm)
-        func place(_ x: Double) {
-            if kneel {
-                // high kneel on one knee, the other foot planted
-                r.farLeg = .init(hip: 2, knee: 92, point: 88)
-                r.nearLeg = .init(hip: 84, knee: 86, point: 4)
-                r.hip = CGPoint(x: x, y: floor - r.build.thigh * rh - r.build.legW * rh * 0.5)
-            } else {
-                r.nearLeg = .init(hip: 16, knee: 6)
-                r.farLeg = .init(hip: -10, knee: 2)
-                r.hip = CGPoint(x: x, y: 0)
-                r.hip.y = r.hipY(onFloor: floor)
-            }
-        }
-        switch st {
-        case 1:
-            // leaning well forward; rescuer beside and behind, one hand across the chest
-            // bent over far enough that the head is below the chest, so the object can fall out
-            v.hip.x -= 34
-            v.lean = 80
-            v.headTilt = 32
-            v.near = .init(shoulder: -66, elbow: 14)
-            v.far = .init(shoulder: -62, elbow: 18)
-            v.nearLeg = .init(hip: -6, knee: 4)
-            v.farLeg = .init(hip: -12, knee: 2)
-            place(v.hip.x - (kneel ? 46 : 58))
-            r.lean = kneel ? 14 : 28
-            r.far = .init(reach: lerp(v.front(0.74), v.torso(0, 0.74), 0.3), hand: .open, handAngle: 0)
-            let blades = v.back(0.8), n = unit(CGPoint(x: blades.x - v.torso(0, 0.8).x, y: blades.y - v.torso(0, 0.8).y))
-            let gap = 2 + (1 - press) * 18
-            let along = v.torso(0, 1).x - v.torso(0, 0).x, alongY = v.torso(0, 1).y - v.torso(0, 0).y
-            r.near = .init(reach: CGPoint(x: blades.x + n.x * gap, y: blades.y + n.y * gap), hand: .open, handAngle: atan2(alongY, along) * 180 / .pi)
-        case 2:
-            v.lean = 18
-            v.near = .init(shoulder: 20, elbow: 30)
-            v.far = .init(shoulder: 14, elbow: 34)
-            place(v.hip.x - (kneel ? 30 : 30))
-            r.lean = kneel ? 4 : 4
-            r.headTilt = 8
-            let f = chestThrust ? 0.62 : 0.36
-            let fist = lerp(v.front(f), v.torso(0, f), 0.08 + press * 0.12)
-            let lift = chestThrust ? 0 : press * 5
-            r.near = .init(reach: CGPoint(x: fist.x + 1, y: fist.y - lift), hand: .fist, handAngle: chestThrust ? 180 : 200)
-            r.far = .init(reach: CGPoint(x: fist.x + 4, y: fist.y - lift - 2), hand: .open, handAngle: 100)
-        default:
-            // hands at the throat (0), or coughing it up (3)
-            if st == 0 {
-                v.near = .init(reach: v.headPoint(0.35, 1.35), hand: .open, handAngle: -70)
-                v.far = .init(reach: v.headPoint(0.15, 1.45), hand: .open, handAngle: -80)
-            } else {
-                v.lean = 20
-                v.headTilt = 12
-                v.near = .init(reach: v.headPoint(1.3, 0.8), hand: .fist)
-                v.far = .init(shoulder: 5, elbow: 15)
-            }
-            place(v.hip.x - (kneel ? 62 : 72))
-            r.lean = kneel ? 4 : 6
-            r.near = .init(reach: v.back(0.9), hand: .open)
-            r.far = .init(shoulder: 5, elbow: 15)
-        }
-        r.drawBack(&s)
-        r.drawBody(&s)
-        if st == 1 || st == 2 { r.drawArm(&s, near: false) }
-        v.draw(&s)
-        r.drawArm(&s, near: true)
-        // back blows: the supporting hand, seen under the chest
-        let support = lerp(v.torso(0, 0.72), v.front(0.72), 1.12)
-        if st == 1 {
-            drawHand(&s, at: support, dir: unit(CGPoint(x: 1, y: -0.15)), len: r.build.hand * rh, shape: .open, look: r.look, thumb: 1)
-        }
-        if st == 2 && !chestThrust {
-            // the far hand grasping the fist, seen round the front
-            drawHand(&s, at: CGPoint(x: r.palm().x + 3, y: r.palm().y - 3), dir: unit(CGPoint(x: 0.3, y: 1)), len: r.build.hand * rh, shape: .open,
-                     look: r.look, thumb: 1)
-        }
-
-        let red = hex("#D8434B"), green = hex("#2E9E5B")
+    @MainActor private static func chokingLabels(_ s: inout Sketch, _ st: Int, _ p: Params, _ t: Double, _ who: Profile, _ at: (String) -> CGPoint) {
+        let press = p[v: "press"], chestThrust = who.isPregnant
+        let red = hex("#D8434B"), green = hex("#2E9E5B"), grey = hex("#555555")
         switch st {
         case 0:
-            let m = r.mouth
-            s.bubble("Are you choking?", "你被噎住了吗？", m.x - 30, max(54, m.y - 40), tip: CGPoint(x: m.x + 2, y: m.y - 6))
-            s.callout("hands at the throat", "双手掐喉", 296, 170, to: v.headPoint(0.4, 1.5), color: red)
+            let h = at("rescuer_head")
+            s.bubble("Are you choking?", "你被噎住了吗？", max(70, h.x - 20), max(52, h.y - 26), tip: CGPoint(x: h.x + 6, y: h.y + 4))
+            s.callout("hands at the throat", "双手掐喉", 296, 170, to: at("throat"), color: red)
             s.tag("can’t speak, cough or breathe", "说不出、咳不出、喘不上", 296, 196, size: 9, color: red, bold: true, width: 110)
         case 1:
-            let b = v.back(0.8)
-            s.callout("heel of hand, between the shoulder blades", "掌根拍两肩胛骨之间", 250, 44, to: CGPoint(x: b.x + 2, y: b.y - 2), color: red, width: 140)
-            s.callout("other hand supports the chest", "另一手扶住胸部", 270, 272, to: support, color: hex("#555555"))
-            let hd = v.headPoint(0, 0), low = hd.y + 52 > 250
-            s.tag("head lower than chest", "头低于胸部", low ? min(300, hd.x + 70) : hd.x + 10, low ? hd.y - 30 : hd.y + 52, size: 9, bold: true)
-            // blow direction
-            let from = CGPoint(x: b.x - 26, y: b.y - 30), to = CGPoint(x: b.x - 8, y: b.y - 10)
+            let b = at("blades")
+            s.callout("heel of hand, between the shoulder blades", "掌根拍两肩胛骨之间", 250, 44, to: b, color: red, width: 140)
+            s.callout("other hand supports the chest", "另一手扶住胸部", 272, 262, to: at("support"), color: grey)
+            let hd = at("casualty_head")
+            s.tag("head lower than chest", "头低于胸部", min(300, hd.x + 60), hd.y + 26, size: 9, bold: true)
+            let from = CGPoint(x: b.x - 18, y: b.y - 36), to = CGPoint(x: b.x - 4, y: b.y - 10)
             s.arrow(lerp(from, to, press * 0.4), lerp(from, to, 0.5 + press * 0.5), color: red, lw: 2)
         case 2:
             fistCard(&s, 238, 8, chest: chestThrust)
-            let f = v.front(chestThrust ? 0.62 : 0.36)
+            let f = at("fist")
             if chestThrust {
-                s.arrow(CGPoint(x: f.x + 26, y: f.y), CGPoint(x: f.x + 8, y: f.y), color: red, lw: 2.2)
+                s.arrow(CGPoint(x: f.x + 30, y: f.y), CGPoint(x: f.x + 12, y: f.y), color: red, lw: 2.2)
                 s.tag("pull straight back", "向正后方冲击", 296, 150, size: 10, color: red, bold: true)
             } else {
-                s.path("M \(f.x + 26) \(f.y + 14) Q \(f.x + 8) \(f.y + 12) \(f.x + 6) \(f.y - 6)", stroke: red, lw: 2.2, cap: .round)
-                s.arrow(CGPoint(x: f.x + 7, y: f.y - 2), CGPoint(x: f.x + 5, y: f.y - 12), color: red, lw: 2.2)
+                s.path("M \(f.x + 30) \(f.y + 14) Q \(f.x + 12) \(f.y + 12) \(f.x + 10) \(f.y - 6)", stroke: red, lw: 2.2, cap: .round)
+                s.arrow(CGPoint(x: f.x + 11, y: f.y - 2), CGPoint(x: f.x + 9, y: f.y - 12), color: red, lw: 2.2)
                 s.tag("pull sharply in and up", "快速向内、向上冲击", 296, 150, size: 10, color: red, bold: true)
             }
         case 3:
-            s.phone(322, floor - 30, number: s.t("911", "120"), t: t)
+            s.phone(322, 256, number: s.t("911", "120"), t: t)
             s.tag("coughed out — still see a doctor", "咳出了——仍需就医", 296, 144, size: 10, color: green, bold: true, width: 110)
-            s.tag("still stuck: 5 + 5 again, call 120", "仍梗阻：再 5+5，拨打 120", 296, 184, size: 9, color: red, bold: true, width: 110)
+            s.tag("still stuck: 5 + 5 again, call 911", "仍梗阻：再 5+5\n拨打 120", 296, 184, size: 9, color: red, bold: true, width: 110)
             s.tag("goes limp: floor, CPR", "失去反应：放平做心肺复苏", 296, 214, size: 9, color: red, bold: true, width: 110)
         default: break
         }
     }
 
+    @MainActor private static func babyChokingLabels(_ s: inout Sketch, _ st: Int, _ p: Params, _ t: Double, _ at: (String) -> CGPoint) {
+        let press = p[v: "press"], red = hex("#D8434B"), grey = hex("#444444")
+        switch st {
+        case 0:
+            s.callout("can’t cry, cough or breathe", "哭不出、咳不出、喘不上", 296, 170, to: at("mouth"), color: red, width: 110)
+            s.tag("lips may turn blue", "嘴唇可能发紫", 296, 200, size: 9, bold: true)
+        case 1:
+            let b = at("blades")
+            s.callout("heel of hand, between the shoulder blades", "掌根拍两肩胛骨之间", 290, 60, to: b, color: red, width: 120)
+            s.callout("head lower than chest", "头低于胸", 300, 250, to: at("baby_head"), color: grey)
+            s.callout("hold the jaw, not the throat", "托住下颌，别压喉咙", 300, 278, to: at("jaw"), color: grey, width: 110)
+            let from = CGPoint(x: b.x - 10, y: b.y - 34), to = CGPoint(x: b.x - 2, y: b.y - 10)
+            s.arrow(lerp(from, to, press * 0.4), lerp(from, to, 0.5 + press * 0.5), color: red, lw: 2)
+        case 2:
+            s.callout("heel of one hand, center of the chest", "单手掌根，胸部正中", 290, 60, to: at("chest"), color: red, width: 120)
+            s.callout("head lower than chest", "头低于胸", 300, 250, to: at("baby_head"), color: grey)
+        case 3:
+            s.phone(330, 250, number: s.t("911", "120"), t: t)
+            s.tag("goes limp: call and start baby CPR", "失去反应：呼救并开始婴儿心肺复苏", 290, 190, size: 10, color: red, bold: true, width: 110)
+        default: break
+        }
+    }
+
     /// front view of the trunk: where the fist goes, thumb side in, other hand over it
-    private static func fistCard(_ s: inout Sketch, _ x: Double, _ y: Double, chest: Bool) {
+    @MainActor private static func fistCard(_ s: inout Sketch, _ x: Double, _ y: Double, chest: Bool) {
         let w = 114.0, h = 112.0
         s.inset(x, y, w, h, chest ? "Fist on breastbone" : "Fist above the navel", chest ? "拳头放在胸骨下半段" : "拳头放在肚脐上方")
         let cx = x + w / 2, top = y + 24
@@ -234,86 +182,8 @@ extension Illustrations {
         if !chest { g.label("navel", "肚脐", navel.x + 5, navel.y + 7, size: 8, color: hex("#8A8378")) }
     }
 
-    private static func drawBabyChoking(_ s: inout Sketch, _ p: Params, _ t: Double) {
-        let st = Int(p[v: "stage"].rounded()), press = p[v: "press"]
-        let floor = 306.0
-        s.room(floor: floor)
-        let rh = 380.0
-        // rescuer sits on a chair, facing right; forearm rests on the thigh
-        var r = SideFigure(h: rh, hip: CGPoint(x: 62, y: floor - 0.27 * rh), lean: 28, headTilt: 22)
-        r.nearLeg = .init(hip: 90, knee: 90)
-        r.farLeg = .init(hip: 86, knee: 84)
-        let seat = r.hip.y + r.build.legW * rh * 0.5
-        s.rect(r.hip.x - 34, seat, 64, 7, r: 2, fill: hex("#CFA97F"))
-        s.rect(r.hip.x - 34, seat - 78, 7, 78, r: 2, fill: hex("#B48D66"))
-        for x in [r.hip.x - 32, r.hip.x + 22] { s.rect(x, seat + 6, 6, floor - seat - 6, fill: hex("#B48D66")) }
-
-        let knee = CGPoint(x: r.hip.x + r.build.thigh * rh, y: r.hip.y)
-        let lap = r.build.legW * rh * 0.5
-        let palm = CGPoint(x: knee.x + 8, y: knee.y - lap - 4)
-        let elbowGuess = CGPoint(x: r.hip.x + 30, y: r.hip.y - lap - 34)
-        let dir = unit(CGPoint(x: palm.x - elbowGuess.x, y: palm.y - elbowGuess.y))
-        let slope = atan2(dir.y, dir.x) * 180 / .pi
-        r.near = .init(reach: palm, hand: .open, handAngle: slope)
-
-        let bh = rh * 0.38
-        let prone = st == 1
-        var b = SideFigure(h: bh, build: .infant, look: .baby, hip: .zero, face: st == 3 ? .open : .distress)
-        b.facing = prone ? 1 : -1
-        b.rotation = prone ? 90 + slope : -(90 + slope)
-        b.headTilt = 0
-        b.nearLeg = .init(hip: 50, knee: 60, point: 30)
-        b.farLeg = .init(hip: 40, knee: 50, point: 30)
-        b.near = .init(shoulder: prone ? 70 : 30, elbow: 30)
-        b.far = .init(shoulder: prone ? 60 : 20, elbow: 40)
-        // body lies along the forearm, head just past the hand
-        let up = CGPoint(x: dir.y, y: -dir.x)
-        let back = (Build.infant.torso + Build.infant.neck + Build.infant.headR * 0.9) * bh
-        let lift = Build.infant.depth * bh * 0.5 + 5
-        b.hip = CGPoint(x: palm.x - dir.x * back + up.x * lift + 6, y: palm.y - dir.y * back + up.y * lift)
-
-        switch st {
-        case 1:
-            let blades = b.back(0.78), n = unit(CGPoint(x: blades.x - b.torso(0, 0.78).x, y: blades.y - b.torso(0, 0.78).y))
-            let gap = 1 + (1 - press) * 14
-            r.far = .init(reach: CGPoint(x: blades.x + n.x * gap, y: blades.y + n.y * gap), hand: .open, handAngle: slope)
-        case 2:
-            // heel of one hand on the breastbone, fingers lifted off toward the tummy
-            let chest = b.front(0.66), n = unit(CGPoint(x: chest.x - b.torso(0, 0.66).x, y: chest.y - b.torso(0, 0.66).y))
-            let gap = 3 + (1 - press) * 8, L = r.build.hand * rh
-            let c = CGPoint(x: chest.x + n.x * (gap + 3) - dir.x * L * 0.4, y: chest.y + n.y * (gap + 3) - dir.y * L * 0.4)
-            r.far = .init(reach: c, hand: .open, handAngle: slope + 180 - 8)
-        default:
-            r.far = .init(reach: b.front(0.3), hand: .open, handAngle: slope)
-        }
-        r.drawBack(&s, farArm: false)
-        r.drawBody(&s)
-        r.drawArm(&s, near: true)
-        b.draw(&s)
-        r.drawArm(&s, near: false)
-
-        let red = hex("#D8434B")
-        switch st {
-        case 0:
-            s.callout("can’t cry, cough or breathe", "哭不出、咳不出、喘不上", 296, 170, to: b.mouth, color: red, width: 110)
-            s.tag("lips may turn blue", "嘴唇可能发紫", 296, 200, size: 9, bold: true)
-        case 1:
-            let blades = b.back(0.78)
-            s.callout("heel of hand, between the shoulder blades", "掌根拍两肩胛骨之间", 290, 60, to: blades, color: red, width: 120)
-            s.callout("head lower than chest", "头低于胸", 300, 250, to: b.headCentre, color: hex("#444444"))
-            s.callout("hold the jaw, not the throat", "托住下颌，别压喉咙", 110, 280, to: r.palm(), color: hex("#444444"), width: 150)
-        case 2:
-            s.callout("heel of one hand, centre of the chest", "单手掌根，胸部正中", 290, 60, to: b.front(0.6), color: red, width: 120)
-            s.callout("head lower than chest", "头低于胸", 300, 250, to: b.headCentre, color: hex("#444444"))
-        case 3:
-            s.phone(330, 250, number: s.t("911", "120"), t: t)
-            s.tag("goes limp: call and start baby CPR", "失去反应：呼救并开始婴儿心肺复苏", 290, 190, size: 10, color: red, bold: true, width: 110)
-        default: break
-        }
-    }
-
     /// head and neck cut open: mouth → throat → windpipe, with the stuck piece of food
-    private static func airwayInset(_ s: inout Sketch, _ x: Double, _ y: Double, out: Double, baby: Bool) {
+    @MainActor private static func airwayInset(_ s: inout Sketch, _ x: Double, _ y: Double, out: Double, baby: Bool) {
         s.inset(x, y, 108, 112, "Airway", "气道")
         var g = s.clipped(x, y + 16, 108, 96)
         let look: Look = baby ? .baby : .man

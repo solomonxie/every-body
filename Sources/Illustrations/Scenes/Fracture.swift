@@ -25,7 +25,7 @@ extension Illustrations {
         var s = Scenario(
             id: "fracture-healing", group: .bones, title: Bilingual("Fracture: setting & healing", "骨折：复位与愈合"),
             warning: Bilingual("Setting a bone is a clinician’s job — this shows how it works.", "骨折复位须由医生操作——此处仅演示原理。"),
-            params: ["offset": 1, "weeks": 0, "cast": 0, "scene": 0, "age": age],
+            params: ["offset": 1, "weeks": 0, "cast": 0, "scene": 0, "age": age, "female": profile.female ? 1 : 0],
             steps: [
                 first,
                 .watch("First aid: don’t straighten it. Rest the forearm across the body on something soft, support it, cold pack, rings off, go to hospital.",
@@ -36,18 +36,18 @@ extension Illustrations {
                                ok: Bilingual("Lined up — an X-ray confirms it. Now it must be held still.", "对齐了——X 光确认。接下来需要固定。"), demo: ["offset": 0])),
                 .watch("A cast from below the elbow to the knuckles holds the ends still; a sling keeps the hand up to limit swelling. Wiggle the fingers.",
                        "石膏从肘下到掌指关节固定断端；吊带抬高手部，减轻肿胀。多活动手指。", set: ["offset": 0, "cast": 1, "scene": 3]),
-                .tryIt("Drag through the weeks: clot → soft callus → hard callus → remodelled bone.", "试一试：拖动周数：血肿 → 软骨痂 → 硬骨痂 → 塑形。",
+                .tryIt("Drag through the weeks: clot → soft callus → hard callus → remodeled bone.", "试一试：拖动周数：血肿 → 软骨痂 → 硬骨痂 → 塑形。",
                        set: ["scene": 4],
                        TryStep(mode: .scrub([Scrub(param: "weeks", label: "Weeks 周", min: 0, max: maxWeeks, digits: 1)]), success: { healing($0[v: "weeks"] / speed).remodel > 0.5 },
                                ok: [Bilingual("Child: ~3–6 weeks in a cast; growing bone even straightens itself.", "儿童：石膏约 3–6 周；生长中的骨头还能自行矫直。"),
-                                    Bilingual("Adult wrist: ~6 weeks in a cast, remodelling for months.", "成人腕部：石膏约 6 周，塑形持续数月。"),
+                                    Bilingual("Adult wrist: ~6 weeks in a cast, remodeling for months.", "成人腕部：石膏约 6 周，塑形持续数月。"),
                                     Bilingual("Senior: 8+ weeks; ask for a bone-density (DEXA) scan to prevent a hip fracture.", "老人：8 周以上；应做骨密度检查，预防髋部骨折。")][Int(age)],
                                demo: ["weeks": maxWeeks])),
             ],
             draw: { s, p, t in drawFracture(&s, p, t, speed: speed) },
             onDrag: { point, _ in ["offset": ((172 - point.y) / 16).clamped(0, 1)] },
-            sources: ["Standard fracture-healing phases: haematoma, soft callus, hard callus, remodelling",
-                      "Distal radius fracture: Colles pattern; paediatric greenstick / physeal injuries; osteoporotic fragility fractures"]
+            sources: ["Standard fracture-healing phases: hematoma, soft callus, hard callus, remodeling",
+                      "Distal radius fracture: Colles pattern; pediatric greenstick / physeal injuries; osteoporotic fragility fractures"]
         )
         s.profileNote = switch Int(age) {
         case 0: Bilingual("Children: growth plates near the ends of bones; bones bend (greenstick) and heal about twice as fast. Injuries at a growth plate need follow-up.",
@@ -142,7 +142,7 @@ extension Illustrations {
                         color: aligned ? Anat.green : Anat.red)
         }
 
-        drawFractureCard(&s, scene: scene, age: age, o: o, weeks: weeks, speed: speed, t: t)
+        drawFractureCard(&s, scene: scene, age: age, female: p[v: "female"] > 0.5, o: o, weeks: weeks, speed: speed, t: t)
     }
 
     /// Radius (front), ulna (behind), wrist and hand bones; the wrist side moves with the break.
@@ -247,7 +247,7 @@ extension Illustrations {
         s.label("\(Int(maxW)) wk", "\(Int(maxW)) 周", x0 + w + 4, y + 9, size: 8, color: Anat.muted)
     }
 
-    @MainActor private static func drawFractureCard(_ s: inout Sketch, scene: Int, age: Int, o: Double, weeks: Double, speed: Double, t: Double) {
+    @MainActor private static func drawFractureCard(_ s: inout Sketch, scene: Int, age: Int, female: Bool, o: Double, weeks: Double, speed: Double, t: Double) {
         let xrayCard = scene == 2 || scene >= 4
         let box = xrayCard ? CGRect(x: 188, y: 6, width: 166, height: 104) : CGRect(x: 250, y: 6, width: 104, height: 108)
         let titles: [(String, String)] = [("How it happens", "如何发生"), ("First aid", "现场处理"), ("X-ray check", "复查 X 光"),
@@ -255,13 +255,14 @@ extension Illustrations {
         let ti = titles[min(scene, 4)]
         s.inset(box.minX, box.minY, box.width, box.height, ti.0, ti.1)
         var c = s.clipped(box.minX, box.minY, box.width, box.height)
-        let look: Look = age == 0 ? .kid : age == 2 ? .senior : .man
+        let look: Look = age == 0 ? (female ? .girl : .kid) : age == 2 ? (female ? .seniorWoman : .senior) : female ? .woman : .man
         let build: Build = age == 0 ? .child : .adult
         var person = FacingPerson(h: age == 0 ? 120 : 140)
         person.head = age == 0 ? 1.25 : 1
-        person.shirt = age == 0 ? Look.kid.top : age == 2 ? Look.senior.top : hex("#8FB3E0")
+        person.shirt = age == 1 && !female ? hex("#8FB3E0") : look.top
         person.shirtLine = darker(person.shirt)
-        person.hair = age == 2 ? hex("#D4D4D4") : age == 0 ? hex("#6B4A2F") : hex("#6B5344")
+        // same person as in the fall
+        person.wear(look)
         let o0 = CGPoint(x: box.midX + 4, y: box.minY + 44)
         switch scene {
         case 0:

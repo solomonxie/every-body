@@ -8,7 +8,7 @@ extension Illustrations {
             steps: [
                 .watch("Blood is pouring from a deep cut on the lower leg. Check it’s safe, then have them sit or lie down.",
                        "小腿上一道深伤口血流不止。确认环境安全，让伤者坐下或躺下。", set: ["stage": 0, "pressure": 0, "clot": 0, "lost": 0.5]),
-                .watch("Call 120/911 on speaker. Put on gloves if there are any — or slip your hands into plastic bags.",
+                .watch("Call 911 on speaker. Put on gloves if there are any — or slip your hands into plastic bags.",
                        "开免提拨打 120。有手套就戴上——没有可用塑料袋套手。", set: ["stage": 1, "lost": 0.65]),
                 .tryIt("Press hard on the wound with a clean pad or cloth, both hands — and keep pressing. Don’t lift it to check.",
                        "试一试：用干净纱布或布块双手用力按住伤口，并持续按压，不要掀开查看。", set: ["stage": 2],
@@ -26,221 +26,75 @@ extension Illustrations {
             sources: ["ILCOR 2025 CoSTR / Red Cross first aid: direct pressure; tourniquet for life-threatening limb bleeding"]
         )
         s.profileNote = switch who.age {
-        case .infant, .toddler, .child: Bilingual("Children have much less blood — a loss that looks small can be serious. Call 120 early.",
+        case .infant, .toddler, .child: Bilingual("Children have much less blood — a loss that looks small can be serious. Call 911 early.",
                                         "儿童血量少得多——看起来不多的失血也可能很危险。尽早拨打 120。")
-        case .senior: Bilingual("65+: many take blood thinners, so bleeding lasts longer — press longer and tell 120 their medicines.",
+        case .senior: Bilingual("65+: many take blood thinners, so bleeding lasts longer — press longer and tell 911 their medicines.",
                                 "老人：很多人服用抗凝药，出血更久——按压时间要更长，并告知 120 所用药物。")
         case .adult: nil
         }
         return s
     }
 
-    private static func drawBleeding(_ s: inout Sketch, _ p: Params, _ t: Double, _ who: Profile) {
+    @MainActor private static func drawBleeding(_ s: inout Sketch, _ p: Params, _ t: Double, _ who: Profile) {
         let st = Int(p[v: "stage"].rounded()), pressure = p[v: "pressure"], clot = p[v: "clot"]
         let flow = st >= 3 ? 0 : st == 2 ? max(0, (1 - pressure * 0.85) * (1 - clot)) : 1
         let infant = who.age == .infant
-        let floor = infant ? 252.0 : 262
-        if infant {
-            s.backdrop()
-            s.rect(0, floor, 360, 300 - floor, fill: hex("#DCE6F0"))
-            s.rect(0, floor, 360, 6, fill: hex("#EEF3F8"))
-        } else {
-            s.room(floor: floor)
-        }
-        let rh = 290.0
-        let scale = infant ? 2.1 / 0.95 : who.age == .toddler ? 1.35 : who.age == .child ? 1.15 : 1
-        let c = Casualty(who, adult: rh * 0.95 * scale)
-
-        // casualty sits leaning back on the hands (a baby lies on its back); the cut is on the front of the near shin
-        var v = SideFigure(h: c.h, build: c.build, look: c.look, hip: .zero, face: st >= 3 ? .calm : .distress, bump: c.bump)
-        if infant {
-            v.rotation = -90
-            v.nearLeg = .init(hip: 4, knee: 6, point: 20)
-            v.farLeg = .init(hip: 14, knee: 24, point: 20)
-            v.near = .init(shoulder: 14, elbow: 40)
-            v.far = .init(shoulder: -6, elbow: 30)
-            v.hip = CGPoint(x: 0, y: floor - c.build.depth * c.h * 0.5)
-        } else {
-            v.lean = -16
-            v.headTilt = 10
-            v.nearLeg = .init(hip: 90, knee: 0, point: 12)
-            v.farLeg = .init(hip: 92, knee: 4, point: 8)
-            v.hip = CGPoint(x: 0, y: floor - c.build.legW * c.h * 0.5 - 1)
-        }
-        let knee0 = v.legPoint(1), ankle0 = v.legPoint(2)
-        v.hip.x = (infant ? 236 : 200) - lerp(knee0, ankle0, 0.6).x
-        if !infant {
-            let back = CGPoint(x: v.hip.x - 0.14 * c.h, y: floor - 3)
-            v.near = .init(reach: back, hand: .open, handAngle: 170, flip: true)
-            v.far = .init(reach: CGPoint(x: back.x - 6, y: back.y), hand: .open, handAngle: 170, flip: true)
-        }
-        let knee = v.legPoint(1), ankle = v.legPoint(2), lw = c.build.legW * c.h
-        let along = unit(CGPoint(x: ankle.x - knee.x, y: ankle.y - knee.y)), up = CGPoint(x: along.y, y: -along.x)
-        func onShin(_ f: Double, _ out: Double = 0.5) -> CGPoint {
-            let q = lerp(knee, ankle, f)
-            return CGPoint(x: q.x + up.x * lw * out, y: q.y + up.y * lw * out)
-        }
-        let wound = onShin(0.6), band = onShin(0.26)
-        let k = infant ? 1.4 : 1.0
-        let push = pressure * 2 * k
-        let gloves = st >= 1 ? hex("#8E86D8") : nil
-
-        // rescuer kneels just past the feet, facing the casualty, leaning over the leg
-        var r = SideFigure(h: rh, hip: .zero, facing: -1)
-        r.look.gloves = gloves
-        r.nearLeg = .init(hip: 8, knee: 96, point: 86)
-        r.farLeg = .init(hip: -2, knee: 88, point: 86)
-        let hipY = floor - r.build.thigh * rh * 0.98 - r.build.legW * rh * 0.5
-        let hands = CGPoint(x: wound.x, y: wound.y - 6 * k + push)
-        let T = r.build.torso * rh * 0.93, reach = (r.build.upperArm + r.build.foreArm + r.build.hand * 0.4) * rh * 0.97
-        func leanOver(_ target: CGPoint) {
-            // lean just far enough that nearly straight arms land on `target`, shoulders above it
-            let dy = hipY - (target.y - reach)
-            r.lean = max(34, acos((dy / T).clamped(-1, 1)) * 180 / .pi)
-            r.hip = CGPoint(x: target.x + sin(r.lean * .pi / 180) * T + 4, y: hipY)
-        }
-        switch st {
-        case 0:
-            r.lean = 12
-            r.hip = CGPoint(x: min(330, ankle.x + 70), y: hipY)
-            r.near = .init(reach: CGPoint(x: r.hip.x - 58, y: hipY - 70), hand: .open, handAngle: -150)
-            r.far = .init(shoulder: 4, elbow: 20)
-        case 1:
-            r.lean = 10
-            r.hip = CGPoint(x: min(330, ankle.x + 70), y: hipY)
-            let chest = r.front(0.62)
-            r.near = .init(reach: CGPoint(x: chest.x - 20, y: chest.y + 6), hand: .open, handAngle: 200)
-            r.far = .init(reach: CGPoint(x: chest.x - 16, y: chest.y + 12), hand: .fist, handAngle: 20)
-        case 2:
-            leanOver(hands)
-            r.near = .init(reach: CGPoint(x: hands.x - 3, y: hands.y), hand: .open, handAngle: 180 + 25)
-            r.far = .init(reach: CGPoint(x: hands.x + 3, y: hands.y - 2), hand: .open, handAngle: 180 + 20)
-        case 3:
-            leanOver(CGPoint(x: wound.x + 6, y: wound.y - 30))
-            r.near = .init(reach: onShin(0.78, -0.9), hand: .fist, handAngle: 110)
-            r.far = .init(reach: onShin(0.5, 1.4), hand: .open, handAngle: 200)
-        default:
-            leanOver(CGPoint(x: band.x + 10, y: band.y - 34))
-            r.near = .init(reach: onShin(0.26, 1.9), hand: .fist, handAngle: 250)
-            r.far = .init(reach: onShin(0.18, 1.2), hand: .open, handAngle: 200)
-        }
-
-        // blood pool under the leg
-        let pool = min(1, p[v: "lost"]) * 44 * k
-        s.ellipse(wound.x + 4, floor + 3, pool, pool * 0.16, fill: hex("#A8232E"), opacity: 0.85)
-        if !infant {
-            r.drawBack(&s, farArm: true)
-            r.drawBody(&s)
-        }
-        v.draw(&s)
-        if st == 4 && !infant {
-            // blanket round the shoulders: keep warm
-            let pts = [v.torso(-0.2, 1.12), v.torso(0.55, 1.0), v.torso(0.75, 0.55), v.torso(0.62, 0.05), v.torso(-0.2, -0.08), v.torso(-0.85, 0.1),
-                       v.torso(-0.8, 0.7)]
-            s.shape(smoothPath(pts), fill: hex("#E3B45A"), stroke: hex("#B8893A"), lw: 1.2)
-            for f in [0.3, 0.6] {
-                let q0 = v.torso(-0.7, f), q1 = v.torso(0.6, f + 0.06)
-                s.line(q0.x, q0.y, q1.x, q1.y, stroke: hex("#C99A45"), lw: 1.4)
-            }
-            let hc = v.headCentre, hr = v.headR
-            drawSideHead(&s, at: hc, up: unit(CGPoint(x: sin((v.lean + v.headTilt) * .pi / 180), y: -cos((v.lean + v.headTilt) * .pi / 180))), r: hr, look: v.look, face: v.face)
-        }
-        // trouser leg rolled up to show the cut
-        if !c.look.bareFeet {
-            s.taper([lerp(knee, ankle, 0.22), lerp(knee, ankle, 0.92)], [lw * 0.8, lw * 0.62], fill: c.look.skin, line: c.look.skinLine)
-            s.taper([lerp(knee, ankle, 0.14), lerp(knee, ankle, 0.24)], [lw * 1.0, lw * 0.96], fill: c.look.bottom, line: darker(c.look.bottom))
-        } else {
-            s.taper([lerp(knee, ankle, 0.3), lerp(knee, ankle, 1.0)], [lw * 0.8, lw * 0.64], fill: c.look.skin, line: c.look.skinLine)
-            s.taper([lerp(knee, ankle, 0.22), lerp(knee, ankle, 0.32)], [lw * 1.0, lw * 0.96], fill: c.look.bottom, line: c.look.topLine)
-        }
-        let ang = atan2(along.y, along.x) * 180 / .pi
-        s.group(translate: wound, rotate: ang) { g in
-            g.ellipse(0, 1.5, 8 * k, 3 * k, fill: hex("#C8323C"), opacity: 0.55)
-            g.path("M \(-6 * k) 0 Q 0 \(-2.2 * k) \(6 * k) 0 Q 0 \(2 * k) \(-6 * k) 0 Z", fill: hex("#6E0F18"))
-        }
+        let v = artPerson(who)
+        let stage = p[v: "stage"].clamped(0, 4), lo = min(3, Int(stage.rounded(.down))), f = stage - Double(lo), k = f * f * (3 - 2 * f)
+        s.backdrop()
+        s.art([("bleeding-\(v)-\(lo)", 1 - k), ("bleeding-\(v)-\(lo + 1)", k)])
+        let m = SceneMarks.at("bleeding-\(v)-\(st)")
+        let at = { (key: String) in m[key] ?? CGPoint(x: 180, y: 220) }
+        let wound = at("wound"), band = at("band")
+        let red = hex("#D8434B"), lx = infant ? 100.0 : 112
         if flow > 0.05 {
-            let side = onShin(0.6, -0.5)
-            s.path("M \(wound.x - 2) \(wound.y) C \(wound.x - 6) \(wound.y + 4) \(side.x - 4) \(side.y - 4) \(side.x - 3) \(floor - 1)",
-                   stroke: hex("#B3202C"), lw: 2.4 * k, opacity: min(1, flow * 1.5), cap: .round)
-            let drops = Int((flow * 5).rounded())
+            // blood running off the shin to the floor
+            let floor = wound.y + (infant ? 22 : 16), side = CGPoint(x: wound.x + 3, y: wound.y + 6)
+            s.path("M \(wound.x) \(wound.y) C \(wound.x + 3) \(wound.y + 3) \(side.x) \(side.y - 2) \(side.x + 1) \(floor)",
+                   stroke: hex("#B3202C"), lw: 2, opacity: min(1, flow * 1.5), cap: .round)
+            let drops = Int((flow * 4).rounded())
             for i in 0..<drops {
                 let u = (t * 1.4 + Double(i) / Double(max(1, drops))).wrap(1)
-                s.circle(side.x - 3 + Double(i % 2) * 5, side.y + u * (floor - side.y), 2.2 - u, fill: hex("#C8323C"))
+                s.circle(side.x + 1 + Double(i % 2) * 3, side.y + u * (floor - side.y), 1.8 - u, fill: hex("#C8323C"))
             }
         }
-        if st >= 2 {
-            // pads over the cut; a second one on top
-            let layers = st >= 3 ? 2 : 1
-            s.group(translate: CGPoint(x: wound.x, y: wound.y + push), rotate: ang) { g in
-                for i in 0..<layers {
-                    let y0 = -4 * k - Double(i) * 3.5 * k
-                    g.rect(-13 * k + Double(i) * 1.5, y0, 26 * k, 5 * k, r: 2, fill: .white, stroke: hex("#C9C2B8"))
-                }
-                if st == 2 && clot < 1 { g.ellipse(0, -2 * k, 5 * k, 1.8 * k, fill: hex("#C8323C"), opacity: 0.5 * (1 - clot)) }
-            }
-        }
-        if st >= 3 {
-            // bandage wound firmly round the leg over the pads, roll trailing to the hand
-            for i in -2...2 {
-                let a = onShin(0.6 + Double(i) * 0.07, 1.05), b = onShin(0.6 + Double(i) * 0.07 + 0.04, -0.45)
-                s.limb([a, b], w: 5 * k, fill: hex("#FBF8F2"), line: hex("#CFC6B8"))
-            }
-        }
-        if st == 4 && !infant {
-            let a = onShin(0.26, 1.3), b = onShin(0.26, -0.6)
-            s.limb([a, b], w: 6, fill: hex("#2F3136"), line: hex("#15161A"))
-            let rod = onShin(0.26, 1.55)
-            s.line(rod.x - 9, rod.y - 2, rod.x + 9, rod.y + 2, stroke: hex("#5A5E66"), lw: 3, cap: .round)
-            // time tag hangs off to the side, where the twisting hands don't cover it
-            let tag = CGPoint(x: rod.x - 34, y: rod.y - 8)
-            s.line(tag.x + 16, tag.y + 2, rod.x - 6, rod.y - 1, stroke: hex("#D8434B"), lw: 0.8)
-            s.rect(tag.x - 16, tag.y - 4, 32, 8, r: 2, fill: .white, stroke: hex("#D8434B"), lw: 1)
-            s.label("T 14:05", "T 14:05", tag.x, tag.y + 2.2, size: 6, color: hex("#D8434B"), anchor: .middle, bold: true)
-        }
-        if infant {
-            let L = 48.0
+        let calm = max(0, 1 - abs(stage - stage.rounded()) * 4)
+        s.group(opacity: calm) { g in
             switch st {
-            case 0, 1:
-                if st == 1 { reachIn(&s, from: CGPoint(x: 400, y: 40), palm: CGPoint(x: 300, y: 120), dir: unit(CGPoint(x: -0.6, y: 0.8)), len: L, shape: .open, thumb: 1, gloves: gloves) }
+            case 0:
+                // beside the casualty, so the leader reaches the shin without crossing them
+                g.callout("deep cut, blood pouring", "深伤口，血流不止", infant ? 72 : 160, infant ? 222 : 140, to: wound, color: red)
+                if !infant {
+                    let h = at("rescuer_head")
+                    g.bubble("Sit down — I’ll help", "坐下，我来帮你", min(300, h.x + 20), max(24, h.y - 30), tip: CGPoint(x: h.x - 4, y: h.y + 2))
+                }
+            case 1:
+                g.phone(30, infant ? 150 : 250, number: g.t("911", "120"), t: t)
+                g.callout("gloves — or plastic bags", "戴手套——或套塑料袋", lx + (infant ? 150 : 120), 60, to: at("hands"), color: hex("#6C63C0"))
             case 2:
-                reachIn(&s, from: CGPoint(x: hands.x + 60, y: -20), palm: CGPoint(x: hands.x + 4, y: hands.y - 12), dir: unit(CGPoint(x: -0.3, y: 1)), len: L, shape: .open, thumb: 1, gloves: gloves)
-                reachIn(&s, from: CGPoint(x: hands.x + 90, y: -10), palm: CGPoint(x: hands.x + 14, y: hands.y - 20), dir: unit(CGPoint(x: -0.5, y: 1)), len: L, shape: .open, thumb: 1, gloves: gloves)
-            default:
-                reachIn(&s, from: CGPoint(x: hands.x + 60, y: -20), palm: CGPoint(x: hands.x + 4, y: hands.y - 16), dir: unit(CGPoint(x: -0.3, y: 1)), len: L, shape: .open, thumb: 1, gloves: gloves)
+                g.callout(infant ? "press hard, keep pressing" : "both hands, press hard", infant ? "用力按住，不要松开" : "双手用力按压",
+                          lx, 60, to: at("hands"), color: red)
+                g.tag("don’t lift to check", "不要掀开查看", lx, 84, size: 9, bold: true)
+            case 3:
+                g.tag("2nd pad on top — keep the first", "第二块叠上——不揭第一块", lx, 56, size: 9, color: hex("#555555"), bold: true, width: 150)
+                g.tag("bandage firmly over the pads", "绷带在敷料上加压包扎", lx, 82, size: 9, color: hex("#555555"), bold: true, width: 150)
+            case 4:
+                if infant {
+                    g.tag("more pads, keep pressing", "加敷料，继续按压", 12, 60, size: 9, color: red, anchor: .start, bold: true)
+                    g.callout("keep baby warm", "给婴儿保暖", 12, 226, to: at("torso"), color: hex("#8A6A2A"), anchor: .start)
+                } else {
+                    g.callout("tourniquet 5–7 cm above the wound", "止血带：伤口上方 5–7 厘米", 256, 286, to: band, color: red, width: 240)
+                    g.tag("tighten till it stops · write the time", "拧紧至不出血 · 记下时间", 352, 50, size: 9, color: red, anchor: .end, bold: true, width: 240)
+                    g.callout("keep them warm", "注意保暖", 12, 286, to: at("torso"), color: hex("#8A6A2A"), anchor: .start)
+                    let tag = CGPoint(x: band.x - 30, y: band.y - 16)
+                    g.line(tag.x + 16, tag.y + 2, band.x - 2, band.y - 2, stroke: red, lw: 0.8)
+                    g.rect(tag.x - 16, tag.y - 4, 32, 8, r: 2, fill: .white, stroke: red, lw: 1)
+                    g.label("T 14:05", "T 14:05", tag.x, tag.y + 2.2, size: 6, color: red, anchor: .middle, bold: true)
+                }
+            default: break
             }
-        } else {
-            r.drawArm(&s, near: false)
-            r.drawArm(&s, near: true)
+            if st == 2 || st == 3 { padInset(&g, 236, 8, pressure: st == 3 ? 1 : pressure, clot: clot, flow: flow, t: t) }
         }
-
-        let red = hex("#D8434B"), lx = infant ? 100.0 : 112
-        switch st {
-        case 0:
-            s.callout("deep cut, blood pouring", "深伤口，血流不止", lx, 70, to: wound, color: red)
-            if !infant { s.bubble("Sit down — I’ll help", "坐下，我来帮你", r.headCentre.x + 10, r.headCentre.y - 46, tip: CGPoint(x: r.mouth.x, y: r.mouth.y - 4)) }
-        case 1:
-            s.phone(infant ? 40 : 30, floor - 30, number: s.t("911", "120"), t: t)
-            s.tag("gloves — or plastic bags", "戴手套——或套塑料袋", lx + (infant ? 60 : 30), 60, size: 10, color: hex("#6C63C0"), bold: true)
-        case 2:
-            s.callout(infant ? "press hard, keep pressing" : "both hands, press hard", infant ? "用力按住，不要松开" : "双手用力按压",
-                      lx, 60, to: CGPoint(x: hands.x, y: hands.y - 4), color: red)
-            s.tag("don’t lift to check", "不要掀开查看", lx, 84, size: 9, bold: true)
-        case 3:
-            s.callout("2nd pad on top — keep the first", "第二块叠上——不揭第一块", lx, 56, to: onShin(0.6, 1.2), color: hex("#555555"), width: 150)
-            s.callout("bandage firmly over the pads", "绷带在敷料上加压包扎", lx, 82, to: onShin(0.7, 1.0), color: hex("#555555"), width: 150)
-        case 4:
-            if infant {
-                s.callout("more pads, keep pressing", "加敷料，继续按压", lx, 60, to: wound, color: red)
-                s.tag("keep baby warm", "给婴儿保暖", lx, 84, size: 9, bold: true)
-            } else {
-                // one line each: below the floor line next to the band, and top right clear of the rescuer
-                s.callout("tourniquet 5–7 cm above the wound", "止血带：伤口上方 5–7 厘米", band.x - 40, floor + 22, to: band, color: red, width: 240)
-                s.tag("tighten till it stops · write the time", "拧紧至不出血 · 记下时间", 352, 50, size: 9, color: red, anchor: .end, bold: true, width: 240)
-                s.callout("keep them warm", "注意保暖", lx - 30, 60, to: v.torso(0.6, 0.7), color: hex("#8A6A2A"))
-            }
-        default: break
-        }
-        if st == 2 || st == 3 { padInset(&s, 236, 8, pressure: st == 3 ? 1 : pressure, clot: clot, flow: flow, t: t) }
         // status pill
         let status = flow > 0.3 ? red : hex("#2E9E5B")
         s.tonal(8, 8, 148, 28, r: 14, color: status)
@@ -250,7 +104,7 @@ extension Illustrations {
     }
 
     /// under the pad: pressure squeezes the torn vessel shut so a clot can seal it
-    private static func padInset(_ s: inout Sketch, _ x: Double, _ y: Double, pressure: Double, clot: Double, flow: Double, t: Double) {
+    @MainActor private static func padInset(_ s: inout Sketch, _ x: Double, _ y: Double, pressure: Double, clot: Double, flow: Double, t: Double) {
         s.inset(x, y, 116, 100, "Under the pad", "敷料下面")
         let top = y + 50, cx = x + 58
         s.rect(x + 6, top, 104, 8, fill: hex("#F2C9A5"))
@@ -264,7 +118,7 @@ extension Illustrations {
             s.circle(cx + Double(i % 2) * 4 - 2, top - 4 - u * 20, 2.2, fill: hex("#C8323C"), opacity: 1 - u)
         }
         s.rect(cx - 26, top - 12 + (1 - pressure) * -14, 52, 10, r: 2, fill: .white, stroke: hex("#BBBBBB"))
-        s.arrow(CGPoint(x: cx, y: top - 36 + (1 - pressure) * -2), CGPoint(x: cx, y: top - 16 + (1 - pressure) * -14), lw: 2)
+        s.arrow(CGPoint(x: cx, y: top - 30 + (1 - pressure) * -2), CGPoint(x: cx, y: top - 16 + (1 - pressure) * -14), lw: 2)
         s.label("vessel", "血管", x + 8, top + 42, size: 8, color: hex("#8A1F2B"))
         if clot > 0.5 { s.label("clot", "血凝块", cx + 10, top + 16, size: 8, color: hex("#5E1219"), bold: true) }
     }
@@ -316,7 +170,7 @@ extension Illustrations {
         s.line(counterX + 80, top + 20, counterX + 80, floor - 8, stroke: hex("#C9AA82"), lw: 1)
         for x in [counterX + 70, counterX + 90] { s.rect(x - 1.5, top + 26, 3, 14, r: 1.5, fill: hex("#B8966C")) }
         let carried = who.age == .infant || who.age == .toddler
-        let basin = carried ? (x0: counterX + 12, x1: counterX + 96) : (x0: counterX + 34, x1: counterX + 118)
+        let basin = carried ? (x0: counterX + 6, x1: counterX + 96) : (x0: counterX + 10, x1: counterX + 100)
         s.rect(basin.x0, top + 4, basin.x1 - basin.x0, 44, r: 12, fill: hex("#D3DBE2"))
         s.rect(basin.x0 + 4, top + 4, basin.x1 - basin.x0 - 8, 8, r: 4, fill: hex("#BFC9D2"))
         s.rect(counterX - 4, top, basin.x0 - counterX + 6, 8, r: 4, fill: hex("#F1EEE9"))
@@ -328,26 +182,31 @@ extension Illustrations {
         let stool = kid ? 52.0 : 0
         if kid { s.rect(128, floor - stool, 56, stool, r: 8, fill: hex("#A9BFDD")); s.rect(128, floor - stool, 56, 8, r: 4, fill: hex("#BFD0E6")) }
         var v = SideFigure(h: c.h, build: c.build, look: c.look, hip: .zero, lean: carried ? 4 : 10, face: st == 0 ? .distress : .calm, bump: c.bump)
-        v.hip = CGPoint(x: 160, y: floor - stool - SideFigure.hipHeight(c.h, c.build))
-        v.nearLeg = .init(hip: 4, knee: 2)
-        v.farLeg = .init(hip: -3, knee: 2)
+        // weight on the far leg, the near knee soft
+        v.nearLeg = .init(hip: 12, knee: 16, point: 6)
+        v.farLeg = .init(hip: -4, knee: 3)
+        v.hip = CGPoint(x: 160, y: 0)
+        v.hip.y = v.hipY(onFloor: floor - stool)
         v.look.longSleeves = false
         let underTap = st == 1 || st == 2
         var parent: SideFigure? = nil
         if carried {
             // sits on the parent's forearm, against her chest
-            var m = SideFigure(h: 220, look: .helper, hip: CGPoint(x: counterX - 26, y: floor - SideFigure.hipHeight(220, .adult)), lean: 4)
-            m.nearLeg = .init(hip: 3, knee: 2)
-            m.farLeg = .init(hip: -3, knee: 2)
-            let front = m.front(0.3)
-            v.hip = CGPoint(x: front.x + c.build.depth * c.h * 0.45, y: front.y - 2)
+            let toddler = who.age == .toddler
+            var m = SideFigure(h: 220, look: .helper, hip: CGPoint(x: counterX - (toddler ? 40 : 26), y: floor - SideFigure.hipHeight(220, .adult)), lean: 4)
+            m.nearLeg = .init(hip: 10, knee: 14, point: 6)
+            m.farLeg = .init(hip: -4, knee: 3)
+            m.hip.y = m.hipY(onFloor: floor)
+            // a toddler sits lower and further out on the hip, clear of her face
+            let front = m.front(toddler ? 0.16 : 0.3)
+            v.hip = CGPoint(x: front.x + c.build.depth * c.h * (toddler ? 0.7 : 0.45), y: front.y - 2)
             v.nearLeg = .init(hip: 84, knee: 70, point: 20)
             v.farLeg = .init(hip: 76, knee: 64, point: 20)
             m.far = .init(reach: CGPoint(x: v.hip.x + 6, y: v.hip.y + c.build.legW * c.h * 0.5 + 3), hand: .open, handAngle: 0)
             parent = m
         }
         if underTap {
-            v.near = .init(reach: carried ? CGPoint(x: counterX + 60, y: top - 12) : CGPoint(x: counterX + 72, y: top - 18), hand: .open, handAngle: 8)
+            v.near = .init(reach: carried ? CGPoint(x: counterX + 70, y: top - 12) : CGPoint(x: counterX + 86, y: top - 16), hand: .open, handAngle: 8)
         } else if st == 0 {
             v.near = .init(shoulder: 20, elbow: 100)
         } else {
@@ -385,7 +244,9 @@ extension Illustrations {
                 s.line(tapX - 2 + Double(i % 2) * 3, top - 56 + u * 30, tapX - 2 + Double(i % 2) * 3, top - 50 + u * 30, stroke: blue, lw: 2.5, cap: .round)
             }
             s.line(tapX, top - 56, tapX, burn.y - 5, stroke: blue, lw: 3, opacity: 0.5)
-            s.path("M \(burn.x - 10) \(burn.y + 4) Q \(burn.x - 14) \(burn.y + 22) \(burn.x - 12) \(top + 30) M \(burn.x + 10) \(burn.y + 4) Q \(burn.x + 14) \(burn.y + 22) \(burn.x + 12) \(top + 30)",
+            // runs off the arm into the basin
+            let lo = max(basin.x0 + 6, burn.x - 8), hi = min(basin.x1 - 6, burn.x + 10)
+            s.path("M \(burn.x - 6) \(burn.y + 4) Q \(lo - 2) \(burn.y + 16) \(lo) \(top + 30) M \(burn.x + 8) \(burn.y + 4) Q \(hi + 2) \(burn.y + 16) \(hi) \(top + 30)",
                    stroke: blue, lw: 2, opacity: 0.6)
         }
         if st >= 3 {
@@ -428,7 +289,8 @@ extension Illustrations {
             s.callout("cling film laid on, not wrapped", "保鲜膜平铺，不要缠绕", 270, 60, to: CGPoint(x: burn.x, y: burn.y - 6), color: hex("#3F7FA8"), width: 140)
             s.callout("cling film", "保鲜膜", 300, 100, to: CGPoint(x: counterX + 128, y: top - 12), color: hex("#555555"))
         case 4:
-            doctorCard(&s, 192, 8, look: v.look, baby: who.age == .infant)
+            // top left, where the skin inset was: clear of the arm and a carried child
+            doctorCard(&s, 6, 8, look: v.look, baby: who.age == .infant)
         default: break
         }
         if st <= 2 { skinInset(&s, 8, 8, depth: depth, cooling: underTap, minutes: p[v: "minutes"] * p[v: "cooling"], t: t) }
@@ -436,7 +298,7 @@ extension Illustrations {
 
     /// when a burn needs a doctor: their own palm as the size check, then the places and kinds that always do
     private static func doctorCard(_ s: inout Sketch, _ x: Double, _ y: Double, look: Look, baby: Bool) {
-        let w = 160.0, h = 132.0, red = hex("#D8434B")
+        let w = 146.0, h = 132.0, red = hex("#D8434B")
         s.inset(x, y, w, h, "See a doctor if…", "以下情况需就医")
         drawHand(&s, at: CGPoint(x: x + 22, y: y + 44), dir: CGPoint(x: 0, y: -1), len: 30, shape: .open, look: look)
         s.shape(Path(roundedRect: CGRect(x: x + 8, y: y + 24, width: 28, height: 38), cornerRadius: 10), stroke: red, lw: 1.2, dash: [3, 2])
@@ -449,7 +311,7 @@ extension Illustrations {
         for (i, row) in rows.enumerated() {
             let yy = y + 76 + Double(i) * 14
             s.circle(x + 12, yy - 3, 2.2, fill: red)
-            s.label(row.0, row.1, x + 20, yy, size: 9, color: hex("#444444"))
+            s.label(row.0, row.1, x + 19, yy, size: 8.5, color: hex("#444444"))
         }
     }
 

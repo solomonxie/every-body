@@ -11,6 +11,8 @@ func sheet(_ name: String, out: URL, height: CGFloat? = nil, @ViewBuilder _ page
         for dark in [false, true] {
             let settings = Settings()
             settings.names = zh ? .zh : .en
+            // PROFILE=infant|toddler|child|senior renders for that person type
+            if let age = ProcessInfo.processInfo.environment["PROFILE"].flatMap(AgeGroup.init(rawValue:)) { settings.age = age }
             let view = VStack(alignment: .leading) { page() }
                 .padding(.horizontal, 16).padding(.vertical, 12)
                 .frame(width: 390, height: height, alignment: .top)
@@ -47,6 +49,12 @@ struct RenderUI {
         func want(_ n: String) -> Bool { only.isEmpty || only.contains(n) }
 
         if want("home") { sheet("home", out: out) { HomeContent(query: .constant("")) } }
+        if want("posture") {
+            let topic = PostureTopic.find("sitting")!
+            sheet("posture-tall", out: out) { PosturePanel(topic: topic, blend: .constant(0)) }
+            sheet("posture-slump", out: out) { PosturePanel(topic: topic, blend: .constant(1)) }
+            sheet("posture-mid", out: out) { PosturePanel(topic: topic, blend: .constant(0.5)) }
+        }
         if want("suggest") {
             let s = Settings()
             s.clearRecentSearches()
@@ -97,6 +105,7 @@ struct RenderUI {
                 .background(Color.card, in: .rect(cornerRadius: 22))
             }
         }
+        if want("hidden") { sheet("hidden", out: out, height: 500) { IllustrationScreen(id: "blood-pressure") } }
         if want("player") { sheet("player", out: out, height: 760) { IllustrationScreen(id: "cpr") } }
     }
 }

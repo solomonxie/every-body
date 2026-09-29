@@ -23,7 +23,7 @@ enum Cautions {
         Bilingual("Bleeding disorders or blood thinners (anticoagulants): tell the practitioner first — bruising and bleeding are more likely.",
                   "有出血性疾病或服用抗凝药者须事先告知医师——更易淤青出血。"),
         Bilingual("Pacemaker or other implanted electronic device: no electro-acupuncture.", "装有心脏起搏器等植入电子设备者：禁用电针。"),
-        Bilingual("Not over broken, infected or swollen skin, varicose veins or tumours; not when very hungry, exhausted or after alcohol.",
+        Bilingual("Not over broken, infected or swollen skin, varicose veins or tumors; not when very hungry, exhausted or after alcohol.",
                   "避开破损、感染、肿胀的皮肤及静脉曲张、肿瘤处；过饥、过劳或饮酒后不宜针刺。"),
         Bilingual("Fainting during needling can happen — lie down, especially the first time.", "针刺时可能晕针——尤其第一次，宜取卧位。"),
     ]
@@ -38,7 +38,7 @@ enum Cautions {
                 out.append(Bilingual("Pregnant: avoid Hegu (the web of the thumb). Strong pressure here is traditionally said to trigger contractions — skip it unless your midwife or doctor says otherwise.",
                                      "孕妇：避免按压合谷（虎口）。传统认为重按此穴可能诱发宫缩——除非医生或助产士同意，请跳过。"))
             case "body-sanyinjiao":
-                out.append(Bilingual("Pregnant: avoid Sanyinjiao (above the inner ankle). It is traditionally used to bring on labour — do not press during pregnancy.",
+                out.append(Bilingual("Pregnant: avoid Sanyinjiao (above the inner ankle). It is traditionally used to bring on labor — do not press during pregnancy.",
                                      "孕妇：避免按压三阴交（内踝上方）。传统用于催产，孕期不要按压。"))
             case "hand-neiguan":
                 out.append(Bilingual("Pregnant: gentle pressure on Neiguan is widely used for morning sickness and is considered low-risk.",
@@ -74,9 +74,9 @@ enum Cautions {
                 out.append(Bilingual("Pregnant: forbidden. Hegu and Sanyinjiao are traditionally said to bring on contractions — no needles, no strong pressure.",
                                      "孕妇禁用：传统认为合谷、三阴交可诱发宫缩——禁针，也不要重按。"))
             case "acu-gb21":
-                out.append(Bilingual("Pregnant: forbidden. Jianjing is traditionally used to hasten labour.", "孕妇禁用：肩井传统用于催产。"))
+                out.append(Bilingual("Pregnant: forbidden. Jianjing is traditionally used to hasten labor.", "孕妇禁用：肩井传统用于催产。"))
             case "acu-bl60":
-                out.append(Bilingual("Pregnant: forbidden. Kunlun is traditionally used for difficult labour.", "孕妇禁用：昆仑传统用于难产。"))
+                out.append(Bilingual("Pregnant: forbidden. Kunlun is traditionally used for difficult labor.", "孕妇禁用：昆仑传统用于难产。"))
             case "acu-bl67":
                 out.append(Bilingual("Pregnant: no needling. Moxibustion here to turn a breech baby only from about 33 weeks, under your midwife or doctor.",
                                      "孕妇禁针。艾灸至阴矫正胎位仅在约孕 33 周后、在助产士或医生指导下进行。"))

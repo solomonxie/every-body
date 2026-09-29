@@ -20,14 +20,13 @@ extension Illustrations {
                    TryStep(mode: .rhythm(target: 10, minRate: 0, maxRate: 9999, label: "KICK 胎动"), success: { $0[v: "taps"] >= 10 },
                            ok: Bilingual("10 movements — reassuring. Fewer than usual, or a change in pattern? Call today; don’t wait until tomorrow.",
                                          "10 次胎动——令人安心。比平时少或规律改变？当天联系医院，不要等到第二天。"))),
-            .tryIt("Sort them: which need a call now, and which can wait for your next check-up?", "试一试：分一分——哪些要立即联系，哪些可以等到下次产检？",
+            .tryIt("Sort them: which need a call now, and which can wait for your next check-up? Not sure? Call anyway — maternity units answer day and night.",
+                   "试一试：分一分——哪些要立即联系，哪些可以等到下次产检？拿不准也要打电话——产科急诊 24 小时有人接听。",
                    set: ["mode": 2, "sort": 0.5],
                    TryStep(mode: .compare(param: "sort", options: [("Can wait 可等产检", 0), ("Call now 立即联系", 1)]), success: { abs($0[v: "sort"] - 0.5) > 0.4 },
-                           ok: Bilingual("Red list: call now, day or night. Green list: mention it at your next check-up.", "红色：立即联系，不分昼夜。绿色：下次产检时告诉医生。"),
+                           ok: Bilingual("Red list: call now, day or night. Green list: mention it at your next check-up. Very heavy bleeding, a fit, collapse or chest pain: call 911.",
+                                         "红色：立即联系，不分昼夜。绿色：下次产检时告诉医生。大出血、抽搐、晕倒或胸痛：立即拨打 120。"),
                            demo: ["sort": 1])),
-            .watch("Not sure? Call anyway — maternity units answer day and night. Very heavy bleeding, a fit, collapse or chest pain: call 911.",
-                   "拿不准？也要打电话——产科急诊 24 小时有人接听。大出血、抽搐、晕倒或胸痛：立即拨打 120。",
-                   set: ["mode": 2, "sort": 1, "call": 1]),
         ],
         draw: { s, p, t in drawWarningSigns(&s, p, t) },
         sources: ["NHS: Symptoms you should not ignore in pregnancy", "CDC Hear Her: urgent maternal warning signs",
@@ -40,7 +39,7 @@ extension Illustrations {
     private static let warnings: [(icon: Int, en: String, zh: String, focus: Int)] = [
         (0, "Bleeding from the vagina", "阴道出血", 1),
         (1, "Waters breaking", "破水（流液）", 1),
-        (2, "Bad headache, blurred vision, sudden swelling", "剧烈头痛、视物模糊、突然水肿", 2),
+        (2, "Bad headache, blurred vision, sudden swelling", "剧烈头痛、视物模糊、\n突然水肿", 2),
         (3, "Fever 38 °C or more", "发热 ≥ 38 °C", 3),
         (4, "Severe or constant belly pain", "剧烈或持续腹痛", 3),
         (5, "Baby moving less", "胎动减少", 4),
@@ -98,20 +97,35 @@ extension Illustrations {
         s.stage(94, floor: floor, r: 92, width: 206)
         var f = SideFigure(h: 250, look: .woman, hip: .zero, face: focus > 1.5 && focus < 2.5 ? .distress : .calm, bump: 1)
         f.hip = CGPoint(x: 88, y: floor - SideFigure.hipHeight(250, .adult))
-        f.nearLeg = .init(hip: 3, knee: 2)
-        f.farLeg = .init(hip: -3, knee: 2)
+        // weight on the back leg, the front knee soft; one hand on the small of her back
+        f.nearLeg = .init(hip: 8, knee: 10, point: 4)
+        f.farLeg = .init(hip: -5, knee: 2)
         let pain = weight(focus, 3) * (focus > 0.5 ? 1 : 0.6)
-        f.far = .init(shoulder: -4, elbow: 10)
+        f.far = .init(reach: f.back(0.3), hand: .open, handAngle: 70, flip: true)
         if focus > 1.5 && focus < 2.5 {
-            f.near = .init(reach: f.headPoint(0.2, -0.6), hand: .open)
+            f.near = .init(reach: f.headPoint(-0.02, -0.52), hand: .open, handAngle: -100, flip: true)
         } else if focus > 2.5 {
-            f.near = .init(reach: f.front(0.62), hand: .open)
+            // cradling the bump from below
+            let low = f.front(0.28)
+            f.near = .init(reach: CGPoint(x: low.x - 4, y: low.y), hand: .open, handAngle: 80)
         } else {
-            f.near = .init(shoulder: 4, elbow: 10)
+            let top = f.front(0.5)
+            f.near = .init(reach: CGPoint(x: top.x - 2, y: top.y - 3), hand: .open, handAngle: 60)
         }
-        f.draw(&s)
-        let head = f.headCentre, eye = f.headPoint(0.62, -0.05), crotch = f.torso(0.25, -0.08)
-        let bump = f.front(0.3), ribs = f.torso(0.25, 0.62), ankle = f.legPoint(near: true, 1.95), hand = f.palm(near: false)
+        var head = f.headCentre, eye = f.headPoint(0.62, -0.05), crotch = f.torso(0.25, -0.08)
+        var bump = f.front(0.3), ribs = f.torso(0.25, 0.62), ankle = f.legPoint(near: true, 1.95), hand = f.palm(near: false)
+        if SceneArt.image("signs-pregnant-0") != nil {
+            // rendered woman: hand on the bump (0, 1), to the forehead (2), under the bump (3+)
+            let key = { (x: Int) in x <= 1 ? "0" : x == 2 ? "2" : "3" }
+            let lo = Int(focus.clamped(0, 4).rounded(.down)), fr = focus.clamped(0, 4) - Double(lo)
+            let a = key(lo), b = key(min(4, lo + 1)), k = a == b ? 0 : fr * fr * (3 - 2 * fr)
+            s.art([("signs-pregnant-\(a)", 1 - k), ("signs-pregnant-\(b)", k)])
+            let m = SceneMarks.at("signs-pregnant-\(k > 0.5 ? b : a)")
+            head = m["head"] ?? head; eye = m["eye"] ?? eye; crotch = m["crotch"] ?? crotch
+            bump = m["bump"] ?? bump; ribs = m["ribs"] ?? ribs; ankle = m["ankle"] ?? ankle; hand = m["hand"] ?? hand
+        } else {
+            f.draw(&s)
+        }
 
         // what each sign looks like on her
         let w1 = weight(focus, 1), w2 = weight(focus, 2), w3 = weight(focus, 3)
@@ -175,9 +189,11 @@ extension Illustrations {
         let bed = CGRect(x: 6, y: 108, width: 200, height: 184)
         s.rect(bed.minX, bed.minY + 2, bed.width, bed.height, r: 10, fill: .black.opacity(0.07))
         s.rect(bed.minX, bed.minY, bed.width, bed.height, r: 10, fill: hex("#EAF1F8"), stroke: hex("#B9C9DC"), lw: 1)
-        s.shade(Path(roundedRect: CGRect(x: bed.minX + 8, y: bed.midY - 44, width: 40, height: 88), cornerRadius: 14), .white, hex("#E1E7EF"), stroke: hex("#C3CEDB"), lw: 1)
         var f = SideFigure(h: 250, look: .woman, hip: CGPoint(x: 138, y: 250), rotation: -82, face: .calm, bump: 1)
         f.headTilt = 10
+        // pillow under her head
+        let hc = f.headCentre, py = min(max(hc.y - 44, bed.minY + 8), bed.maxY - 96)
+        s.shade(Path(roundedRect: CGRect(x: bed.minX + 8, y: py, width: 40, height: 88), cornerRadius: 14), .white, hex("#E1E7EF"), stroke: hex("#C3CEDB"), lw: 1)
         f.nearLeg = .init(hip: 84, knee: 118, point: 20)
         f.farLeg = .init(hip: 66, knee: 106, point: 20)
         let bump = f.front(0.3)

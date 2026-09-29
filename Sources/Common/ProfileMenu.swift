@@ -10,16 +10,14 @@ struct ProfileMenu: View {
             Picker(settings.t("Age", "年龄"), selection: $settings.age) {
                 ForEach(AgeGroup.allCases, id: \.self) { Text(settings.t($0.label)).tag($0) }
             }
-            Picker(settings.t("Sex", "性别"), selection: $settings.female) {
-                Text(settings.t("Male", "男")).tag(false)
-                Text(settings.t("Female", "女")).tag(true)
+            if settings.age != .infant {
+                Picker(settings.t("Sex", "性别"), selection: $settings.female) {
+                    Text(settings.t("Male", "男")).tag(false)
+                    Text(settings.t("Female", "女")).tag(true)
+                }
             }
             if settings.female && settings.age == .adult {
                 Toggle(settings.t("Pregnant", "怀孕"), isOn: $settings.pregnant)
-            }
-            // children always keep theirs on, so only adults get the switch
-            if !settings.profile.isKid {
-                Toggle(settings.t("Show underwear", "显示内衣"), isOn: $settings.showUnderwear)
             }
             Picker(settings.t("Appearance", "外貌"), selection: $settings.heritage) {
                 ForEach(Heritage.allCases, id: \.self) { Text(settings.t($0.label)).tag($0) }
@@ -44,7 +42,27 @@ struct ProfileMenu: View {
         case .adult: settings.t("Adult", "成人")
         case .senior: settings.t("65+", "老人")
         }
-        return settings.profile.isPregnant ? settings.t("Pregnant", "孕妇") : "\(age) \(sex)"
+        return settings.profile.isPregnant ? settings.t("Pregnant", "孕妇") : settings.age == .infant ? age : "\(age) \(sex)"
+    }
+}
+
+/// Adult woman: one body shape (S–XXL; the lower body follows), and pregnancy.
+struct BodyShapePickers: View {
+    @Binding var chest: BodySize
+    @Binding var hips: BodySize
+    @Binding var pregnant: Bool
+    @Environment(Settings.self) private var settings
+
+    var body: some View {
+        Picker(settings.t("Body shape", "体型"), selection: shape) {
+            ForEach(BodySize.allCases, id: \.self) { Text(settings.t($0.letter)).tag($0) }
+        }
+        .pickerStyle(.menu)
+        Toggle(settings.t("Pregnant", "怀孕"), isOn: $pregnant)
+    }
+
+    private var shape: Binding<BodySize> {
+        Binding(get: { chest }, set: { chest = $0; hips = $0.lower })
     }
 }
 
