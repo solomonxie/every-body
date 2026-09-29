@@ -21,18 +21,24 @@ extension Illustrations {
                                                   "孕妇：孕 20 周后血压 ≥140/90，并伴头痛或水肿，可能是子痫前期——当天就医。")
         case .adult: nil
         }
-        return s.rebased(["kid": p.isKid ? 1 : 0, "senior": p.age == .senior ? 1 : 0, "pregnant": p.isPregnant ? 1 : 0])
+        return s.rebased(["kid": p.isKid ? 1 : 0, "senior": p.age == .senior ? 1 : 0, "pregnant": p.isPregnant ? 1 : 0, "female": p.female ? 1 : 0])
     }
 
     static func heartAttack(for p: Profile) -> Scenario {
         var s = heartAttack
-        if p.female {
-            s.profileNote = Bilingual("Women more often feel breathlessness, nausea, back or jaw pain and unusual tiredness — sometimes with little chest pain. Still call 120.",
+        if p.isKid {
+            s.profileNote = Bilingual("Heart attacks are very rare in children, so the scene shows an adult. Chest pain in a child is usually harmless — but fainting during exercise needs a doctor.",
+                                      "儿童极少发生心梗，所以图中是成人。儿童胸痛大多无害——但运动时晕倒需要就医。")
+        } else if p.isPregnant {
+            s.profileNote = Bilingual("Pregnant: rare but real, and easy to blame on the pregnancy. Chest pain, breathlessness or back or jaw pain — call 911 and say she is pregnant.",
+                                      "孕妇：少见但会发生，容易被误以为是孕期不适。胸痛、气短、背痛或下颌痛——拨打 120，并说明她怀孕了。")
+        } else if p.female {
+            s.profileNote = Bilingual("Women more often feel breathlessness, nausea, back or jaw pain and unusual tiredness — sometimes with little chest pain. Still call 911.",
                                       "女性更常出现气短、恶心、背痛或下颌痛、异常疲乏，胸痛可能不明显。同样立即拨打 120。")
         } else if p.age == .senior {
             s.profileNote = Bilingual("65+ and people with diabetes may have a 'silent' attack: breathlessness, confusion or collapse without chest pain.",
                                       "老人和糖尿病患者可能出现“无痛性”心梗：只有气短、意识混乱或晕倒。")
         }
-        return s.rebased(["female": p.female ? 1 : 0, "senior": p.age == .senior ? 1 : 0])
+        return s.rebased(["female": p.female ? 1 : 0, "senior": p.age == .senior ? 1 : 0, "pregnant": p.isPregnant ? 1 : 0])
     }
 }

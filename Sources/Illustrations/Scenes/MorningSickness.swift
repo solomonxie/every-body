@@ -42,18 +42,24 @@ extension Illustrations {
     @MainActor private static func drawQueasy(_ s: inout Sketch, calm: Double, t: Double) {
         let o = CGPoint(x: 84, y: 118), table = 232.0
         s.circle(84, 150, 78, fill: calm > 0.5 ? hex("#EEF5EA") : hex("#F1F3E6"))
+        if SceneArt.image("sickness-woman-0") != nil {
+            // rendered woman behind the table: queasy, or better with a cracker and ginger tea
+            s.art([("sickness-woman-0", 1 - calm), ("sickness-woman-1", calm)])
+            if calm < 0.5, let c = SceneMarks.at("sickness-woman-0")["head"] {
+                s.softGlow(CGPoint(x: c.x, y: c.y + 6), 16, 11, hex("#9BC46A"), 0.3)
+                for i in 0..<2 {
+                    let r = 7.0 + Double(i) * 5, a = t * 2 + Double(i)
+                    s.path("M \(c.x + 40 + cos(a) * r) \(c.y - 20 + sin(a) * r) A \(r) \(r) 0 1 1 \(c.x + 40 + cos(a + 4) * r) \(c.y - 20 + sin(a + 4) * r)",
+                           stroke: hex("#7FA84E"), lw: 1.6, cap: .round)
+                }
+            }
+            return
+        }
         let woman = Look.woman
         var f = FacingPerson(h: 300)
         f.skin = woman.skin; f.line = woman.skinLine; f.shirt = woman.top; f.shirtLine = woman.topLine
         f.hair = woman.hair; f.longHair = true
         f.face = calm > 0.5 ? .calm : .worried
-        if calm > 0.5 {
-            f.rightHand = CGPoint(x: -0.06 * f.h, y: table - o.y - 8)
-            f.leftHand = CGPoint(x: 0.1 * f.h, y: table - o.y - 6)
-        } else {
-            f.rightHand = CGPoint(x: -0.012 * f.h, y: f.mouth.y + 6)
-            f.leftHand = CGPoint(x: 0.02 * f.h, y: 0.3 * f.h)
-        }
         f.drawBody(&s, at: o)
         if calm < 0.5 {
             // queasy: greenish cheeks and a swirl beside the head
@@ -68,25 +74,44 @@ extension Illustrations {
         // table
         s.shade(Path(roundedRect: CGRect(x: 0, y: table, width: 200, height: 10), cornerRadius: 3), hex("#E6CFB2"), hex("#D8BC9A"))
         s.shade(Path(CGRect(x: 0, y: table + 10, width: 200, height: 58)), hex("#F0E6DA"), hex("#E8DCCC"), vertical: true)
-        if calm > 0.02 {
-            s.group(opacity: calm) { g in
-                // ginger tea
-                let cx = 128.0
-                g.path("M \(cx - 12) \(table - 24) L \(cx + 12) \(table - 24) L \(cx + 9) \(table) L \(cx - 9) \(table) Z", fill: .white, stroke: hex("#B8AFA2"), lw: 1)
-                g.path("M \(cx + 11) \(table - 18) q 9 2 1 12", stroke: hex("#B8AFA2"), lw: 2)
-                g.ellipse(cx, table - 23, 11, 2.4, fill: hex("#E8C77A"))
-                for i in 0..<2 {
-                    let x = cx - 4 + Double(i) * 8, w = sin(t * 1.5 + Double(i)) * 2
-                    g.path("M \(x) \(table - 30) q \(w + 3) -6 0 -12", stroke: hex("#C9C2B8"), lw: 1.2, cap: .round)
+        // queasy: hand over the mouth, elbow tucked in front of the chest, other hand on the tummy
+        // calm: a cracker in one hand, a mug of ginger tea held in the other
+        let queasy: [(Double, CGPoint, CGPoint)] = [(-1, CGPoint(x: -0.02 * f.h, y: f.mouth.y + 5), CGPoint(x: -0.5, y: 1)),
+                                                     (1, CGPoint(x: 0.03 * f.h, y: 0.29 * f.h), CGPoint(x: 1, y: 0.6))]
+        let relaxed: [(Double, CGPoint, CGPoint)] = [(-1, CGPoint(x: -0.075 * f.h, y: 0.1 * f.h), CGPoint(x: -0.6, y: 1)),
+                                                      (1, CGPoint(x: 0.075 * f.h, y: 0.2 * f.h), CGPoint(x: 0.6, y: 1))]
+        let crackers = { (g: inout Sketch) in
+            g.ellipse(46, table - 3, 24, 5, fill: .white, stroke: hex("#B8AFA2"), lw: 1)
+            for (dx, dy) in [(-10.0, -8.0), (4, -10)] {
+                g.rect(46 + dx - 8, table + dy - 3, 16, 10, r: 1.5, fill: hex("#EAC98A"), stroke: hex("#C9A262"), lw: 0.8)
+            }
+        }
+        if calm > 0.02 { s.group(opacity: calm) { g in crackers(&g) } }
+        for (pose, alpha) in [(queasy, 1 - calm), (relaxed, calm)] where alpha > 0.02 {
+            s.group(translate: o, opacity: alpha) { g in
+                for (side, target, bend) in pose {
+                    // raised forearms come toward us: the upper arm reads shorter
+                    let raised = target.y < 0.22 * f.h
+                    let (e, hd) = twoBone(f.shoulderPoint(side), target, raised ? 0.135 * f.h : 0.17 * f.h, raised ? 0.13 * f.h : 0.15 * f.h, bend: bend)
+                    f.limb(&g, side, elbow: e, hand: hd)
                 }
-                // plate of crackers
-                g.ellipse(46, table - 3, 24, 5, fill: .white, stroke: hex("#B8AFA2"), lw: 1)
-                for (dx, dy) in [(-10.0, -8.0), (4, -10), (-2, -14)] {
-                    g.rect(46 + dx - 8, table + dy - 3, 16, 10, r: 1.5, fill: hex("#EAC98A"), stroke: hex("#C9A262"), lw: 0.8)
+                guard pose.first?.1 == relaxed.first?.1 else { return }
+                // cracker between the fingers
+                let c = relaxed[0].1
+                g.group(rotate: -20, about: CGPoint(x: c.x + 2, y: c.y - 10)) { k in
+                    k.rect(c.x - 6, c.y - 17, 14, 10, r: 1.5, fill: hex("#EAC98A"), stroke: hex("#C9A262"), lw: 0.8)
+                    for dx in [-2.0, 2, 6] { k.circle(c.x + dx - 1, c.y - 12, 0.7, fill: hex("#C9A262")) }
+                }
+                // ginger tea, held in front of the hand
+                let m = CGPoint(x: relaxed[1].1.x + 2, y: relaxed[1].1.y + 2)
+                g.path("M \(m.x - 11) \(m.y - 12) L \(m.x + 11) \(m.y - 12) L \(m.x + 8.5) \(m.y + 12) L \(m.x - 8.5) \(m.y + 12) Z", fill: .white, stroke: hex("#B8AFA2"), lw: 1)
+                g.ellipse(m.x, m.y - 11.5, 10, 2.2, fill: hex("#E8C77A"))
+                for i in 0..<2 {
+                    let x = m.x - 4 + Double(i) * 8, w = sin(t * 1.5 + Double(i)) * 2
+                    g.path("M \(x) \(m.y - 17) q \(w + 3) -6 0 -12", stroke: hex("#C9C2B8"), lw: 1.2, cap: .round)
                 }
             }
         }
-        f.drawArms(&s, at: o)
     }
 
     @MainActor private static func drawNauseaCurve(_ s: inout Sketch, t: Double) {
@@ -127,7 +152,7 @@ extension Illustrations {
         let items: [(String, String, String, String)] = [
             ("Small, often", "少食多餐", "bland, every 2–3 h", "清淡，每 2–3 小时"),
             ("Cracker first", "起床先吃饼干", "before getting up", "起床前吃几块"),
-            ("Ginger", "姜", "tea, sweets, biscuits", "姜茶、姜糖、姜饼"),
+            ("Ginger", "姜", "tea, candies, cookies", "姜茶、姜糖、姜饼"),
             ("Sip fluids", "小口喝水", "little and often", "少量多次"),
             ("Rest", "多休息", "tiredness makes it worse", "疲劳会加重"),
             ("Avoid triggers", "避开诱因", "strong smells, fatty food", "浓烈气味、油腻食物"),

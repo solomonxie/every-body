@@ -11,7 +11,8 @@ correct positions and cause → effect (see `docs/design/mvp/DESIGN.md`). Every 
 
 ## What's in it
 
-- **Body** — real skeleton (Z-Anatomy, ~200 tappable bones) and textured skin figures (MakeHuman: male / female ×
+- **Body** — real skeleton (Z-Anatomy, ~200 tappable bones) and textured skin figures (MakeHuman bodies, faces and
+  hair stylized after Blender Studio's Snow / Rain: male / female ×
   infant, toddler, child, adult, 65+, pregnant × six appearances, modest underwear) in `Resources/Models/`; muscles,
   vessels, nerves and organs still math-built (`Resources/Data/body.json`, meshes in `Sources/Body/`). Layers, tap to
   name, Hide / Fade / Isolate / Undo, bend shoulder, elbow and knee (muscles bulge). Settings → Appearance / Show underwear.
@@ -60,9 +61,11 @@ the real skin figure). Check placement with
 `POINTS=acupuncture [FOCUS=acu-li11] [PANX=0.42] [PITCH=0.9] scripts/render_body/render.sh out.png skin <yaw> <focusY> <distance>`.
 Real models: `scripts/models/build.sh` (Blender 4.5 headless + MPFB2, raw downloads in gitignored `tools/`) rebuilds
 `Resources/Models/` and prints a size table; `REAL_MODELS=0` (env) falls back to the generated skeleton and skin.
-Skin figures: `scripts/models/build.sh fit` (MPFB humans → `build/models/figure`) then `build.sh pack` (→ `figure.bin`,
-textures); `scripts/render_body/grid.sh /tmp/grid` renders heritage / age / underwear / inside contact sheets.
-Third-party licences: `LICENSES/THIRD_PARTY.md` (Z-Anatomy CC BY-SA 4.0, MakeHuman CC0), also in Settings → Credits.
+Skin figures: `scripts/models/build.sh fit` (MPFB humans → `build/models/figure`; faces drawn onto the Snow / Rain heads
+by `face_fit.py`; sculpted hair) then `build.sh pack` (→ `figure.bin`, textures, points re-snapped), then `internals`;
+`scripts/render_body/grid.sh /tmp/grid` renders heritage / age / underwear / inside contact sheets.
+Third-party licences: `LICENSES/THIRD_PARTY.md` (Z-Anatomy CC BY-SA 4.0, MakeHuman CC0, Blender Studio Snow / Rain
+CC BY), also in Settings → Credits.
 Illustrations: `scripts/render_scenes/render.sh /tmp/scenes` renders every step to PNG on the Mac.
 Reflex charts: `venv/bin/python scripts/render_charts/gen_charts.py` regenerates `charts.json` (needs shapely);
 `scripts/render_charts/render.sh` renders every face to `build/charts/` with the app's `ChartCanvas`.

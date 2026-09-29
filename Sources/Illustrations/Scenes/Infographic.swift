@@ -69,13 +69,14 @@ extension Sketch {
         let w = width(en, zh, size: size, bold: bold)
         let x0 = anchor == .start ? x : anchor == .middle ? x - w / 2 : x - w
         let d: String
-        if anchor == .middle {
+        if anchor == .middle || (p.x > x0 + 4 && p.x < x0 + w - 4) {
+            // feature above or below the text: a straight leader to its nearest edge
             let ly = p.y < y ? y - size - 1 : y + 3
-            d = "M \(p.x) \(p.y) L \(x) \(ly)"
+            d = "M \(p.x) \(p.y) L \(anchor == .middle ? x : p.x) \(ly)"
         } else {
             // attach on the side of the text that faces the feature
             let right = p.x > x0 + w / 2, ex = right ? x0 + w + 3 : x0 - 3, ly = y - size * 0.35
-            let knee = CGPoint(x: ex + (right ? 6 : -6), y: ly)
+            let knee = CGPoint(x: right ? min(ex + 6, max(ex, p.x)) : max(ex - 6, min(ex, p.x)), y: ly)
             d = "M \(p.x) \(p.y) L \(knee.x) \(knee.y) L \(ex) \(ly)"
         }
         // white halo keeps the leader readable where it crosses a busy drawing
@@ -174,8 +175,9 @@ extension Sketch {
         circle(c.x, c.y, 1.8, fill: Tone.ink)
     }
 
-    /// "☎ 120" style call chip
-    mutating func callChip(_ x: Double, _ y: Double, number: String = "120", t: Double = 0) {
+    /// "☎ 911 / 120" call chip
+    mutating func callChip(_ x: Double, _ y: Double, number: String? = nil, t: Double = 0) {
+        let number = number ?? self.t("911", "120")
         rect(x, y, 58, 20, r: 10, fill: Tone.red)
         // handset
         path("M \(x + 9) \(y + 6) C \(x + 8) \(y + 12) \(x + 12) \(y + 16) \(x + 17) \(y + 15) L \(x + 17) \(y + 12.5) L \(x + 14.5) \(y + 11.5) L \(x + 13.5) \(y + 12.8) C \(x + 12) \(y + 12) \(x + 11.5) \(y + 11) \(x + 11) \(y + 9.8) L \(x + 12.3) \(y + 8.8) L \(x + 11.5) \(y + 6) Z",

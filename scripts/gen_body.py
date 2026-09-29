@@ -482,7 +482,8 @@ def muscles():
     part("orbicularis-oris", "Orbicularis oris", "口轮匝肌", "muscular", MUSCLE, tube(ring(0, 1.553, 0.09, 0.02, 0.011, 0.018), 0.0038))
     pair("zygomaticus", "Zygomaticus", "颧肌", "muscular", MUSCLE,
          tube([(0.054, 1.603, 0.062), (0.04, 1.578, 0.078), (0.022, 1.556, 0.09)], 0.003, [0.004, 0.0035, 0.0028]))
-    pair("eyeball", "Eye", "眼睛", "muscular", "#F4F1EC", sphere((0.03, 1.627, 0.07), 0.012))
+    # at the real skull's orbits (build_models.SKULL "to"), where the skin figure's eyes are
+    pair("eyeball", "Eye", "眼睛", "muscular", "#F4F1EC", sphere((0.0283, 1.6398, 0.071), 0.012))
     # jaw muscles lie on the side of the head: temporalis fans over the temple to the jaw, masseter from cheekbone to jaw angle
     on("temporalis", "Temporalis", "颞肌", HEAD_CORE, ((1.69, -45), (1.69, 42)), ((1.595, 8), (1.595, 20)), 0.005, 1.0,
        converge=((0.056, 1.585, 0.028), 0.8))
@@ -800,7 +801,7 @@ def torso_skin(rows, female, pregnant=False):
         k -= 0.02 * near(theta, 90, 4) * bell(y, 0.98, 1.26)                            # belly midline
         if female:
             for side in (-1, 1):
-                # breasts: rounded, fuller below the middle, rising out of the chest wall
+                # breasts: domes on the chest wall
                 lift = bell(y, 1.215, 1.355) ** 0.8 * (1 + 0.25 * (1.3 - y) / 0.05) if 1.215 < y < 1.355 else 0
                 k += (0.52 if pregnant else 0.45) * near(theta, 90 + side * 29, 15) * max(0, lift)
         if pregnant:
@@ -900,7 +901,7 @@ def skin():
     for sex, rows in torso.items():
         s(f"torso-{sex}", torso_skin(rows, sex == "female"), sex)
     s("torso-pregnant", torso_skin(TORSO["female"], True, pregnant=True), "pregnant")
-    # breast: a dome rising out of the chest wall, fuller low
+    # breast: a dome on the chest wall
     # upper arm starts as a rounded deltoid cap tucked under the shoulder slope
     sp("upper-arm", limb_skin(UPPER_ARM, lambda y, th:
         0.04 * near(th, 90, 30) * bell(y, 1.13, 1.33)             # biceps

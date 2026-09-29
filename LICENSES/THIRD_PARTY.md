@@ -1,7 +1,7 @@
 # Third-party assets
 
-Third-party material: the files in `Resources/Models/` (built by `scripts/models/build.sh`) and the character-art
-path data in `Sources/Illustrations/Art/PeopleArtData.swift` (built by `scripts/art/build_art.py`).
+Third-party material: the files in `Resources/Models/` (built by `scripts/models/build.sh`) and the scene pictures in
+`Resources/Illustrations/` (built by `scripts/art3d/build.sh`).
 
 ## Skeleton — Z-Anatomy (CC BY-SA 4.0)
 
@@ -50,26 +50,33 @@ path data in `Sources/Illustrations/Art/PeopleArtData.swift` (built by `scripts/
 - Licence: CC0 1.0 (public domain dedication), https://creativecommons.org/publicdomain/zero/1.0/ — no attribution required; credited anyway.
 - Changes: posed into the anatomical position and fitted to the app's landmarks (children to the app's age proportions);
   face targets per sex and heritage; heritage limited to the head; Southeast Asian, South Asian and Hispanic skins are
-  pixel blends of the Asian, African and Caucasian skins; nipples toned to a brown areola; scalp under the hair tinted
+  pixel blends of the Asian, African and Caucasian skins; chest marks toned; scalp under the hair tinted
   with the hair colour; hair and brows reduced to grey strands and tinted per heritage (silver for 65+); pregnant bump
   scaled to term; textures resized/recompressed, iris toned; underwear cut from the base mesh by the app's pipeline
   (no third-party garment).
 
-## Illustration people — Humaaans (CC0 1.0; earlier releases CC BY 4.0)
+## Faces and hair — Blender Studio Snow and Rain (CC BY 4.0)
 
-- File: `Sources/Illustrations/Art/PeopleArtData.swift` (used by the CPR illustration)
-- Source: "Humaaans" by Pablo Stanley, https://www.humaaans.com — SVG "Single Pieces" as mirrored in
-  https://github.com/Calinou/humaaans (`Flat Assets/Single Pieces`, © 2019 Pablo Stanley).
-- Licence: humaaans.com now states "Free for commercial or personal use. CC0 Public Domain License. Made by Pablo Stanley"
-  (checked 2026-09-26, https://creativecommons.org/publicdomain/zero/1.0/). The mirrored release carries
-  CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/); to satisfy either, we attribute:
-  **"Humaaans by Pablo Stanley (humaaans.com), CC BY 4.0 / CC0 — modified"**.
-- Used parts: profile heads (Short 1, Short 2, Caesar, Long, Pony, Top, Curly, Afro, No Hair, Short Beard, Wavy),
-  the hand from Body/Long Sleeve, shoes Flat Pointy and Flat Sneaker.
-- Changes: normalised into part frames, colours turned into recolourable tokens (skin, hair, clothes, shoes);
-  new parts drawn in the same style (face-on heads and hair, baby head, fist / laced / two-finger / encircling / thumb hands),
-  arms, legs and torsos drawn by the app in the library's flat style and posed per scene.
-- Open Peeps (Pablo Stanley, CC0) was compared and not used: its hand-drawn outlines clash with the app's flat scenes.
+- "Snow Rig © Blender Foundation | studio.blender.org" (https://studio.blender.org/characters/snow/v2/) and
+  "Rain Rig © Blender Foundation | studio.blender.org" (https://studio.blender.org/characters/rain/v2/), CC BY.
+- Used: the heads (Snow for men, Rain for women and children), their eye centres and sculpted hair (Snow's; Rain's main hair
+  and ponytail, bent to hang). `scripts/models/face_fit.py` draws each MakeHuman figure's face onto the head (matched by
+  478 face landmarks, blended part way for adults) and carries the hair onto it; the figure keeps its own mesh, UVs and
+  skin. No rig, texture or material of theirs ships.
+
+## Scene pictures — MakeHuman via MPFB2 (CC0 1.0)
+
+- Files: `Resources/Illustrations/<scene>/*.webp` — CPR, choking, recovery position, severe bleeding, stroke, heart attack,
+  pregnancy warning signs, morning sickness, sleeping position (built by `scripts/art3d/build.sh`: `render.py` + `pack.py`)
+- Made headless with MPFB 2.0.17 in Blender 4.5 LTS (EEVEE render); same source and licence as the skin figures above.
+- Assets (`makehuman_system_assets`, CC0): base mesh, macro and `stomach-pregnant` / `stomach-navel` targets, the `default` rig,
+  eyes `low-poly`, eyebrows `eyebrow006` / `010` / `012`, eyelashes `eyelashes01` / `02` / `03`,
+  hair `bob02` / `short02` / `short03` / `short04`, clothes `female_casualsuit01` / `02`, `female_sportsuit01`,
+  `male_casualsuit04` / `06`, shoes `shoes02` / `03` / `05` / `06`; skin, clothes and hair textures kept only as shading detail.
+- Changes: posed per step, recoloured, garments cut (top off or cut open, trouser leg rolled up, socks removed; a sports-bra
+  band, gloves and a blanket cut from the skin mesh); props (AED, pads, phone, table, chair, bed, bandage, tourniquet)
+  modelled in the scripts.
+- Licence: CC0 1.0 (public domain dedication), https://creativecommons.org/publicdomain/zero/1.0/ — no attribution required; credited anyway.
 
 ## Tools
 

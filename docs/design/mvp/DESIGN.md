@@ -157,8 +157,11 @@ peel layers, and see what a point connects to — on a phone, free, offline.
     - one topology for every figure → `figure.bin`: per-variant positions as int16 deltas (deflated) instead of
       USD blend shapes; the app builds the mesh for sex × age × heritage (+ pregnant). ~2.9 MB for 66 variants.
     - heritage (East / Southeast / South Asian, Hispanic, White, Black) = face (neck up) + skin texture only;
-      body shape fixed per sex (man athletic, woman fuller bust and hips). Textures: MPFB young/old × 3 races, blended.
+      body shape fixed per sex. Textures: MPFB young/old × 3 races, blended.
     - children: MakeHuman child fitted to the app's age reshape (shorter neck added to the reshape).
+    - faces and hair stylized (2026-09-28): drawn onto Blender Studio's Snow (men) / Rain (women, children) heads by
+      478 face landmarks (`face_fit.py`), part way for adults; their sculpted hair carried along, other styles
+      sculpted solids. Realistic faces (MakeHuman targets, photo-sample averages) were rejected.
     - underwear: cut from the body mesh along smooth fields, on by default; children always wear it.
 - Budget: app ≤ 50 MB. Levers: decimate + baked normal maps, 1–2K compressed textures, merge tiny parts,
   load layers lazily; over budget → download layers on demand.

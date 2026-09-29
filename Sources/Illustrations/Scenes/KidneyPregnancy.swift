@@ -14,7 +14,7 @@ extension Illustrations {
             s.profileNote = Bilingual("Pregnant: checked by ultrasound, not CT. A mildly swollen right kidney is normal in pregnancy; pain with fever → hospital the same day.",
                                       "孕妇：用超声检查，不做 CT。孕期右肾轻度积水常见；疼痛伴发热 → 当天就医。")
         } else if p.isKid {
-            s.profileNote = Bilingual("Children: stones are rare and often have a cause (diet, metabolism, urine infection) — see a paediatric doctor. Pain may show as vomiting or crying.",
+            s.profileNote = Bilingual("Children: stones are rare and often have a cause (diet, metabolism, urine infection) — see a pediatric doctor. Pain may show as vomiting or crying.",
                                       "儿童：结石少见，常有病因（饮食、代谢、尿路感染）——请看儿科。疼痛可能表现为呕吐、哭闹。")
         }
         return s
@@ -24,7 +24,7 @@ extension Illustrations {
         id: "kidney-stones", group: .illness, title: Bilingual("Kidney stones", "肾结石"),
         params: ["mm": 3, "moving": 0, "scene": 0],
         steps: [
-            .watch("Kidneys sit high at the back, tucked under the lowest ribs. Minerals in urine can crystallise into a stone inside them.",
+            .watch("Kidneys sit high at the back, tucked under the lowest ribs. Minerals in urine can crystallize into a stone inside them.",
                    "肾脏位于后腰高处、最下面肋骨的下方。尿液中的矿物质可在肾内结晶成结石。", set: ["mm": 3, "moving": 0, "scene": 0]),
             .watch("When it slips into the ureter — a tube only 3–4 mm wide — it causes waves of severe pain from the loin to the groin.",
                    "结石滑入输尿管（仅 3–4 毫米宽）时，会引起从腰部放射到腹股沟的阵发性剧痛。", set: ["moving": 1]),
@@ -160,9 +160,9 @@ extension Illustrations {
             s.text("\(i + 1)", q.x + 11, q.y + 3, size: 7.5, color: here ? .white : Anat.ink, anchor: .middle, bold: true)
         }
         // the stone
-        let stone = travel <= 0 ? pt(143, 100) : along(min(1, travel))
+        let stone = travel <= 0 ? pt(157, 117) : along(min(1, travel)), stoneR = 1.8 + mm * 0.34
         if !passed {
-            let r = 1.8 + mm * 0.34
+            let r = stoneR
             s.gradFill(stonePath(stone, r), [hex("#B79A6A"), hex("#6E5634")], from: pt(stone.x - r, stone.y - r), to: pt(stone.x + r, stone.y + r),
                        stroke: hex("#4A3A22"), lw: 0.9)
         }
@@ -170,7 +170,7 @@ extension Illustrations {
         s.leader("kidney", "肾", at: pt(70, 104), 10, 86, color: hex("#8A3B45"), bold: true)
         s.leader("ureter", "输尿管", at: pt(96, 172), 10, 172, color: hex("#8A6A1B"), bold: true)
         s.leader("bladder", "膀胱", at: pt(94, 252), 10, 236, color: hex("#8A6A1B"), bold: true)
-        if !moving { s.leader("stone", "结石", at: stone, 150, 148, anchor: .middle, color: Anat.ink, bold: true) }
+        if !moving { s.leader("stone", "结石", at: pt(stone.x + 1, stone.y + stoneR + 1), 170, 156, anchor: .middle, color: Anat.ink, bold: true, dot: false) }
         if moving && !prevention { s.leader("pain: loin → groin", "疼痛：腰 → 腹股沟", at: pt(198, 290), 204, 292, anchor: .end, color: red, bold: true, dot: false) }
 
         // right panel
@@ -231,7 +231,7 @@ extension Illustrations {
         let table: [(Double, Double, Double, Bilingual)] = [
             (6, 0.6, 0.1, Bilingual("lentil", "扁豆")), (8, 1.6, 1, Bilingual("raspberry", "树莓")), (12, 5.4, 14, Bilingual("lime", "青柠")),
             (16, 11.6, 100, Bilingual("avocado", "牛油果")), (20, 25.6, 300, Bilingual("banana", "香蕉")), (24, 30, 600, Bilingual("ear of corn", "玉米")),
-            (28, 37.6, 1000, Bilingual("aubergine", "茄子")), (32, 42.4, 1700, Bilingual("squash", "南瓜")), (36, 47.4, 2600, Bilingual("papaya", "木瓜")),
+            (28, 37.6, 1000, Bilingual("eggplant", "茄子")), (32, 42.4, 1700, Bilingual("squash", "南瓜")), (36, 47.4, 2600, Bilingual("papaya", "木瓜")),
             (40, 51.2, 3400, Bilingual("watermelon", "西瓜")),
         ]
         let i = max(0, (table.firstIndex { $0.0 >= week } ?? table.count) - 1)
@@ -357,8 +357,8 @@ extension Illustrations {
             .watch("Week 12: all organs formed; the womb rises just above the pubic bone. First-trimester scan.", "第 12 周：器官基本形成；子宫刚超出耻骨。孕早期超声检查。", set: ["week": 12]),
             .watch("Week 20: halfway. The top of the womb reaches the navel; first kicks are felt.", "第 20 周：孕期过半。宫底到达肚脐；开始感到胎动。", set: ["week": 20]),
             .watch("Week 28: eyes open; a baby born now often survives with intensive care.", "第 28 周：眼睛睁开；此时早产经重症监护多可存活。", set: ["week": 28]),
-            .watch("Week 40: full term — about 50 cm and 3.4 kg, usually head down, the womb up under the ribs.", "第 40 周：足月——约 50 厘米、3.4 公斤，多为头朝下，子宫顶到肋下。", set: ["week": 40]),
-            .tryIt("Drag through the weeks and watch the belly grow.", "试一试：拖动孕周，看肚子长大。",
+            .tryIt("Week 40: full term — about 50 cm and 3.4 kg, usually head down, the womb up under the ribs. Drag through the weeks and watch the belly grow.",
+                   "第 40 周：足月——约 50 厘米、3.4 公斤，多为头朝下，子宫顶到肋下。试一试：拖动孕周，看肚子长大。", set: ["week": 40],
                    TryStep(mode: .scrub([Scrub(param: "week", label: "Week 孕周", min: 6, max: 40, digits: 0)]), success: { _ in true },
                            ok: Bilingual("From week 20, fundal height (cm above the pubic bone) ≈ weeks — midwives measure it with a tape.",
                                          "约 20 周后，宫高（耻骨上厘米数）≈ 孕周数——产检时用软尺测量。"))),
@@ -370,7 +370,7 @@ extension Illustrations {
     // Mother side-on, facing right, womb cut open; 2.85 pt per cm: pubic bone y 236, navel y 176, breastbone tip y 132.
     @MainActor private static func drawGrowth(_ s: inout Sketch, _ week: Double, _ t: Double) {
         let size = fetalSize(week)
-        let purple = Anat.purple, label = hex("#8A5A6A")
+        let purple = Anat.purple
         let pubis = 236.0, pxPerCm = 2.85
         let marks: [(Double, Double)] = [(6, 238), (12, 226), (20, 176), (28, 154), (36, 130), (40, 136)]
         let i = max(0, (marks.firstIndex { $0.0 >= week } ?? marks.count) - 1)
@@ -411,7 +411,12 @@ extension Illustrations {
         s.rect(112, 44, 20, 20, fill: skin)
         s.gradFill(Path(ellipseIn: CGRect(x: 101, y: 9, width: 42, height: 42)), [skin, Anat.skinShade], from: pt(136, 20), to: pt(104, 46), stroke: edge, lw: 1.6)
         s.path("M 141 24 L 147 34 L 141 36 C 142 40, 141 44, 136 48", fill: skin, stroke: edge, lw: 1.2)
-        s.path("M 134 25 q 3 -1.5 5 0", stroke: hex("#4A4550"), lw: 1.3, cap: .round)
+        // simple calm face: ear, brow, open eye, blush, small smile
+        s.ellipse(117, 31, 3, 4, fill: skin, stroke: edge, lw: 0.9)
+        s.path("M 133.5 21.5 q 3 -1.6 5.5 0", stroke: hex("#5B4033"), lw: 1.1, cap: .round)
+        s.ellipse(136.8, 26.5, 1.5, 1.9, fill: Ink.ink)
+        s.ellipse(133.5, 34, 3.4, 2.2, fill: Ink.blush, opacity: 0.28)
+        s.path("M 138.2 39.6 q 1.6 1.1 3.2 -0.2", stroke: Ink.lip, lw: 1, cap: .round)
         s.path("M 102 32 C 96 10, 130 0, 142 18 C 128 14, 114 18, 106 40 Z", fill: hex("#5B4033"))
         s.circle(98, 30, 7, fill: hex("#5B4033"))
         // spine and pubic bone
@@ -446,8 +451,7 @@ extension Illustrations {
         drawFetus(&s, at: centre, length: length, week: week, rotate: 20 - turn * 1.05, kick: kick, cord: week >= 9 ? placenta : nil)
 
         // landmarks and the tape measure
-        s.circle(navelX - 2, 176, 2, fill: label)
-        s.circle(151, 132, 2, fill: label)
+        s.path("M \(navelX - 3) 173.5 q 2.4 2.5 0 5", stroke: edge, lw: 1.1, cap: .round)
         if week >= 16 {
             let x = bx + 12
             s.line(x, pubis, x, fundus, stroke: hex("#E9BE45"), lw: 6, cap: .round)
@@ -458,9 +462,9 @@ extension Illustrations {
             s.line(x - 6, fundus, x + 6, fundus, stroke: hex("#8A6A1B"), lw: 1.2)
         }
         s.leader("pubic bone", "耻骨", at: pt(144, pubis + 6), 156, 262, color: Anat.text, size: 8)
-        s.leader("womb", "子宫", at: pt(cx - width * 0.4, top + height * 0.55), 18, 150, color: hex("#A0506A"), size: 8)
+        s.leader("womb", "子宫", at: pt(cx - width * 0.4, top + height * 0.55), 18, week >= 16 ? 174 : 150, color: hex("#A0506A"), size: 8)
         if week >= 16 {
-            s.leader("placenta", "胎盘", at: placenta, 18, 172, color: hex("#8A2E46"), size: 8)
+            s.leader("placenta", "胎盘", at: placenta, 18, 150, color: hex("#8A2E46"), size: 8)
         }
 
         // right panel
@@ -479,7 +483,7 @@ extension Illustrations {
         s.stateChip(milestone.0, milestone.1, px, 102, color: purple)
         if week < 16 {
             // too small to see in the body: magnified view in its fluid sac
-            let c = pt(px + pw / 2, 192), r = 50.0
+            let c = pt(px + pw / 2, 196), r = 48.0
             s.circle(c.x, c.y, r + 2, fill: .black.opacity(0.06))
             s.gradFill(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r)), [hex("#FDEDEF"), hex("#F2C6CF")],
                        from: pt(c.x, c.y - r), to: pt(c.x, c.y + r), stroke: hex("#C97488"), lw: 1.5)
@@ -488,7 +492,7 @@ extension Illustrations {
             s.path("M \(c.x - r + 6) \(c.y - 18) C \(c.x - 30) \(c.y - 14), \(c.x - 20) \(c.y), \(c.x - 6) \(c.y + 6)", stroke: hex("#D9C3D6"), lw: 2.4, cap: .round)
             s.gradFill(Path(ellipseIn: CGRect(x: c.x - r + 1, y: c.y - 30, width: 12, height: 60)), [hex("#B84A62"), hex("#8A2E46")], from: pt(c.x, c.y - 30), to: pt(c.x, c.y + 30))
             drawFetus(&s, at: pt(c.x + 6, c.y + 2), length: L, week: week, rotate: 20)
-            s.cardNote("magnified ×\(Int(scale))", "放大 \(Int(scale)) 倍", c.x, c.y + r - 9, width: 80, size: 7.5, color: Anat.muted)
+            s.cardNote("magnified ×\(Int(scale))", "放大 \(Int(scale)) 倍", c.x, c.y - r - 7, width: 80, size: 7.5, color: Anat.muted)
         }
         if week >= 16 {
             let fh = (pubis - fundus) / pxPerCm
@@ -515,12 +519,12 @@ extension Illustrations {
     ]
 
     static let labor = Scenario(
-        id: "labor", group: .pregnancy, title: Bilingual("Labour & birth", "分娩过程"),
+        id: "labor", group: .pregnancy, title: Bilingual("Labor & birth", "分娩过程"),
         params: ["cm": 1, "descent": 0, "placenta": 0, "hosp": 0],
         steps: [
-            .watch("Early labour: irregular contractions slowly thin (efface) and open the cervix — the neck of the womb.",
+            .watch("Early labor: irregular contractions slowly thin (efface) and open the cervix — the neck of the womb.",
                    "潜伏期：不规律宫缩使宫颈（子宫下端的“颈”）逐渐变薄、扩张。", set: ["cm": 2, "descent": 0, "placenta": 0, "hosp": 0]),
-            .watch("Active labour (from ~6 cm): strong contractions every 2–3 minutes, each about a minute long.",
+            .watch("Active labor (from ~6 cm): strong contractions every 2–3 minutes, each about a minute long.",
                    "活跃期（约 6 厘米起）：强宫缩每 2–3 分钟一次，每次约 1 分钟。", set: ["cm": 7]),
             .tryIt("Open the cervix to full dilation — 10 cm, about the size of a bagel.", "试一试：宫口开全——10 厘米，约一个贝果大。",
                    TryStep(mode: .scrub([Scrub(param: "cm", label: "Dilation 宫口", min: 0, max: 10, unit: "cm", digits: 0)]), success: { $0[v: "cm"] >= 9.8 },
@@ -528,14 +532,14 @@ extension Illustrations {
             .tryIt("Stage 2: with each push the head turns and moves down the birth canal, under the pubic bone and out.",
                    "试一试：第二产程：每次用力，胎头旋转并沿产道下降，从耻骨下方娩出。", set: ["cm": 10],
                    TryStep(mode: .scrub([Scrub(param: "descent", label: "Descent 下降", min: 0, max: 1)]), success: { $0[v: "descent"] >= 0.95 },
-                           ok: Bilingual("Born! Straight onto mum’s chest, skin to skin.", "宝宝出生了！马上放到妈妈胸前，肌肤接触。"), demo: ["descent": 1])),
+                           ok: Bilingual("Born! Straight onto mom’s chest, skin to skin.", "宝宝出生了！马上放到妈妈胸前，肌肤接触。"), demo: ["descent": 1])),
             .watch("Stage 3: the womb clamps down and the placenta follows, usually within 30 minutes.", "第三产程：子宫收缩变硬，胎盘随后娩出，通常在 30 分钟内。",
                    set: ["descent": 1, "placenta": 1]),
             .watch("Go to hospital: first baby — contractions every 5 min, lasting 1 min, for 1 hour; or waters break, bleeding, fewer movements.",
                    "何时去医院：初产妇宫缩每 5 分钟一次、每次 1 分钟、持续 1 小时；或破水、出血、胎动减少。", set: ["cm": 3, "descent": 0, "placenta": 0, "hosp": 1]),
         ],
         draw: { s, p, t in drawLabor(&s, p, t) },
-        sources: ["WHO intrapartum care 2018 (active phase from 5–6 cm)", "5-1-1 rule for first labours (ACOG patient guidance)"]
+        sources: ["WHO intrapartum care 2018 (active phase from 5–6 cm)", "5-1-1 rule for first labors (ACOG patient guidance)"]
     )
 
     /// head centre on the way out: engaged at the pelvic inlet … under the pubic arch … out (curve of Carus)
@@ -556,9 +560,9 @@ extension Illustrations {
                    + "C 212 240, 238 190, 238 120 C 238 60, 224 20, 216 0 Z", [Anat.skinShade, Anat.skin, Anat.skin], from: pt(30, 0), to: pt(238, 0),
                    stroke: Anat.skinEdge, lw: 1.6)
         // lumbar spine, sacrum and coccyx; pubic bone in front
-        for k in 0..<5 {
+        for k in 0..<6 {
             let y = 4 + Double(k) * 22
-            s.rect(34 + Double(k) * 1.5, y, 20, 18, r: 4, fill: hex("#F1EADA"), stroke: hex("#D6C9AE"), lw: 0.9, opacity: 0.7)
+            s.rect(34 + Double(k) * 1.8, y, 20, 18, r: 4, fill: hex("#F1EADA"), stroke: hex("#D6C9AE"), lw: 0.9, opacity: 0.7)
         }
         // birth canal
         s.path("M 114 222 C 114 252, 128 278, 148 300 M 146 222 C 150 248, 164 268, 180 294", stroke: hex("#D9A0AE"), lw: 3)
@@ -570,23 +574,31 @@ extension Illustrations {
         let gap = cm / 10 * 32, lip = 14 * (1 - min(cm, 4) / 4) + 4
         let wall = 7 + sq * 6 + 6 * placenta
         s.group(translate: pt(130 * (1 - shrink) + follow.x, 218 * (1 - shrink) + follow.y), scale: shrink) { g in
-            let d = "M \(130 - gap / 2 - 10) 216 C 62 202, 44 112, 76 52 C 98 12, 174 6, 200 40 C 232 90, 218 198, \(130 + gap / 2 + 10) 216"
+            let d = "M \(130 - gap / 2 - 10) 216 C 80 204, 64 122, 84 54 C 102 14, 174 6, 200 40 C 232 90, 218 198, \(130 + gap / 2 + 10) 216"
             g.path(d, fill: hex("#FBE6EA"))
             g.path(d, stroke: hex("#C97488"), lw: wall + 1.5)
             g.path(d, stroke: hex("#E59AAB"), lw: wall - 1)
             g.line(130 - gap / 2 - 12, 214, 130 - gap / 2 - 2, 214 + lip, stroke: label, lw: 6, cap: .round)
             g.line(130 + gap / 2 + 12, 214, 130 + gap / 2 + 2, 214 + lip, stroke: label, lw: 6, cap: .round)
             if placenta < 0.5 && !born {
-                g.gradFill("M 66 70 C 58 102, 62 132, 72 148 C 88 134, 96 98, 88 64 Z", [hex("#B84A62"), hex("#8A2E46")], from: pt(70, 70), to: pt(88, 140))
+                g.gradFill("M 80 72 C 72 102, 74 130, 82 146 C 98 132, 106 98, 98 66 Z", [hex("#B84A62"), hex("#8A2E46")], from: pt(80, 72), to: pt(98, 140))
             }
         }
         // sacrum and coccyx behind, pubic bone in front: the bony ring the baby must pass
-        s.path("M 58 116 C 48 160, 60 214, 96 252 C 104 260, 112 266, 118 268", stroke: Anat.boneEdge, lw: 15, cap: .round)
-        s.path("M 58 116 C 48 160, 60 214, 96 252 C 104 260, 112 266, 118 268", stroke: Anat.bone, lw: 13, cap: .round)
-        for k in 0..<4 { let y = 140 + Double(k) * 24; s.line(50 + Double(k) * 3, y, 64 + Double(k) * 6, y - 2, stroke: Anat.boneShade, lw: 1) }
+        let sacrum = "M 56 140 C 50 180, 64 222, 98 254 C 106 260, 112 264, 118 266"
+        s.path(sacrum, stroke: Anat.boneEdge, lw: 15, cap: .round)
+        s.path(sacrum, stroke: Anat.bone, lw: 13, cap: .round)
+        for u in [0.2, 0.4, 0.6, 0.8] {
+            // segment lines across the sacrum
+            let a = (1 - u) * (1 - u) * (1 - u), b = 3 * u * (1 - u) * (1 - u), c = 3 * u * u * (1 - u), d = u * u * u
+            let q = pt(a * 56 + b * 50 + c * 64 + d * 98, a * 140 + b * 180 + c * 222 + d * 254)
+            let tx = 3 * (1 - u) * (1 - u) * -6 + 6 * u * (1 - u) * 14 + 3 * u * u * 34, ty = 3 * (1 - u) * (1 - u) * 40 + 6 * u * (1 - u) * 42 + 3 * u * u * 32
+            let n = unit(pt(-ty, tx))
+            s.line(q.x - n.x * 6, q.y - n.y * 6, q.x + n.x * 6, q.y + n.y * 6, stroke: Anat.boneShade, lw: 1)
+        }
         s.boneFill(Path(ellipseIn: CGRect(x: 180, y: 222, width: 14, height: 32)), light: pt(182, 224), dark: pt(192, 252))
         // ischial spines level = station 0
-        s.line(66, 226, 180, 226, stroke: Anat.muted, lw: 0.8, dash: [3, 3])
+        s.line(60, 226, 180, 226, stroke: Anat.muted, lw: 0.8, dash: [3, 3])
         if sq > 0.2 && placenta < 0.5 && !born {
             for k in 0..<3 {
                 let a = Double(k) * 0.9 + 0.5
@@ -600,7 +612,7 @@ extension Illustrations {
             let hr = L * 0.33 / 2
             let local = pt(L * 0.06, -L / 2 + hr), r = rot * .pi / 180
             let centre = pt(head.x - (local.x * cos(r) - local.y * sin(r)), head.y - (local.x * sin(r) + local.y * cos(r)))
-            drawFetus(&s, at: centre, length: L, week: 40, rotate: rot, cord: placenta < 0.5 ? pt(80 + follow.x, 104 + follow.y) : nil)
+            drawFetus(&s, at: centre, length: L, week: 40, rotate: rot, cord: placenta < 0.5 ? pt(90 + follow.x, 104 + follow.y) : nil)
         }
         if placenta > 0.02 {
             let pc = lerp(pt(132, 228), pt(160, 288), Anat.ease(placenta))
@@ -608,13 +620,13 @@ extension Illustrations {
         }
 
         // labels
-        s.leader("sacrum", "骶骨", at: pt(60, 170), 8, 190, size: 8)
+        s.leader("sacrum", "骶骨", at: pt(58, 188), 8, 208, size: 8)
         s.leader("pubic bone", "耻骨", at: pt(190, 246), 196, 270, size: 8)
-        s.label("station 0", "0 位", 66, 222, size: 7.5, color: Anat.muted, anchor: .end)
-        if placenta < 0.5 && !born { s.leader("placenta", "胎盘", at: pt(76 + follow.x, 90 + follow.y), 8, 60, color: label, size: 8) }
+        s.label("station 0", "0 位", 58, 229, size: 7, color: Anat.muted, anchor: .end)
+        if placenta < 0.5 && !born { s.leader("placenta", "胎盘", at: pt(88 + follow.x, 92 + follow.y), 8, 60, color: label, size: 8) }
         s.leader("cervix", "宫颈", at: pt(130 + gap / 2 + 8 + follow.x, 220 + follow.y), 206, 208, color: label, size: 8)
         if placenta > 0.5 { s.leader("placenta out", "胎盘娩出", at: pt(160, 288), 196, 292, color: label, size: 8) }
-        if sq > 0.3 && placenta < 0.5 && !born { s.label("contraction", "宫缩", 150, 36, size: 10, color: hex("#B5627A"), anchor: .middle, bold: true) }
+        if sq > 0.3 && placenta < 0.5 && !born { s.label("contraction", "宫缩", 150, 70, size: 10, color: hex("#B5627A"), anchor: .middle, bold: true) }
 
         // stage chip and right panel
         let stage: (String, String) = placenta > 0.5 ? ("Stage 3 · placenta", "第三产程 · 胎盘") : descent > 0.05 ? ("Stage 2 · birth", "第二产程 · 娩出")

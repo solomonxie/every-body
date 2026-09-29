@@ -18,7 +18,6 @@ struct ExploreView: View {
                     prompt: settings.t("Body parts, illnesses, procedures", "身体部位、疾病、操作"))
         .onSubmit(of: .search) { settings.remember(search: query) }
         .navigationTitle("Every Body")
-        .profileToolbar()
     }
 }
 
@@ -28,6 +27,7 @@ struct HomeContent: View {
     @Environment(\.isSearching) private var searching
     @Environment(Settings.self) private var settings
     @State private var showAllBody = false
+    @State private var showAllReflex = false
 
     var body: some View {
         let empty = query.trimmingCharacters(in: .whitespaces).isEmpty
@@ -37,9 +37,10 @@ struct HomeContent: View {
             } else if searching {
                 SearchSuggestions(query: $query)
             } else {
-                TileGrid(title: settings.t("Acupuncture & reflexology", "针灸与反射区"), tiles: Tile.reflex, expanded: nil)
+                TileGrid(title: settings.t("Acupuncture & reflexology", "针灸与反射区"), tiles: Tile.reflex, expanded: $showAllReflex, rows: 1)
                 TileGrid(title: settings.t("Human body", "人体"), tiles: Tile.body, expanded: $showAllBody, rows: 1)
                 IllustrationsSection()
+                PostureSection()
                 PregnancySection()
                 ChildrenSection()
                 SettingsSection()
@@ -76,11 +77,12 @@ struct Tile: Identifiable {
         let map = Catalog.system("acupoint-reflex-map").map {
             Tile(id: $0.id, name: Bilingual("3D point map", "3D 穴位图"), color: $0.color, route: .viewer(system: $0.id))
         }
-        return [acupuncture, map].compactMap { $0 } + [
-            Tile(id: "hand-chart", name: Bilingual("Hand chart", "手部反射区"), color: "#E8A87C", route: .chart(id: "hand"), chart: "hand"),
+        // the three charts first, then the 3D maps
+        return [
             Tile(id: "foot-chart", name: Bilingual("Foot chart", "足底反射区"), color: "#C9A06A", route: .chart(id: "foot"), chart: "foot"),
+            Tile(id: "hand-chart", name: Bilingual("Hand chart", "手部反射区"), color: "#E8A87C", route: .chart(id: "hand"), chart: "hand"),
             Tile(id: "ear-chart", name: Bilingual("Ear points", "耳穴"), color: "#D98BA8", route: .chart(id: "ear"), chart: "ear"),
-        ]
+        ] + [acupuncture, map].compactMap { $0 }
     }
 }
 
