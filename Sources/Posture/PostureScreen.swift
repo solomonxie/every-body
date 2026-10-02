@@ -22,9 +22,7 @@ private struct PostureTopicView: View {
     @State private var blend: Double = 0
     @State private var ready = false
     @State private var neckLean: Float = 34
-    @State private var seeThrough = true
     @State private var view: PostureScene.View = .side
-    @State private var person = PosturePerson()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -37,26 +35,24 @@ private struct PostureTopicView: View {
             }
             .frame(maxHeight: .infinity)
             ScrollView {
-                PosturePanel(topic: topic, blend: $blend, neckLean: neckLean, pregnant: person.kind == .pregnant).padding(Space.l)
+                PosturePanel(topic: topic, blend: $blend, neckLean: neckLean).padding(Space.l)
             }
             .frame(maxHeight: .infinity)
             .background(Color.page)
         }
         .navigationTitle(settings.t(topic.title))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { PosturePersonMenu(person: $person) } }
-        .task(id: "\(person.kind)-\(person.heritage.rawValue)") {
+        .task {
             await BodyScene.prepare()
             scene.loads = [topic.loads.0, topic.loads.1]
-            scene.build(topic: topic.id, female: person.kind != .man, pregnant: person.kind == .pregnant,
-                        heritage: person.heritage, underwear: true, chest: .large, hips: .medium)
+            // one adult figure, always seen inside (no skin)
+            scene.build(topic: topic.id, female: false, pregnant: false, heritage: .white, underwear: true, chest: .large, hips: .medium)
             neckLean = scene.neck.last ?? neckLean
-            scene.seeThrough = seeThrough
+            scene.seeThrough = true
             if !ready { scene.show(view); scene.settle() }
             ready = true
         }
         .onChange(of: blend) { scene.goalBlend = Float(blend) }
-        .onChange(of: seeThrough) { scene.seeThrough = seeThrough }
         .sensoryFeedback(.selection, trigger: blend == 0 || blend == 1)
     }
 
@@ -69,19 +65,7 @@ private struct PostureTopicView: View {
 
     private var rail: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .top) {
-                legend
-                Spacer(minLength: Space.s)
-                Button { seeThrough.toggle() } label: {
-                    Label(seeThrough ? settings.t("Show skin", "显示皮肤") : settings.t("See inside", "透视"),
-                          systemImage: seeThrough ? "person.fill" : "eye")
-                        .font(.footnote.weight(.semibold))
-                        .padding(.horizontal, Space.m).frame(height: 36)
-                        .background(.regularMaterial, in: .capsule)
-                }
-                .buttonStyle(PressableStyle())
-                .foregroundStyle(.primary)
-            }
+            legend.frame(maxWidth: .infinity, alignment: .leading)
             Spacer()
             HStack(spacing: 2) {
                 ForEach(Self.views, id: \.label.en) { v in
@@ -121,7 +105,6 @@ private struct PostureTopicView: View {
         }
         .padding(.horizontal, 10).padding(.vertical, 7)
         .background(.regularMaterial, in: .rect(cornerRadius: 12, style: .continuous))
-        .opacity(seeThrough ? 1 : 0)
         .accessibilityHidden(true)
     }
 
@@ -180,44 +163,5 @@ struct PostureView: View {
         let next = Swift.max(1.2, Swift.min(9, start / Float(scale)))
         scene.goalDistance = next
         scene.distance = next
-    }
-}
-
-/// The posture figures: an adult man, woman or pregnant woman (a fresh white man on each visit).
-struct PosturePerson: Equatable {
-    enum Kind: CaseIterable { case man, woman, pregnant }
-    var kind = Kind.man
-    var heritage = Heritage.white
-}
-
-private struct PosturePersonMenu: View {
-    @Binding var person: PosturePerson
-    @Environment(Settings.self) private var settings
-
-    var body: some View {
-        Menu {
-            Picker(settings.t("Person", "人物"), selection: $person.kind) {
-                ForEach(PosturePerson.Kind.allCases, id: \.self) { Text(settings.t(label($0))).tag($0) }
-            }
-            .pickerStyle(.inline)
-            Picker(settings.t("Appearance", "外貌"), selection: $person.heritage) {
-                ForEach(Heritage.allCases, id: \.self) { Text(settings.t($0.label)).tag($0) }
-            }
-            .pickerStyle(.inline)
-        } label: {
-            Label("\(settings.t(person.heritage.label)) \(settings.t(label(person.kind)))", systemImage: "figure.stand")
-                .labelStyle(.titleAndIcon)
-                .font(.footnote.weight(.semibold))
-        }
-        .accessibilityLabel(settings.t("Person type", "人群"))
-        .sensoryFeedback(.selection, trigger: person)
-    }
-
-    private func label(_ kind: PosturePerson.Kind) -> Bilingual {
-        switch kind {
-        case .man: Bilingual("Man", "男性")
-        case .woman: Bilingual("Woman", "女性")
-        case .pregnant: Bilingual("Pregnant", "孕妇")
-        }
     }
 }

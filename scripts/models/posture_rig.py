@@ -626,7 +626,7 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
 SOFT = ("disc-", "erector-spinae", "transversospinales", "splenius", "levator-scapulae")
 SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pregnant"}
 HERITAGES = ["southeast-asian", "south-asian", "hispanic", "white", "black"]
-SHAPES = {"female": ["chest-small", "chest-medium", "chest-xlarge", "chest-xxlarge", "hips-small", "hips-large"],
+SHAPES = {"female": ["chest-small", "chest-medium", "chest-xlarge", "chest-xxlarge", "hips-small", "hips-medium", "hips-large", "hips-xlarge", "hips-xxlarge"],
           "pregnant": ["chest-small", "chest-medium", "chest-xlarge", "chest-xxlarge"]}
 GARMENTS = {"male": ["briefs-male"], "female": ["briefs-female", "bra"], "pregnant": ["briefs-pregnant", "bra"]}
 

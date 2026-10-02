@@ -110,14 +110,18 @@ enum SearchIndex {
         }
         let layerSystem: [LayerID: String] = [.skin: "organs", .muscular: "muscular", .skeletal: "skeletal", .circulatory: "circulatory", .nervous: "nervous", .organs: "organs"]
         var seen = Set<String>()
-        for part in Catalog.body.parts where part.layer != .skin {
+        // the generated parts, then the real models' (muscles like the quadratus lumborum exist only there)
+        let parts = Catalog.body.parts.map { ($0.id, $0.name, $0.nameZh, $0.layer) }
+            + ModelLibrary.allParts.map { ($0.id, $0.name, $0.nameZh, $0.layer) }
+            + InternalModels.allParts.filter { $0.organ == nil }.map { ($0.id, $0.name, $0.nameZh, $0.layer) }
+        for (id, name, nameZh, layerID) in parts where layerID != .skin {
             // one hit per name — left/right and numbered copies are the same answer
-            let key = part.name.replacingOccurrences(of: #" \((L|R)\)$"#, with: "", options: .regularExpression)
+            let key = name.replacingOccurrences(of: #" \((L|R)\)$"#, with: "", options: .regularExpression)
             guard seen.insert(key).inserted else { continue }
-            let layer = Catalog.body.layers.first { $0.id == part.layer }
-            out.append(SearchEntry(.part, id: "b-\(part.id)", name: Bilingual(key, part.nameZh.replacingOccurrences(of: #"^[左右]"#, with: "", options: .regularExpression)),
+            let layer = Catalog.body.layers.first { $0.id == layerID }
+            out.append(SearchEntry(.part, id: "b-\(id)", name: Bilingual(key, nameZh.replacingOccurrences(of: #"^[左右]"#, with: "", options: .regularExpression)),
                                    detail: layer.map { Bilingual($0.label, $0.labelZh) } ?? Bilingual("", ""),
-                                   route: .viewer(system: layerSystem[part.layer] ?? "organs", part: part.id)))
+                                   route: .viewer(system: layerSystem[layerID] ?? "organs", part: id)))
         }
         for organ in Catalog.body.organs {
             guard let names = organ.names else { continue }
@@ -128,6 +132,15 @@ enum SearchIndex {
     }()
 
     static func search(_ query: String, for profile: Profile = .standard) -> [(kind: SearchEntry.Kind, items: [SearchEntry])] {
+        let scored = rank(entries, query, for: profile)
+        return SearchEntry.Kind.allCases.compactMap { kind in
+            let items = scored.filter { $0.kind == kind }
+            return items.isEmpty ? nil : (kind, Array(items.prefix(kind == .part ? 12 : 20)))
+        }
+    }
+
+    /// The entries that match, best first.
+    static func rank(_ entries: [SearchEntry], _ query: String, for profile: Profile = .standard) -> [SearchEntry] {
         let q = query.lowercased().trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else { return [] }
         let terms = q.split(separator: " ").map(String.init)
@@ -147,10 +160,7 @@ enum SearchIndex {
             }
             if all { scored.append((e, score)) }
         }
-        return SearchEntry.Kind.allCases.compactMap { kind in
-            let items = scored.filter { $0.0.kind == kind }.sorted { $0.1 > $1.1 }.map(\.0)
-            return items.isEmpty ? nil : (kind, Array(items.prefix(kind == .part ? 12 : 20)))
-        }
+        return scored.sorted { $0.1 > $1.1 }.map(\.0)
     }
 }
 
@@ -184,8 +194,9 @@ struct SearchResults: View {
     }
 }
 
-private struct SearchRow: View {
+struct SearchRow: View {
     let entry: SearchEntry
+    var chevron = true
     @Environment(Settings.self) private var settings
 
     private var tint: Color {
@@ -213,7 +224,9 @@ private struct SearchRow: View {
             }
             .multilineTextAlignment(.leading)
             Spacer(minLength: Space.s)
-            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+            if chevron {
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+            }
         }
         .padding(.horizontal, Space.l)
         .padding(.vertical, Space.m)

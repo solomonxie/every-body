@@ -48,9 +48,14 @@ BUILD = {
 }
 # by (sex, age): changes to the sex's build
 AGE_BUILD = {("female", "senior"): {"cupsize": 0.7, "firmness": 0.8}}
-# adult female body options, shipped as deltas from BUILD["female"] (the large chest, the medium hips)
+# adult body options, shipped as deltas from BUILD["female"] (the large chest)
 _F_MACROS, _F_TARGETS = BUILD["female"]
 _HIPS = ("hip/hip-scale-horiz-incr", "buttocks/buttocks-volume-incr", "torso/measure-hips-circ-incr")
+# the lower body grows evenly with each size, small to the fullest (XXL = the old large width): wider hips, rounder
+# fuller buttocks projecting further back (depth, a little set back) and lifted (pelvis tone)
+_HIP_TARGETS = _HIPS + ("pelvis/pelvis-tone-incr", "hip/hip-scale-depth-incr", "hip/hip-trans-backward")
+_HIP_RANGE = ((0.1, 0.1, 0.0, 0.0, 0.0, 0.0), (0.8, 1.0, 0.65, 0.7, 0.3, 0.12))
+_hips = lambda t: {**_F_TARGETS, **{k: a + t * (b - a) for k, a, b in zip(_HIP_TARGETS, *_HIP_RANGE)}}
 SHAPES = {
     "chest-small": ({**_F_MACROS, "cupsize": 0.15, "firmness": 0.85}, _F_TARGETS),
     "chest-medium": ({**_F_MACROS, "cupsize": 0.6}, _F_TARGETS),
@@ -59,11 +64,13 @@ SHAPES = {
     "chest-xxlarge": ({**_F_MACROS, "cupsize": 1.0, "firmness": 0.25},
                       {**_F_TARGETS, "breast/breast-volume-vert-down": 0.3, "breast/breast-dist-incr": 0.2,
                        "breast/nipple-size-decr": 0.9}),
-    "hips-small": (_F_MACROS, {**_F_TARGETS, **dict(zip(_HIPS, (0.1, 0.3, 0.0)))}),
-    "hips-large": (_F_MACROS, {**_F_TARGETS, **dict(zip(_HIPS, (0.8, 1.0, 0.65)))}),
+    **{f"hips-{size}": (_F_MACROS, _hips(t)) for size, t in
+       (("small", 0.0), ("medium", 0.25), ("large", 0.5), ("xlarge", 0.75), ("xxlarge", 1.0))},
 }
+# smoothing passes over the hips shapes' change about the waist
+HIP_EASE = 40
 # arm swing (radians, out from the body) that goes with a shape
-ARM_OUT = {"hips-large": 0.1}
+ARM_OUT = {"hips-large": 0.03, "hips-xlarge": 0.065, "hips-xxlarge": 0.1}
 # group: (sex build, age, hair styles (hair.STYLES), eyebrows, eyelashes)
 GROUPS = {
     "male-adult": ("male", "adult", ["man"], "eyebrow012", "eyelashes02"),
@@ -105,9 +112,11 @@ FACE = {
             "mouth/mouth-angles-up": 0.3},
 }
 # each heritage keeps its own nose and lips: the narrowing targets are toned down where they'd erase them
-FACE_SCALE = {"black": {"nose/": 0.2, "mouth/mouth-upperlip-volume": 0.3, "mouth/mouth-lowerlip-volume": 0.3, "mouth/mouth-upperlip-middle": 0.0, "mouth/mouth-cupidsbow": 0.3}, "southeast-asian": {"nose/": 0.5}, "south-asian": {"nose/": 0.8}}
+FACE_SCALE = {"black": {"nose/": 0.2, "mouth/mouth-upperlip-volume": 0.3, "mouth/mouth-lowerlip-volume": 0.3, "mouth/mouth-upperlip-middle": 0.0, "mouth/mouth-cupidsbow": 0.3}, "southeast-asian": {"nose/": 0.5}, "east-asian": {"nose/": 0.6, "mouth/mouth-upperlip-volume": 0.0}, "south-asian": {"nose/": 0.8}}
 # on top of the race macro: features typical of each heritage at natural strength (both sexes, every age)
 HERITAGE_FACE = {
+    "east-asian": {"eyes/eye-epicanthus-out": 0.3, "eyes/eye-height2-incr": 0.25, "nose/nose-scale-depth-decr": 0.3,
+                   "nose/nose-hump-decr": 0.4, "head/head-back-scale-depth-decr": 0.3, "head/head-scale-horiz-incr": 0.1},
     "southeast-asian": {"eyes/eye-epicanthus-out": 0.35, "nose/nose-flaring-incr": 0.35, "nose/nose-scale-depth-decr": 0.3,
                         "mouth/mouth-lowerlip-volume-incr": 0.25, "head/head-scale-horiz-incr": 0.15},
     "south-asian": {"eyes/eye-scale-incr": 0.15, "nose/nose-point-down": 0.25, "nose/nose-scale-vert-incr": 0.2,
@@ -120,6 +129,15 @@ HERITAGE_FACE = {
 
 # per sex on top of HERITAGE_FACE (adults and seniors)
 SEX_HERITAGE_FACE = {
+    ("female", "east-asian"): {"eyebrows/eyebrows-trans-up": 0.2, "eyebrows/eyebrows-angle-down": 0.25, "eyes/eye-epicanthus-out": -0.1,
+                               "eyes/eye-height2-incr": -0.1, "eyes/eye-scale-incr": 0.3, "eyes/eye-eyefold-down": 0.1, "eyes/eye-corner2-up": 0.15,
+                               "head/head-oval": 0.2, "chin/chin-triangle": 0.1, "nose/nose-scale-vert-decr": 0.15, "mouth/mouth-cupidsbow-width-decr": 0.2,
+                               "mouth/mouth-scale-depth-decr": 0.4, "mouth/mouth-scale-horiz-decr": 0.3, "mouth/mouth-scale-vert-decr": 0.15,
+                               "mouth/mouth-upperlip-volume-decr": 0.3, "mouth/mouth-lowerlip-volume-decr": 0.3, "mouth/mouth-cupidsbow-incr": 0.3,
+                               "nose/nose-scale-horiz-decr": 0.3, "nose/nose-nostrils-width-decr": 0.4, "nose/nose-point-width-decr": 0.35,
+                               "nose/nose-width1-decr": 0.2, "nose/nose-flaring-decr": 0.4, "nose/nose-scale-depth-decr": -0.1,
+                               "chin/chin-height-incr": 0.3, "chin/chin-width-decr": 0.15, "head/head-scale-horiz-decr": 0.1,
+                               "cheek/cheek-inner-decr": 0.15, "cheek/cheek-bones-incr": 0.1},
     ("female", "southeast-asian"): {"eyebrows/eyebrows-trans-up": 0.3, "eyes/eye-epicanthus-out": -0.3, "eyes/eye-epicanthus-in": 0.1,
                                     "eyes/eye-push1-in": 0.25, "eyes/eye-scale-incr": 0.2, "nose/nose-scale-horiz-incr": 0.35, "nose/nose-flaring-incr": 0.25,
                                     "nose/nose-point-width-incr": 0.45, "nose/nose-scale-depth-decr": 0.3, "nose/nose-width1-incr": 0.35,
@@ -142,6 +160,7 @@ SEX_HERITAGE_FACE = {
     ("female", "black"): {"mouth/mouth-lowerlip-volume-decr": 0.25, "mouth/mouth-upperlip-volume-decr": 0.1, "nose/nose-flaring-incr": -0.4,
                           "nose/nose-scale-horiz-incr": -0.2, "nose/nose-nostrils-width-decr": 0.35, "nose/nose-point-width-decr": 0.3,
                           "nose/nose-width2-decr": 0.25},
+    ("male", "east-asian"): {"eyes/eye-epicanthus-out": -0.15, "eyes/eye-scale-incr": 0.15, "eyes/eye-height2-incr": 0.15},
     ("male", "southeast-asian"): {"eyes/eye-epicanthus-out": -0.2, "eyes/eye-scale-incr": 0.1, "eyes/eye-push1-in": 0.2,
                                   "nose/nose-scale-horiz-incr": 0.3, "nose/nose-flaring-incr": 0.2, "nose/nose-point-width-incr": 0.3,
                                   "nose/nose-width1-incr": 0.3, "mouth/mouth-upperlip-volume-incr": 0.3, "mouth/mouth-lowerlip-volume-incr": 0.3,
@@ -224,7 +243,7 @@ def face_targets(sex, age, heritage=None):
     for t, w in KID_FACE.get(age, {}).items():
         add(t, w)
     # expression units (per race set): both eyes / the mouth
-    units = "african" if heritage == "black" else "asian" if heritage == "southeast-asian" else "caucasian"
+    units = "african" if heritage == "black" else "asian" if heritage in ("east-asian", "southeast-asian") else "caucasian"
     for t, w in EXPRESSION_AGE.get(age, EXPRESSION.get(sex, {})).items():
         if t == "mouth-compression" and sex == "female" and heritage in STYLIZED:
             continue
@@ -977,8 +996,16 @@ class Packer:
 def pack():
     import numpy as np
     import hair
-    load = lambda n: {k[4:]: v.astype(np.float64) for k, v in np.load(RAW / f"{n}.npz").items()}
     topo = {p.name.split(".")[1]: dict(np.load(p)) for p in RAW.glob("topo.*.npz") if not p.name.startswith("topo.hair-")}
+    body_tris = topo["body"]["vmap"][topo["body"]["index"].reshape(-1, 3)]
+    loaded = {}
+
+    def load(n):
+        if n not in loaded:
+            got = {k[4:]: v.astype(np.float64) for k, v in np.load(RAW / f"{n}.npz").items()}
+            eyes = got["eyes"] if "eyes" in got else load(f"{n.split('.')[0]}.neutral")["eyes"]
+            loaded[n] = dict(got, body=smooth_skin(np, got["body"], eyes, body_tris))
+        return {k: v.copy() for k, v in loaded[n].items()}
     grooms = grow_hair(np, load, topo["body"])
     for gid, styles in grooms.items():
         for name, g in styles.items():
@@ -1047,23 +1074,39 @@ def pack():
     below = 1 - smoothstep(gen["shoulder"][1] + 0.3 * (gen["neck"][1] - gen["shoulder"][1]), gen["neck"][1], y)[:, None]
     arms = np.load(RAW / "regions.npz")["arms"]
 
+    edges = np.unique(np.sort(np.concatenate([body_tris[:, [0, 1]], body_tris[:, [1, 2]], body_tris[:, [2, 0]]]), axis=1), axis=0)
+    degree = np.maximum(np.bincount(edges.ravel(), minlength=len(f0)), 1)[:, None]
+    # the hips' change eased into the waist (no shelf across the small of the back)
+    waist = (smoothstep(0.2, 0.32, y) * (1 - smoothstep(0.6, 0.75, y)))[:, None]
+
     def shape_delta(name):
         d = below * (load(f"female-adult.shape-{name}")["body"] - f0)
+        if name.startswith("hips-"):
+            for _ in range(HIP_EASE):
+                acc = np.zeros_like(d)
+                np.add.at(acc, edges[:, 0], d[edges[:, 1]])
+                np.add.at(acc, edges[:, 1], d[edges[:, 0]])
+                d += 0.5 * waist * (acc / degree - d)
+            # nothing of it reaches the chest (the bra's band sits there)
+            d *= 1 - smoothstep(0.62, 0.78, y)[:, None]
         # wider hips: the arms swing out about the shoulders just enough that the hands and forearms clear them
         angle = ARM_OUT.get(name, 0.0)
         if angle:
             for side in (1, -1):
                 c = np.array(gen["shoulder"]) * np.array([side, 1, 1])
-                # the whole arm turns as one (full below the armpit, fading in above it)
-                sel = (arms > 0.02) * (np.sign(f0[:, 0]) == side) * smoothstep(c[1] - 0.02, c[1] - 0.25, f0[:, 1])
+                # the whole arm turns as one (full below the armpit, fading in above it), by its own weight: the side
+                # of the chest under it stays put
+                arm = np.maximum(smoothstep(0.2, 0.7, arms), (arms > 0.02) * smoothstep(c[1] - 0.2, c[1] - 0.35, f0[:, 1]))
+                sel = arm * (np.sign(f0[:, 0]) == side) * smoothstep(c[1] - 0.02, c[1] - 0.25, f0[:, 1])
                 q = f0 - c
                 a = -side * angle * sel
                 rot = np.stack([q[:, 0] * np.cos(a) + q[:, 1] * np.sin(a), -q[:, 0] * np.sin(a) + q[:, 1] * np.cos(a), q[:, 2]], 1)
                 d += rot - q
         return d
     header["shapes"] = {name: pk.block(shape_delta(name)) for name in SHAPES}
-    chests = {n[6:]: load(f"female-adult.shape-{n}")["body"] for n in SHAPES if n.startswith("chest-")}
-    header["garments"] = garments(np, pk, topo["body"], load("male-adult.neutral")["body"], load("female-adult.neutral")["body"],
+    # each size's garments fit the body the app shows: that chest with its matching hips
+    chests = {n[6:]: f0 + shape_delta(n) + shape_delta(f"hips-{n[6:]}") for n in SHAPES if n.startswith("chest-")}
+    header["garments"] = garments(np, pk, topo["body"], load("male-adult.neutral")["body"], f0 + shape_delta("hips-large"),
                                   load("kid-toddler.neutral")["body"], chests, load("kid-child.neutral")["body"],
                                   nipple_ids(np, load("female-adult.neutral")))
     payload = b"".join(pk.chunks)
@@ -1087,7 +1130,7 @@ def pack():
 CELL = 0.009
 
 
-def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=None):
+def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=None, only_bra=False):
     """Underwear as the parts of the body where a smooth field is positive, cut exactly along its zero line.
     Each garment vertex is a point in a body triangle, so it follows every sex/age/heritage variant.
     Fields are written on the neutral adult male / female and the toddler (children share them: same topology); the
@@ -1131,29 +1174,31 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
     def bra_for(body):
         """the bra cut on this body"""
         if nipples:
-            apex = body[max(nipples, key=lambda i: body[i, 0])]
-        else:
-            apex = body[(body[:, 1] > 0.6) & (body[:, 1] < 0.95) & (body[:, 0] > 0.02) & (body[:, 0] < 0.32)]
-            apex = apex[np.argmax(apex[:, 2])]
-        return lambda p: bra(p, apex)
+            i = max(nipples, key=lambda i: body[i, 0])
+            return lambda p: bra(p, body[i], body[i, 1] - breast_depth(np, body, i))
+        apex = body[(body[:, 1] > 0.6) & (body[:, 1] < 0.95) & (body[:, 0] > 0.02) & (body[:, 0] < 0.32)]
+        apex = apex[np.argmax(apex[:, 2])]
+        return lambda p: bra(p, apex, apex[1] - 0.1)
 
-    def bra(p, apex):
+    def bra(p, apex, fold):
+        """a soft bralette: the band under the breasts' fold all round, each cup round its breast down to the band (no
+        gap between them at any size), the front between the cups up to a neckline rising to the straps, a low V"""
         x, y, z = p.T
         ax = np.abs(x)
         ay = apex[1]
-        centre = apex - np.array([0.015, 0.005, 0.08])
         sx = apex[0] - 0.01 - 0.02 * ramp(-z, -0.03, 0.03)  # strap line: over the cup in front, a little inward at the back
-        # a sphere for each cup, its top a curve rising from the centre to the strap
+        lo, hi = fold - 0.055, fold + 0.012
         top = ay - 0.005 + 0.11 * np.clip((ax - 0.03) / (sx - 0.03), 0, 1.2)
-        cups = smin(0.135 - np.sqrt((ax - centre[0]) ** 2 + (y - centre[1]) ** 2 + (z - centre[2]) ** 2), top - y, 0.01)
-        lo, hi = ay - 0.15, ay - 0.085
-        band = smin(smin(y - lo, hi - y, 0.01), 0.27 - ax, 0.01)
-        # centre gore: the cups' neckline carried on down to a soft V between them
-        gore = smin(smin(y - lo, np.minimum(top, ay - 0.005) - 0.9 * np.clip(0.03 - ax, 0, None) - y, 0.01),
-                    smin(apex[0] - ax, z, 0.01), 0.01)
-        strap = smin(smin(0.02 - np.abs(ax - sx), 1.2 - y, 0.01), y - (ay + 0.06) + ramp(-z, 0, 0.02) * 0.155, 0.01)
-        # smooth unions: the straps flow into the cups, the cups into the band, no corners
-        return smax(smax(smax(cups, gore, 0.02), band, 0.015), strap, 0.03)
+        # past the strap, kept low (the arm meets the chest in a tight crease above)
+        top = top - 0.9 * np.clip(0.03 - ax, 0, None) - ramp(ax, sx + 0.03, sx + 0.07) * np.maximum(top - ay - 0.05, 0)
+        reach = ay - fold + 0.035
+        cups = smin(smin(y - lo, top - y, 0.012), reach - np.hypot(1.1 * (ax - apex[0]), y - ay), 0.02)
+        gore = smin(smin(y - lo, top - y, 0.012), apex[0] - ax, 0.02)
+        front = smin(smin(smax(cups, gore, 0.02), z, 0.01), ay + 0.05 - y + 10 * np.clip(sx + 0.03 - ax, 0, None), 0.01)
+        band = smin(smin(y - lo, hi - y, 0.01), 0.3 - ax, 0.01)
+        # (at the back it runs on down into the band at every size)
+        strap = smin(smin(0.02 - np.abs(ax - sx), 1.2 - y, 0.01), y - (ay + 0.06) + ramp(-z, 0, 0.02) * (ay + 0.08 - hi), 0.01)
+        return smax(smax(front, band, 0.015), strap, 0.03)
 
     kid_hip, kid_crotch = reshape(GEN["hip"], "toddler")[1], -0.075
 
@@ -1249,12 +1294,14 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
             ("briefs-male", male, briefs_male, 0.004, "#2F3947"),
             ("briefs-female", female, briefs_female, 0.004, "#D4B2AA"),
             ("briefs-pregnant", female, briefs_pregnant, 0.004, "#D4B2AA"),
-            ("bra", female, bra_for(female), 0.0045, "#D4B2AA"),
-            *[(f"bra-{n}", body, bra_for(body), 0.0045, "#D4B2AA") for n, body in (chests or {}).items()],
+            ("bra", female, bra_for(female), 0.0065, "#D4B2AA"),
+            *[(f"bra-{n}", body, bra_for(body), 0.0065, "#D4B2AA") for n, body in (chests or {}).items()],
             ("nappy", kid, nappy, 0.014, "#F4F2EE"),
             ("briefs-kid", kid, briefs_kid, 0.004, "#7FA6CF"),
             ("top-kid", kid if child is None else child, top_kid, 0.006, "#7FA6CF")):
-        abc, w, f, tri = clip(field, pos, arms_anywhere=name == "top-kid")
+        if only_bra and name != "bra":
+            continue
+        abc, w, f, tri = clip(field, pos, arms_anywhere=name == "top-kid" or name.startswith("bra"))
         # the field isn't a distance: measure each vertex's distance to the cut edge on the neutral body instead
         wc = 1 - w.sum(1)
         p = w[:, :1] * pos[abc[:, 0]] + w[:, 1:] * pos[abc[:, 1]] + wc[:, None] * pos[abc[:, 2]]
@@ -1295,7 +1342,35 @@ def tri_frame(np, a, b, c, n):
     return t1, np.cross(nt, t1), nt
 
 
-def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, outer=0.06):
+def breast_depth(np, body, i):
+    """how far below the chest centre the breast's underside meets the chest wall (its front falls back there)"""
+    a = body[i]
+    s = (np.abs(body[:, 0] - a[0]) < 0.02) & (body[:, 2] > 0) & (body[:, 1] < a[1]) & (body[:, 1] > a[1] - 0.3)
+    q = body[s]
+    wall = np.median(q[q[:, 1] < a[1] - 0.25, 2])
+    for d in np.arange(0.0, 0.3, 0.005):
+        near = np.abs(q[:, 1] - (a[1] - d)) < 0.004
+        if near.any() and q[near, 2].max() < wall + 0.25 * (a[2] - wall):
+            return d
+    return 0.1
+
+
+def tutte(np, x, free, se):
+    """x with its `free` rows moved to the average of their neighbours (solved: no folds)"""
+    from scipy import sparse
+    from scipy.sparse.linalg import spsolve
+    n = len(x)
+    A = sparse.csr_matrix((np.ones(len(se)), (se[:, 0], se[:, 1])), shape=(n, n))
+    A.data[:] = 1
+    L = sparse.diags(np.asarray(A.sum(1)).ravel()) - A
+    U, K = np.flatnonzero(free), np.flatnonzero(~free)
+    out = x.copy()
+    out[U] = spsolve(L[U][:, U].tocsc(), -(L[U][:, K] @ x[K]))
+    return out
+
+
+def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03):
+    from scipy.spatial import cKDTree
     """a cup over each chest centre: the skin's height (along the cup's axis) evened out over the cup, raised to
     clear the tip and easing back onto the skin by `outer`; the fabric lies on the higher of that and the skin. The
     stand-off is found per skin vertex and carried to the fabric's points with their weights, so the fabric follows
@@ -1314,46 +1389,154 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, outer=0.06):
     n = carry(vn)
     n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
     target, weight = p + lift[:, None] * n, np.zeros(len(p))
+    tipzone = np.zeros(len(body), bool)
+    # (the skin's normals evened out: the areola's own little slopes left out)
+    vs = vn.copy()
+    for _ in range(40):
+        acc = np.zeros_like(vs)
+        np.add.at(acc, se[:, 0], vs[se[:, 1]])
+        vs = acc / deg[:, None]
+    ns = carry(vs)
+    ns /= np.maximum(np.linalg.norm(ns, axis=1, keepdims=True), 1e-12)
+    outers, axes = [], []
     for i in nipples:
+        # the cup reaches over the whole breast
+        outer = float(np.clip(0.75 * breast_depth(np, body, i), 0.075, 0.13))
+        outers.append(outer)
         t = body[i]
         d = body - t
         close = np.linalg.norm(d, axis=1) < 2 * outer
         axis = vn[np.linalg.norm(d, axis=1) < 1.3 * outer].sum(0)
         axis /= np.linalg.norm(axis)
+        axes.append(axis)
         h = d @ axis
         rho = np.linalg.norm(d - h[:, None] * axis, axis=1)
-        # the skin's height evened out (heat spread over the mesh), held at the skin past the cup; the centre
-        # starts from the ring round it, so its bump is filled in, not spread
-        free = close & (rho < 1.3 * outer) & (h > -outer)
-        top = close & (rho <= inner) & (h > -outer)
-        hs = h.copy()
-        hs[top] = h[close & (rho > inner) & (rho < 1.5 * inner) & (h > -outer)].mean()
-        for _ in range(50):
-            acc = np.zeros(len(body))
-            np.add.at(acc, se[:, 0], hs[se[:, 1]])
-            hs[free] = (acc / deg)[free]
-        clear = max(float((h[top] - hs[top]).max()) + 0.004, 0.008)
-        near = (1 - smoothstep(outer, 1.4 * outer, rho)) * (h > -outer) * close
-        s_v = (1 - smoothstep(0.6 * inner, outer, rho)) * near
-        gap = hs + clear * s_v - h
-        up_v = 0.004 * np.logaddexp(0, gap / 0.004) * near
+        # the skin with its centre left out: the breast's own surface carried on smoothly over it
+        # (a cubic over the cup's own plane, fitted on the ring round the centre)
+        e1 = np.cross(axis, [0.0, 1.0, 0.0])
+        e1 /= np.linalg.norm(e1)
+        e2 = np.cross(axis, e1)
+        zone = close & (rho < 1.3 * inner) & (h > -inner)
+        uv = np.stack([d @ e1, d @ e2], 1)
+        src = close & ~zone & (h > -outer) & (vn @ axis > 0.25)
+        tree, suv, sh = cKDTree(uv[src]), uv[src], h[src]
+
+        def surf(Q, sig=0.045):
+            """the breast's front without its centre, as one smooth surface over the cup's plane (moving least squares)"""
+            out = np.empty(len(Q))
+            for k, (qq, nb) in enumerate(zip(Q, tree.query_ball_point(Q, 2.5 * sig))):
+                du = suv[nb] - qq
+                sw = np.exp(-0.5 * (du ** 2).sum(1) / sig ** 2)[:, None]
+                A = np.stack([np.ones(len(du)), du[:, 0], du[:, 1], du[:, 0] ** 2, du[:, 0] * du[:, 1], du[:, 1] ** 2], 1)
+                out[k] = np.linalg.lstsq(A * sw, sh[nb] * sw[:, 0], rcond=None)[0][0]
+            return out
+        hf = h.copy()
+        hf[zone] = surf(uv[zone])
+        near = (1 - smoothstep(outer, 1.4 * outer, rho)) * smoothstep(-1.2 * outer, -0.9 * outer, h) * close
+        cupm = (1 - smoothstep(0, 1.3 * outer, rho)) * smoothstep(-outer, -0.8 * outer, h) * close
+        # the cup clears the centre by one even stand-off over its middle (a moulded cup), easing off to its edge
+        prof = cupm
+        amp = max(float(((h - hf) / np.maximum(prof, 1e-6))[zone].max()), 0.002)
+        s_v = prof
+        up_v = np.maximum(hf + amp * prof - h, 0) * cupm
         dirn_v = vn * (1 - s_v)[:, None] + axis * s_v[:, None]
-        s, up, dirn = carry(s_v[:, None])[:, 0], carry(up_v[:, None])[:, 0], carry(dirn_v)
+        # the centre's steep little walls spread evenly over the cup (laid flat they'd fold over each other)
+        lat = d - h[:, None] * axis
+        inside = close & (rho < 1.6 * inner) & (h > -inner)
+        tipzone |= inside
+        flat = tutte(np, lat, inside, se)
+        dirn_v[inside] = axis
+        up, dirn, shift = carry(up_v[:, None])[:, 0], carry(dirn_v), carry(flat - lat)
         dirn /= np.maximum(np.linalg.norm(dirn, axis=1, keepdims=True), 1e-12)
-        mine = s > weight
+        reach = carry(near[:, None])[:, 0]
+        mine = reach > weight
         target[mine] = (p + lift[:, None] * dirn + up[:, None] * axis)[mine]
-        weight = np.maximum(weight, s)
-    moved = weight > 0
-    # never back down onto the skin
-    h = ((target - p) * n).sum(1)
-    target += (np.maximum(lift - h, 0) * moved)[:, None] * n
-    # as offsets in each point's triangle frame: a moved point on a sliver (the centre's fan, a corner or an edge
-    # stored with a corner repeated) is re-bound to the nearest well-sized triangle, at the closest point on it
+        # the cup's front: that smooth surface, raised, where each point now lies (not the skin's facets)
+        q = p + shift - t
+        qu = np.stack([q @ e1, q @ e2], 1)
+        rq = np.linalg.norm(qu, axis=1)
+        wm = (1 - smoothstep(0.55 * outer, 0.85 * outer, rq)) * (q @ axis > -outer) * np.maximum(
+            smoothstep(0.35, 0.6, ns @ axis), np.clip(2 * carry(inside[:, None].astype(np.float64))[:, 0], 0, 1))
+        sel = mine & (wm > 0)
+        fq = surf(qu[sel])
+        hq = fq + amp * (1 - smoothstep(0, 1.3 * outer, rq[sel])) + lift[sel]
+        front = t + q[sel] - (q[sel] @ axis)[:, None] * axis + hq[:, None] * axis
+        target[sel] += wm[sel, None] * (front - target[sel])
+        weight = np.maximum(weight, reach)
+    # the fabric is one smooth sheet over the breast and round it (it bridges the creases at the breast's edge): smoothed
+    # over its own mesh without shrinking (Taubin), its cut edge held, then pushed back off the skin along its own
+    # normal where it sank in (not over the chest centre: its walls face sideways, and the cup clears it)
+    ge = np.unique(np.sort(np.concatenate([gtri[:, [0, 1]], gtri[:, [1, 2]], gtri[:, [2, 0]]]), axis=1), axis=0)
+    gdeg = np.maximum(np.bincount(ge.ravel(), minlength=len(p)), 1)[:, None]
+    te = np.sort(np.concatenate([gtri[:, [0, 1]], gtri[:, [1, 2]], gtri[:, [2, 0]]]), axis=1)
+    uniq, count = np.unique(te, axis=0, return_counts=True)
+    rim = np.zeros(len(p), bool)
+    rim[uniq[count == 1].ravel()] = True
+    around = np.zeros(len(p))
+    for i, outer in zip(nipples, outers):
+        around = np.maximum(around, 1 - smoothstep(1.4 * outer, 2.2 * outer, np.linalg.norm(p - body[i], axis=1)))
+    open_ = 1 - np.clip(4 * carry(tipzone[:, None].astype(np.float64))[:, 0], 0, 1)
+    hold = (np.maximum(np.clip(weight * 3, 0, 1), around) * ~rim)[:, None]
+    moved = (weight > 0) | (around > 0)
+
+    def taubin(q, k, passes):
+        for _ in range(passes):
+            for step in (0.5, -0.53):
+                acc = np.zeros_like(q)
+                np.add.at(acc, ge[:, 0], q[ge[:, 1]])
+                np.add.at(acc, ge[:, 1], q[ge[:, 0]])
+                q = q + step * k * (acc / gdeg - q)
+        return q
+    for _ in range(3):
+        target = taubin(target, hold, 40)
+        gn = np.zeros_like(target)
+        fn = np.cross(target[gtri[:, 1]] - target[gtri[:, 0]], target[gtri[:, 2]] - target[gtri[:, 0]])
+        for k in range(3):
+            np.add.at(gn, gtri[:, k], fn)
+        gn /= np.maximum(np.linalg.norm(gn, axis=1, keepdims=True), 1e-12)
+        gn[(gn * n).sum(1) < 0] *= -1
+        h = ((target - p) * n).sum(1)
+        target += (np.maximum(lift - h, 0) * moved * open_ / np.maximum((gn * n).sum(1), 0.3))[:, None] * gn
+    # the cup clears the tip for sure: the most the skin there comes through, as one broad rise over the whole cup
+    for i, outer, axis in zip(nipples, outers, axes):
+        t = body[i]
+        e1 = np.cross(axis, [0.0, 1.0, 0.0])
+        e1 /= np.linalg.norm(e1)
+        e2 = np.cross(axis, e1)
+        sk = body[np.linalg.norm(body - t, axis=1) < 0.5 * outer] - t
+        ft = target - t
+        fh, fuv = ft @ axis, np.stack([ft @ e1, ft @ e2], 1)
+        fr = np.linalg.norm(fuv, axis=1)
+        front = moved & (fr < outer) & (fh > -0.5 * outer)
+        if not front.any():
+            continue
+        got = cKDTree(fuv[front]).query(np.stack([sk @ e1, sk @ e2], 1))[1]
+        rise = max(float((sk @ axis + 0.004 - fh[front][got]).max()), 0.0)
+        target += (rise * (1 - smoothstep(0, 1.3 * outer, fr)) * moved * (fh > -outer))[:, None] * axis
+    # folded-over facets (the tip's walls laid out, the cup's edge) are smoothed out locally until none is left
+    nn = n[gtri].sum(1)
+    for _ in range(150):
+        fn = np.cross(target[gtri[:, 1]] - target[gtri[:, 0]], target[gtri[:, 2]] - target[gtri[:, 0]])
+        bad = np.zeros(len(p), bool)
+        bad[gtri[(fn * nn).sum(1) <= 0].ravel()] = True
+        if not bad.any():
+            break
+        for _ in range(2):
+            bad[ge[bad[ge[:, 0]], 1]] = True
+            bad[ge[bad[ge[:, 1]], 0]] = True
+        acc = np.zeros_like(target)
+        np.add.at(acc, ge[:, 0], target[ge[:, 1]])
+        np.add.at(acc, ge[:, 1], target[ge[:, 0]])
+        target[bad] = (acc / gdeg)[bad]
+    # as offsets in each point's triangle frame: a moved point on a sliver (a corner or an edge stored with a corner
+    # repeated) or on the chest centre's small steep facets is re-bound to the nearest well-sized triangle round it,
+    # at the closest point on it (the cup there no longer hangs off the centre's own shape)
     abc, w = abc.copy(), w.copy()
     area = np.linalg.norm(np.cross(body[tris[:, 1]] - body[tris[:, 0]], body[tris[:, 2]] - body[tris[:, 0]]), axis=1)
     own = {frozenset(t.tolist()): k for k, t in enumerate(tris)}
-    small = np.array([area[own[frozenset(t.tolist())]] < 1e-6 if len(set(t.tolist())) == 3 else True for t in abc])
-    big = tris[area >= 1e-6]
+    small = np.array([area[own[frozenset(t.tolist())]] < 1e-6 or tipzone[t].any() if len(set(t.tolist())) == 3 else True
+                      for t in abc])
+    big = tris[(area >= 1e-6) & ~tipzone[tris].any(1)]
     cent = body[big].mean(1)
     for v in np.flatnonzero(moved & small):
         x = p[v]
@@ -1394,7 +1577,7 @@ SKIN_TEX = 1536
 
 # hair colour per heritage at the roots (sRGB), for the scalp under the hair; the strands' tint is Figure.hairColor
 HAIR_COLOR = {"white": (168, 132, 88), "hispanic": (52, 39, 30), "south-asian": (46, 37, 32), "southeast-asian": (46, 37, 32),
-              "black": (38, 32, 29), "grey": (196, 194, 190)}
+              "east-asian": (38, 32, 29), "black": (38, 32, 29), "grey": (196, 194, 190)}
 # which groups' hair lies on each skin texture (children: the young female skin with their own scalp)
 SCALP = {("male", "young"): ["male-adult"], ("male", "old"): ["male-senior"],
          ("female", "young"): ["female-adult"], ("female", "old"): ["female-senior"], ("kid", "young"): ["kid-toddler", "kid-child"]}
@@ -1406,6 +1589,59 @@ def vertex_normals(np, p, tris):
     for k in range(3):
         np.add.at(n, tris[:, k], f)
     return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+
+
+# the fit leaves the skin crinkled between the chin and the chest (MakeHuman's coarse shoulder ridge and the arm
+# pressed into the armpit): where it folds or ripples it is smoothed without shrinking (Taubin), the chest centres kept
+SKIN_RELAX = (4, 25)
+# (and lightly all over that band)
+SKIN_EVEN = 0.7
+
+
+def smooth_skin(np, p, eyes, tris):
+    e = np.unique(np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), axis=1), axis=0)
+    cnt = np.maximum(np.bincount(e.ravel(), minlength=len(p)), 1).astype(np.float64)
+
+    def mean(q):
+        acc = np.zeros_like(q)
+        np.add.at(acc, e[:, 0], q[e[:, 1]])
+        np.add.at(acc, e[:, 1], q[e[:, 0]])
+        return acc / (cnt if q.ndim == 1 else cnt[:, None])
+
+    # pairs of triangles across each edge, for the fold between them
+    te = np.concatenate([np.sort(tris[:, [0, 1]], 1), np.sort(tris[:, [1, 2]], 1), np.sort(tris[:, [2, 0]], 1)])
+    ti = np.tile(np.arange(len(tris)), 3)
+    o = np.lexsort((te[:, 1], te[:, 0]))
+    te, ti = te[o], ti[o]
+    same = (te[1:] == te[:-1]).all(1)
+    ta, tb, tv = ti[:-1][same], ti[1:][same], te[:-1][same]
+
+    def fold(q):
+        fn = np.cross(q[tris[:, 1]] - q[tris[:, 0]], q[tris[:, 2]] - q[tris[:, 0]])
+        fn /= np.maximum(np.linalg.norm(fn, axis=1, keepdims=True), 1e-12)
+        ang = np.degrees(np.arccos(np.clip((fn[ta] * fn[tb]).sum(1), -1, 1)))
+        out = np.zeros(len(q))
+        np.maximum.at(out, tv[:, 0], ang)
+        np.maximum.at(out, tv[:, 1], ang)
+        return out
+
+    U = np.linalg.norm(eyes[eyes[:, 0] > 0].mean(0) - eyes[eyes[:, 0] < 0].mean(0))
+    ey, ny = eyes[:, 1].mean(), p[list(NIPPLE_VERTS), 1].mean()
+    band = smoothstep(ny - 0.4, ny - 0.3, p[:, 1]) * (1 - smoothstep(ey - 1.9 * U, ey - 1.5 * U, p[:, 1]))
+    for i in NIPPLE_VERTS:
+        band *= smoothstep(0.04, 0.07, np.linalg.norm(p - p[i], axis=1))
+    rounds, passes = SKIN_RELAX
+    q = p.copy()
+    for _ in range(rounds):
+        ripple = np.linalg.norm(mean(mean(q) - q) - (mean(q) - q), axis=1)
+        w = np.maximum.reduce([np.full(len(q), SKIN_EVEN), smoothstep(15, 35, fold(q)), smoothstep(0.004, 0.012, ripple)])
+        for _ in range(5):
+            w = np.maximum(w, 0.5 * w + 0.5 * mean(w))
+        w = (w * band)[:, None]
+        for _ in range(passes):
+            for step in (0.5, -0.53):
+                q = q + step * w * (mean(q) - q)
+    return q
 
 
 def grow_hair(np, load, body_topo):
@@ -1479,6 +1715,7 @@ def textures(scalp=None):
                 lum = px @ np.array([0.3, 0.59, 0.11])
                 grain = (lum / max(float(np.median(lum)), 1))[..., None] ** 0.5
                 px = px * (1 - 0.92 * m) + hair * grain * 0.92 * m
+            px = skin_textures.level_seams(np, px, regions)
             skin_textures.save(np, px, OUT / f"skin-{her}-{name}.jpg")
     for old in list(OUT.glob("brows-*")) + list(OUT.glob("lashes*")) + list(OUT.glob("hair-*")):
         old.unlink()

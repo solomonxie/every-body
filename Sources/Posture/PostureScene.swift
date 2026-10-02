@@ -107,9 +107,9 @@ final class PostureScene {
                 for v in keys[k].indices where delta[v] != .zero { keys[k][v] += r * delta[v] }
             }
         }
-        // chest and hips options (the bump keeps medium hips)
+        // chest and hips options (the bump keeps the default lower body)
         if female {
-            for shape in ["chest-\(chest.rawValue)", "hips-\((pregnant ? .medium : hips).rawValue)"] {
+            for shape in ["chest-\(chest.rawValue)"] + (pregnant ? [] : ["hips-\(hips.rawValue)"]) {
                 guard let deltas = figure.shapes[shape] else { continue }
                 for k in keys.indices { for v in keys[k].indices { keys[k][v] += deltas[k][v] } }
             }

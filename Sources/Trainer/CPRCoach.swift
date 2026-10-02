@@ -167,8 +167,8 @@ final class CPRCoach {
     /// rings on what to tap next
     private func showHints() {
         guard scene.ready else { return }
-        // the baby's feet are out of the chest view
-        if victim == .infant { scene.frameWhole(stage == .check) }
+        // the whole body while checking for a response, then the chest
+        scene.frameWhole(stage == .check)
         switch stage {
         case .check: scene.hint([victim == .infant ? .feet : .shoulder])
         case .bump: scene.hint([.belly])
