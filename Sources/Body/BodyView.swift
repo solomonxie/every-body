@@ -12,6 +12,10 @@ struct BodyView: View {
     var compact = false
     /// acupuncture: a rail switch for the meridian lines
     var meridians: Binding<Bool>? = nil
+    /// the reset button puts the whole page back as it opened, not just the camera
+    var onReset: (() -> Void)? = nil
+    var onSearch: (() -> Void)? = nil
+    /// room under the hint for a bar along the bottom
     var onPick: (Pick) -> Void = { _ in }
 
     @Environment(Settings.self) private var settings
@@ -61,7 +65,14 @@ struct BodyView: View {
 
     private var rail: some View {
         VStack(spacing: 10) {
-            RailButton(symbol: "arrow.counterclockwise", label: settings.t("Reset view", "重置视角")) { scene.resetView() }
+            if let onReset {
+                RailButton(symbol: "arrow.counterclockwise", label: settings.t("Reset everything", "全部重置"), action: onReset)
+            } else {
+                RailButton(symbol: "arrow.counterclockwise", label: settings.t("Reset view", "重置视角")) { scene.resetView() }
+            }
+            if let onSearch {
+                RailButton(symbol: "magnifyingglass", label: settings.t("Find a part", "查找部位"), action: onSearch)
+            }
             if let meridians {
                 RailButton(symbol: "point.bottomleft.forward.to.point.topright.scurvepath",
                            label: meridians.wrappedValue ? settings.t("Hide meridians", "隐藏经络线") : settings.t("Show meridians", "显示经络线"),

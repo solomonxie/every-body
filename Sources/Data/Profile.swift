@@ -26,24 +26,15 @@ enum Heritage: String, CaseIterable, Sendable {
         case .southeastAsian: Bilingual("Southeast Asian", "东南亚")
         case .southAsian: Bilingual("South Asian", "南亚")
         case .hispanic: Bilingual("Hispanic / Latino", "拉丁裔")
-        case .white: Bilingual("White", "白人")
+        case .white: Bilingual("Caucasian", "欧裔")
         case .black: Bilingual("Black", "黑人")
         }
     }
 }
 
-/// Adult female body shape: the chest size, with the lower body following it.
+/// Adult body shape option: the chest size, with the lower body growing alongside it (the same size).
 enum BodySize: String, CaseIterable, Sendable {
     case small, medium, large, xlarge, xxlarge
-
-    /// the lower body that goes with each shape (it has three sizes)
-    var lower: BodySize {
-        switch self {
-        case .small: .small
-        case .medium: .medium
-        default: .large
-        }
-    }
 
     var label: Bilingual {
         switch self {

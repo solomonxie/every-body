@@ -39,6 +39,7 @@ enum InternalModels {
     nonisolated private static let replaced = Set(index?.replaces ?? [])
 
     nonisolated static func part(_ id: String) -> Part? { partsByID[id] }
+    nonisolated static var allParts: [Part] { index?.parts ?? [] }
 
     private static var pieces: [String: ModelLibrary.Piece] = [:]
     /// muscles re-fitted under the female skin ("<id>--female" in the file)

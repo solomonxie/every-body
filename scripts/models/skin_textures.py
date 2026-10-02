@@ -83,6 +83,7 @@ class Regions:
         topo = dict(np.load(raw / "topo.body.npz"))
         self.np, self.size = np, size
         uv, vmap, tris = topo["uv"], topo["vmap"], topo["index"].reshape(-1, 3)
+        self.uv, self.vmap, self.tris = uv, vmap, tris
         self.tri_v = vmap[tris]
         # triangle id per texel (-1: none)
         im = Image.new("I", (size, size), 0)
@@ -190,6 +191,7 @@ def regions(np, raw, mpfb, size):
         dot = np.maximum(dot, 1 - smoothstep(0.006 * s, 0.011 * s, np.linalg.norm(p - c, axis=1)))
     out["kid-areola"] = r.paint(dot, 1.5)
     out["covered"] = r.covered
+    out["mesh"] = r
     return out
 
 
@@ -294,6 +296,68 @@ def finish(np, px, heritage, name, reg):
     if name == "kid":
         px = mix(px, reg["kid-areola"], np.array([0.9, 0.8, 0.78]) * (1 - dark) + np.array([0.86, 0.8, 0.78]) * dark, 0.6)
     return np.clip(px, 0, 255)
+
+
+def level_seams(np, px, reg, reach=0.05, size=2.0):
+    """the skin's UV islands meet along seams (down the spine, over the shoulders) where the two sides' tones differ
+    and print as lines: each side is moved to their mean there, the change fading into the island (over about
+    1/sqrt(reach) edges); the atlas round the islands takes their edge colour (no background bleeding into the
+    sampled or mipmapped edge)"""
+    r, covered = reg["mesh"], reg["covered"]
+    uv, vmap, tris = r.uv.astype(np.float64), r.vmap, r.tris
+    n = px.shape[0]
+    cov = covered.astype(np.float64)
+    soft = blur3(np, px * cov[..., None], size) / np.maximum(blur(np, cov, size), 1e-3)[..., None]
+
+    def sample(q):
+        x = np.clip(q[:, 0] * n - 0.5, 0, n - 1.001)
+        y = np.clip((1 - q[:, 1]) * n - 0.5, 0, n - 1.001)
+        x0, y0 = x.astype(int), y.astype(int)
+        fx, fy = (x - x0)[:, None], (y - y0)[:, None]
+        return ((soft[y0, x0] * (1 - fx) + soft[y0, x0 + 1] * fx) * (1 - fy)
+                + (soft[y0 + 1, x0] * (1 - fx) + soft[y0 + 1, x0 + 1] * fx) * fy)
+    # each render vertex's colour, sampled a little inside each of its triangles
+    cen = uv[tris].mean(1)
+    col, cnt = np.zeros((len(uv), 3)), np.zeros(len(uv))
+    for k in range(3):
+        np.add.at(col, tris[:, k], sample(0.8 * uv[tris[:, k]] + 0.2 * cen))
+        np.add.at(cnt, tris[:, k], 1)
+    col /= np.maximum(cnt, 1)[:, None]
+    twins = np.bincount(vmap, minlength=vmap.max() + 1)
+    seam = twins[vmap] > 1
+    mean = np.zeros((len(twins), 3))
+    np.add.at(mean, vmap, col)
+    mean /= np.maximum(twins, 1)[:, None]
+    fix = np.where(seam[:, None], mean[vmap] - col, 0.0)
+    e = np.unique(np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), axis=1), axis=0)
+    deg = np.bincount(e.ravel(), minlength=len(uv)).astype(np.float64)
+    g = fix.copy()
+    for _ in range(300):
+        acc = np.zeros_like(g)
+        np.add.at(acc, e[:, 0], g[e[:, 1]])
+        np.add.at(acc, e[:, 1], g[e[:, 0]])
+        g = np.where(seam[:, None], fix, acc / (deg + reach)[:, None])
+    # onto the texels: barycentric within each texel's triangle
+    ys, xs = np.nonzero(covered)
+    t = r.tri[ys, xs]
+    q = np.stack([(xs + 0.5) / n, 1 - (ys + 0.5) / n], 1)
+    a, b, c = uv[tris[t, 0]], uv[tris[t, 1]], uv[tris[t, 2]]
+    v0, v1, v2 = b - a, c - a, q - a
+    den = v0[:, 0] * v1[:, 1] - v1[:, 0] * v0[:, 1]
+    den = np.where(np.abs(den) < 1e-12, 1e-12, den)
+    wb = np.clip((v2[:, 0] * v1[:, 1] - v1[:, 0] * v2[:, 1]) / den, 0, 1)
+    wc = np.clip((v0[:, 0] * v2[:, 1] - v2[:, 0] * v0[:, 1]) / den, 0, 1 - wb)
+    out = px.copy()
+    out[ys, xs] += (1 - wb - wc)[:, None] * g[tris[t, 0]] + wb[:, None] * g[tris[t, 1]] + wc[:, None] * g[tris[t, 2]]
+    # the background: the islands' colour spread outward
+    filled = cov.copy()
+    for sigma in (2, 6, 18, 54):
+        w = blur(np, filled, sigma)
+        spread = blur3(np, out * filled[..., None], sigma) / np.maximum(w, 1e-6)[..., None]
+        new = (filled == 0) & (w > 0.02)
+        out[new] = spread[new]
+        filled[new] = 1
+    return out
 
 
 def save(np, px, path, limit=250_000):
