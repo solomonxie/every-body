@@ -5,7 +5,7 @@ BLENDER := $(TOOLS)/Blender.app/Contents/MacOS/Blender
 .PHONY: models-export models-import
 
 # figure variants + anatomy → .blend files for hand editing (an old MODELS_DIR is moved to /tmp)
-# ONLY=female.adult.east-asian exports just that variant (its body is the L chest, medium hips build)
+# ONLY=female.adult.white exports just that variant (its body is the L chest, medium hips build)
 models-export: export MODELS_ONLY = $(ONLY)
 models-export:
 	"$(BLENDER)" -b -P scripts/models/hand_edit.py -- export "$(MODELS_DIR)" 2>&1 | grep -E "^EXPORT|Error|Traceback|File \""

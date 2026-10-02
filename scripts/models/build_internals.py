@@ -441,7 +441,7 @@ class SkinClamp:
         polys = np.unique(vmap[index].astype(np.int64), axis=0).tolist()
         for sex in ("male", "female"):
             # heritage only changes the head, which isn't clamped
-            v = header["variants"].get(f"{sex}.adult.east-asian")
+            v = header["variants"].get(f"{sex}.adult.white")
             if v:
                 body = block(v["body"])
                 # the woman's smallest body options: inside that, inside them all

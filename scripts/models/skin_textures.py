@@ -7,7 +7,6 @@ from pathlib import Path
 
 # body tone per heritage (sRGB median of the body's skin), light to dark
 TONE = {
-    "east-asian": (219, 179, 160),
     "white": (209, 156, 133),
     "hispanic": (182, 130, 98),
     "southeast-asian": (165, 117, 86),

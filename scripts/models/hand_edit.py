@@ -1,7 +1,7 @@
 """Hand editing in Blender: the shipped models out to .blend files, and edited figure shapes back in.
 
   Blender -b -P hand_edit.py -- export <dir>   # figure variants + anatomy → <dir>/*.blend (an old <dir> goes to /tmp)
-                                               # MODELS_ONLY=female.adult.east-asian: just that variant (no anatomy)
+                                               # MODELS_ONLY=female.adult.white: just that variant (no anatomy)
   Blender -b -P hand_edit.py -- import <dir>   # moved vertices of body / eyes / brows / lashes → build/models/figure
                                                # (then build.sh pack; build.sh fit starts over from MakeHuman)
 
@@ -28,9 +28,9 @@ import numpy as np  # noqa: E402
 ANATOMY = ["skeleton", "muscles", "organs", "vessels", "nerves"]
 # Figure.swift hairColor / browColor
 HAIR = {"white": "#E8C184", "hispanic": "#58412F", "south-asian": "#4E3E35", "southeast-asian": "#4E3E35",
-        "east-asian": "#40352F", "black": "#40352F"}
+        "black": "#40352F"}
 BROW = {"white": "#9C7A52", "hispanic": "#3A2B22", "south-asian": "#362B26", "southeast-asian": "#362B26",
-        "east-asian": "#3A2F2A", "black": "#3A2F2A"}
+        "black": "#3A2F2A"}
 GREY_HAIR, GREY_BROW = "#F4F1EC", "#B8B4AE"
 KIDS = ("infant", "toddler", "child")
 # MakeHuman targets offered as shape-key sliders on the body (not: expressions, asymmetry, macros, genitals)

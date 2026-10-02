@@ -625,7 +625,7 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
                           variants={"pregnant": {"slouched": PREGNANT_SLUMP}})}
 SOFT = ("disc-", "erector-spinae", "transversospinales", "splenius", "levator-scapulae")
 SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pregnant"}
-HERITAGES = ["east-asian", "southeast-asian", "south-asian", "hispanic", "white", "black"]
+HERITAGES = ["southeast-asian", "south-asian", "hispanic", "white", "black"]
 SHAPES = {"female": ["chest-small", "chest-medium", "chest-xlarge", "chest-xxlarge", "hips-small", "hips-large"],
           "pregnant": ["chest-small", "chest-medium", "chest-xlarge", "chest-xxlarge"]}
 GARMENTS = {"male": ["briefs-male"], "female": ["briefs-female", "bra"], "pregnant": ["briefs-pregnant", "bra"]}
@@ -672,7 +672,7 @@ def pack(topics=None):
     parts = inner()
     J = joints(parts)
     btopo = fig.topology("body")
-    rest = {sex: fig.pieces(f"{v}.east-asian") for sex, v in SEXES.items()}
+    rest = {sex: fig.pieces(f"{v}.white") for sex, v in SEXES.items()}
     heritage = {sex: {h: fig.pieces(f"{v}.{h}")["body"] for h in HERITAGES} for sex, v in SEXES.items()}
     tris = btopo["vmap"][btopo["index"]]
     W = {sex: skin_weights(len(r["body"]), J, r["body"], tris) for sex, r in rest.items()}
@@ -731,7 +731,7 @@ def pack(topics=None):
         header["inner"] = {"count": start, "blocks": blocks, "pieces": pieces}
         header["neck"] = neck(poses)
         for sex, r in rest.items():
-            entry = {"variant": f"{SEXES[sex]}.east-asian", "body": [], "heritage": {}, "garments": []}
+            entry = {"variant": f"{SEXES[sex]}.white", "body": [], "heritage": {}, "garments": []}
             mine = poses if sex == "male" else posed_keys(sex)
             if sex in topic.get("variants", {}):
                 entry["transforms"], entry["inner"] = inner_keys(mine)
