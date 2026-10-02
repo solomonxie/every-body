@@ -49,7 +49,8 @@ Install on a connected iPhone — put `DEVELOPMENT_TEAM` and `IOS_BUNDLE_ID` in 
 `.env.local` first:
 
 ```bash
-scripts/install-ios-device.sh
+make device                    # = scripts/install-ios-device.sh; STORE=us (Canada/US) by default
+make device STORE=cn           # App Store region → Info.plist AppStoreRegion, read via storeRegion()
 scripts/screenshot.sh viewer/skeletal /tmp/shot.png   # open a screen via everybody:// and capture it
 ```
 
