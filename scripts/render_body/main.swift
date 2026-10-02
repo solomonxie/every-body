@@ -78,13 +78,22 @@ final class Renderer: NSObject, NSApplicationDelegate {
                 scene.yaw = scene.goalYaw ?? scene.yaw
                 scene.focusY = scene.goalFocusY; scene.distance = scene.goalDistance; scene.panX = scene.goalPanX
             }
+            // FIND=quadratus-lumborum-l selects a part and turns to it, as the viewer's part search does
+            if let id = ProcessInfo.processInfo.environment["FIND"] {
+                scene.setParts(PartState(), selected: id)
+                scene.focus(onPart: id)
+                scene.yaw = scene.goalYaw ?? scene.yaw
+                scene.focusY = scene.goalFocusY; scene.distance = scene.goalDistance; scene.panX = scene.goalPanX
+            }
             // JOINT=elbow-l:90 bends a joint
             if let spec = ProcessInfo.processInfo.environment["JOINT"]?.split(separator: ":"), spec.count == 2 {
                 scene.setJoint(String(spec[0]), degrees: Float(spec[1]) ?? 0)
             }
-            // SELECT=a,b selects each part in turn (as tapping them does); the last stays selected
+            // SELECT=a,b selects each part in turn (as tapping them does); the last stays selected; FADE=a,b fades those
+            let faded = PartState(faded: Set((ProcessInfo.processInfo.environment["FADE"] ?? "").split(separator: ",").map(String.init)))
+            scene.setParts(faded, selected: nil)
             for id in (ProcessInfo.processInfo.environment["SELECT"] ?? "").split(separator: ",") {
-                scene.setParts(PartState(), selected: String(id))
+                scene.setParts(faded, selected: String(id))
             }
             let anchor = AnchorEntity(world: .zero)
             anchor.addChild(scene.root)
@@ -102,6 +111,11 @@ final class Renderer: NSObject, NSApplicationDelegate {
                 func walk(_ e: Entity) { if e is ModelEntity, !e.name.isEmpty { seen[e.name, default: 0] += 1 }; e.children.forEach(walk) }
                 walk(scene.root)
                 print("DUPES", seen.filter { $0.value > 1 }.sorted { $0.key < $1.key }.map { "\($0.key)×\($0.value)" })
+            }
+            // FIND also fades what covers the part, as the viewer does
+            if let id = ProcessInfo.processInfo.environment["FIND"] {
+                scene.setParts(PartState(faded: scene.covering(id)), selected: id)
+                print("COVERING", scene.covering(id).sorted())
             }
             // HITS=x,y;x,y prints what a tap at each view point lands on
             for spec in (ProcessInfo.processInfo.environment["HITS"] ?? "").split(separator: ";") {
@@ -166,6 +180,8 @@ extension Renderer {
         let t = CPRTrainerScene(victim: CPRVictim(age), pregnant: env["PREGNANT"] == "1")
         t.build(female: female, heritage: env["HERITAGE"].flatMap(Heritage.init(rawValue:)) ?? .white, age: age,
                 chest: env["CHEST"].flatMap(BodySize.init(rawValue:)) ?? .small, hips: env["HIPS"].flatMap(BodySize.init(rawValue:)) ?? .medium)
+        // past the check the camera comes in to the chest
+        if state != "check" { t.frameWhole(false); for _ in 0..<240 { t.update(dt: 1 / 60) } }
         if env["CLOSE"] == "1" { t.focusOnTarget() }
         t.glass = env["GLASS"] == "1"
         if let v = env["AZ"].flatMap(Float.init) { t.azimuth = v }

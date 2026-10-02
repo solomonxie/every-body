@@ -46,26 +46,6 @@ struct ProfileMenu: View {
     }
 }
 
-/// Adult woman: one body shape (S–XXL; the lower body follows), and pregnancy.
-struct BodyShapePickers: View {
-    @Binding var chest: BodySize
-    @Binding var hips: BodySize
-    @Binding var pregnant: Bool
-    @Environment(Settings.self) private var settings
-
-    var body: some View {
-        Picker(settings.t("Body shape", "体型"), selection: shape) {
-            ForEach(BodySize.allCases, id: \.self) { Text(settings.t($0.letter)).tag($0) }
-        }
-        .pickerStyle(.menu)
-        Toggle(settings.t("Pregnant", "怀孕"), isOn: $pregnant)
-    }
-
-    private var shape: Binding<BodySize> {
-        Binding(get: { chest }, set: { chest = $0; hips = $0.lower })
-    }
-}
-
 extension View {
     func profileToolbar() -> some View {
         toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileMenu() } }

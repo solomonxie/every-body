@@ -37,6 +37,7 @@ enum ModelLibrary {
     nonisolated private static let partsByID = Dictionary((index?.skeleton?.parts ?? []).map { ($0.id, $0) }) { a, _ in a }
 
     nonisolated static func part(_ id: String) -> Part? { partsByID[id] }
+    nonisolated static var allParts: [Part] { index?.skeleton?.parts ?? [] }
 
     private(set) static var bones: [Piece] = []
     private static var collisions: [String: ShapeResource] = [:]

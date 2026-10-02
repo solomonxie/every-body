@@ -12,6 +12,7 @@ enum SceneArt {
     private static var missing: Set<String> = []
 
     static func image(_ name: String) -> Image? {
+        if let log = ProcessInfo.processInfo.environment["ART_LOG"], let h = FileHandle(forWritingAtPath: log) { h.seekToEndOfFile(); h.write((name + "\n").data(using: .utf8)!); try? h.close() }
         if let hit = cache[name] { return hit }
         guard !missing.contains(name), let url = url(name), let data = try? Data(contentsOf: url) else {
             missing.insert(name)
@@ -43,6 +44,7 @@ extension Sketch {
     /// Full-frame pictures cross-faded by weight (weights sum to 1); false when none is available.
     @MainActor @discardableResult
     mutating func art(_ layers: [(name: String, weight: Double)]) -> Bool {
+        if ProcessInfo.processInfo.environment["ART_LOG"] != nil { for l in layers { _ = SceneArt.image(l.name) } }
         let got = layers.filter { $0.weight > 0.001 }.compactMap { l in SceneArt.image(l.name).map { ($0, l.weight) } }
         guard !got.isEmpty else { return false }
         let frame = CGRect(origin: .zero, size: sceneSize)

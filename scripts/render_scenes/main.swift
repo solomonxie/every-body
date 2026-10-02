@@ -36,6 +36,30 @@ func renderAll() {
     let profile = env == "pregnant" ? Profile(age: .adult, female: true, pregnant: true) : Profile(age: AgeGroup(rawValue: env) ?? .adult, female: female)
     for scenario in Illustrations.builders.map({ $0(profile) }) where only.isEmpty || only.contains(scenario.id) {
         guard Illustrations.shown(scenario.id, for: profile) else { print("\(scenario.id): hidden for \(env)"); continue }
+        if ProcessInfo.processInfo.environment["AUDIT"] == "1" {
+            // every step, the frames between steps, and a try's progress range
+            for i in scenario.steps.indices {
+                let a = scenario.targets(at: max(i - 1, 0)), b = scenario.targets(at: i)
+                for f in stride(from: 0.0, through: 1.0, by: 0.05) {
+                    var p = a
+                    for (k, v) in b { p[k] = (a[k] ?? v) + (v - (a[k] ?? v)) * f }
+                    for t in [0.0, 0.7, 1.3, 3.0] { draw(scenario, p, t) }
+                }
+                if let tr = scenario.steps[i].try {
+                    var p = b
+                    if let demo = tr.demo { p.merge(demo) { _, n in n } }
+                    if case let .hold(param, progress, _, _) = tr.mode {
+                        for f in stride(from: 0.0, through: 1.0, by: 0.05) { p[param] = f; p[progress] = f; draw(scenario, p, 1.3) }
+                    }
+                    if case .rhythm = tr.mode {
+                        for press in stride(from: 0.0, through: 1.0, by: 0.1) { p.merge(["taps": 12, "rate": 110, "press": press]) { _, n in n }; draw(scenario, p, 1.3) }
+                    }
+                    draw(scenario, p, 1.3)
+                }
+            }
+            print(scenario.id)
+            continue
+        }
         let images = scenario.steps.indices.compactMap { render(scenario, step: $0, t: 1.3) }
         // SPLIT=1 also writes one PNG per step
         if ProcessInfo.processInfo.environment["SPLIT"] == "1" {
@@ -48,6 +72,16 @@ func renderAll() {
         writePNG(sheet, out.appendingPathComponent("\(scenario.id).png"))
         print(scenario.id)
     }
+}
+
+@MainActor
+func draw(_ scenario: Scenario, _ params: [String: Double], _ t: Double) {
+    let view = Canvas { ctx, _ in
+        var sketch = Sketch(ctx: ctx, zh: false)
+        scenario.draw(&sketch, params, t)
+    }
+    .frame(width: 360, height: 300)
+    _ = ImageRenderer(content: view).nsImage
 }
 
 func writePNG(_ img: NSImage, _ url: URL) {

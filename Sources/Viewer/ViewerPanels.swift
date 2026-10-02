@@ -20,6 +20,11 @@ func partLabel(_ id: String, female: Bool) -> (name: Bilingual, layer: Bilingual
     return (Bilingual(names[0], names[1]), organs)
 }
 
+/// The layer a schematic part, real part or organ is drawn in.
+func partLayerID(_ id: String) -> LayerID? {
+    Catalog.part(id)?.layer ?? ModelLibrary.part(id)?.layer ?? InternalModels.part(id)?.layer ?? (Catalog.organ(id) == nil ? nil : .organs)
+}
+
 /// Every chart zone said to act on an organ.
 func zonesForOrgan(_ id: String) -> [(label: Bilingual, route: Route)] {
     let chartName = ["hand": Bilingual("Hand", "手"), "foot": Bilingual("Foot", "足"), "ear": Bilingual("Ear", "耳")]
@@ -296,5 +301,43 @@ struct CautionList: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.cautionFill, in: .rect(cornerRadius: Radius.small, style: .continuous))
         }
+    }
+}
+
+/// Find a part of this 3D body by its English or Chinese name.
+struct PartSearch: View {
+    let partIDs: [String]
+    let female: Bool
+    let onPick: (String) -> Void
+    @Environment(Settings.self) private var settings
+    @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
+
+    var body: some View {
+        let all = partIDs.compactMap { id in
+            partLabel(id, female: female).map { SearchEntry(.part, id: id, name: $0.name, detail: $0.layer, route: .viewer(system: "", part: id)) }
+        }
+        .sorted { settings.t($0.name).localizedStandardCompare(settings.t($1.name)) == .orderedAscending }
+        let shown = query.trimmingCharacters(in: .whitespaces).isEmpty ? all : SearchIndex.rank(all, query)
+        NavigationStack {
+            List(shown) { entry in
+                Button { dismiss(); onPick(entry.id) } label: { SearchRow(entry: entry, chevron: false) }
+                    .buttonStyle(RowButtonStyle())
+                    .listRowInsets(EdgeInsets())
+            }
+            .listStyle(.plain)
+            .overlay {
+                if shown.isEmpty {
+                    ContentUnavailableView(settings.t("No matches for “\(query)”", "没有找到“\(query)”"), systemImage: "magnifyingglass")
+                }
+            }
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: settings.t("Part name", "部位名称"))
+            .navigationTitle(settings.t("Find a part", "查找部位"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button(settings.t("Done", "完成")) { dismiss() } }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }

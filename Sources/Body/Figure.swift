@@ -71,8 +71,8 @@ enum Figure {
             guard let info = header.pieces[name] else { continue }
             var positions = reader.positions(block)
             if name == "body" && look.female && look.age == .adult {
-                let lower: BodySize = look.pregnant ? .medium : look.hips
-                for shape in ["chest-\(look.chest.rawValue)", "hips-\(lower.rawValue)"] {
+                // (the bump keeps the default lower body)
+                for shape in ["chest-\(look.chest.rawValue)"] + (look.pregnant ? [] : ["hips-\(look.hips.rawValue)"]) {
                     guard let i = header.shapes?[shape] else { continue }
                     for (v, d) in reader.positions(i).enumerated() { positions[v] += d }
                 }
@@ -87,7 +87,9 @@ enum Figure {
             }
             var d = MeshDescriptor(name: name)
             d.positions = MeshBuffers.Positions(vmap.map { positions[Int($0)] })
-            d.normals = MeshBuffers.Normals(vmap.map { normals[Int($0)] })
+            // the skin shades with its normals evened out a little (garments and points keep the plain ones)
+            let shade = name == "body" ? Self.normals(positions, vmap: vmap, index: index, blur: 2) : normals
+            d.normals = MeshBuffers.Normals(vmap.map { shade[Int($0)] })
             d.textureCoordinates = MeshBuffers.TextureCoordinates((0..<info.render).map {
                 SIMD2(Float(uv16[2 * $0]) / 65535, Float(uv16[2 * $0 + 1]) / 65535)
             })
@@ -188,15 +190,25 @@ enum Figure {
         }
     }
 
-    /// Smooth normals per position (shared across UV seams).
-    private static func normals(_ p: [SIMD3<Float>], vmap: [UInt32], index: [UInt32]) -> [SIMD3<Float>] {
+    /// Smooth normals per position (shared across UV seams), averaged with their neighbours' `blur` times: the
+    /// skin's coarse facets (shoulders, neck) shade as one curve.
+    private static func normals(_ p: [SIMD3<Float>], vmap: [UInt32], index: [UInt32], blur: Int = 0) -> [SIMD3<Float>] {
         var n = [SIMD3<Float>](repeating: .zero, count: p.count)
         for t in stride(from: 0, to: index.count, by: 3) {
             let a = Int(vmap[Int(index[t])]), b = Int(vmap[Int(index[t + 1])]), c = Int(vmap[Int(index[t + 2])])
             let f = simd_cross(p[b] - p[a], p[c] - p[a])
             n[a] += f; n[b] += f; n[c] += f
         }
-        return n.map { simd_length($0) > 0 ? simd_normalize($0) : SIMD3(0, 1, 0) }
+        n = n.map { simd_length($0) > 0 ? simd_normalize($0) : SIMD3(0, 1, 0) }
+        for _ in 0..<blur {
+            var m = n
+            for t in stride(from: 0, to: index.count, by: 3) {
+                let a = Int(vmap[Int(index[t])]), b = Int(vmap[Int(index[t + 1])]), c = Int(vmap[Int(index[t + 2])])
+                m[a] += n[b] + n[c]; m[b] += n[a] + n[c]; m[c] += n[a] + n[b]
+            }
+            n = m.map { simd_length($0) > 0 ? simd_normalize($0) : SIMD3(0, 1, 0) }
+        }
+        return n
     }
 
     /// hem width (scene units) the fabric texture spans, from the garment's edge inward

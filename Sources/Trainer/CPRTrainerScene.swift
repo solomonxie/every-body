@@ -81,11 +81,13 @@ final class CPRTrainerScene {
     private var homeFocus = SIMD3<Float>.zero
     private var homeDistance: Float = 1
 
-    /// Pull back to show the whole body (the infant's feet), or come back to the chest.
+    /// Pull back to show the whole body, head to feet, or come back to the chest.
     func frameWhole(_ whole: Bool) {
-        let mid = world(SIMD3(0, (marks.headTop + marks.feetY) / 2, marks.target.z * 0.5))
+        // the feet are nearer the camera and look longer: aim a little below the middle and stand further back
+        let length = marks.headTop - marks.feetY
+        let mid = world(SIMD3(0, marks.feetY + length * 0.42, marks.target.z * 0.5))
         goalFocus = whole ? mid : homeFocus
-        goalDistance = whole ? Self.fit((marks.headTop - marks.feetY) * scale) : homeDistance
+        goalDistance = whole ? Self.fit(length * scale) * 1.25 : homeDistance
     }
 
     /// camera distance at which a length (world) spans 80% of the 40° view
@@ -216,6 +218,10 @@ final class CPRTrainerScene {
         distance = Self.fit((marks.headTop - thigh) * scale) * 1.02
         homeFocus = focus
         homeDistance = distance
+        // it opens on the whole body (checking for a response), then comes in to the chest
+        frameWhole(true)
+        focus = goalFocus ?? focus
+        distance = goalDistance ?? distance
         ready = true
         update(dt: 0)
     }

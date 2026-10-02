@@ -77,6 +77,8 @@ final class BodyScene {
     private var surface: Figure.Surface?
     private var bentJoints: Set<String> = []
     private var organEntities: [String: Entity] = [:]
+    /// each organ piece's own opacity (the see-through womb), back when it's no longer faded
+    private var organOpacity: [ObjectIdentifier: Float] = [:]
     private var jointOuter: [String: Entity] = [:]
     private var jointInner: [String: Entity] = [:]
     private var pointEntities: [String: [ModelEntity]] = [:]
@@ -140,7 +142,7 @@ final class BodyScene {
         self.female = female
         let pregnant = pregnant && female && age == .adult
         rig.children.removeAll()
-        partEntities = [:]; skinEntities = []; organEntities = [:]; jointOuter = [:]; pointEntities = [:]; pointColors = [:]; smallPoints = []; meridianEntities = [:]
+        partEntities = [:]; skinEntities = []; organEntities = [:]; organOpacity = [:]; jointOuter = [:]; pointEntities = [:]; pointColors = [:]; smallPoints = []; meridianEntities = [:]
         bentJoints = []
 
         // joint pivots: outer at the pivot (rotates), inner offset back so children use body coords
@@ -202,6 +204,7 @@ final class BodyScene {
                 piece.position -= real.centre
                 piece.model?.materials = [Self.material(UIColor(hex: real.part.color), opacity: 1, texture: Textures.organ)]
                 piece.name = organ.id
+                organOpacity[ObjectIdentifier(piece)] = 1
                 piece.components.set(InputTargetComponent())
                 Task { @MainActor in
                     if let shape = await ModelLibrary.collision(for: real.piece) { piece.components.set(CollisionComponent(shapes: [shape])) }
@@ -216,6 +219,7 @@ final class BodyScene {
                 piece.model?.materials = [Self.material(UIColor(hex: variant.color), opacity: Float(see),
                                                         texture: organ.region == true ? nil : organ.id == "brain" ? Textures.brain : Textures.organ)]
                 piece.name = organ.names == nil ? "" : organ.id
+                organOpacity[ObjectIdentifier(piece)] = Float(see)
                 if organ.names != nil { Self.makeTappable(piece, shape: shape) }
                 container.addChild(piece)
             }
@@ -298,9 +302,9 @@ final class BodyScene {
                 return dot
             }
         }
-        // adult channels already lie on the adult skin (a woman's: large chest, medium hips); a child's, or a woman's with
-        // other body options, are laid onto its own (a new mesh, not reshaped)
-        let lay = age == .infant || age.isChild || (female && age == .adult && (chest != .large || hips != .medium || pregnant))
+        // adult channels already lie on the default adult skin; other figures (with their body options) are laid onto
+        // its own (a new mesh, not reshaped)
+        let lay = age == .infant || age.isChild || (female && age == .adult)
         for meridian in meridians {
             let material = UnlitMaterial(color: meridianColor[meridian.id] ?? .gray)
             meridianEntities[meridian.id] = meridian.pieces(female: adultShape).map { paths in
@@ -728,16 +732,40 @@ final class BodyScene {
             // deep muscle cores fill gaps in a muscle-only view but would hide the bones
             let deep = id.hasPrefix("deep-") && layers.contains(.skeletal)
             entity.isEnabled = layers.contains(layer) && parts.visible(id) && !deep && !hiddenForAge.contains(id)
-            var m = baseMaterials[id]!
-            let opacity: Float = parts.faded.contains(id) ? 0.18 : layer == .muscular ? muscleOpacity : 1
-            if opacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: opacity)) }
-            if id == selected { m.emissiveColor = .init(color: UIColor(hex: "#FFD166")); m.emissiveIntensity = 0.8 }
+            let faded = parts.faded.contains(id)
+            var m = faded ? Self.ghost(baseMaterials[id]!) : baseMaterials[id]!
+            if !faded && layer == .muscular && muscleOpacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: muscleOpacity)) }
+            if id == selected { m.emissiveColor = .init(color: UIColor(hex: "#FFD166")); m.emissiveIntensity = faded ? 0.25 : 0.8 }
             entity.model?.materials = [m]
         }
         for (id, entity) in organEntities where Catalog.organ(id)?.region != true {
             // the brain is an organ but belongs in the nervous system view too
             entity.isEnabled = (layers.contains(.organs) || (id == "brain" && layers.contains(.nervous))) && parts.visible(id)
+            let faded = parts.faded.contains(id)
+            for case let piece as ModelEntity in entity.children {
+                guard let own = organOpacity[ObjectIdentifier(piece)], var m = piece.model?.materials.first as? PhysicallyBasedMaterial else { continue }
+                let opacity = faded ? min(own, Self.ghostOpacity) : own
+                m.blending = opacity < 1 ? .transparent(opacity: .init(floatLiteral: opacity)) : .opaque
+                piece.model?.materials = [m]
+            }
         }
+    }
+
+    static let ghostOpacity: Float = 0.3
+
+    /// A faded part: a pale see-through ghost of itself, unlike the solid parts behind it.
+    private static func ghost(_ base: PhysicallyBasedMaterial) -> PhysicallyBasedMaterial {
+        var m = base
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        base.baseColor.tint.getRed(&r, green: &g, blue: &b, alpha: &a)
+        m.baseColor.tint = UIColor(red: (r + 2) / 3, green: (g + 2) / 3, blue: (b + 2) / 3, alpha: 1)
+        m.blending = .transparent(opacity: .init(floatLiteral: ghostOpacity))
+        return m
+    }
+
+    /// Every tappable part and organ in this body.
+    var partIDs: [String] {
+        Array(partEntities.keys) + organEntities.keys.filter { Catalog.organ($0)?.names != nil && Catalog.organ($0)?.region != true }
     }
 
     // MARK: frame
@@ -858,6 +886,44 @@ final class BodyScene {
         goalPanX = turned.x
         goalFocusY = turned.y
         goalDistance = distance * body.squareRoot()
+    }
+
+    /// Turn and zoom so a part faces the camera, centred: from behind when it lies in the back half of the body.
+    func focus(onPart id: String) {
+        guard let entity = partEntities[id] ?? organEntities[id] else { return }
+        let box = entity.visualBounds(relativeTo: rig)
+        guard !box.isEmpty else { return }
+        let body = proportions.body
+        var target: Float = box.center.z < -0.03 ? .pi : 0
+        target += ((yaw - target) / (2 * .pi)).rounded() * 2 * .pi
+        goalYaw = target
+        let turned = (simd_quatf(angle: pitch, axis: SIMD3(1, 0, 0)) * simd_quatf(angle: target, axis: SIMD3(0, 1, 0))).act(box.center * body)
+        goalPanX = turned.x
+        goalFocusY = turned.y
+        goalDistance = min(Focus.all.distance, max(1.2, max(box.extents.x, box.extents.y) * body * 1.8 + 0.5))
+    }
+
+    /// Parts over this one as focus(onPart:) shows it (a deep muscle under the back's), to fade so it shows through.
+    func covering(_ id: String) -> Set<String> {
+        guard let scene = root.scene, let entity = partEntities[id] ?? organEntities[id] else { return [] }
+        let box = entity.visualBounds(relativeTo: rig)
+        guard !box.isEmpty else { return [] }
+        let n = SIMD3<Float>(0, 0, box.center.z < -0.03 ? -1 : 1)
+        let dir = simd_normalize(rig.convert(direction: -n, to: nil))
+        var out = Set<String>()
+        for dx: Float in [-0.3, 0, 0.3] {
+            for dy: Float in [-0.3, 0, 0.3] {
+                let p = box.center + SIMD3(dx * box.extents.x, dy * box.extents.y, 0)
+                let origin = rig.convert(position: p + n * 2, to: nil)
+                let depth = simd_distance(origin, rig.convert(position: p, to: nil))
+                for hit in scene.raycast(origin: origin, direction: dir, length: depth, query: .all, mask: .all, relativeTo: nil) {
+                    let name = hit.entity.name
+                    if name == id { break }
+                    if partEntities[name] != nil || organEntities[name] != nil { out.insert(name) }
+                }
+            }
+        }
+        return out
     }
 
     func resetView() {
