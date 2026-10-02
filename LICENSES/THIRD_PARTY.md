@@ -49,8 +49,8 @@ Third-party material: the files in `Resources/Models/` (built by `scripts/models
   hair `short01` / `short04` / `long01` / `ponytail01`.
 - Licence: CC0 1.0 (public domain dedication), https://creativecommons.org/publicdomain/zero/1.0/ — no attribution required; credited anyway.
 - Changes: posed into the anatomical position and fitted to the app's landmarks (children to the app's age proportions);
-  face targets per sex and heritage; heritage limited to the head; Southeast Asian, South Asian and Hispanic skins are
-  pixel blends of the Asian, African and Caucasian skins; chest marks toned; scalp under the hair tinted
+  face targets per figure option; appearance limited to the head; some skins are pixel blends of the base skins;
+  chest marks toned; scalp under the hair tinted
   with the hair colour; hair and brows reduced to grey strands and tinted per heritage (silver for 65+); pregnant bump
   scaled to term; textures resized/recompressed, iris toned; underwear cut from the base mesh by the app's pipeline
   (no third-party garment).
@@ -59,7 +59,7 @@ Third-party material: the files in `Resources/Models/` (built by `scripts/models
 
 - "Snow Rig © Blender Foundation | studio.blender.org" (https://studio.blender.org/characters/snow/v2/) and
   "Rain Rig © Blender Foundation | studio.blender.org" (https://studio.blender.org/characters/rain/v2/), CC BY.
-- Used: the heads (Snow for men, Rain for women and children), their eye centres and sculpted hair (Snow's; Rain's main hair
+- Used: the heads (Snow and Rain), their eye centres and sculpted hair (Snow's; Rain's main hair
   and ponytail, bent to hang). `scripts/models/face_fit.py` draws each MakeHuman figure's face onto the head (matched by
   478 face landmarks, blended part way for adults) and carries the hair onto it; the figure keeps its own mesh, UVs and
   skin. No rig, texture or material of theirs ships.
