@@ -47,7 +47,7 @@ final class Renderer: NSObject, NSApplicationDelegate {
             // GLASS=0.4 makes the skin over inner layers less see-through
             if let glass = ProcessInfo.processInfo.environment["GLASS"].flatMap(Float.init) { BodyScene.glassOpacity = glass }
             // HERITAGE=black, UNDERWEAR=0 change the outer figure
-            scene.heritage = ProcessInfo.processInfo.environment["HERITAGE"].flatMap(Heritage.init(rawValue:)) ?? .eastAsian
+            scene.heritage = ProcessInfo.processInfo.environment["HERITAGE"].flatMap(Heritage.init(rawValue:)) ?? .white
             scene.underwear = ProcessInfo.processInfo.environment["UNDERWEAR"] != "0"
             // CHEST=small|medium|large, HIPS=… (adult women)
             if let v = ProcessInfo.processInfo.environment["CHEST"].flatMap(BodySize.init(rawValue:)) { scene.chest = v }
@@ -127,7 +127,7 @@ extension Renderer {
     func renderPosture(_ topic: String, out: String, female: Bool) {
         let env = ProcessInfo.processInfo.environment
         let scene = PostureScene()
-        let heritage = env["HERITAGE"].flatMap(Heritage.init(rawValue:)) ?? .eastAsian
+        let heritage = env["HERITAGE"].flatMap(Heritage.init(rawValue:)) ?? .white
         scene.build(topic: topic, female: female, pregnant: env["PREGNANT"] == "1", heritage: heritage, underwear: env["UNDERWEAR"] != "0",
                     chest: env["CHEST"].flatMap(BodySize.init(rawValue:)) ?? .small, hips: env["HIPS"].flatMap(BodySize.init(rawValue:)) ?? .medium)
         scene.seeThrough = env["SOLID"] != "1"
@@ -164,7 +164,7 @@ extension Renderer {
         await BodyScene.prepare()
         BodyScene.glassOpacity = 0.22
         let t = CPRTrainerScene(victim: CPRVictim(age), pregnant: env["PREGNANT"] == "1")
-        t.build(female: female, heritage: env["HERITAGE"].flatMap(Heritage.init(rawValue:)) ?? .eastAsian, age: age,
+        t.build(female: female, heritage: env["HERITAGE"].flatMap(Heritage.init(rawValue:)) ?? .white, age: age,
                 chest: env["CHEST"].flatMap(BodySize.init(rawValue:)) ?? .small, hips: env["HIPS"].flatMap(BodySize.init(rawValue:)) ?? .medium)
         if env["CLOSE"] == "1" { t.focusOnTarget() }
         t.glass = env["GLASS"] == "1"

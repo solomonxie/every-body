@@ -31,7 +31,7 @@ final class Settings {
     init() {
         names = NameMode(rawValue: store.string(forKey: "names") ?? "")
             ?? (Locale.preferredLanguages.first?.hasPrefix("zh") == true ? .zh : .en)
-        heritage = Locale.preferredLanguages.first?.hasPrefix("zh") == true ? .eastAsian : .white
+        heritage = Locale.preferredLanguages.first?.hasPrefix("zh") == true ? .southeastAsian : .white
     }
 
     private func save() {

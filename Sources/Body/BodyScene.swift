@@ -104,7 +104,7 @@ final class BodyScene {
     private var female = false
     private var skinColor = UIColor(hex: "#F2C9A5")
     /// outer skin look; set before build
-    var heritage: Heritage = .eastAsian
+    var heritage: Heritage = .white
     var underwear = true
     /// adult female figure options
     var chest: BodySize = .small
