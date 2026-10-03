@@ -26,7 +26,6 @@ private struct CPRTrainer: View {
     @State private var ready = false
     @State private var orbitStart: (azimuth: Float, elevation: Float)?
     @State private var zoomStart: Float?
-    @State private var touching = false
     @State private var glass = false
 
     @Binding var who: Profile
@@ -53,15 +52,10 @@ private struct CPRTrainer: View {
                         MainActor.assumeIsolated { coach.tick(Float(event.deltaTime)) }
                     }
                 }
-                .gesture(DragGesture(minimumDistance: 0)
-                    .onChanged { v in
-                        if !touching { touching = true; coach.touchBegan(v.startLocation, size: geo.size) }
-                        coach.touchMoved(v.location, size: geo.size)
-                    }
-                    .onEnded { v in
-                        touching = false
-                        coach.touchEnded(v.location, size: geo.size)
-                    })
+                .gesture(SingleTouchRecognizer(
+                    onBegan: { coach.touchBegan($0, size: $1) },
+                    onMoved: { coach.touchMoved($0, size: $1) },
+                    onEnded: { coach.touchEnded($0, size: $1) }))
                 .gesture(PanRecognizer(touches: 2, onChange: orbit, onEnd: { orbitStart = nil }))
                 .gesture(PinchRecognizer(onChange: zoom, onEnd: { zoomStart = nil }))
             }
