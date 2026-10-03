@@ -311,7 +311,9 @@ def with_base_head(neutral, gid, source):
         if k not in ("body", "eyes"):
             i = np.argsort(np.linalg.norm(body[None, :, :] - v[:, None, :], axis=2), axis=1)[:, :4]
             out[k] = v + move[i].mean(1)
-    return out, face, placed
+    # the chin's underside (facing down, below the lips): a variant's own difference there is carried evened out
+    under = face * smoothstep(L[14, 1] - 0.3 * U, L[14, 1] - 0.5 * U, body[:, 1]) * smoothstep(-0.15, -0.5, vertex_normals(head)[:, 1])
+    return out, face, placed, under
 
 
 # a group's hair style taken from its source character (hair.CHARACTER_HAIR)
@@ -372,8 +374,14 @@ def carry_hair(base, head_new, source, eyes):
     return out
 
 
-def base_variant(v, neutral, new_neutral, face, keep):
+# smoothing passes over a variant's difference under the chin (unsmoothed, it pinches into a fold on the base head's jaw)
+UNDER_EVEN = 60
+
+
+def base_variant(v, neutral, new_neutral, face, keep, under):
     """a variant on the base-headed neutral: its difference from the neutral kept at `keep` in the face"""
+    import base_head as bh
+    _, vmap, tris = topo("body")
     out = {}
     for k, x in v.items():
         n0, n1 = neutral.get(k), new_neutral.get(k)
@@ -381,7 +389,10 @@ def base_variant(v, neutral, new_neutral, face, keep):
             out[k] = x
             continue
         f = face[:, None] if k == "body" else 1.0
-        out[k] = n1 + (x - n0) * (1 - (1 - keep) * f)
+        d = x - n0
+        if k == "body":
+            d = d + under[:, None] * (bh.smooth(np, d, vmap[tris], len(d), UNDER_EVEN) - d)
+        out[k] = n1 + d * (1 - (1 - keep) * f)
     return out
 
 
@@ -879,7 +890,7 @@ def starting(gid):
     if gid in BASE:
         source, keep, amount = BASE[gid]
         neutral = got["neutral"]
-        new, face, placed = with_base_head(neutral, gid, source)
+        new, face, placed, under = with_base_head(neutral, gid, source)
         new = {k: neutral[k] + amount * (v - neutral[k]) for k, v in new.items()}
         if gid in HAIR_OF:
             hairs = carry_hair(placed, new["body"], source, new["eyes"])
@@ -887,9 +898,35 @@ def starting(gid):
             first = np.cumsum([0] + [len(h) for h, _ in hairs])[:-1]
             tri = np.concatenate([t + o for (_, t), o in zip(hairs, first)])
             np.savez_compressed(RAW / f"sculpt.{HAIR_OF[gid]}.npz", pos=pos.astype(np.float32), tri=tri.astype(np.uint32))
-        got = {v: new if v == "neutral" else base_variant(p, neutral, new, face, keep.get(v, keep["*"]) if isinstance(keep, dict) else keep)
+        got = {v: new if v == "neutral" else base_variant(p, neutral, new, face, keep.get(v, keep["*"]) if isinstance(keep, dict) else keep, under)
                for v, p in got.items()}
+        got = {v: dict(p, body=untangle(p["body"], under)) for v, p in got.items()}
     return got
+
+
+def untangle(body, under, passes=80):
+    """folds under the chin (the base head's jaw drawn over a variant's own chin) relaxed, there only"""
+    import base_head as bh
+    _, vmap, tris = topo("body")
+    t = vmap[tris]
+    fn = np.cross(body[t[:, 1]] - body[t[:, 0]], body[t[:, 2]] - body[t[:, 0]])
+    fn /= np.maximum(np.linalg.norm(fn, axis=1, keepdims=True), 1e-12)
+    vn = vertex_normals(body)
+    bend = np.zeros(len(body))
+    for k in range(3):
+        np.maximum.at(bend, t[:, k], np.degrees(np.arccos(np.clip((fn * vn[t[:, k]]).sum(1), -1, 1))))
+    w = bh.smooth(np, (under * smoothstep(20, 40, bend))[:, None], t, len(body), 4)[:, 0]
+    w = np.clip(3 * w, 0, 1)[:, None]
+    e = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
+    cnt = np.maximum(np.bincount(e.ravel(), minlength=len(body)), 1).astype(float)[:, None]
+    p = body.copy()
+    for _ in range(passes):
+        for step in (0.5, -0.53):
+            acc = np.zeros_like(p)
+            np.add.at(acc, e[:, 0], p[e[:, 1]])
+            np.add.at(acc, e[:, 1], p[e[:, 0]])
+            p = p + step * w * (acc / cnt - p)
+    return p
 
 
 def fit_group(gid, avgs, moves):
