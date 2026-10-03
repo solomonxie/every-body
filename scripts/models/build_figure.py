@@ -130,8 +130,7 @@ HERITAGE_FACE = {
 # per sex on top of HERITAGE_FACE (adults and seniors)
 SEX_HERITAGE_FACE = {
     # this appearance's own look for women
-    ("female", "east-asian"): {"head/head-round": 0.3, "head/head-scale-horiz-decr": 0.25, "cheek/cheek-bones-decr": 0.9,
-                               "chin/chin-width-decr": 0.1, "chin/chin-height-decr": 0.3, "chin/chin-triangle": -0.3,
+    ("female", "east-asian"): {"head/head-round": 0.3, "head/head-scale-horiz-decr": 0.15, "cheek/cheek-bones-decr": 0.9,
                                "eyes/eye-scale-incr": 0.25, "eyes/eye-height2-incr": 0.3, "eyes/eye-epicanthus-out": -0.25,
                                "eyes/eye-eyefold-up": 0.3, "eyes/eye-push1-in": 0.1,
                                "eyebrows/eyebrows-trans-up": 0.15, "eyebrows/eyebrows-angle-up": 0.05,
