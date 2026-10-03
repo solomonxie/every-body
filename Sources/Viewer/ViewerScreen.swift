@@ -399,13 +399,12 @@ struct LocalFigureMenus: View {
     }
 }
 
-/// A pill with a fixed label whose options open after a long hold (fills while held); a tap does nothing.
+/// A pill with a fixed label whose options open after a long hold; a tap does nothing.
 struct MenuPill<Content: View>: View {
-    static var holdSeconds: Double { 3 }
+    static var holdSeconds: Double { 1 }
     let label: String
     @ViewBuilder let content: Content
     @State private var open = false
-    @State private var pressing = false
     @State private var listHeight: CGFloat = 200
 
     var body: some View {
@@ -417,20 +416,10 @@ struct MenuPill<Content: View>: View {
         .foregroundStyle(.primary)
         .padding(.horizontal, 14)
         .frame(minHeight: 36)
-        .background {
-            Capsule().fill(Color.fill)
-                .overlay(alignment: .leading) {
-                    Capsule().fill(Color.accentColor.opacity(0.3))
-                        .scaleEffect(x: pressing ? 1 : 0, anchor: .leading)
-                        .animation(pressing ? .linear(duration: Self.holdSeconds) : .easeOut(duration: 0.2), value: pressing)
-                }
-                .clipShape(.capsule)
-        }
+        .background(Color.fill, in: .capsule)
         .padding(.vertical, (minTap - 36) / 2)
         .contentShape(.rect)
-        .onLongPressGesture(minimumDuration: Self.holdSeconds, maximumDistance: 30) {
-            open = true
-        } onPressingChanged: { pressing = $0 }
+        .onLongPressGesture(minimumDuration: Self.holdSeconds, maximumDistance: 30) { open = true }
         .sensoryFeedback(.impact(weight: .medium), trigger: open) { _, new in new }
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { open = true }
