@@ -251,7 +251,7 @@ private struct CPRTrainer: View {
         let start = orbitStart ?? (scene.azimuth, scene.elevation)
         orbitStart = start
         scene.goalElevation = nil
-        scene.azimuth = start.azimuth + Float(t.x) * 0.008
+        scene.azimuth = start.azimuth - Float(t.x) * 0.008
         // not straight down: from overhead a turn only spins the picture
         scene.elevation = max(0.15, min(1.2, start.elevation + Float(t.y) * 0.008))
     }
