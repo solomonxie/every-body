@@ -175,6 +175,44 @@ struct PanRecognizer: UIGestureRecognizerRepresentable {
     func makeCoordinator(converter: CoordinateSpaceConverter) -> Simultaneous { Simultaneous() }
 }
 
+/// One finger down/move/up with no delay; a second finger cancels it so two-finger turn and pinch stay free.
+struct SingleTouchRecognizer: UIGestureRecognizerRepresentable {
+    let onBegan: (CGPoint, CGSize) -> Void
+    let onMoved: (CGPoint, CGSize) -> Void
+    let onEnded: (CGPoint, CGSize) -> Void
+
+    final class Coordinator: Simultaneous {
+        var active = false
+    }
+
+    func makeUIGestureRecognizer(context: Context) -> UILongPressGestureRecognizer {
+        let g = UILongPressGestureRecognizer()
+        g.minimumPressDuration = 0
+        g.allowableMovement = .greatestFiniteMagnitude
+        g.numberOfTouchesRequired = 1
+        g.delegate = context.coordinator
+        return g
+    }
+
+    func handleUIGestureRecognizerAction(_ g: UILongPressGestureRecognizer, context: Context) {
+        guard let v = g.view else { return }
+        let c = context.coordinator, pt = g.location(in: v), size = v.bounds.size
+        switch g.state {
+        case .began:
+            c.active = true
+            onBegan(pt, size)
+        case .changed:
+            if g.numberOfTouches > 1 { c.active = false; onEnded(pt, size) }
+            else if c.active { onMoved(pt, size) }
+        case .ended, .cancelled, .failed:
+            if c.active { c.active = false; onEnded(pt, size) }
+        default: break
+        }
+    }
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
+}
+
 /// A tap, hit-tested by the scene itself (a SwiftUI tap on entities dropped taps once a part was selected).
 struct TapRecognizer: UIGestureRecognizerRepresentable {
     let onTap: (CGPoint, CGSize) -> Void
@@ -215,6 +253,6 @@ struct PinchRecognizer: UIGestureRecognizerRepresentable {
 }
 
 /// lets two-finger pan and pinch run together
-final class Simultaneous: NSObject, UIGestureRecognizerDelegate {
+class Simultaneous: NSObject, UIGestureRecognizerDelegate {
     func gestureRecognizer(_ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
 }
