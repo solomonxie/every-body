@@ -401,7 +401,7 @@ struct LocalFigureMenus: View {
 
 /// A pill with a fixed label whose options open after a long hold; a tap does nothing.
 struct MenuPill<Content: View>: View {
-    static var holdSeconds: Double { 1 }
+    static var holdSeconds: Double { 0.5 }
     let label: String
     @ViewBuilder let content: Content
     @State private var open = false
