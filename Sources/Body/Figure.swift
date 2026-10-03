@@ -12,6 +12,9 @@ import AppKit
 /// Written by scripts/models/build_figure.py; children are already fitted to BodyScene's age reshaping.
 @MainActor
 enum Figure {
+    /// false for the App Store build: adults keep their underwear on, opaque; true restores the Clothing toggle
+    static let clothingOptional = false
+
     struct Look: Hashable {
         var female: Bool
         var age: AgeGroup

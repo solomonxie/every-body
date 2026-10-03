@@ -76,7 +76,12 @@ struct AcupuncturePanel: View {
                 // the card scrolls on its own once it outgrows its share, so the body stays in view
                 ViewThatFits(in: .vertical) {
                     card
+                    #if SCREENSHOTS
                     ScrollView { card }.scrollBounceBehavior(.basedOnSize)
+                        .defaultScrollAnchor(Screenshot.flag("cardBottom") ? .bottom : .top)
+                    #else
+                    ScrollView { card }.scrollBounceBehavior(.basedOnSize)
+                    #endif
                 }
                 .frame(maxHeight: 260)
             } else {
@@ -129,13 +134,14 @@ struct AcupointCard: View {
             CautionList(warnings: Cautions.warnings(point.id, for: settings.profile))
             DisclosureGroup(isExpanded: $needling) {
                 VStack(alignment: .leading, spacing: Space.s) {
-                    Text(settings.name(acu.needling, acu.needlingZh)).font(.subheadline)
-                        .fixedSize(horizontal: false, vertical: true)
+                    // safety first, then the depths
                     ForEach(Cautions.acupunctureSafety, id: \.en) { note in
                         Label(settings.t(note), systemImage: "checkmark.shield")
                             .font(.footnote).foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    Text(settings.name(acu.needling, acu.needlingZh)).font(.subheadline)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.top, Space.xs)
             } label: {
