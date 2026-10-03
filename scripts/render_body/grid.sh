@@ -11,7 +11,7 @@ mkdir -p "$OUT/tiles"
 R=scripts/render_body/render.sh
 want() { [ $# -eq 0 ] || [ -z "$SHEETS" ] || echo " $SHEETS " | grep -q " $1 "; }
 SHEETS="$*"
-HERITAGES="southeast-asian south-asian hispanic white black"
+HERITAGES="east-asian southeast-asian south-asian hispanic white black"
 T="$OUT/tiles"
 
 if want heritage; then

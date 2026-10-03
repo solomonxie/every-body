@@ -22,7 +22,7 @@ correct positions and cause → effect (see `docs/design/mvp/DESIGN.md`). Every 
 
 - **Body** — real skeleton (Z-Anatomy, ~200 tappable bones) and textured skin figures (MakeHuman bodies, faces and
   hair stylized after Blender Studio's Snow / Rain: male / female ×
-  infant, toddler, child, adult, 65+, pregnant × five appearances, modest underwear) in `Resources/Models/`; muscles,
+  infant, toddler, child, adult, 65+, pregnant × six appearances, modest underwear) in `Resources/Models/`; muscles,
   vessels, nerves and organs still math-built (`Resources/Data/body.json`, meshes in `Sources/Body/`). Layers, tap to
   name, Hide / Fade / Isolate / Undo, bend shoulder, elbow and knee (muscles bulge). Settings → Appearance / Show underwear.
 - **Reflex Map 穴位反射图** — hand, foot and ear charts with zones per the standard maps
