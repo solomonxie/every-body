@@ -27,8 +27,9 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         ITSAppUsesNonExemptEncryption: false
+        CFBundleLocalizations: [en, zh-Hans]
         AppStoreRegion: $(STORE)
-        # everybody://viewer/skeletal — opens a screen directly (also used for device screenshots)
+        # everybody://viewer/skeletal — opens a screen directly
         CFBundleURLTypes:
           - CFBundleURLSchemes: [everybody]
     settings:

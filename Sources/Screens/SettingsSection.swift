@@ -27,8 +27,8 @@ struct SettingsSection: View {
     private var about: some View {
         VStack(alignment: .leading, spacing: Space.s) {
             Label {
-                Text(settings.t("For learning, not medical advice. In an emergency call 911.",
-                                "仅供学习，不构成医疗建议。紧急情况请拨打 120。"))
+                Text(settings.t("For learning, not medical advice. In an emergency, call your local emergency number.",
+                                "仅供学习，不构成医疗建议。紧急情况请拨打当地急救电话。"))
             } icon: {
                 Image(systemName: "stethoscope").foregroundStyle(Color.emergency)
             }

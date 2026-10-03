@@ -19,7 +19,7 @@ struct ViewerScreen: View {
     private var canUndress: Bool { systemID == "body" }
     /// muscles, bones, organs…: the anatomy alone, no skin or anything about it
     private var anatomyOnly: Bool { systemID != "body" && !Tile.pointSystems.contains(systemID) }
-    private var underwear: Bool { local.underwear || !canUndress }
+    private var underwear: Bool { local.underwear || !canUndress || !Figure.clothingOptional }
     private var chest: BodySize { local.chest }
     private var hips: BodySize { local.hips }
     private var isKid: Bool { age == .infant || age.isChild }
@@ -75,6 +75,9 @@ struct ViewerScreen: View {
             ToolbarItem { ViewerOptionsMenu(showCredits: $showCredits) }
         }
         .sheet(isPresented: $showCredits) { CreditsView() }
+        #if SCREENSHOTS
+        .onAppear { if Screenshot.flag("credits") { showCredits = true } }
+        #endif
         .sheet(isPresented: $showSearch) { PartSearch(partIDs: scene.partIDs, female: female) { find($0) } }
         .task { await BodyScene.prepare(); setUp() }
         .onChange(of: layers) { scene.setLayers(layers) }
@@ -253,7 +256,7 @@ struct ViewerScreen: View {
                 }
                 // children always keep their clothes on
                 LocalFigureMenus(figure: $local, canUndress: canUndress, anatomyOnly: anatomyOnly,
-                                 showClothing: layers.contains(.skin) && !isKid && canUndress)
+                                 showClothing: Figure.clothingOptional && layers.contains(.skin) && !isKid && canUndress)
                 if parts.changedCount > 0 {
                     Pill(label: settings.t("Show all (\(parts.changedCount))", "全部显示（\(parts.changedCount)）"), symbol: "eye") { change(PartState()) }
                 }
@@ -396,26 +399,47 @@ struct LocalFigureMenus: View {
     }
 }
 
-/// A pill with a fixed label whose menu opens on hold; a tap does nothing.
+/// A pill with a fixed label whose options open after a long hold (fills while held); a tap does nothing.
 struct MenuPill<Content: View>: View {
+    static var holdSeconds: Double { 3 }
     let label: String
     @ViewBuilder let content: Content
+    @State private var open = false
+    @State private var pressing = false
+    @State private var listHeight: CGFloat = 200
 
     var body: some View {
-        Menu {
-            content
-        } label: {
-            HStack(spacing: Space.xs + 2) {
-                Text(label).lineLimit(1)
-                Image(systemName: "chevron.down").imageScale(.small).foregroundStyle(.secondary)
-            }
-            .font(.subheadline.weight(.medium))
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 14)
-            .frame(minHeight: 36)
-            .background(Color.fill, in: .capsule)
-            .padding(.vertical, (minTap - 36) / 2)
-            .contentShape(.rect)
-        } primaryAction: {}
+        HStack(spacing: Space.xs + 2) {
+            Text(label).lineLimit(1)
+            Image(systemName: "chevron.down").imageScale(.small).foregroundStyle(.secondary)
+        }
+        .font(.subheadline.weight(.medium))
+        .foregroundStyle(.primary)
+        .padding(.horizontal, 14)
+        .frame(minHeight: 36)
+        .background {
+            Capsule().fill(Color.fill)
+                .overlay(alignment: .leading) {
+                    Capsule().fill(Color.accentColor.opacity(0.3))
+                        .scaleEffect(x: pressing ? 1 : 0, anchor: .leading)
+                        .animation(pressing ? .linear(duration: Self.holdSeconds) : .easeOut(duration: 0.2), value: pressing)
+                }
+                .clipShape(.capsule)
+        }
+        .padding(.vertical, (minTap - 36) / 2)
+        .contentShape(.rect)
+        .onLongPressGesture(minimumDuration: Self.holdSeconds, maximumDistance: 30) {
+            open = true
+        } onPressingChanged: { pressing = $0 }
+        .sensoryFeedback(.impact(weight: .medium), trigger: open) { _, new in new }
+        .accessibilityAddTraits(.isButton)
+        .accessibilityAction { open = true }
+        .popover(isPresented: $open) {
+            List { content }
+                .pickerStyle(.inline)
+                .onScrollGeometryChange(for: CGFloat.self, of: { $0.contentSize.height }) { _, h in listHeight = h }
+                .frame(width: 260, height: min(listHeight, 440))
+                .presentationCompactAdaptation(.popover)
+        }
     }
 }
