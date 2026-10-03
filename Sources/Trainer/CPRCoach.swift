@@ -253,6 +253,8 @@ final class CPRCoach {
 
     // MARK: touches (one finger)
 
+    var touchBusy: Bool { pressing || draggingPad != nil || pushingBump }
+
     func touchBegan(_ pt: CGPoint, size: CGSize) {
         touchStart = pt
         touchMoved = false

@@ -26,6 +26,7 @@ private struct CPRTrainer: View {
     @State private var ready = false
     @State private var orbitStart: (azimuth: Float, elevation: Float)?
     @State private var zoomStart: Float?
+    @State private var panStart: SIMD3<Float>?
     @State private var glass = false
 
     @Binding var who: Profile
@@ -56,6 +57,7 @@ private struct CPRTrainer: View {
                     onBegan: { coach.touchBegan($0, size: $1) },
                     onMoved: { coach.touchMoved($0, size: $1) },
                     onEnded: { coach.touchEnded($0, size: $1) }))
+                .gesture(PanRecognizer(touches: 1, onChange: slide, onEnd: { panStart = nil }))
                 .gesture(PanRecognizer(touches: 2, onChange: orbit, onEnd: { orbitStart = nil }))
                 .gesture(PinchRecognizer(onChange: zoom, onEnd: { zoomStart = nil }))
             }
@@ -254,6 +256,16 @@ private struct CPRTrainer: View {
         scene.azimuth = start.azimuth - Float(t.x) * 0.008
         // not straight down: from overhead a turn only spins the picture
         scene.elevation = max(0.15, min(1.2, start.elevation + Float(t.y) * 0.008))
+    }
+
+    /// one finger off the chest or pads: slide the view, tracking the finger at any zoom
+    private func slide(_ t: CGPoint) {
+        guard panStart != nil || !coach.touchBusy else { return }
+        let start = panStart ?? scene.panOffset
+        panStart = start
+        let k = scene.distance * scene.zoom * 0.0012
+        let (right, up) = scene.screenAxes
+        scene.panOffset = start - right * Float(t.x) * k + up * Float(t.y) * k
     }
 
     private func zoom(_ s: CGFloat) {

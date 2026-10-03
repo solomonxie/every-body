@@ -74,6 +74,8 @@ final class CPRTrainerScene {
     var elevation: Float = 0.8
     var distance: Float = 2.4
     var zoom: Float = 1
+    /// one-finger slide of the view, in world units across the screen plane
+    var panOffset = SIMD3<Float>.zero
     /// eased toward when set (a step that needs a higher view)
     var goalElevation: Float?
     private var goalFocus: SIMD3<Float>?
@@ -82,7 +84,15 @@ final class CPRTrainerScene {
     private var homeDistance: Float = 1
 
     /// Pull back to show the whole body, head to feet, or come back to the chest.
+    /// screen right and up in world, for sliding the view under a finger
+    var screenAxes: (right: SIMD3<Float>, up: SIMD3<Float>) {
+        let forward = -simd_normalize(SIMD3(-cos(elevation) * cos(azimuth), sin(elevation), cos(elevation) * sin(azimuth)))
+        let right = simd_normalize(simd_cross(forward, SIMD3(0, 1, 0)))
+        return (right, simd_cross(right, forward))
+    }
+
     func frameWhole(_ whole: Bool) {
+        panOffset = .zero
         // the feet are nearer the camera and look longer: aim a little below the middle and stand further back
         let length = marks.headTop - marks.feetY
         let mid = world(SIMD3(0, marks.feetY + length * 0.42, marks.target.z * 0.5))
@@ -948,7 +958,7 @@ final class CPRTrainerScene {
         let d = distance * zoom
         let dir = SIMD3(-cos(elevation) * cos(azimuth), sin(elevation), cos(elevation) * sin(azimuth))
         // screen up toward her head
-        body.camera.look(at: focus, from: focus + dir * d, relativeTo: nil)
+        body.camera.look(at: focus + panOffset, from: focus + panOffset + dir * d, relativeTo: nil)
 
         // hands ride the chest down; the infant grip too
         let c = Self.cm
