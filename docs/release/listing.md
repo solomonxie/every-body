@@ -61,7 +61,7 @@ Fill the pages in [App Store Connect pages](#app-store-connect-pages).
 
 ## 7. Screenshots
 
-Ready — `docs/release/screenshots/6.9`, 10 shots (2026-10-02). Upload per [Screenshots](#screenshots).
+Ready — `docs/release/screenshots/`, 10 shots (2026-10-02). Upload per [Screenshots](#screenshots).
 
 ## 8. Archive and upload
 
@@ -141,8 +141,8 @@ Hello, thank you for the review. Answers below, and the same text is now in the 
 ## Screenshots
 
 **Ready** — captured 2026-10-02 on the iPhone 18 Pro simulator (iOS 27), English UI, light mode,
-figures clothed. Upload `docs/release/screenshots/6.9/*.jpg` to the **iPhone 6.9" Display** slot
-(`1320 × 2868`, the one Apple requires) in filename order; `6.5/` (`1284 × 2778`) is optional.
+figures clothed. Upload `docs/release/screenshots/*.jpg` to the **iPhone 6.9" Display** slot
+(`1320 × 2868`, the one Apple requires) in filename order.
 JPEG, no alpha.
 
 | # | File | Screen | Launch args (`scripts/screenshot.sh shot`) |

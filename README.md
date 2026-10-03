@@ -13,10 +13,10 @@ correct positions and cause → effect (see `docs/design/mvp/DESIGN.md`). Every 
 
 | | | |
 |---|---|---|
-| **Full body**<br><img src="docs/release/screenshots/6.9/01-full-body.jpg" width="250"> | **Skeleton**<br><img src="docs/release/screenshots/6.9/02-skeleton.jpg" width="250"> | **Muscles**<br><img src="docs/release/screenshots/6.9/03-muscles.jpg" width="250"> |
-| **Organs**<br><img src="docs/release/screenshots/6.9/04-organs.jpg" width="250"> | **Acupuncture**<br><img src="docs/release/screenshots/6.9/05-acupuncture.jpg" width="250"> | **Foot chart**<br><img src="docs/release/screenshots/6.9/06-foot-chart.jpg" width="250"> |
-| **CPR**<br><img src="docs/release/screenshots/6.9/07-cpr.jpg" width="250"> | **CPR practice**<br><img src="docs/release/screenshots/6.9/08-cpr-practice.jpg" width="250"> | **Posture**<br><img src="docs/release/screenshots/6.9/09-posture.jpg" width="250"> |
-| **Home**<br><img src="docs/release/screenshots/6.9/10-home.jpg" width="250"> | | |
+| **Full body**<br><img src="docs/release/screenshots/01-full-body.jpg" width="250"> | **Skeleton**<br><img src="docs/release/screenshots/02-skeleton.jpg" width="250"> | **Muscles**<br><img src="docs/release/screenshots/03-muscles.jpg" width="250"> |
+| **Organs**<br><img src="docs/release/screenshots/04-organs.jpg" width="250"> | **Acupuncture**<br><img src="docs/release/screenshots/05-acupuncture.jpg" width="250"> | **Foot chart**<br><img src="docs/release/screenshots/06-foot-chart.jpg" width="250"> |
+| **CPR**<br><img src="docs/release/screenshots/07-cpr.jpg" width="250"> | **CPR practice**<br><img src="docs/release/screenshots/08-cpr-practice.jpg" width="250"> | **Posture**<br><img src="docs/release/screenshots/09-posture.jpg" width="250"> |
+| **Home**<br><img src="docs/release/screenshots/10-home.jpg" width="250"> | | |
 
 ## What's in it
 
