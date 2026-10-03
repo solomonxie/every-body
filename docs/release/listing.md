@@ -212,7 +212,7 @@ Every feature is watch, then try: an animation, plus something to drag, tap, hol
 • A real skeleton with about 200 tappable bones, plus muscles, organs, blood vessels and nerves
 • Peel the body layer by layer, tap any part for its name, hide, fade or isolate it
 • Bend the shoulder, elbow and knee and watch the muscles work
-• Men and women, infant to 65+, pregnancy, five appearances
+• Men and women, infant to 65+, pregnancy, six appearances
 
 REFLEX MAPS AND ACUPUNCTURE
 • Hand, foot and ear charts drawn to the standard maps (GB/T 13734 ear points)

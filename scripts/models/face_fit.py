@@ -182,7 +182,7 @@ EYE_GROW_BY = {"female-adult": 0.4, "kid-infant": 0.1, "kid-toddler": 0.6, "kid-
 # (young children's lids stay open)
 EYE_SHAPE_BY = {"kid-infant": (1.0, 1.06, 1.0), "kid-toddler": (1.0, 1.05, 1.0), "kid-child": (1.0, 1.02, 1.0)}
 # (a dict: per heritage, "*" the rest; the base head evens faces out, so some heritages keep more)
-BASE = {"female-adult": ("rain", {"*": 0.5, "hispanic": 0.85, "southeast-asian": 0.9, "south-asian": 0.85}, 0.7),
+BASE = {"female-adult": ("rain", {"*": 0.5, "hispanic": 0.85, "southeast-asian": 0.9, "east-asian": 0.9, "south-asian": 0.85}, 0.7),
         "male-adult": ("snow", {"*": 0.5, "southeast-asian": 0.85, "south-asian": 0.85}, 0.85), "female-senior": ("rain", 0.5, 0.55),
         "male-senior": ("snow", 0.5, 0.65), "kid-child": ("rain", 0.5, 1.0), "kid-toddler": ("rain", 0.5, 0.5)}
 
@@ -510,9 +510,9 @@ def carry(pieces, move, warp):
 
 
 # brows flattened (the arch's middle lowered, in eye spacings) and lowered, by group
-BROWS = {"female-adult.southeast-asian": (0.05, 0.0)}
+BROWS = {"female-adult.southeast-asian": (0.05, 0.0), "female-adult.east-asian": (0.06, 0.0)}
 # brows thickened (scaled across their length about the middle line), by group or group.heritage
-BROW_THICK = {"female-adult.hispanic": 1.15, "female-adult.southeast-asian": 1.1, "kid-toddler": 0.7, "kid-child": 0.8}
+BROW_THICK = {"female-adult.east-asian": 0.8, "female-adult.hispanic": 1.15, "female-adult.southeast-asian": 1.1, "kid-toddler": 0.7, "kid-child": 0.8}
 
 
 def thicken_brows(pieces, k, U):
@@ -567,7 +567,7 @@ def seat_brows(pieces, arch, drop):
 
 
 # profile touches (eye spacings): lower lip back, chin forward
-PROFILE = {"female-adult.hispanic": (0.08, 0.04), "female-adult.southeast-asian": (0.06, 0.03)}
+PROFILE = {"female-adult.east-asian": (0.05, 0.03), "female-adult.hispanic": (0.08, 0.04), "female-adult.southeast-asian": (0.06, 0.03)}
 
 
 def profile(pieces, lip_back, chin_out, gid):
@@ -607,7 +607,8 @@ def profile(pieces, lip_back, chin_out, gid):
 IDEAL = {"kid-infant": dict(nose=0.95), "kid-toddler": dict(nose=0.9, eyes=1.05), "kid-child": dict(nose=0.9),
          # (measured against the photo samples)
          "female-adult.hispanic": dict(eyes=1.05, nose=0.97, jaw=0.06, wide=0.97),
-         "female-adult.southeast-asian": dict(eyes=1.05, lips=0.97, jaw=0.04, wide=0.96)}
+         "female-adult.southeast-asian": dict(eyes=1.05, lips=0.97, jaw=0.04, wide=0.96),
+         "female-adult.east-asian": dict(eyes=1.08, nose=0.95, wide=0.94)}
 
 
 def idealize(pieces, gid, her, eyes=1.0, nose=1.0, jaw=0.0, lips=1.0, mid=1.0, wide=1.0):

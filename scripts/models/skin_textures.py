@@ -9,10 +9,13 @@ from pathlib import Path
 TONE = {
     "white": (209, 156, 133),
     "hispanic": (182, 130, 98),
+    "east-asian": (214, 168, 132),
     "southeast-asian": (165, 117, 86),
     "south-asian": (116, 76, 52),
     "black": (92, 58, 40),
 }
+# lip colour scale per heritage
+LIP_TINT = {"east-asian": (1.0, 0.82, 0.84)}
 # per texture: brightness and warmth (men a shade deeper and ruddier, seniors a little duller, children lighter)
 VARIANT = {"male-young": (0.97, (1.0, 0.985, 0.97)), "male-old": (0.95, (1.0, 0.99, 0.98)), "female-young": (1.0, (1, 1, 1)),
            "female-old": (0.98, (1.0, 0.995, 0.99)), "kid": (1.03, (1.0, 0.995, 0.995))}
@@ -275,6 +278,7 @@ def finish(np, px, heritage, name, reg):
     px = mix(px, reg["under-eyes"], np.array([0.96, 0.92, 0.94]), 0.4)
     # lips: a tone that follows the skin's
     lip = np.array([0.94, 0.75, 0.76]) * (1 - dark) + np.array([0.82, 0.70, 0.74]) * dark
+    lip = lip * np.array(LIP_TINT.get(heritage, (1.0, 1.0, 1.0)))
     if name == "kid":
         # a child's lips barely darker than the skin
         px = mix(px, reg["lips-core"], lip, 0.15 + 0.2 * f)
