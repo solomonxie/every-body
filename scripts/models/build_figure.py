@@ -1106,6 +1106,7 @@ def pack():
     header["shapes"] = {name: pk.block(shape_delta(name)) for name in SHAPES}
     # each size's garments fit the body the app shows: that chest with its matching hips
     chests = {n[6:]: f0 + shape_delta(n) + shape_delta(f"hips-{n[6:]}") for n in SHAPES if n.startswith("chest-")}
+    chests["senior"] = load("female-senior.neutral")["body"]
     header["garments"] = garments(np, pk, topo["body"], load("male-adult.neutral")["body"], f0 + shape_delta("hips-large"),
                                   load("kid-toddler.neutral")["body"], chests, load("kid-child.neutral")["body"],
                                   nipple_ids(np, load("female-adult.neutral")))

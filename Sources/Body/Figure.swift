@@ -111,7 +111,7 @@ enum Figure {
             }
             for name in names {
                 // the bra cut for the chest option (the large one is the base)
-                let cut = name == "bra" && look.age == .adult && look.chest != .large ? "bra-\(look.chest.rawValue)" : name
+                let cut = name != "bra" ? name : look.age == .senior ? "bra-senior" : look.age == .adult && look.chest != .large ? "bra-\(look.chest.rawValue)" : name
                 guard let g = header.garments[cut] ?? header.garments[name] else { continue }
                 if let mesh = garment(g, reader: reader, body: body) {
                     var m = PhysicallyBasedMaterial()
