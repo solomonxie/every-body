@@ -9,6 +9,15 @@ Everything is **schematic, not lifelike**: drawn from simple geometry and math, 
 correct positions and cause → effect (see `docs/design/mvp/DESIGN.md`). Every feature is
 **watch, then try** — an animation plus something to drag, tap, hold or compare.
 
+## Screenshots
+
+| | | |
+|---|---|---|
+| **Full body**<br><img src="docs/release/screenshots/6.9/01-full-body.jpg" width="250"> | **Skeleton**<br><img src="docs/release/screenshots/6.9/02-skeleton.jpg" width="250"> | **Muscles**<br><img src="docs/release/screenshots/6.9/03-muscles.jpg" width="250"> |
+| **Organs**<br><img src="docs/release/screenshots/6.9/04-organs.jpg" width="250"> | **Acupuncture**<br><img src="docs/release/screenshots/6.9/05-acupuncture.jpg" width="250"> | **Foot chart**<br><img src="docs/release/screenshots/6.9/06-foot-chart.jpg" width="250"> |
+| **CPR**<br><img src="docs/release/screenshots/6.9/07-cpr.jpg" width="250"> | **CPR practice**<br><img src="docs/release/screenshots/6.9/08-cpr-practice.jpg" width="250"> | **Posture**<br><img src="docs/release/screenshots/6.9/09-posture.jpg" width="250"> |
+| **Home**<br><img src="docs/release/screenshots/6.9/10-home.jpg" width="250"> | | |
+
 ## What's in it
 
 - **Body** — real skeleton (Z-Anatomy, ~200 tappable bones) and textured skin figures (MakeHuman bodies, faces and
@@ -51,8 +60,11 @@ Install on a connected iPhone — put `DEVELOPMENT_TEAM` and `IOS_BUNDLE_ID` in 
 ```bash
 make device                    # = scripts/install-ios-device.sh; STORE=us (Canada/US) by default
 make device STORE=cn           # App Store region → Info.plist AppStoreRegion, read via storeRegion()
-scripts/screenshot.sh viewer/skeletal /tmp/shot.png   # open a screen via everybody:// and capture it
 ```
+
+App Store release: `make release` (archive + upload); screenshots on the simulator:
+`scripts/screenshot.sh install && scripts/screenshot.sh all /tmp/eb-shots && make screenshots SHOTS=/tmp/eb-shots`; fields and steps in
+[`docs/release/listing.md`](docs/release/listing.md).
 
 Data lives in `Resources/Data/*.json` (body parts, organs, joints, points, charts, systems).
 App icon: `venv/bin/python scripts/make_icons.py` (needs Pillow in `venv/`).
