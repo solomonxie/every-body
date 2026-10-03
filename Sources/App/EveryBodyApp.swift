@@ -29,8 +29,33 @@ struct RootView: View {
                 .queryItems?.first { $0.name == "yaw" }?.value.flatMap(Float.init)
             path = [route]
         }
+        #if SCREENSHOTS
+        .onAppear { if let route = Screenshot.route { path = [route] } }
+        #endif
     }
 }
+
+#if SCREENSHOTS
+/// Launch arguments for simulator screenshots: -screen viewer/skeletal [-part femur-l] [-point acu-li4]
+/// [-face sole -zone sole-heart] [-yaw 0.3] [-trainer YES] [-credits YES]
+enum Screenshot {
+    nonisolated(unsafe) static let args = UserDefaults.standard
+    static func flag(_ key: String) -> Bool { args.bool(forKey: key) }
+
+    @MainActor static var route: Route? {
+        guard let screen = args.string(forKey: "screen"), var route = Route(path: "/" + screen) else { return nil }
+        BodyScene.pinnedYaw = args.string(forKey: "yaw").flatMap(Float.init)
+        switch route {
+        case let .viewer(system, _, _):
+            route = .viewer(system: system, point: args.string(forKey: "point"), part: args.string(forKey: "part"))
+        case let .chart(id, _, _, _):
+            route = .chart(id: id, face: args.string(forKey: "face"), zone: args.string(forKey: "zone"))
+        default: break
+        }
+        return route
+    }
+}
+#endif
 
 struct RouteView: View {
     let route: Route

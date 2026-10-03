@@ -71,7 +71,7 @@ final class BodyScene {
     private var skinEntities: [(entity: ModelEntity, material: PhysicallyBasedMaterial)] = []
     /// the real (MakeHuman) skin is one mesh: it can't bend, so it steps aside while a joint is bent
     private var realSkin = false
-    /// acupuncture: points and channels show through underwear (and the generated skin's hair); the real hair hides
+    /// acupuncture: points and channels show through the hair (and underwear, if clothing is optional); the real hair hides
     private var seeThrough = false
     /// the real skin: points (every age) and children's channels are dropped onto it
     private var surface: Figure.Surface?
@@ -723,7 +723,7 @@ final class BodyScene {
             // the real figure's hair steps aside for points and channels: its scalp is already tinted the hair's colour
             let hidden = seeThrough && realSkin && skin.name == "skin:hair"
             skin.isEnabled = skinOpacity > 0 && !(realSkin && !bentJoints.isEmpty) && !hidden
-            let hair = seeThrough && (skin.name == "skin:hair" || skin.name.hasPrefix("skin:underwear"))
+            let hair = seeThrough && (skin.name == "skin:hair" || (Figure.clothingOptional && skin.name.hasPrefix("skin:underwear")))
             skin.model?.materials = [Self.faded(base, hair ? min(skinOpacity, 0.35) : skinOpacity)]
         }
         let muscleOpacity: Float = layers.contains(.skeletal) ? 0.55 : 1

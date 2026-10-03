@@ -123,6 +123,9 @@ struct PlayerView: View {
         .sensoryFeedback(trigger: player.solved) { old, new in
             !old && new && player.step.kind == .try ? .success : nil
         }
+        #if SCREENSHOTS
+        .onAppear { if Screenshot.flag("trainer") { showTrainer = true } }
+        #endif
         .task {
             player.reduceMotion = UIAccessibility.isReduceMotionEnabled
             while !Task.isCancelled {
