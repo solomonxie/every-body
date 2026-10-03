@@ -112,8 +112,8 @@ for _name, _source in CHARACTER_HAIR.items():
     STYLES[_name] = dict(character=_source, recede=0.0)
 
 
-# long and straight
-STYLES["woman-long"] = {**STYLES["woman"], "cut": 26.0, "max_len": 62, "gravity": 0.5, "wave": 0.1, "tuck": 0.2}
+# shoulder-length and straight
+STYLES["woman-long"] = {**STYLES["woman"], "cut": 10.0, "max_len": 44, "gravity": 0.5, "wave": 0.1, "tuck": 0.3}
 
 # a heritage's own version of a cut
 HERITAGE_STYLE = {"east-asian": {"woman": "woman-long"}, "hispanic": {"woman": "woman-curly"},
