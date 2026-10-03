@@ -189,7 +189,7 @@ def regions(np, raw, mpfb, size):
         band = (side * p[:, 0] > 0.5 * U) & (side * p[:, 0] < 2.8 * U) & (p[:, 1] < left[1] - 3.2 * U) & (p[:, 1] > left[1] - 7 * U)
         c = p[np.flatnonzero(band)[np.argmax(p[band][:, 2])]]
         dot = np.maximum(dot, 1 - smoothstep(0.006 * s, 0.011 * s, np.linalg.norm(p - c, axis=1)))
-    out["kid-areola"] = r.paint(dot, 1.5)
+    out["kid-areola"] = r.paint(dot, 3)
     out["covered"] = r.covered
     out["mesh"] = r
     return out
@@ -216,8 +216,9 @@ def areolae(np, px, radius, strength, male=False):
         cx, cy = cx - w + dx, cy - w + dy
         d = np.hypot(xx - cx, yy - cy) / radius
         # the skin round it evened out: its texels stretch into spokes where the mesh fans in to the centre
-        wide = (1 - smoothstep(1.0, 2.4, d))[..., None] * 0.8
-        out = out * (1 - wide) + (bg + 0.25 * (px - bg)) * wide
+        # (a child's: wiped clean, the soft mark is painted over it after)
+        wide = (1 - smoothstep(1.0, 2.4, d))[..., None] * (0.8 if strength else 1.0)
+        out = out * (1 - wide) + (bg + (0.25 if strength else 0.0) * (px - bg)) * wide
         m = (1 - smoothstep(0.45, 1.25, d))[..., None] * strength
         core = (1 - smoothstep(0.15, 0.4, d))[..., None]
         base = bg[cy, cx]
@@ -294,7 +295,7 @@ def finish(np, px, heritage, name, reg):
     radius = {"male": 14, "female": 12, "kid": 9}[name.split("-")[0]]
     px = areolae(np, px, radius, 0.0 if name == "kid" else 1.0, male=name.startswith("male"))
     if name == "kid":
-        px = mix(px, reg["kid-areola"], np.array([0.9, 0.8, 0.78]) * (1 - dark) + np.array([0.86, 0.8, 0.78]) * dark, 0.6)
+        px = mix(px, reg["kid-areola"], np.array([0.9, 0.8, 0.78]) * (1 - dark) + np.array([0.86, 0.8, 0.78]) * dark, 0.3)
     return np.clip(px, 0, 255)
 
 

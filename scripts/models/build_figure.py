@@ -1130,6 +1130,10 @@ def pack():
 CELL = 0.009
 
 
+# the bra's side wing falls to the band over this depth (z, m: back, front)
+WING = (-0.08, 0.12)
+
+
 def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=None, only_bra=False):
     """Underwear as the parts of the body where a smooth field is positive, cut exactly along its zero line.
     Each garment vertex is a point in a body triangle, so it follows every sex/age/heritage variant.
@@ -1194,7 +1198,9 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
         reach = ay - fold + 0.035
         cups = smin(smin(y - lo, top - y, 0.012), reach - np.hypot(1.1 * (ax - apex[0]), y - ay), 0.02)
         gore = smin(smin(y - lo, top - y, 0.012), apex[0] - ax, 0.02)
-        front = smin(smin(smax(cups, gore, 0.02), z, 0.01), ay + 0.05 - y + 10 * np.clip(sx + 0.03 - ax, 0, None), 0.01)
+        # the side wing: its top sweeps down from the cup's side to the band toward the back (no corner)
+        wing = hi + (ay + 0.05 - hi) * ramp(z, WING[0], WING[1]) - y
+        front = smin(smin(smax(cups, gore, 0.02), wing, 0.01), ay + 0.05 - y + 10 * np.clip(sx + 0.03 - ax, 0, None), 0.01)
         band = smin(smin(y - lo, hi - y, 0.01), 0.3 - ax, 0.01)
         # (at the back it runs on down into the band at every size)
         strap = smin(smin(0.02 - np.abs(ax - sx), 1.2 - y, 0.01), y - (ay + 0.06) + ramp(-z, 0, 0.02) * (ay + 0.08 - hi), 0.01)
@@ -1641,7 +1647,34 @@ def smooth_skin(np, p, eyes, tris):
         for _ in range(passes):
             for step in (0.5, -0.53):
                 q = q + step * w * (mean(q) - q)
+    for _ in range(ARMPIT_FILL[2]):
+        q = soften_armpits(np, q, tris)
     return q
+
+
+# the arm swung down by the fit meets the chest in a step at the front of the armpit (a nub, a pocket below it):
+# skin vertices on that step (each side) and (reach, Gaussian width, passes), scene units
+ARMPIT_VERTS = (8124, 1436)
+ARMPIT_FILL = (0.08, 0.03, 3)
+
+
+def soften_armpits(np, p, tris):
+    """a Gaussian in space (not along the mesh, so arm and chest blend across the gap) round each armpit's front,
+    feathered from full at half the reach to none at the reach"""
+    reach, sigma, _ = ARMPIT_FILL
+    fn = np.linalg.norm(np.cross(p[tris[:, 1]] - p[tris[:, 0]], p[tris[:, 2]] - p[tris[:, 0]]), axis=1)
+    area = np.zeros(len(p))
+    for k in range(3):
+        np.add.at(area, tris[:, k], fn / 6)
+    out = p.copy()
+    for s in ARMPIT_VERTS:
+        d = np.linalg.norm(p - p[s], axis=1)
+        near = np.flatnonzero(d < reach + 3 * sigma)
+        mine = near[d[near] < reach]
+        w = np.exp(-np.sum((p[mine, None] - p[None, near]) ** 2, -1) / sigma ** 2) * area[near]
+        k = 1 - smoothstep(0.5, 1.0, d[mine] / reach)[:, None]
+        out[mine] += k * (w @ p[near] / w.sum(1, keepdims=True) - p[mine])
+    return out
 
 
 def grow_hair(np, load, body_topo):
