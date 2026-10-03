@@ -28,9 +28,9 @@ import numpy as np  # noqa: E402
 ANATOMY = ["skeleton", "muscles", "organs", "vessels", "nerves"]
 # Figure.swift hairColor / browColor
 HAIR = {"white": "#E8C184", "hispanic": "#58412F", "south-asian": "#4E3E35", "southeast-asian": "#4E3E35",
-        "black": "#40352F"}
+        "east-asian": "#2B2522", "black": "#40352F"}
 BROW = {"white": "#9C7A52", "hispanic": "#3A2B22", "south-asian": "#362B26", "southeast-asian": "#362B26",
-        "black": "#3A2F2A"}
+        "east-asian": "#2E2724", "black": "#3A2F2A"}
 GREY_HAIR, GREY_BROW = "#F4F1EC", "#B8B4AE"
 KIDS = ("infant", "toddler", "child")
 # MakeHuman targets offered as shape-key sliders on the body (not: expressions, asymmetry, macros, genitals)

@@ -24,6 +24,7 @@ FIGURE = OUT / "figure.bin"
 
 HERITAGES = {
     # id: (MakeHuman race macro, skin texture blend)
+    "east-asian": ({"asian": 0.85, "caucasian": 0.15}, {"asian": 0.8, "caucasian": 0.2}),
     "southeast-asian": ({"asian": 0.7, "african": 0.15, "caucasian": 0.15}, {"asian": 0.62, "african": 0.38}),
     "south-asian": ({"caucasian": 0.5, "asian": 0.2, "african": 0.3}, {"asian": 0.42, "african": 0.58}),
     "hispanic": ({"caucasian": 0.6, "asian": 0.25, "african": 0.15}, {"caucasian": 0.5, "asian": 0.5}),
@@ -112,11 +113,10 @@ FACE = {
             "mouth/mouth-angles-up": 0.3},
 }
 # each heritage keeps its own nose and lips: the narrowing targets are toned down where they'd erase them
-FACE_SCALE = {"black": {"nose/": 0.2, "mouth/mouth-upperlip-volume": 0.3, "mouth/mouth-lowerlip-volume": 0.3, "mouth/mouth-upperlip-middle": 0.0, "mouth/mouth-cupidsbow": 0.3}, "southeast-asian": {"nose/": 0.5}, "east-asian": {"nose/": 0.6, "mouth/mouth-upperlip-volume": 0.0}, "south-asian": {"nose/": 0.8}}
+FACE_SCALE = {"black": {"nose/": 0.2, "mouth/mouth-upperlip-volume": 0.3, "mouth/mouth-lowerlip-volume": 0.3, "mouth/mouth-upperlip-middle": 0.0, "mouth/mouth-cupidsbow": 0.3}, "southeast-asian": {"nose/": 0.5}, "east-asian": {"nose/": 0.6}, "south-asian": {"nose/": 0.8}}
 # on top of the race macro: features typical of each heritage at natural strength (both sexes, every age)
 HERITAGE_FACE = {
-    "east-asian": {"eyes/eye-epicanthus-out": 0.3, "eyes/eye-height2-incr": 0.25, "nose/nose-scale-depth-decr": 0.3,
-                   "nose/nose-hump-decr": 0.4, "head/head-back-scale-depth-decr": 0.3, "head/head-scale-horiz-incr": 0.1},
+    "east-asian": {"nose/nose-scale-depth-decr": 0.2, "nose/nose-hump-decr": 0.3, "head/head-scale-horiz-incr": 0.05},
     "southeast-asian": {"eyes/eye-epicanthus-out": 0.35, "nose/nose-flaring-incr": 0.35, "nose/nose-scale-depth-decr": 0.3,
                         "mouth/mouth-lowerlip-volume-incr": 0.25, "head/head-scale-horiz-incr": 0.15},
     "south-asian": {"eyes/eye-scale-incr": 0.15, "nose/nose-point-down": 0.25, "nose/nose-scale-vert-incr": 0.2,
@@ -129,15 +129,14 @@ HERITAGE_FACE = {
 
 # per sex on top of HERITAGE_FACE (adults and seniors)
 SEX_HERITAGE_FACE = {
-    ("female", "east-asian"): {"eyebrows/eyebrows-trans-up": 0.2, "eyebrows/eyebrows-angle-down": 0.25, "eyes/eye-epicanthus-out": -0.1,
-                               "eyes/eye-height2-incr": -0.1, "eyes/eye-scale-incr": 0.3, "eyes/eye-eyefold-down": 0.1, "eyes/eye-corner2-up": 0.15,
-                               "head/head-oval": 0.2, "chin/chin-triangle": 0.1, "nose/nose-scale-vert-decr": 0.15, "mouth/mouth-cupidsbow-width-decr": 0.2,
-                               "mouth/mouth-scale-depth-decr": 0.4, "mouth/mouth-scale-horiz-decr": 0.3, "mouth/mouth-scale-vert-decr": 0.15,
-                               "mouth/mouth-upperlip-volume-decr": 0.3, "mouth/mouth-lowerlip-volume-decr": 0.3, "mouth/mouth-cupidsbow-incr": 0.3,
-                               "nose/nose-scale-horiz-decr": 0.3, "nose/nose-nostrils-width-decr": 0.4, "nose/nose-point-width-decr": 0.35,
-                               "nose/nose-width1-decr": 0.2, "nose/nose-flaring-decr": 0.4, "nose/nose-scale-depth-decr": -0.1,
-                               "chin/chin-height-incr": 0.3, "chin/chin-width-decr": 0.15, "head/head-scale-horiz-decr": 0.1,
-                               "cheek/cheek-inner-decr": 0.15, "cheek/cheek-bones-incr": 0.1},
+    # round (not sharp, not full) face; eyes of natural size and open, the fold above the lid set high; small nose; thin brows
+    ("female", "east-asian"): {"head/head-round": 0.3, "head/head-scale-horiz-decr": 0.25, "cheek/cheek-bones-decr": 0.9,
+                               "chin/chin-width-decr": 0.1, "chin/chin-height-decr": 0.3, "chin/chin-triangle": -0.3,
+                               "eyes/eye-scale-incr": 0.25, "eyes/eye-height2-incr": 0.3, "eyes/eye-epicanthus-out": -0.25,
+                               "eyes/eye-eyefold-up": 0.3, "eyes/eye-push1-in": 0.1,
+                               "eyebrows/eyebrows-trans-up": 0.15, "eyebrows/eyebrows-angle-up": 0.05,
+                               "nose/nose-scale-horiz-decr": 0.2, "nose/nose-flaring-decr": 0.2, "nose/nose-point-width-decr": 0.2,
+                               "mouth/mouth-cupidsbow-incr": 0.2},
     ("female", "southeast-asian"): {"eyebrows/eyebrows-trans-up": 0.3, "eyes/eye-epicanthus-out": -0.3, "eyes/eye-epicanthus-in": 0.1,
                                     "eyes/eye-push1-in": 0.25, "eyes/eye-scale-incr": 0.2, "nose/nose-scale-horiz-incr": 0.35, "nose/nose-flaring-incr": 0.25,
                                     "nose/nose-point-width-incr": 0.45, "nose/nose-scale-depth-decr": 0.3, "nose/nose-width1-incr": 0.35,
@@ -160,7 +159,6 @@ SEX_HERITAGE_FACE = {
     ("female", "black"): {"mouth/mouth-lowerlip-volume-decr": 0.25, "mouth/mouth-upperlip-volume-decr": 0.1, "nose/nose-flaring-incr": -0.4,
                           "nose/nose-scale-horiz-incr": -0.2, "nose/nose-nostrils-width-decr": 0.35, "nose/nose-point-width-decr": 0.3,
                           "nose/nose-width2-decr": 0.25},
-    ("male", "east-asian"): {"eyes/eye-epicanthus-out": -0.15, "eyes/eye-scale-incr": 0.15, "eyes/eye-height2-incr": 0.15},
     ("male", "southeast-asian"): {"eyes/eye-epicanthus-out": -0.2, "eyes/eye-scale-incr": 0.1, "eyes/eye-push1-in": 0.2,
                                   "nose/nose-scale-horiz-incr": 0.3, "nose/nose-flaring-incr": 0.2, "nose/nose-point-width-incr": 0.3,
                                   "nose/nose-width1-incr": 0.3, "mouth/mouth-upperlip-volume-incr": 0.3, "mouth/mouth-lowerlip-volume-incr": 0.3,
@@ -1583,8 +1581,8 @@ SKIN_TEX = 1536
 
 
 # hair colour per heritage at the roots (sRGB), for the scalp under the hair; the strands' tint is Figure.hairColor
-HAIR_COLOR = {"white": (168, 132, 88), "hispanic": (52, 39, 30), "south-asian": (46, 37, 32), "southeast-asian": (46, 37, 32),
-              "east-asian": (38, 32, 29), "black": (38, 32, 29), "grey": (196, 194, 190)}
+HAIR_COLOR = {"white": (168, 132, 88), "hispanic": (52, 39, 30), "south-asian": (46, 37, 32), "southeast-asian": (46, 37, 32), "east-asian": (30, 26, 25),
+              "black": (38, 32, 29), "grey": (196, 194, 190)}
 # which groups' hair lies on each skin texture (children: the young female skin with their own scalp)
 SCALP = {("male", "young"): ["male-adult"], ("male", "old"): ["male-senior"],
          ("female", "young"): ["female-adult"], ("female", "old"): ["female-senior"], ("kid", "young"): ["kid-toddler", "kid-child"]}
