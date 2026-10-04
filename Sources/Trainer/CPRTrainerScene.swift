@@ -177,6 +177,7 @@ final class CPRTrainerScene {
         self.female = female && victim == .adult
         body.heritage = heritage
         body.underwear = true
+        body.fieldJoints = false
         body.setAge(age)
         body.build(skinColor: UIColor(hex: "#F2C9A5"), female: female, pregnant: pregnant, points: [], flowStops: [])
         body.touched = true

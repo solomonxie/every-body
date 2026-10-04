@@ -48,9 +48,12 @@ struct ViewerScreen: View {
         guard let sp = systemPoints, let flow = sp.flow else { return [] }
         return flow.pointIds.compactMap { id in sp.points.first { $0.id == id } }
     }
+    /// a joint picked by tapping the skin near it (skin-only views)
+    @State private var selectedJoint: String?
     private var tryJoint: Joint? {
+        if let id = selectedJoint { return scene.joints.first { $0.id == id } }
         guard let id = selectedPart else { return nil }
-        return Catalog.body.joints.first { $0.movers.contains(id) } ?? Catalog.body.joints.first { $0.parts.contains(id) }
+        return scene.joints.first { $0.movers.contains(id) } ?? scene.joints.first { $0.parts.contains(id) }
     }
 
     var body: some View {
@@ -105,8 +108,16 @@ struct ViewerScreen: View {
             // tapping what's selected again or empty space lets it go; tapping another moves the selection to it
             switch pick {
             case let .point(id): if activePoint == id { release() } else { press(id) }
-            case let .part(id): selectedPart = selectedPart == id ? nil : id
-            case .empty: selectedPart = nil
+            case let .part(id) where id.hasPrefix("skin:"):
+                // bare skin: the joint nearest the tap (not on a points page)
+                selectedPart = nil
+                selectedJoint = systemPoints == nil ? scene.nearestJoint(to: scene.lastHit) : nil
+            case let .part(id):
+                selectedJoint = nil
+                selectedPart = selectedPart == id ? nil : id
+            case .empty:
+                selectedPart = nil
+                selectedJoint = nil
             }
         }
         .overlay { if !built { LoadingBadge(text: settings.t("Loading 3D body…", "正在载入 3D 人体…")) } }
@@ -145,6 +156,7 @@ struct ViewerScreen: View {
         local = LocalFigure()
         layers = openingLayers
         selectedPart = nil
+        selectedJoint = nil
         release()
         filter = "all"
         acuFilter = AcuFilter()
