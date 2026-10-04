@@ -13,7 +13,7 @@ import AppKit
 @MainActor
 enum Figure {
     /// false for the App Store build: adults keep their underwear on, opaque; true restores the Clothing toggle
-    static let clothingOptional = false
+    static let clothingOptional = true
 
     struct Look: Hashable {
         var female: Bool
