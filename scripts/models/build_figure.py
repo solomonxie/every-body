@@ -130,12 +130,14 @@ HERITAGE_FACE = {
 # per sex on top of HERITAGE_FACE (adults and seniors)
 SEX_HERITAGE_FACE = {
     # this appearance's own look for women
-    ("female", "east-asian"): {"head/head-round": 0.3, "head/head-scale-horiz-decr": 0.15, "cheek/cheek-bones-decr": 0.9,
+    ("female", "east-asian"): {"head/head-oval": 0.4, "head/head-round": 0.15, "head/head-scale-horiz-decr": 0.15, "cheek/cheek-bones-decr": 0.5,
+                               "chin/chin-width-decr": 0.15, "mouth/mouth-trans-backward": 0.15,
                                "eyes/eye-scale-incr": 0.25, "eyes/eye-height2-incr": 0.3, "eyes/eye-epicanthus-out": -0.25,
                                "eyes/eye-eyefold-up": 0.3, "eyes/eye-push1-in": 0.1,
                                "eyebrows/eyebrows-trans-up": 0.15, "eyebrows/eyebrows-angle-up": 0.05,
                                "nose/nose-scale-horiz-decr": 0.2, "nose/nose-flaring-decr": 0.2, "nose/nose-point-width-decr": 0.2,
-                               "mouth/mouth-cupidsbow-incr": 0.2},
+                               "mouth/mouth-cupidsbow-incr": 0.2, "mouth/mouth-upperlip-volume-decr": 0.25,
+                               "mouth/mouth-lowerlip-volume-decr": 0.25, "mouth/mouth-scale-horiz-incr": 0.1, "cheek/cheek-volume-decr": 0.15},
     ("female", "southeast-asian"): {"eyebrows/eyebrows-trans-up": 0.3, "eyes/eye-epicanthus-out": -0.3, "eyes/eye-epicanthus-in": 0.1,
                                     "eyes/eye-push1-in": 0.25, "eyes/eye-scale-incr": 0.2, "nose/nose-scale-horiz-incr": 0.35, "nose/nose-flaring-incr": 0.25,
                                     "nose/nose-point-width-incr": 0.45, "nose/nose-scale-depth-decr": 0.3, "nose/nose-width1-incr": 0.35,

@@ -401,7 +401,7 @@ enum Figure {
         case .white: UIColor(hex: "#9C7A52")
         case .hispanic: UIColor(hex: "#3A2B22")
         case .southAsian, .southeastAsian: UIColor(hex: "#362B26")
-        case .eastAsian: UIColor(hex: "#2E2724")
+        case .eastAsian: UIColor(hex: "#4A3B34")
         case .black: UIColor(hex: "#3A2F2A")
         }
     }
