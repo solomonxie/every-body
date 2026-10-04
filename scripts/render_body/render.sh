@@ -4,6 +4,7 @@
 # Env: HERITAGE=black, UNDERWEAR=0, PREGNANT=1, CHEST=small|medium|large, HIPS=…, POINTS=acupuncture, FOCUS=acu-li11, PANX, PITCH, JOINT=elbow-l:90, BG
 # Posture scenes: POSTURE=sitting [BLEND=0..1] [SIZE=430x400] [VIEW=side|back|front] [SOLID=1] [YAW PITCH DIST FOCUSY] render.sh out.png - - - - [female]
 # CPR trainer: TRAINER=check|find-miss|find|compress|compress-down|tilt|breath|bump|aed|aed-drag|aed-placed (+ GLASS=1, AZ, EL, ZOOM)
+#   (+ GLASS=1 for bones and organs under glass skin, or LAYERS=skeletal,muscular,organs for any inner layers)
 #   e.g. TRAINER=compress-down GLASS=1 scripts/render_body/render.sh /tmp/t.png skin 0 - - female adult
 set -e
 cd "$(dirname "$0")/../.."

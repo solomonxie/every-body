@@ -27,7 +27,7 @@ private struct CPRTrainer: View {
     @State private var orbitStart: (azimuth: Float, elevation: Float)?
     @State private var zoomStart: Float?
     @State private var panStart: SIMD3<Float>?
-    @State private var glass = false
+    @State private var inner: Set<LayerID> = []
 
     @Binding var who: Profile
 
@@ -100,13 +100,21 @@ private struct CPRTrainer: View {
             Spacer()
             whoMenu
             RailButton(symbol: "arrow.counterclockwise", label: settings.t("Start over", "重新开始")) { coach.restart() }
-            RailButton(symbol: "circle.lefthalf.filled", label: glass ? settings.t("Solid skin", "显示皮肤") : settings.t("See inside", "透视"),
-                       on: glass) {
-                glass.toggle()
-                scene.glass = glass
+            // see inside: bones, muscles and organs, in any combination
+            ForEach(Self.layers, id: \.0) { layer, symbol, label in
+                RailButton(symbol: symbol, label: settings.t(label), on: inner.contains(layer)) {
+                    if inner.contains(layer) { inner.remove(layer) } else { inner.insert(layer) }
+                    scene.inner = inner
+                }
             }
         }
     }
+
+    private static let layers: [(LayerID, String, Bilingual)] = [
+        (.skeletal, "figure.stand", Bilingual("Bones", "骨骼")),
+        (.muscular, "figure.strengthtraining.traditional", Bilingual("Muscles", "肌肉")),
+        (.organs, "lungs", Bilingual("Organs", "器官")),
+    ]
 
     private static let choices: [(Profile, Bilingual)] = [
         (Profile(age: .adult), Bilingual("Man", "男性")),
