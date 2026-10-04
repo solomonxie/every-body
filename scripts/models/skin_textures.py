@@ -9,11 +9,13 @@ from pathlib import Path
 TONE = {
     "white": (209, 156, 133),
     "hispanic": (182, 130, 98),
-    "east-asian": (214, 168, 132),
+    "east-asian": (206, 158, 124),
     "southeast-asian": (165, 117, 86),
     "south-asian": (116, 76, 52),
     "black": (92, 58, 40),
 }
+# face shading strength per heritage (cheeks, nose, lids)
+SHADE = {"east-asian": 1.5}
 # lip colour scale per heritage
 LIP_TINT = {"east-asian": (1.0, 0.82, 0.84)}
 # per texture: brightness and warmth (men a shade deeper and ruddier, seniors a little duller, children lighter)
@@ -268,13 +270,14 @@ def finish(np, px, heritage, name, reg):
     lum = float(target @ np.array([0.3, 0.59, 0.11]))
     dark = float(np.clip((190 - lum) / 120, 0, 1))  # 0 light … 1 deep
     f = FACE[name]
+    sh = SHADE.get(heritage, 1.0)
     # blood shows as a warmth that follows the skin's tone
     flush = np.array([1.02, 0.88, 0.87]) * (1 - dark) + np.array([0.96, 0.88, 0.86]) * dark
-    px = mix(px, reg["cheeks"], flush, 0.55 * f)
-    px = mix(px, reg["nose"], flush, 0.45)
+    px = mix(px, reg["cheeks"], flush, min(0.55 * f * sh, 0.95))
+    px = mix(px, reg["nose"], flush, min(0.45 * sh, 0.95))
     px = mix(px, reg["ears"], flush, 0.35)
     # lids a touch deeper and browner (defines the eye), a faint shadow under the eyes
-    px = mix(px, reg["lids"], np.array([0.93, 0.89, 0.88]) * (1 - dark) + np.array([0.88, 0.85, 0.84]) * dark, 0.55)
+    px = mix(px, reg["lids"], np.array([0.93, 0.89, 0.88]) * (1 - dark) + np.array([0.88, 0.85, 0.84]) * dark, min(0.55 * sh, 0.95))
     px = mix(px, reg["under-eyes"], np.array([0.96, 0.92, 0.94]), 0.4)
     # lips: a tone that follows the skin's
     lip = np.array([0.94, 0.75, 0.76]) * (1 - dark) + np.array([0.82, 0.70, 0.74]) * dark
