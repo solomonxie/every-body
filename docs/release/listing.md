@@ -99,7 +99,7 @@ Fallback, Xcode GUI: `xcodegen generate`, open `EveryBody.xcodeproj`, set Team a
 - Rejection → **Resolution Center**: reply there, or fix, `make release` (fresh build number), attach the build, resubmit.
 - Likely questions:
   - **1.4.1 Physical harm / medical** — acupuncture needling depths, reflexology, first aid. Notes cover: educational, sourced, disclaimers in-app, no diagnosis or treatment.
-  - **Nudity** — none: every figure wears underwear, which can't be removed (`Figure.clothingOptional = false`). See [Age rating](#general--app-information).
+  - **Nudity** — adult figures can be shown unclothed, only via a Clothing toggle on the full-body page (off by default); children's figures are always clothed. Anatomical, non-sexual. See [Age rating](#general--app-information).
   - **2.1 Information Needed** — step 12.
 
 ## 12. Guideline 2.1 "Information Needed" (new developer accounts)
@@ -262,7 +262,7 @@ MEDICAL CONTENT (Guideline 1.4.1)
 The app is an educational reference, not a medical device. It takes no health data, does no diagnosis, gives no dosing or personalised treatment advice and makes no measurements. Disclaimers appear in the app: Settings footer "For learning, not medical advice. In an emergency, call your local emergency number." (same in Chinese), on every acupuncture and reflex card "Traditional claims — not medical advice", and the needling notes open with "Only by a licensed practitioner, with sterile, single-use needles" before any needling depth. Reflex and acupoint effects are described as traditional practice, not proven treatment. Sources are listed in Settings → Sources: WHO Standard Acupuncture Point Locations (2008), GB/T 13734-2008 ear points, ILCOR / Red Cross first-aid guidance; illness and pregnancy notes cite their guidance in each illustration.
 
 ANATOMICAL FIGURE
-Every 3D figure, adult or child, wears opaque modest underwear on every screen; there is no option to remove it. The figures are non-sexual, in the standard anatomical pose, with no genitals modelled. Inner layers (muscles, bones, organs) are anatomical models, not skin.
+Every 3D figure opens clothed. On the full-body page only, an adult figure can be shown without clothing through a Clothing toggle; children's figures are always clothed and the toggle is not offered. The figures are non-sexual, in the standard anatomical pose, with no genitals modelled. Inner layers (muscles, bones, organs) are anatomical models, not skin.
 
 EXTERNAL SERVICES
 None. The app makes no network requests: no analytics, advertising, crash reporting, accounts, payments or AI services. The only links are the source and licence URLs in Credits & licenses, which open in Safari.
@@ -323,19 +323,28 @@ Age rating questionnaire — every answer:
 | Advertising | No | |
 | Violence (cartoon, realistic, graphic), profanity, horror | None | first-aid wounds are schematic |
 | Mature or suggestive themes | **Infrequent** | labour and birth, stillbirth risk, heart attack and stroke |
-| Sexual content or nudity | None | every figure wears opaque underwear, not removable; standard anatomical pose |
-| Graphic sexual content and nudity | None | |
+| Sexual content or nudity | **Infrequent / Mild** | adults only, optional toggle, default clothed; children always clothed; anatomical pose, non-sexual |
+| Graphic sexual content and nudity | None | no genitals modelled |
 | Alcohol, tobacco, drugs | None | only a caution ("not after alcohol") and "blood thinners" |
 | Medical or treatment information | **Frequent** | first aid, illnesses, acupuncture needling depths — core content |
 | Health or wellness topics | **Yes** | posture, pregnancy sleep, blood sugar / pressure / fats |
 | Gambling, simulated gambling, contests, loot boxes | None / No | |
 | Made for Kids | No | |
 
-Expected: **16+**, driven by Frequent medical information alone (nudity is None). Answering
-"Infrequent" would give 13+, but medical content is the core of the app — keep it honest.
-Clothing is fixed on in code: `Figure.clothingOptional = false` (`Sources/Body/Figure.swift`). Setting it
-`true` brings back the full-body page's Clothing toggle and see-through underwear on the acupuncture
-view — then nudity must be re-answered and Review may reject.
+Expected: **16+** or higher (medical information plus optional anatomical nudity); use whatever
+App Store Connect computes. Clothing is optional in code: `Figure.clothingOptional = true`
+(`Sources/Body/Figure.swift`); set `false` to lock every figure clothed and answer nudity "None" again.
+
+Step 7 — Additional Information (last page of the questionnaire):
+
+| Field | Value | Why |
+|---|---|---|
+| Calculated Rating | **16+** — nothing to set | If it shows lower, re-check the Medical (Frequent) and Nudity (Infrequent / Mild) answers above |
+| Age Categories and Override | **Not Applicable** (the default) | Override only raises the rating; no need, and the app uses Apple's standard EULA, which has no age minimum |
+| Age Suitability URL (optional) | leave blank | |
+| Yellow banner "will not be sold in Afghanistan if the category is Entertainment, Lifestyle or Games" | ignore | Only applies to those categories; this app is Education + Reference |
+
+Then **Save**.
 
 Regional (Korea, China Mainland, Vietnam) — leave unset.
 **Digital Services Act** trader status: **Not a trader** (free, no monetization).
