@@ -9,11 +9,10 @@ import AppKit
 /// What the user has done to individual parts; every change is one undo step.
 struct PartState: Equatable {
     var hidden: Set<String> = []
-    var faded: Set<String> = []
     var isolated: String?
 
     func visible(_ id: String) -> Bool { !hidden.contains(id) && (isolated == nil || isolated == id) }
-    var changedCount: Int { hidden.count + faded.count + (isolated == nil ? 0 : 1) }
+    var changedCount: Int { hidden.count + (isolated == nil ? 0 : 1) }
 }
 
 enum Focus {
@@ -77,7 +76,7 @@ final class BodyScene {
     private var surface: Figure.Surface?
     private var bentJoints: Set<String> = []
     private var organEntities: [String: Entity] = [:]
-    /// each organ piece's own opacity (the see-through womb), back when it's no longer faded
+    /// each organ piece's own opacity (the see-through womb)
     private var organOpacity: [ObjectIdentifier: Float] = [:]
     private var jointOuter: [String: Entity] = [:]
     private var jointInner: [String: Entity] = [:]
@@ -654,16 +653,49 @@ final class BodyScene {
         }
     }
 
-    /// The named entity under a view point (a ray from the camera), or nil.
+    /// The named entity under a view point (a ray from the camera), or nil; a part keeps the spot touched (anchor).
+    /// A miss is retried in a small ring round the point: a finger lands beside a thin bone or vessel.
     func pick(at p: CGPoint, in size: CGSize) -> String? {
         guard let scene = root.scene, size.width > 0, size.height > 0 else { return nil }
         let t = tan(camera.camera.fieldOfViewInDegrees * .pi / 360), aspect = Float(size.width / size.height)
-        let d = SIMD4(Float(2 * p.x / size.width - 1) * t * aspect, Float(1 - 2 * p.y / size.height) * t, -1, 0)
         let m = camera.transformMatrix(relativeTo: nil)
         let origin = SIMD3(m.columns.3.x, m.columns.3.y, m.columns.3.z)
-        let w = m * d
-        let dir = simd_normalize(SIMD3(w.x, w.y, w.z))
-        return scene.raycast(origin: origin, direction: dir, length: 50, query: .nearest, mask: .all, relativeTo: nil).first?.entity.name
+        func cast(_ q: CGPoint) -> CollisionCastHit? {
+            let d = SIMD4(Float(2 * q.x / size.width - 1) * t * aspect, Float(1 - 2 * q.y / size.height) * t, -1, 0)
+            let w = m * d
+            return scene.raycast(origin: origin, direction: simd_normalize(SIMD3(w.x, w.y, w.z)), length: 50, query: .nearest, mask: .all, relativeTo: nil).first
+        }
+        var hit = cast(p)
+        for r in [10.0, 20.0] where hit == nil {
+            for k in 0..<8 where hit == nil {
+                let a = Double(k) * .pi / 4
+                hit = cast(CGPoint(x: p.x + r * cos(a), y: p.y + r * sin(a)))
+            }
+        }
+        guard let hit else { return nil }
+        anchor = (hit.entity.name, hit.entity.convert(position: hit.position, from: nil))
+        return hit.entity.name
+    }
+
+    /// where a part was last touched, in its own space (a callout's anchor; otherwise its centre)
+    private var anchor: (id: String, local: SIMD3<Float>)?
+
+    /// A part's anchor on screen (nil when behind the camera or not built), for a callout that follows it.
+    func project(_ id: String, in size: CGSize) -> CGPoint? {
+        guard let entity = partEntities[id] ?? organEntities[id], size.width > 0, size.height > 0 else { return nil }
+        let world: SIMD3<Float>
+        if let anchor, anchor.id == id {
+            world = entity.convert(position: anchor.local, to: nil)
+        } else {
+            let box = entity.visualBounds(relativeTo: nil)
+            guard !box.isEmpty else { return nil }
+            world = box.center
+        }
+        let p = camera.transformMatrix(relativeTo: nil).inverse * SIMD4(world, 1)
+        guard p.z < 0 else { return nil }
+        let t = tan(camera.camera.fieldOfViewInDegrees * .pi / 360), aspect = Float(size.width / size.height)
+        let x = (-p.x / p.z) / (t * aspect), y = (-p.y / p.z) / t
+        return CGPoint(x: CGFloat((x + 1) / 2) * size.width, y: CGFloat((1 - y) / 2) * size.height)
     }
 
     func setActivePoint(_ id: String?) {
@@ -732,35 +764,22 @@ final class BodyScene {
             // deep muscle cores fill gaps in a muscle-only view but would hide the bones
             let deep = id.hasPrefix("deep-") && layers.contains(.skeletal)
             entity.isEnabled = layers.contains(layer) && parts.visible(id) && !deep && !hiddenForAge.contains(id)
-            let faded = parts.faded.contains(id)
-            var m = faded ? Self.ghost(baseMaterials[id]!) : baseMaterials[id]!
-            if !faded && layer == .muscular && muscleOpacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: muscleOpacity)) }
-            if id == selected { m.emissiveColor = .init(color: UIColor(hex: "#FFD166")); m.emissiveIntensity = faded ? 0.25 : 0.8 }
+            var m = baseMaterials[id]!
+            if layer == .muscular && muscleOpacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: muscleOpacity)) }
+            // written both ways: on iOS the copy can share the base's resource, so a plain copy keeps the glow
+            m.emissiveColor = .init(color: id == selected ? UIColor(hex: "#FFD166") : .black)
+            m.emissiveIntensity = id == selected ? 0.8 : 0
             entity.model?.materials = [m]
         }
         for (id, entity) in organEntities where Catalog.organ(id)?.region != true {
             // the brain is an organ but belongs in the nervous system view too
             entity.isEnabled = (layers.contains(.organs) || (id == "brain" && layers.contains(.nervous))) && parts.visible(id)
-            let faded = parts.faded.contains(id)
             for case let piece as ModelEntity in entity.children {
                 guard let own = organOpacity[ObjectIdentifier(piece)], var m = piece.model?.materials.first as? PhysicallyBasedMaterial else { continue }
-                let opacity = faded ? min(own, Self.ghostOpacity) : own
-                m.blending = opacity < 1 ? .transparent(opacity: .init(floatLiteral: opacity)) : .opaque
+                m.blending = own < 1 ? .transparent(opacity: .init(floatLiteral: own)) : .opaque
                 piece.model?.materials = [m]
             }
         }
-    }
-
-    static let ghostOpacity: Float = 0.3
-
-    /// A faded part: a pale see-through ghost of itself, unlike the solid parts behind it.
-    private static func ghost(_ base: PhysicallyBasedMaterial) -> PhysicallyBasedMaterial {
-        var m = base
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        base.baseColor.tint.getRed(&r, green: &g, blue: &b, alpha: &a)
-        m.baseColor.tint = UIColor(red: (r + 2) / 3, green: (g + 2) / 3, blue: (b + 2) / 3, alpha: 1)
-        m.blending = .transparent(opacity: .init(floatLiteral: ghostOpacity))
-        return m
     }
 
     /// Every tappable part and organ in this body.
@@ -903,7 +922,7 @@ final class BodyScene {
         goalDistance = min(Focus.all.distance, max(1.2, max(box.extents.x, box.extents.y) * body * 1.8 + 0.5))
     }
 
-    /// Parts over this one as focus(onPart:) shows it (a deep muscle under the back's), to fade so it shows through.
+    /// Parts over this one as focus(onPart:) shows it (a deep muscle under the back's), to hide so it shows.
     func covering(_ id: String) -> Set<String> {
         guard let scene = root.scene, let entity = partEntities[id] ?? organEntities[id] else { return [] }
         let box = entity.visualBounds(relativeTo: rig)

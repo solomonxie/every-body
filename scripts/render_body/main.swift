@@ -89,13 +89,15 @@ final class Renderer: NSObject, NSApplicationDelegate {
             if let spec = ProcessInfo.processInfo.environment["JOINT"]?.split(separator: ":"), spec.count == 2 {
                 scene.setJoint(String(spec[0]), degrees: Float(spec[1]) ?? 0)
             }
-            // SELECT=a,b selects each part in turn (as tapping them does); the last stays selected; FADE=a,b fades those
-            let faded = PartState(faded: Set((ProcessInfo.processInfo.environment["FADE"] ?? "").split(separator: ",").map(String.init)))
-            scene.setParts(faded, selected: nil)
+            // SELECT=a,b selects each part in turn (as tapping them does); the last stays selected; HIDE=a,b hides those
+            let hidden = PartState(hidden: Set((ProcessInfo.processInfo.environment["HIDE"] ?? "").split(separator: ",").map(String.init)))
+            scene.setParts(hidden, selected: nil)
             for id in (ProcessInfo.processInfo.environment["SELECT"] ?? "").split(separator: ",") {
-                scene.setParts(faded, selected: String(id))
+                scene.setParts(hidden, selected: String(id))
             }
             let anchor = AnchorEntity(world: .zero)
+            // UNSELECT=1 then lets the selection go (the highlight must clear)
+            if ProcessInfo.processInfo.environment["UNSELECT"] == "1" { scene.setParts(hidden, selected: nil) }
             anchor.addChild(scene.root)
             view.scene.addAnchor(anchor)
             for _ in 0..<5 { scene.update(dt: 0.016) }
@@ -112,9 +114,9 @@ final class Renderer: NSObject, NSApplicationDelegate {
                 walk(scene.root)
                 print("DUPES", seen.filter { $0.value > 1 }.sorted { $0.key < $1.key }.map { "\($0.key)×\($0.value)" })
             }
-            // FIND also fades what covers the part, as the viewer does
+            // FIND also hides what covers the part, as the viewer does
             if let id = ProcessInfo.processInfo.environment["FIND"] {
-                scene.setParts(PartState(faded: scene.covering(id)), selected: id)
+                scene.setParts(PartState(hidden: scene.covering(id)), selected: id)
                 print("COVERING", scene.covering(id).sorted())
             }
             // HITS=x,y;x,y prints what a tap at each view point lands on
@@ -125,6 +127,12 @@ final class Renderer: NSObject, NSApplicationDelegate {
                 print("HIT", c[0], c[1], hits.prefix(4).map { $0.entity.name })
             }
             view.snapshot(saveToHDR: false) { image in
+            // PICKS=x,y;x,y prints what the viewer's own tap pick (BodyScene.pick) lands on
+            for spec in (ProcessInfo.processInfo.environment["PICKS"] ?? "").split(separator: ";") {
+                let c = spec.split(separator: ",").compactMap { Double($0) }
+                guard c.count == 2 else { continue }
+                print("PICK", c[0], c[1], scene.pick(at: CGPoint(x: c[0], y: c[1]), in: view.bounds.size) ?? "nil")
+            }
                 if let tiff = image?.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
                    let png = rep.representation(using: .png, properties: [:]) {
                     try? png.write(to: URL(fileURLWithPath: out))

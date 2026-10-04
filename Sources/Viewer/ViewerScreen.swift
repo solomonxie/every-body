@@ -27,6 +27,8 @@ struct ViewerScreen: View {
     @State private var parts = PartState()
     @State private var history: [PartState] = []
     @State private var selectedPart: String?
+    /// where the selected part is on screen, for its callout
+    @State private var calloutPoint: CGPoint?
     @State private var activePoint: String?
     @State private var effectVisible = false
     @State private var filter = "all"
@@ -52,19 +54,19 @@ struct ViewerScreen: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            model
-            if typeSize.isAccessibilitySize {
-                // huge type: cap the sheet and let it scroll so the model keeps half the screen
-                ScrollView { panel }
-                    .containerRelativeFrame(.vertical) { h, _ in h * 0.5 }
-                    .background(Color.card)
-                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: Radius.sheet, topTrailingRadius: Radius.sheet, style: .continuous))
-            } else {
-                panel
+        model
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if typeSize.isAccessibilitySize {
+                    // huge type: cap the sheet and let it scroll so the model keeps half the screen
+                    ScrollView { panel }
+                        .containerRelativeFrame(.vertical) { h, _ in h * 0.5 }
+                        .background(Color.card)
+                        .clipShape(UnevenRoundedRectangle(topLeadingRadius: Radius.sheet, topTrailingRadius: Radius.sheet, style: .continuous))
+                } else {
+                    panel
+                }
             }
-        }
-        .background(Color.page)
+            .background(Color.page)
         .navigationTitle(settings.name(system.name, system.nameZh))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -96,15 +98,23 @@ struct ViewerScreen: View {
     }
 
     private var model: some View {
-        BodyView(scene: scene, meridians: isAcupuncture ? $acuFilter.lines : nil, onReset: resetAll, onSearch: { showSearch = true }) { pick in
-            // tapping what's selected again lets it go; tapping another moves the selection to it
+        BodyView(scene: scene, meridians: isAcupuncture ? $acuFilter.lines : nil, onReset: resetAll, onSearch: { showSearch = true }, onFrame: { size in
+            let p = selectedPart.flatMap { scene.project($0, in: size) }
+            if p != calloutPoint { calloutPoint = p }
+        }) { pick in
+            // tapping what's selected again or empty space lets it go; tapping another moves the selection to it
             switch pick {
             case let .point(id): if activePoint == id { release() } else { press(id) }
             case let .part(id): selectedPart = selectedPart == id ? nil : id
+            case .empty: selectedPart = nil
             }
         }
         .overlay { if !built { LoadingBadge(text: settings.t("Loading 3D body…", "正在载入 3D 人体…")) } }
-        .padding(.bottom, -Radius.sheet)
+        .overlay {
+            if let id = selectedPart, let p = calloutPoint {
+                PartCallout(partID: id, parts: parts, female: female, at: p, onChange: change) { selectedPart = nil }
+            }
+        }
     }
 
     private func setUp() {
@@ -145,7 +155,7 @@ struct ViewerScreen: View {
     }
 
     /// A part picked from the search (or opened with): shown if hidden, its layer on, selected and turned to;
-    /// whatever covers it fades.
+    /// whatever covers it is hidden.
     private func find(_ id: String, undoable: Bool = true) {
         let before = parts
         var next = parts
@@ -163,8 +173,8 @@ struct ViewerScreen: View {
             try? await Task.sleep(for: .milliseconds(undoable ? 100 : 800))
             guard parts == before, selectedPart == id else { return }
             var next = revealed
-            next.faded.formUnion(scene.covering(id))
-            next.faded.remove(id)
+            next.hidden.formUnion(scene.covering(id))
+            next.hidden.remove(id)
             if next == parts { return }
             if undoable { change(next) } else { parts = next }
         }
@@ -236,8 +246,8 @@ struct ViewerScreen: View {
     private var panel: some View {
         VStack(alignment: .leading, spacing: Space.m) {
             PillRow {
-                if !history.isEmpty {
-                    Button { parts = history.removeLast() } label: {
+                if parts.changedCount > 0 || !history.isEmpty {
+                    Button { if !history.isEmpty { parts = history.removeLast() } } label: {
                         Image(systemName: "arrow.uturn.backward").font(.subheadline.weight(.semibold))
                             .frame(width: 36, height: 36)
                             .background(Color.fill, in: .circle)
@@ -245,6 +255,8 @@ struct ViewerScreen: View {
                             .contentShape(.rect)
                     }
                     .buttonStyle(PressableStyle())
+                    .disabled(history.isEmpty)
+                    .opacity(history.isEmpty ? 0.4 : 1)
                     .accessibilityLabel(settings.t("Undo", "撤销"))
                     .sensoryFeedback(.impact(weight: .light), trigger: history.count)
                 }
@@ -255,7 +267,7 @@ struct ViewerScreen: View {
                     }
                 }
                 // children always keep their clothes on
-                LocalFigureMenus(figure: $local, canUndress: canUndress, anatomyOnly: anatomyOnly,
+                LocalFigureMenus(figure: $local, canUndress: canUndress, anatomyOnly: anatomyOnly, showSex: !anatomyOnly || layers.contains(.organs),
                                  showClothing: Figure.clothingOptional && layers.contains(.skin) && !isKid && canUndress)
                 if parts.changedCount > 0 {
                     Pill(label: settings.t("Show all (\(parts.changedCount))", "全部显示（\(parts.changedCount)）"), symbol: "eye") { change(PartState()) }
@@ -263,9 +275,6 @@ struct ViewerScreen: View {
             }
             .padding(.top, Space.xs)
             Group {
-                if let id = selectedPart {
-                    PartCard(partID: id, parts: parts, female: female, onChange: change) { selectedPart = nil }
-                }
                 if let joint = tryJoint {
                     JointControl(joint: joint, angle: angles[joint.id] ?? 0) { deg in
                         angles[joint.id] = deg
@@ -289,9 +298,6 @@ struct ViewerScreen: View {
                     FlowPanel(stops: flowStops, bpm: $bpm, activeID: activePoint, onStop: press)
                 } else if layers.isEmpty {
                     Hint(symbol: "square.stack.3d.up.slash", text: settings.t("All layers are hidden. Turn one on above.", "所有图层都已隐藏，请在上方打开一个。"))
-                } else if selectedPart == nil && layers.contains(where: { $0 != .skin }) {
-                    // (the skin itself isn't tappable)
-                    Hint(symbol: "hand.tap", text: settings.t("Tap any part to name it. Tap an arm or leg bone or muscle to move its joint.", "点击任意部位查看名称。点击手臂或腿部的骨骼、肌肉可活动关节。"))
                 }
             }
             .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -353,6 +359,8 @@ struct LocalFigureMenus: View {
     var canUndress = true
     /// a body-system page: no skin, so nothing about how it looks, and no older body
     var anatomyOnly = false
+    /// sex and pregnancy only show where they change something (the organs)
+    var showSex = true
     var showClothing = false
     @Environment(Settings.self) private var settings
 
@@ -362,7 +370,7 @@ struct LocalFigureMenus: View {
                 ForEach(AgeGroup.allCases.filter { !(anatomyOnly && $0 == .senior) }, id: \.self) { Text(settings.t($0.label)).tag($0) }
             }
         }
-        if figure.age != .infant {
+        if showSex && figure.age != .infant {
             MenuPill(label: settings.t("Gender", "性别")) {
                 Picker(settings.t("Gender", "性别"), selection: $figure.female) {
                     Text(settings.t("Male", "男")).tag(false)
@@ -380,7 +388,7 @@ struct LocalFigureMenus: View {
                 }
             }
         }
-        if figure.female && figure.age == .adult {
+        if showSex && figure.female && figure.age == .adult {
             if canUndress {
                 MenuPill(label: settings.t("Body shape", "体型")) {
                     Picker(settings.t("Body shape", "体型"), selection: shape) {

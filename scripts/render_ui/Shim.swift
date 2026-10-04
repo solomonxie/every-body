@@ -82,7 +82,6 @@ struct ChartCanvas: View {
 // BodyScene.swift stand-ins (RealityKit isn't compiled here)
 struct PartState: Equatable {
     var hidden: Set<String> = []
-    var faded: Set<String> = []
     var isolated: String?
 }
 
