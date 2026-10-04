@@ -39,94 +39,109 @@ func zonesForOrgan(_ id: String) -> [(label: Bilingual, route: Route)] {
     }
 }
 
-struct PartCard: View {
+/// A small floating label for the selected part, set off from it with a leader line to the spot touched: name,
+/// layer, hide / isolate, and the chart zones said to act on it. Sits above (below near the top), kept inside the view.
+struct PartCallout: View {
     let partID: String
     let parts: PartState
     let female: Bool
+    /// the part's anchor in the view
+    let at: CGPoint
     let onChange: (PartState) -> Void
     let onClose: () -> Void
     @Environment(Settings.self) private var settings
+    @State private var size = CGSize(width: 200, height: 80)
+
+    private static let width: CGFloat = 220
+    /// how far the label sits from the spot
+    private static let lift: CGFloat = 150
+    private static let side: CGFloat = 110
 
     var body: some View {
-        if let label = partLabel(partID, female: female) {
-            let faded = parts.faded.contains(partID)
-            let isolated = parts.isolated == partID
-            VStack(alignment: .leading, spacing: Space.m) {
-                HStack(alignment: .top, spacing: Space.s) {
-                    VStack(alignment: .leading, spacing: Space.xxs) {
-                        Text(settings.t(label.name)).font(.title3.weight(.semibold))
-                            .lineLimit(2)
-                            .accessibilityAddTraits(.isHeader)
-                        Text(settings.t(label.layer)).font(.subheadline).foregroundStyle(.secondary)
-                    }
-                    Spacer(minLength: Space.s)
-                    Button(action: onClose) {
-                        Image(systemName: "xmark").font(.footnote.weight(.bold)).foregroundStyle(.secondary)
-                            .frame(width: 30, height: 30)
-                            .background(Color.fill, in: .circle)
-                            .frame(width: minTap, height: minTap)
-                            .contentShape(.rect)
-                    }
-                    .buttonStyle(PressableStyle())
-                    .padding(.top, -Space.s).padding(.trailing, -Space.s)
-                    .accessibilityLabel(settings.t("Close", "关闭"))
+        GeometryReader { geo in
+            if let label = partLabel(partID, female: female) {
+                let below = at.y < size.height + Self.lift + Space.m
+                // off to the side with more room
+                let towardRight = at.x < geo.size.width / 2
+                let x = min(max(at.x + (towardRight ? Self.side : -Self.side), Self.width / 2 + Space.s), geo.size.width - Self.width / 2 - Space.s)
+                let y = min(max(below ? at.y + Self.lift + size.height / 2 : at.y - Self.lift - size.height / 2,
+                                size.height / 2 + Space.s), geo.size.height - size.height / 2 - Space.s)
+                let edge = CGPoint(x: min(max(at.x, x - Self.width / 2 + 16), x + Self.width / 2 - 16), y: below ? y - size.height / 2 : y + size.height / 2)
+                ZStack {
+                    Path { p in p.move(to: at); p.addLine(to: edge) }
+                        .stroke(Color.primary.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                    Circle().fill(Color(hex: "#FFD166")).stroke(Color.primary.opacity(0.55), lineWidth: 1.5)
+                        .frame(width: 9, height: 9).position(at)
+                    content(label)
+                        .frame(width: Self.width)
+                        .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
+                        .background(.regularMaterial, in: .rect(cornerRadius: 12, style: .continuous))
+                        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+                        .position(x: x, y: y)
                 }
-                HStack(spacing: Space.s) {
-                    action(settings.t("Hide", "隐藏"), "eye.slash", on: false) {
-                        var p = parts; p.hidden.insert(partID); onChange(p); onClose()
-                    }
-                    action(settings.t("Fade", "淡化"), "circle.lefthalf.filled", on: faded) {
-                        var p = parts
-                        if faded { p.faded.remove(partID) } else { p.faded.insert(partID) }
-                        onChange(p)
-                    }
-                    action(settings.t("Isolate", "单独显示"), "scope", on: isolated) {
-                        var p = parts; p.isolated = isolated ? nil : partID; onChange(p)
-                    }
-                }
-                let zones = zonesForOrgan(partID)
-                if !zones.isEmpty {
-                    VStack(alignment: .leading, spacing: Space.xs) {
-                        Eyebrow(settings.t("Reflex zones", "反射区"))
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: Space.s) {
-                                ForEach(zones, id: \.label.en) { zone in
-                                    NavigationLink(value: zone.route) {
-                                        HStack(spacing: Space.xs) {
-                                            Text(settings.t(zone.label))
-                                            Image(systemName: "chevron.right").imageScale(.small)
-                                        }
-                                        .font(.subheadline.weight(.medium))
-                                        .foregroundStyle(Color.brand)
-                                        .padding(.horizontal, Space.m)
-                                        .frame(minHeight: 34)
-                                        .background(Color.brand.opacity(0.12), in: .capsule)
-                                        .padding(.vertical, 5)
-                                        .contentShape(.rect)
-                                    }
-                                    .buttonStyle(PressableStyle())
-                                }
-                            }
-                        }
-                        .padding(.horizontal, -Space.l)
-                        .contentMargins(.horizontal, Space.l, for: .scrollContent)
-                    }
-                }
+                .transition(.opacity)
             }
-            .padding(.horizontal, Space.l)
         }
+        .animation(.snappy(duration: 0.2), value: partID)
     }
 
-    /// equal-width icon-over-label action; `on` marks a toggled state
+    private func content(_ label: (name: Bilingual, layer: Bilingual)) -> some View {
+        let isolated = parts.isolated == partID
+        return VStack(alignment: .leading, spacing: Space.xs) {
+            HStack(alignment: .top, spacing: Space.xs) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(settings.t(label.name)).font(.subheadline.weight(.semibold)).lineLimit(2)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(settings.t(label.layer)).font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: Space.xs)
+                Button(action: onClose) {
+                    Image(systemName: "xmark").font(.caption2.weight(.bold)).foregroundStyle(.secondary)
+                        .frame(width: 24, height: 24).background(Color.fill, in: .circle)
+                        .frame(width: 32, height: 32).contentShape(.rect)
+                }
+                .buttonStyle(PressableStyle())
+                .padding(.top, -4).padding(.trailing, -4)
+                .accessibilityLabel(settings.t("Close", "关闭"))
+            }
+            HStack(spacing: Space.xs) {
+                action(settings.t("Hide", "隐藏"), "eye.slash", on: false) {
+                    var p = parts; p.hidden.insert(partID); onChange(p); onClose()
+                }
+                action(settings.t("Isolate", "单独显示"), "scope", on: isolated) {
+                    var p = parts; p.isolated = isolated ? nil : partID; onChange(p)
+                }
+            }
+            let zones = zonesForOrgan(partID)
+            if !zones.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Space.xs) {
+                        ForEach(zones, id: \.label.en) { zone in
+                            NavigationLink(value: zone.route) {
+                                HStack(spacing: 2) {
+                                    Text(settings.t(zone.label))
+                                    Image(systemName: "chevron.right").imageScale(.small)
+                                }
+                                .font(.caption.weight(.medium)).foregroundStyle(Color.brand)
+                                .padding(.horizontal, Space.s).frame(minHeight: 28)
+                                .background(Color.brand.opacity(0.12), in: .capsule)
+                                .contentShape(.rect)
+                            }
+                            .buttonStyle(PressableStyle())
+                        }
+                    }
+                }
+            }
+        }
+        .padding(Space.s)
+    }
+
     private func action(_ title: String, _ symbol: String, on: Bool, _ run: @escaping () -> Void) -> some View {
         Button(action: run) {
-            VStack(spacing: Space.xxs) {
-                Image(systemName: symbol).font(.body.weight(.semibold))
-                Text(title).font(.caption.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
-            }
-            .foregroundStyle(on ? Color.white : Color.brand)
-            .frame(maxWidth: .infinity, minHeight: 52)
-            .background(on ? Color.brandFill : Color.brand.opacity(0.12), in: .rect(cornerRadius: Radius.tile, style: .continuous))
+            Label(title, systemImage: symbol).font(.caption.weight(.semibold)).lineLimit(1)
+                .foregroundStyle(on ? Color.white : Color.brand)
+                .frame(maxWidth: .infinity, minHeight: 32)
+                .background(on ? Color.brandFill : Color.brand.opacity(0.12), in: .rect(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(PressableStyle())
         .accessibilityAddTraits(on ? .isSelected : [])
@@ -153,10 +168,6 @@ struct JointControl: View {
             Slider(value: Binding(get: { Double(angle) }, set: { onChange(Float($0)) }), in: 0...Double(joint.maxDeg))
                 .accessibilityLabel(name)
                 .accessibilityValue("\(Int(angle))°")
-            let movers = joint.movers.compactMap(Catalog.part).map { settings.name($0.name, $0.nameZh) }
-            Text(settings.t("Working muscle: \(movers.joined(separator: ", ")) · range 0–\(Int(joint.maxDeg))°",
-                            "工作肌肉：\(movers.joined(separator: "、")) · 活动范围 0–\(Int(joint.maxDeg))°"))
-                .font(.footnote).foregroundStyle(.secondary)
         }
         .padding(Space.m)
         .background(Color.brand.opacity(0.08), in: .rect(cornerRadius: Radius.tile, style: .continuous))
