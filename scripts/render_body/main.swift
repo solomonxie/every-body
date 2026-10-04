@@ -96,9 +96,9 @@ final class Renderer: NSObject, NSApplicationDelegate {
             for id in (ProcessInfo.processInfo.environment["SELECT"] ?? "").split(separator: ",") {
                 scene.setParts(hidden, selected: String(id))
             }
-            let anchor = AnchorEntity(world: .zero)
             // UNSELECT=1 then lets the selection go (the highlight must clear)
             if ProcessInfo.processInfo.environment["UNSELECT"] == "1" { scene.setParts(hidden, selected: nil) }
+            let anchor = AnchorEntity(world: .zero)
             anchor.addChild(scene.root)
             view.scene.addAnchor(anchor)
             for _ in 0..<5 { scene.update(dt: 0.016) }
@@ -127,13 +127,13 @@ final class Renderer: NSObject, NSApplicationDelegate {
                 let hits: [CollisionCastHit] = view.hitTest(CGPoint(x: c[0], y: c[1]), query: .all, mask: .all)
                 print("HIT", c[0], c[1], hits.prefix(4).map { $0.entity.name })
             }
-            view.snapshot(saveToHDR: false) { image in
             // PICKS=x,y;x,y prints what the viewer's own tap pick (BodyScene.pick) lands on
             for spec in (ProcessInfo.processInfo.environment["PICKS"] ?? "").split(separator: ";") {
                 let c = spec.split(separator: ",").compactMap { Double($0) }
                 guard c.count == 2 else { continue }
                 print("PICK", c[0], c[1], scene.pick(at: CGPoint(x: c[0], y: c[1]), in: view.bounds.size) ?? "nil")
             }
+            view.snapshot(saveToHDR: false) { image in
                 if let tiff = image?.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff),
                    let png = rep.representation(using: .png, properties: [:]) {
                     try? png.write(to: URL(fileURLWithPath: out))
@@ -192,7 +192,8 @@ extension Renderer {
         // past the check the camera comes in to the chest
         if state != "check" { t.frameWhole(false); for _ in 0..<240 { t.update(dt: 1 / 60) } }
         if env["CLOSE"] == "1" { t.focusOnTarget() }
-        t.glass = env["GLASS"] == "1"
+        // GLASS=1 shows bones and organs; LAYERS=skeletal,muscular,organs picks the inner layers
+        t.inner = env["GLASS"] == "1" ? [.skeletal, .organs] : Set((env["LAYERS"] ?? "").split(separator: ",").compactMap { LayerID(rawValue: String($0)) })
         if let v = env["AZ"].flatMap(Float.init) { t.azimuth = v }
         if let v = env["EL"].flatMap(Float.init) { t.elevation = v }
         if let v = env["ZOOM"].flatMap(Float.init) { t.zoom = v }

@@ -67,7 +67,9 @@ final class CPRTrainerScene {
     var breath: Float = 0
     var tilt: Float = 0
     var bump: Float = 0
-    var glass = false { didSet { if glass != oldValue { applyLayers(); applyGloves() } } }
+    /// inner layers shown under a glass skin (any combination); none: solid skin
+    var inner: Set<LayerID> = [] { didSet { if inner != oldValue { applyLayers(); applyGloves() } } }
+    var glass: Bool { !inner.isEmpty }
 
     // camera orbit around `focus` (world)
     var azimuth: Float = 0.95
@@ -237,7 +239,7 @@ final class CPRTrainerScene {
     }
 
     private func applyLayers() {
-        body.setLayers(glass ? [.skin, .skeletal, .organs] : [.skin])
+        body.setLayers(inner.union([.skin]))
         // chest organs only: the belly's organs would hide the heart and lungs
         let keep: Set<String> = ["heart", "lung-l", "lung-r", "brain", "uterus", "fetus", "placenta"]
         body.setParts(PartState(hidden: Set(Catalog.body.organs.map(\.id)).subtracting(keep)), selected: nil)
