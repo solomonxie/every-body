@@ -4,6 +4,7 @@ import SwiftUI
 enum Pick {
     case point(String)
     case part(String)
+    case empty
 }
 
 /// Full-bleed 3D body: one finger moves it, two fingers turn it, pinch zooms, tap a part or point (again to let go).
@@ -15,7 +16,8 @@ struct BodyView: View {
     /// the reset button puts the whole page back as it opened, not just the camera
     var onReset: (() -> Void)? = nil
     var onSearch: (() -> Void)? = nil
-    /// room under the hint for a bar along the bottom
+    /// every rendered frame, with the view's size (a callout follows the body)
+    var onFrame: ((CGSize) -> Void)? = nil
     var onPick: (Pick) -> Void = { _ in }
 
     @Environment(Settings.self) private var settings
@@ -23,27 +25,34 @@ struct BodyView: View {
     @State private var dragStart: (yaw: Float, pitch: Float)?
     @State private var panStart: (x: Float, y: Float)?
     @State private var zoomStart: Float?
+    private let frame = FrameBox()
 
     var body: some View {
         ZStack {
             (settings.whiteBackground ? Color.white : Color(light: "#DADCE2", dark: "#2B2D33"))
+                .ignoresSafeArea(.container, edges: compact ? [] : .bottom)
             RealityView { content in
                 content.camera = .virtual
                 scene.root.removeFromParent()
                 content.add(scene.root)
                 scene.subscription = content.subscribe(to: SceneEvents.Update.self) { event in
-                    MainActor.assumeIsolated { scene.update(dt: Float(event.deltaTime)) }
+                    MainActor.assumeIsolated {
+                        scene.update(dt: Float(event.deltaTime))
+                        onFrame?(frame.size)
+                    }
                 }
             }
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { frame.size = $0 }
             // one finger slides the body around, two fingers turn it, pinch zooms
             .gesture(PanRecognizer(touches: 1, onChange: move, onEnd: { panStart = nil }))
             .gesture(PanRecognizer(touches: 2, onChange: rotate, onEnd: { dragStart = nil }))
             .gesture(PinchRecognizer(onChange: zoom, onEnd: { zoomStart = nil }))
             .gesture(TapRecognizer { point, size in
                 firstTouch()
-                guard let name = scene.pick(at: point, in: size), !name.isEmpty else { return }
+                guard let name = scene.pick(at: point, in: size), !name.isEmpty else { onPick(.empty); return }
                 onPick(name.hasPrefix("point:") ? .point(String(name.dropFirst(6))) : .part(name))
             })
+            .ignoresSafeArea(.container, edges: compact ? [] : .bottom)
 
             if !compact {
                 rail
@@ -53,7 +62,7 @@ struct BodyView: View {
                         .padding(.horizontal, Space.l).padding(.vertical, Space.s)
                         .background(.regularMaterial, in: .capsule)
                         .frame(maxHeight: .infinity, alignment: .bottom)
-                        .padding(.bottom, Radius.sheet + Space.m)
+                        .padding(.bottom, Space.m)
                         .allowsHitTesting(false)
                         .transition(.opacity)
                 }
@@ -212,6 +221,9 @@ struct SingleTouchRecognizer: UIGestureRecognizerRepresentable {
 
     func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
 }
+
+/// the 3D view's current size, read from the render loop
+final class FrameBox { var size = CGSize.zero }
 
 /// A tap, hit-tested by the scene itself (a SwiftUI tap on entities dropped taps once a part was selected).
 struct TapRecognizer: UIGestureRecognizerRepresentable {

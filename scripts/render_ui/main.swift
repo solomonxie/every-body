@@ -91,7 +91,7 @@ struct RenderUI {
             let flow = Catalog.points["circulatory"]?.points ?? []
             sheet("panels", out: out) {
                 VStack(alignment: .leading, spacing: 12) {
-                    PartCard(partID: "heart", parts: PartState(faded: ["heart"]), female: false, onChange: { _ in }, onClose: {})
+                    PartCallout(partID: "heart", parts: PartState(isolated: "heart"), female: false, at: CGPoint(x: 160, y: 140), onChange: { _ in }, onClose: {}).frame(height: 180)
                     if let j = Catalog.body.joints.first { JointControl(joint: j, angle: 45, onChange: { _ in }) }
                     Divider()
                     ReflexPanel(points: reflex, filter: .constant("foot"), activeID: reflex.first { $0.region == "foot" }?.id,
