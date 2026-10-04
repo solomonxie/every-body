@@ -142,6 +142,7 @@ final class BodyScene {
         let pregnant = pregnant && female && age == .adult
         rig.children.removeAll()
         partEntities = [:]; skinEntities = []; organEntities = [:]; organOpacity = [:]; jointOuter = [:]; pointEntities = [:]; pointColors = [:]; smallPoints = []; meridianEntities = [:]
+        benders = [:]; crossing = [:]
         bentJoints = []
 
         // joint pivots: outer at the pivot (rotates), inner offset back so children use body coords
@@ -650,6 +651,69 @@ final class BodyScene {
             default:
                 break
             }
+        }
+        bendCrossing(joint, outer: outer, degrees: degrees)
+    }
+
+    /// parts crossing a joint, turned into movable meshes on its first bend, by part id
+    private var benders: [String: SkinDeformer] = [:]
+    private var crossing: [String: [String]] = [:]
+    /// half-width of the band over a joint where a crossing part turns gradually (body units)
+    private static let bendBand: Float = 0.12
+
+    /// Parts crossing the joint (muscles, vessels, nerves; bones stay rigid) bend with it: each vertex turns by its
+    /// share of the angle, none on the near side to all on the far side, so a hamstring stays joined to the shin.
+    private func bendCrossing(_ joint: Joint, outer: Entity, degrees: Float) {
+        let pivot = outer.position
+        let axis = simd_normalize(joint.axis.simd)
+        let theta = degrees * .pi / 180
+        let band = Self.bendBand
+        // a part under the joint's own container already turns with it
+        let within = jointInner[joint.id]
+        if crossing.isEmpty {
+            // every joint's set, measured at rest before any part is made movable (a movable part's box is padded
+            // for culling, wide enough to reach the other leg's joint); in the parent's space (the joint's own
+            // parts sit under its offset: the same coordinates)
+            for j in Catalog.body.joints {
+                guard let p = jointOuter[j.id]?.position else { continue }
+                crossing[j.id] = partEntities.filter { id, entity in
+                    guard let layer = partLayer[id], layer != .skeletal, layer != .skin else { return false }
+                    let box = entity.visualBounds(relativeTo: entity.parent)
+                    return !box.isEmpty && box.min.y < p.y + band && box.max.y > p.y - band
+                        && box.min.x - 0.06 < p.x && box.max.x + 0.06 > p.x && box.min.z - 0.1 < p.z && box.max.z + 0.1 > p.z
+                }.map(\.key)
+            }
+        }
+        func smooth(_ a: Float, _ b: Float, _ x: Float) -> Float {
+            let t = max(0, min(1, (x - a) / (b - a)))
+            return t * t * (3 - 2 * t)
+        }
+        for id in crossing[joint.id] ?? [] {
+            guard let entity = partEntities[id] else { continue }
+            let bender: SkinDeformer
+            if let b = benders[id] { bender = b } else {
+                guard let b = SkinDeformer(entity) else { continue }
+                benders[id] = b
+                bender = b
+            }
+            let m = entity.transform.matrix, inv = m.inverse
+            var pos = bender.rest, nrm = bender.normals
+            for i in pos.indices {
+                let q4 = m * SIMD4(pos[i], 1)
+                let q = SIMD3(q4.x, q4.y, q4.z)
+                // the far side (below the joint) turns fully; a part under the joint already turns with it
+                let w = smooth(pivot.y + band, pivot.y - band, q.y)
+                let a = entity.parent === within ? (w - 1) * theta : w * theta
+                if abs(a) < 1e-4 { continue }
+                let r = simd_quatf(angle: a, axis: axis)
+                let moved = pivot + r.act(q - pivot)
+                let back = inv * SIMD4(moved, 1)
+                pos[i] = SIMD3(back.x, back.y, back.z)
+                let n4 = m * SIMD4(nrm[i], 0)
+                let n = inv * SIMD4(r.act(SIMD3(n4.x, n4.y, n4.z)), 0)
+                nrm[i] = simd_normalize(SIMD3(n.x, n.y, n.z))
+            }
+            bender.write(indices: Array(pos.indices), positions: pos, normals: nrm)
         }
     }
 
