@@ -85,9 +85,10 @@ final class Renderer: NSObject, NSApplicationDelegate {
                 scene.yaw = scene.goalYaw ?? scene.yaw
                 scene.focusY = scene.goalFocusY; scene.distance = scene.goalDistance; scene.panX = scene.goalPanX
             }
-            // JOINT=elbow-l:90 bends a joint
-            if let spec = ProcessInfo.processInfo.environment["JOINT"]?.split(separator: ":"), spec.count == 2 {
-                scene.setJoint(String(spec[0]), degrees: Float(spec[1]) ?? 0)
+            // JOINT=elbow-l:90 bends a joint; JOINT=knee-l:54,knee-l:0,knee-r:90 applies the steps in order
+            for step in (ProcessInfo.processInfo.environment["JOINT"] ?? "").split(separator: ",") {
+                let spec = step.split(separator: ":")
+                if spec.count == 2 { scene.setJoint(String(spec[0]), degrees: Float(spec[1]) ?? 0) }
             }
             // SELECT=a,b selects each part in turn (as tapping them does); the last stays selected; HIDE=a,b hides those
             let hidden = PartState(hidden: Set((ProcessInfo.processInfo.environment["HIDE"] ?? "").split(separator: ",").map(String.init)))
