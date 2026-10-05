@@ -113,10 +113,15 @@ struct ChartCanvas: View {
                                  cornerRadius: 4), with: .color(.white.opacity(0.92)))
                 labels.draw(resolved, at: at, anchor: .center)
             } else {
-                let text = Text(zh ? zone.label ?? String(zone.nameZh.split(separator: "·").first ?? "") : Self.shortName(zone.name))
-                    .font(.system(size: chart.labelSize * 0.8)).foregroundStyle(Self.ink)
+                let name = zh ? zone.label ?? String(zone.nameZh.split(separator: "·").first ?? "") : Self.shortName(zone.name)
                 let below = zone.path == nil
-                labels.draw(text, at: CGPoint(x: box.midX, y: below ? box.maxY + chart.labelSize * 0.6 : box.midY), anchor: .center)
+                func text(_ size: CGFloat) -> Text { Text(name).font(.system(size: size)).foregroundStyle(Self.ink) }
+                var size = chart.labelSize * 0.8
+                if !below {
+                    let fit = labels.resolve(text(size)).measure(in: CGSize(width: 400, height: 100))
+                    size *= max(0.35, min(1, box.width * 0.92 / max(fit.width, 1), box.height * 0.9 / max(fit.height, 1)))
+                }
+                labels.draw(labels.resolve(text(size)), at: CGPoint(x: box.midX, y: below ? box.maxY + chart.labelSize * 0.6 : box.midY), anchor: .center)
             }
         }
     }
