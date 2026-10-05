@@ -885,7 +885,6 @@ final class BodyScene {
     /// pivot), one beside it turns by its share; joints compose parent first, each pivot moved by its ancestors.
     private func bendSkin() {
         guard realSkin else { return }
-        if skinBends.isEmpty { bindSkin() }
         let band = Self.bendBand
         struct Bend { let id: String; let parent: ObjectIdentifier; let restPivot, pivot, axis: SIMD3<Float>; let theta: Float; let under: Set<ObjectIdentifier> }
         func joint(_ id: String) -> Joint? { joints.first { $0.id == id } }
@@ -910,6 +909,8 @@ final class BodyScene {
             bends.append(Bend(id: j.id, parent: ObjectIdentifier(outer.parent ?? rig), restPivot: outer.position, pivot: pivot, axis: axis,
                               theta: (jointAngles[j.id] ?? 0) * .pi / 180, under: under))
         }
+        if bends.isEmpty && skinBends.isEmpty { return }
+        if skinBends.isEmpty { bindSkin() }
         let holdID = holders.map { ObjectIdentifier($0) }
         for s in skinBends {
             if bends.isEmpty { s.bender.write(indices: [], positions: [], normals: []); continue }
