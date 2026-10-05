@@ -670,7 +670,7 @@ final class CPRTrainerScene {
             body.root.addChild(bumpHand)
         }
 
-        ring.model = ModelComponent(mesh: Self.torus(radius: victim.tolerance * c, tube: 0.25 * c), materials: [Self.ringMaterial(false)])
+        ring.model = ModelComponent(mesh: Self.torus(radius: victim.tolerance * c, tube: 0.45 * c), materials: [Self.ringMaterial(false)])
         ring.isEnabled = false
         place(ring, at: marks.target, normal: marks.targetNormal, axis: SIMD3(1, 0, 0), lift: 1.1 * c)
         body.root.addChild(ring)
@@ -841,7 +841,7 @@ final class CPRTrainerScene {
         hintRings = rest.map { p0 in
             let (p, n) = surface(x: p0.x, y: p0.y)
             let onHead = headWeight(p, pivot: headPivot) > 0.5
-            let r = ModelEntity(mesh: Self.torus(radius: 2.2 * k * Self.cm, tube: 0.22 * Self.cm), materials: [Self.ringMaterial(false)])
+            let r = ModelEntity(mesh: Self.torus(radius: 3 * k * Self.cm, tube: 0.5 * Self.cm), materials: [Self.ringMaterial(false)])
             place(r, at: headPoint(p), normal: onHead ? q.act(n) : n, axis: SIMD3(1, 0, 0), lift: 0.8 * Self.cm)
             body.root.addChild(r)
             return r
@@ -984,7 +984,7 @@ final class CPRTrainerScene {
             }
         }
 
-        for r in hintRings { r.scale = SIMD3(repeating: 1 + 0.15 * sin(clock * 5)) }
+        for r in hintRings { r.scale = SIMD3(repeating: 1 + 0.22 * sin(clock * 5)) }
         if showRing {
             let pulse = 1 + 0.08 * sin(clock * 5)
             ring.scale = SIMD3(repeating: ringGood ? 1 : pulse)
@@ -1019,8 +1019,8 @@ final class CPRTrainerScene {
     }
 
     private static func ringMaterial(_ good: Bool) -> UnlitMaterial {
-        var m = UnlitMaterial(color: UIColor(hex: good ? "#2E9E5B" : "#FFB020"))
-        m.blending = .transparent(opacity: .init(floatLiteral: 0.9))
+        var m = UnlitMaterial(color: UIColor(hex: good ? "#12D66B" : "#00E0FF"))
+        m.blending = .transparent(opacity: .init(floatLiteral: 1))
         return m
     }
 
