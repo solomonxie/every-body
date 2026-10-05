@@ -419,9 +419,8 @@ struct LocalFigureMenus: View {
     }
 }
 
-/// A pill with a fixed label whose options open after a long hold; a tap does nothing.
+/// A pill with a fixed label whose options open on a tap.
 struct MenuPill<Content: View>: View {
-    static var holdSeconds: Double { 0.5 }
     let label: String
     @ViewBuilder let content: Content
     @State private var open = false
@@ -439,7 +438,7 @@ struct MenuPill<Content: View>: View {
         .background(Color.fill, in: .capsule)
         .padding(.vertical, (minTap - 36) / 2)
         .contentShape(.rect)
-        .onLongPressGesture(minimumDuration: Self.holdSeconds, maximumDistance: 30) { open = true }
+        .onTapGesture { open = true }
         .sensoryFeedback(.impact(weight: .medium), trigger: open) { _, new in new }
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { open = true }
