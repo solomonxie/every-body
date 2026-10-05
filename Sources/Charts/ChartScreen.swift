@@ -40,11 +40,13 @@ struct ChartScreen: View {
                 let r = rects(stage.size)
                 ZStack(alignment: .topLeading) {
                     bodyPane
+                        .background(layout == .overlay ? Color(uiColor: .systemBackground) : .clear, in: .rect(cornerRadius: 14))
+                        .clipShape(.rect(cornerRadius: layout == .overlay ? 14 : 0))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.secondary.opacity(layout == .overlay ? 0.4 : 0)))
                         .frame(width: r.body.width, height: r.body.height)
                         .offset(x: r.body.minX, y: r.body.minY)
+                        .zIndex(layout == .overlay ? 1 : 0)
                     chartPane
-                        .background(layout == .overlay ? Color(uiColor: .systemBackground) : .clear, in: .rect(cornerRadius: 14))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.secondary.opacity(layout == .overlay ? 0.4 : 0)))
                         .frame(width: r.chart.width, height: r.chart.height)
                         .offset(x: r.chart.minX, y: r.chart.minY)
                     if let bar = r.bar {
@@ -182,7 +184,7 @@ struct ChartScreen: View {
             ZStack(alignment: .bottomTrailing) {
                 GeometryReader { geo in
                     ChartCanvas(chart: chart, face: face, side: side, zones: zones, selectedID: selected?.id,
-                                showLabels: false, zh: settings.zh, flagged: Set(zones.filter { Cautions.avoid($0.id, for: settings.profile) }.map(\.id)), zoom: zoom, pan: pan)
+                                showLabels: true, zh: settings.zh, flagged: Set(zones.filter { Cautions.avoid($0.id, for: settings.profile) }.map(\.id)), zoom: zoom, pan: pan)
                         .contentShape(.rect)
                         .gesture(SpatialTapGesture().onEnded { value in
                             let hit = ChartCanvas.hitTest(value.location, size: geo.size, chart: chart, face: face, side: side,
@@ -225,8 +227,8 @@ struct ChartScreen: View {
                     CGRect(x: chartW, y: 0, width: bar, height: size.height))
         case .overlay:
             let w = size.width * 0.46, h = size.height * 0.46
-            return (CGRect(origin: .zero, size: size),
-                    CGRect(x: size.width - w - 16, y: size.height - h - 16, width: w, height: h), nil)
+            return (CGRect(x: size.width - w - 16, y: size.height - h - 16, width: w, height: h),
+                    CGRect(origin: .zero, size: size), nil)
         }
     }
 
@@ -253,11 +255,9 @@ struct ChartScreen: View {
         Set(insetLayersRaw.split(separator: ",").compactMap { InsetLayer(rawValue: String($0)) })
     }
 
-    /// In the body + box layout the body stands left of centre, a little closer, so the box never covers it.
     private func placeBody() {
-        let overlay = layout == .overlay
-        inset.basePanX = overlay ? 0.62 : 0
-        inset.baseZoom = overlay ? 0.88 : 1
+        inset.basePanX = 0
+        inset.baseZoom = 1
         inset.focus(.all)
     }
 
@@ -354,7 +354,7 @@ enum ChartLayout: String, CaseIterable {
         switch self {
         case .stacked: Bilingual("Up / down", "上下")
         case .sideBySide: Bilingual("Left / right", "左右")
-        case .overlay: Bilingual("Body + chart box", "人体 + 小图")
+        case .overlay: Bilingual("Chart + body box", "图 + 小人体")
         }
     }
 
