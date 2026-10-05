@@ -99,6 +99,14 @@ struct ChartCanvas: View {
         var labels = ctx
         labels.transform = view
         let mirror = Self.mirror(chart: chart, face: face, side: side)
+        let base = chart.labelSize * 0.8
+        func name(_ zone: ReflexZone) -> String {
+            zh ? zone.label ?? String(zone.nameZh.split(separator: "·").first ?? "") : Self.shortName(zone.name)
+        }
+        func text(_ s: String, _ size: CGFloat) -> Text { Text(s).font(.system(size: size)).foregroundStyle(Self.ink) }
+        func measure(_ s: String, _ size: CGFloat) -> CGSize { labels.resolve(text(s, size)).measure(in: CGSize(width: 400, height: 100)) }
+
+        var callouts: [(zone: ReflexZone, box: CGRect)] = []
         for zone in zones where showLabels || zone.id == selectedID {
             let box = Self.zonePath(zone).boundingRect.applying(mirror)
             if zone.id == selectedID {
@@ -112,16 +120,52 @@ struct ChartCanvas: View {
                 labels.fill(Path(roundedRect: CGRect(x: at.x - half, y: at.y - size.height / 2 - 2, width: half * 2, height: size.height + 4),
                                  cornerRadius: 4), with: .color(.white.opacity(0.92)))
                 labels.draw(resolved, at: at, anchor: .center)
+            } else if zone.path == nil {
+                labels.draw(labels.resolve(text(name(zone), base)), at: CGPoint(x: box.midX, y: box.maxY + chart.labelSize * 0.6), anchor: .center)
             } else {
-                let name = zh ? zone.label ?? String(zone.nameZh.split(separator: "·").first ?? "") : Self.shortName(zone.name)
-                let below = zone.path == nil
-                func text(_ size: CGFloat) -> Text { Text(name).font(.system(size: size)).foregroundStyle(Self.ink) }
-                var size = chart.labelSize * 0.8
-                if !below {
-                    let fit = labels.resolve(text(size)).measure(in: CGSize(width: 400, height: 100))
-                    size *= max(0.35, min(1, box.width * 0.92 / max(fit.width, 1), box.height * 0.9 / max(fit.height, 1)))
-                }
-                labels.draw(labels.resolve(text(size)), at: CGPoint(x: box.midX, y: below ? box.maxY + chart.labelSize * 0.6 : box.midY), anchor: .center)
+                let fit = measure(name(zone), base)
+                let k = min(1, box.width * 0.92 / max(fit.width, 1), box.height * 0.9 / max(fit.height, 1))
+                if k < 0.6 { callouts.append((zone, box)) }
+                else { labels.draw(labels.resolve(text(name(zone), base * k)), at: CGPoint(x: box.midX, y: box.midY), anchor: .center) }
+            }
+        }
+        drawCallouts(labels, callouts, size: base, name: name, text: text, measure: measure)
+    }
+
+    /// Zones too small to hold their name get it in a side margin, on a line to the zone.
+    private func drawCallouts(_ context: GraphicsContext, _ items: [(zone: ReflexZone, box: CGRect)], size: CGFloat,
+                              name: (ReflexZone) -> String, text: (String, CGFloat) -> Text, measure: (String, CGFloat) -> CGSize) {
+        guard !items.isEmpty else { return }
+        var g = context
+        let (vx, vy, vw, vh) = (chart.viewBox[0], chart.viewBox[1], chart.viewBox[2], chart.viewBox[3])
+        let mirror = Self.mirror(chart: chart, face: face, side: side)
+        let drawn = zones.map { Self.zonePath($0).boundingRect.applying(mirror) }.reduce(CGRect.null) { $0.union($1) }
+        let pad: CGFloat = 6
+        let leftRoom = max(0, drawn.minX - vx - 2 * pad), rightRoom = max(0, vx + vw - drawn.maxX - 2 * pad)
+        let gap = size * 0.5
+        for onRight in [false, true] {
+            let room = onRight ? rightRoom : leftRoom
+            let column = items.filter { ($0.box.midX > drawn.midX) == onRight }.sorted { $0.box.midY < $1.box.midY }
+            guard !column.isEmpty, room > size else { continue }
+            let widest = column.map { measure(name($0.zone), size).width }.max() ?? 1
+            let k = min(1, room / max(widest, 1))
+            let h = measure("Ag", size * k).height * 1.1
+            var ys = column.map { $0.box.midY }
+            for i in ys.indices.dropFirst() { ys[i] = max(ys[i], ys[i - 1] + h) }
+            let overflow = (ys.last ?? 0) + h / 2 - (vy + vh - pad)
+            if overflow > 0 { ys = ys.map { $0 - overflow } }
+            for i in ys.indices.reversed().dropFirst() { ys[i] = min(ys[i], ys[i + 1] - h) }
+            let x = onRight ? vx + vw - pad : vx + pad
+            for (item, y) in zip(column, ys) {
+                let w = measure(name(item.zone), size * k).width
+                let edge = CGPoint(x: onRight ? x - w - gap : x + w + gap, y: y)
+                let target = CGPoint(x: item.box.midX, y: item.box.midY)
+                var line = Path()
+                line.move(to: edge)
+                line.addLine(to: target)
+                g.stroke(line, with: .color(Self.ink.opacity(0.55)), lineWidth: 0.7)
+                g.fill(Path(ellipseIn: CGRect(x: target.x - 1.6, y: target.y - 1.6, width: 3.2, height: 3.2)), with: .color(Self.ink))
+                g.draw(g.resolve(text(name(item.zone), size * k)), at: CGPoint(x: x, y: y), anchor: onRight ? .trailing : .leading)
             }
         }
     }
