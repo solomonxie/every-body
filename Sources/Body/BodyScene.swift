@@ -168,6 +168,9 @@ final class BodyScene {
         let sex = female && !(age == .infant || age.isChild) ? "female" : "male"
         let look = Figure.Look(female: female, age: age, pregnant: pregnant, heritage: heritage, underwear: underwear, chest: chest, hips: hips)
         let realSkin = ModelLibrary.skin(look)
+        var plain = look
+        plain.chest = .small; plain.hips = .medium
+        unshaped = look != plain ? plain : nil
         surface = realSkin == nil ? nil : Figure.surface(look)
         self.realSkin = realSkin != nil
         seeThrough = !meridians.isEmpty
@@ -683,6 +686,8 @@ final class BodyScene {
         let holder: [Int]
     }
     private var skinBends: [SkinBend] = []
+    /// the look without chest or hips options: the body options move skin (a hand beside the hips) off its bones, so the skin binds on this
+    private var unshaped: Figure.Look?
     private var holders: [Entity] = []
     private var jointAngles: [String: Float] = [:]
     /// joints the body can bend: the catalogue's (shoulders hung from the back) plus the back and neck found on the
@@ -801,12 +806,39 @@ final class BodyScene {
                 ?? nearest(q, n, cells: 8) { _, far, inside in far >= 0.12 && inside < 0.01 }
                 ?? nearest(q, n, cells: 12) { _, _, _ in true } ?? 0
         }
-        for (entity, _) in skinEntities where entity.name == "skin:body" || entity.name.hasPrefix("skin:underwear") {
+        // garments follow the body skin under them, the body (bound first) its nearest bone
+        var skinGrid: [SIMD3<Int32>: [Int]] = [:]
+        var skinPoints: [SIMD3<Float>] = [], skinHolder: [Int] = []
+        let skinCell: Float = 0.03
+        func skinKey(_ p: SIMD3<Float>) -> SIMD3<Int32> { SIMD3<Int32>(Int32(floor(p.x / skinCell)), Int32(floor(p.y / skinCell)), Int32(floor(p.z / skinCell))) }
+        func underSkin(_ q: SIMD3<Float>) -> Int {
+            let c = skinKey(q)
+            for r in 1...6 {
+                var best = Float.infinity, pick = -1
+                for dx in -r...r { for dy in -r...r { for dz in -r...r {
+                    for i in skinGrid[c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))] ?? [] {
+                        let d = simd_length_squared(skinPoints[i] - q)
+                        if d < best { best = d; pick = i }
+                    }
+                } } }
+                if pick >= 0 { return skinHolder[pick] }
+            }
+            return 0
+        }
+        for (entity, _) in skinEntities.sorted(by: { $0.entity.name == "skin:body" && $1.entity.name != "skin:body" })
+        where entity.name == "skin:body" || entity.name.hasPrefix("skin:underwear") {
             guard let b = SkinDeformer(entity) else { continue }
             let m = entity.transform.matrix
             let rest = b.rest.map { (p: SIMD3<Float>) -> SIMD3<Float> in let q = m * SIMD4(p, 1); return SIMD3(q.x, q.y, q.z) }
             let normals = b.normals.map { (p: SIMD3<Float>) -> SIMD3<Float> in let n = m * SIMD4(p, 0); return simd_normalize(SIMD3(n.x, n.y, n.z)) }
-            var hold = zip(rest, normals).map { nearest($0, $1) }
+            var bindRest = rest, bindNormals = normals
+            if entity.name == "skin:body", let look = unshaped, let plain = ModelLibrary.skin(look)?.first(where: { $0.id == "body" }),
+               let part = plain.mesh.contents.models.first?.parts.first, part.positions.count == rest.count {
+                let pm = plain.transform.matrix
+                bindRest = part.positions.map { (p: SIMD3<Float>) -> SIMD3<Float> in let q = pm * SIMD4(p, 1); return SIMD3(q.x, q.y, q.z) }
+                if let pn = part.normals { bindNormals = pn.map { (p: SIMD3<Float>) -> SIMD3<Float> in let n = pm * SIMD4(p, 0); return simd_normalize(SIMD3(n.x, n.y, n.z)) } }
+            }
+            var hold = entity.name == "skin:body" || skinPoints.isEmpty ? zip(bindRest, bindNormals).map { nearest($0, $1) } : rest.map { underSkin($0) }
             // strays (a few vertices bound across a gap, where a hand rests on the thigh) take their neighbours' side
             var adjacent = [[Int]](repeating: [], count: rest.count)
             let t = b.triangles
@@ -814,14 +846,36 @@ final class BodyScene {
                 let a = Int(t[k]), bb = Int(t[k + 1]), c = Int(t[k + 2])
                 adjacent[a].append(bb); adjacent[a].append(c); adjacent[bb].append(a); adjacent[bb].append(c); adjacent[c].append(a); adjacent[c].append(bb)
             }
-            for _ in 0..<4 {
+            for _ in 0..<8 {
                 var next = hold
                 for i in hold.indices where !adjacent[i].isEmpty {
                     var votes: [Int: Int] = [:]
                     for j in adjacent[i] { votes[hold[j], default: 0] += 1 }
-                    if let (top, n) = votes.max(by: { $0.value < $1.value }), top != hold[i], n * 4 >= adjacent[i].count * 3 { next[i] = top }
+                    if let (top, n) = votes.max(by: { $0.value < $1.value }), top != hold[i], n * 3 >= adjacent[i].count * 2 { next[i] = top }
                 }
                 hold = next
+            }
+            // a small island of one holder inside another's skin (a few hand vertices bound to a far bone) joins its surround
+            var label = [Int](repeating: -1, count: hold.count), sizes: [Int] = []
+            for start in hold.indices where label[start] < 0 {
+                var stack = [start], n = 0
+                label[start] = sizes.count
+                while let v = stack.popLast() {
+                    n += 1
+                    for w in adjacent[v] where label[w] < 0 && hold[w] == hold[v] { label[w] = sizes.count; stack.append(w) }
+                }
+                sizes.append(n)
+            }
+            var votes = [[Int: Int]](repeating: [:], count: sizes.count)
+            for i in hold.indices where sizes[label[i]] < 150 {
+                for j in adjacent[i] where label[j] != label[i] { votes[label[i]][hold[j], default: 0] += 1 }
+            }
+            for i in hold.indices where sizes[label[i]] < 150 {
+                if let top = votes[label[i]].max(by: { $0.value < $1.value })?.key { hold[i] = top }
+            }
+            if entity.name == "skin:body" {
+                skinPoints = rest; skinHolder = hold
+                for (i, p) in rest.enumerated() { skinGrid[skinKey(p), default: []].append(i) }
             }
             skinBends.append(SkinBend(bender: b, toLocal: m.inverse, rest: rest, normals: normals, holder: hold))
         }
