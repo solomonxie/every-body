@@ -77,7 +77,7 @@ One compact menu row on top, the stage fills the rest; zone details pop over it.
 └──────────────────────────────────────────────────┘
 ```
 - (✋ ▾) side left/right + face (palm/back, sole/top); (☰ ▾) every zone by group, ⚠ flags;
-  (▤) layout: up/down, left/right, body + chart box.
+  (▤) layout: up/down, left/right, chart + body box.
 
 ## Blood flow (Circulation)
 
