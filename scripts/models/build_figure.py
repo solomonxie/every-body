@@ -1298,13 +1298,13 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
     out = {}
     for name, pos, field, lift, color in (
             ("briefs-male", male, briefs_male, 0.004, "#2F3947"),
-            ("briefs-female", female, briefs_female, 0.004, "#D4B2AA"),
-            ("briefs-pregnant", female, briefs_pregnant, 0.004, "#D4B2AA"),
-            ("bra", female, bra_for(female), 0.0065, "#D4B2AA"),
-            *[(f"bra-{n}", body, bra_for(body), 0.0065, "#D4B2AA") for n, body in (chests or {}).items()],
+            ("briefs-female", female, briefs_female, 0.004, "#4A2F42"),
+            ("briefs-pregnant", female, briefs_pregnant, 0.004, "#4A2F42"),
+            ("bra", female, bra_for(female), 0.0065, "#4A2F42"),
+            *[(f"bra-{n}", body, bra_for(body), 0.0065, "#4A2F42") for n, body in (chests or {}).items()],
             ("nappy", kid, nappy, 0.014, "#F4F2EE"),
-            ("briefs-kid", kid, briefs_kid, 0.004, "#7FA6CF"),
-            ("top-kid", kid if child is None else child, top_kid, 0.006, "#7FA6CF")):
+            ("briefs-kid", kid, briefs_kid, 0.004, "#2C5A6E"),
+            ("top-kid", kid if child is None else child, top_kid, 0.006, "#2C5A6E")):
         if only_bra and name != "bra":
             continue
         abc, w, f, tri = clip(field, pos, arms_anywhere=name == "top-kid" or name.startswith("bra"))
