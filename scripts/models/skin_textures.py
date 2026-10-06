@@ -14,8 +14,13 @@ TONE = {
     "south-asian": (116, 76, 52),
     "black": (92, 58, 40),
 }
+# per (heritage, sex) tone where it differs
+TONE_OVERRIDE = {("east-asian", "female"): (205, 160, 120)}
 # face shading strength per heritage (cheeks, nose, lids)
 SHADE = {"east-asian": 1.5}
+SHADE_FEMALE = {"east-asian": 1.3}
+# blood-flush colour scale per heritage (yellower, less pink)
+FLUSH_TINT = {"east-asian": (1.0, 1.03, 1.04)}
 # lip colour scale per heritage
 LIP_TINT = {"east-asian": (1.0, 0.82, 0.84)}
 # per texture: brightness and warmth (men a shade deeper and ruddier, seniors a little duller, children lighter)
@@ -250,7 +255,8 @@ def finish(np, px, heritage, name, reg):
     """blended MakeHuman skin → the heritage's tone with natural colour by region"""
     covered = reg["covered"]
     bright, warm = VARIANT[name]
-    target = np.array(TONE[heritage], np.float64) * bright * np.array(warm)
+    tone_key = (heritage, name.split("-")[0])
+    target = np.array(TONE_OVERRIDE.get(tone_key, TONE[heritage]), np.float64) * bright * np.array(warm)
     # broad colour to the target, detail kept (a little stronger); the broad colour from skin texels only
     cov = covered.astype(np.float32)
     # on the head, the deep folds (nostrils, the mouth's corners) don't darken the broad colour round them
@@ -270,9 +276,11 @@ def finish(np, px, heritage, name, reg):
     lum = float(target @ np.array([0.3, 0.59, 0.11]))
     dark = float(np.clip((190 - lum) / 120, 0, 1))  # 0 light … 1 deep
     f = FACE[name]
-    sh = SHADE.get(heritage, 1.0)
+    sh = (SHADE_FEMALE if name.startswith("female") else SHADE).get(heritage, SHADE.get(heritage, 1.0))
     # blood shows as a warmth that follows the skin's tone
     flush = np.array([1.02, 0.88, 0.87]) * (1 - dark) + np.array([0.96, 0.88, 0.86]) * dark
+    if name.startswith("female"):
+        flush = flush * np.array(FLUSH_TINT.get(heritage, (1.0, 1.0, 1.0)))
     px = mix(px, reg["cheeks"], flush, min(0.55 * f * sh, 0.95))
     px = mix(px, reg["nose"], flush, min(0.45 * sh, 0.95))
     px = mix(px, reg["ears"], flush, 0.35)
