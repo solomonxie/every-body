@@ -148,7 +148,9 @@ struct ChartCanvas: View {
             let column = items.filter { ($0.box.midX > drawn.midX) == onRight }.sorted { $0.box.midY < $1.box.midY }
             guard !column.isEmpty, room > size else { continue }
             let widest = column.map { measure(name($0.zone), size).width }.max() ?? 1
-            let k = min(1, room / max(widest, 1))
+            let k = min(1, max(0.75, room / max(widest, 1)))
+            let dark = context.environment.colorScheme == .dark
+            let ink = dark ? Color.white : Self.ink
             let h = measure("Ag", size * k).height * 1.1
             var ys = column.map { $0.box.midY }
             for i in ys.indices.dropFirst() { ys[i] = max(ys[i], ys[i - 1] + h) }
@@ -163,9 +165,13 @@ struct ChartCanvas: View {
                 var line = Path()
                 line.move(to: edge)
                 line.addLine(to: target)
-                g.stroke(line, with: .color(Self.ink.opacity(0.55)), lineWidth: 0.7)
-                g.fill(Path(ellipseIn: CGRect(x: target.x - 1.6, y: target.y - 1.6, width: 3.2, height: 3.2)), with: .color(Self.ink))
-                g.draw(g.resolve(text(name(item.zone), size * k)), at: CGPoint(x: x, y: y), anchor: onRight ? .trailing : .leading)
+                g.stroke(line, with: .color(ink.opacity(0.7)), lineWidth: 0.8)
+                g.fill(Path(ellipseIn: CGRect(x: target.x - 1.8, y: target.y - 1.8, width: 3.6, height: 3.6)), with: .color(ink))
+                let label = g.resolve(Text(name(item.zone)).font(.system(size: size * k, weight: .medium)).foregroundStyle(ink))
+                let lw = label.measure(in: CGSize(width: 400, height: 100))
+                let pill = CGRect(x: onRight ? x - lw.width - 3 : x - 3, y: y - lw.height / 2 - 1, width: lw.width + 6, height: lw.height + 2)
+                g.fill(Path(roundedRect: pill, cornerRadius: 3), with: .color((dark ? Color.black : Color.white).opacity(0.75)))
+                g.draw(label, at: CGPoint(x: x, y: y), anchor: onRight ? .trailing : .leading)
             }
         }
     }
