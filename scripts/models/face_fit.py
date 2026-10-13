@@ -182,7 +182,7 @@ EYE_GROW_BY = {"female-adult": 0.4, "kid-infant": 0.1, "kid-toddler": 0.6, "kid-
 # (young children's lids stay open)
 EYE_SHAPE_BY = {"kid-infant": (1.0, 1.06, 1.0), "kid-toddler": (1.0, 1.05, 1.0), "kid-child": (1.0, 1.02, 1.0)}
 # (a dict: per heritage, "*" the rest; the base head evens faces out, so some heritages keep more)
-BASE = {"female-adult": ("rain", {"*": 0.5, "hispanic": 0.85, "southeast-asian": 0.9, "east-asian": 0.7, "south-asian": 0.85}, 0.7),
+BASE = {"female-adult": ("rain", {"*": 0.5, "hispanic": 0.85, "southeast-asian": 0.9, "east-asian": 0.6, "south-asian": 0.85}, 0.7),
         "male-adult": ("snow", {"*": 0.5, "southeast-asian": 0.85, "south-asian": 0.85}, 0.85), "female-senior": ("rain", 0.5, 0.55),
         "male-senior": ("snow", 0.5, 0.65), "kid-child": ("rain", 0.5, 1.0), "kid-toddler": ("rain", 0.5, 0.5)}
 
@@ -510,9 +510,9 @@ def carry(pieces, move, warp):
 
 
 # brows flattened (the arch's middle lowered, in eye spacings) and lowered, by group
-BROWS = {"female-adult.southeast-asian": (0.05, 0.0), "female-adult.east-asian": (0.06, 0.0)}
+BROWS = {"female-adult.southeast-asian": (0.05, 0.0), "female-adult.east-asian": (0.03, 0.03)}
 # brows thickened (scaled across their length about the middle line), by group or group.heritage
-BROW_THICK = {"female-adult.east-asian": 0.7, "female-adult.hispanic": 1.15, "female-adult.southeast-asian": 1.1, "kid-toddler": 0.7, "kid-child": 0.8}
+BROW_THICK = {"female-adult.east-asian": 1.05, "female-adult.hispanic": 1.15, "female-adult.southeast-asian": 1.1, "kid-toddler": 0.7, "kid-child": 0.8}
 
 
 def thicken_brows(pieces, k, U):
@@ -567,7 +567,7 @@ def seat_brows(pieces, arch, drop):
 
 
 # profile touches (eye spacings): lower lip back, chin forward
-PROFILE = {"female-adult.east-asian": (0.06, 0.03), "female-adult.hispanic": (0.08, 0.04), "female-adult.southeast-asian": (0.06, 0.03)}
+PROFILE = {"female-adult.east-asian": (0.1, 0.06), "female-adult.hispanic": (0.08, 0.04), "female-adult.southeast-asian": (0.06, 0.03)}
 
 
 def profile(pieces, lip_back, chin_out, gid):
@@ -602,16 +602,16 @@ def profile(pieces, lip_back, chin_out, gid):
 
 # the drawn-ideal touches after the fit, by group: eyes (scale of each eye with its eyeball), nose (scale),
 # jaw (how much narrower the chin's width gets), lips (height scale), mid (height scale of the face below the eyes),
-# wide (width scale of the lower face)
+# wide (width scale of the lower face), bridge (the nose ridge forward), smile (the mouth corners up; both in eye spacings)
 # (by group, or group.heritage)
 IDEAL = {"kid-infant": dict(nose=0.95), "kid-toddler": dict(nose=0.9, eyes=1.05), "kid-child": dict(nose=0.9),
          # (measured against the photo samples)
          "female-adult.hispanic": dict(eyes=1.05, nose=0.97, jaw=0.06, wide=0.97),
          "female-adult.southeast-asian": dict(eyes=1.05, lips=0.97, jaw=0.04, wide=0.96),
-         "female-adult.east-asian": dict(eyes=1.08, nose=1.0, jaw=0.04, wide=0.97)}
+         "female-adult.east-asian": dict(eyes=1.08, nose=1.0, jaw=0.1, lips=0.95, wide=0.93, bridge=0.08, smile=0.03)}
 
 
-def idealize(pieces, gid, her, eyes=1.0, nose=1.0, jaw=0.0, lips=1.0, mid=1.0, wide=1.0):
+def idealize(pieces, gid, her, eyes=1.0, nose=1.0, jaw=0.0, lips=1.0, mid=1.0, wide=1.0, bridge=0.0, smile=0.0):
     """local, smooth reshapes about landmarks found on this face"""
     uv, vmap, tris = topo("body")
     body = pieces["body"]
@@ -634,12 +634,20 @@ def idealize(pieces, gid, her, eyes=1.0, nose=1.0, jaw=0.0, lips=1.0, mid=1.0, w
     out["eyes"] = ev
     tip, base = L[1], L[2]
     move += (body - base) * (nose - 1) * fall((tip + base) / 2, 0.32)
+    if bridge:
+        # the nose's ridge brought forward, from the upper bridge to the tip
+        along = (L[168, 1] - body[:, 1]) / (L[168, 1] - tip[1])
+        ridge = smoothstep(0.0, 0.45, along) * (1 - smoothstep(1.0, 1.3, along))
+        ridge *= np.exp(-(body[:, 0] / (0.2 * U)) ** 2) * smoothstep(base[2] - 0.5 * U, base[2] - 0.2 * U, body[:, 2])
+        move[:, 2] += bridge * U * ridge
     # a V: the lower face narrowed toward the chin (not the neck below it, nor the head behind the ears)
     y, z = body[:, 1], body[:, 2]
     chin = L[152, 1]
     taper = jaw * smoothstep(L[4, 1], chin, y) * (1 - smoothstep(chin, chin - 0.7 * U, y))
     taper *= smoothstep((L[234, 2] + L[454, 2]) / 2 - 0.3 * U, (L[234, 2] + L[454, 2]) / 2 + 0.5 * U, z)
     move[:, 0] -= body[:, 0] * taper
+    for corner in (L[61], L[291]):
+        move[:, 1] += smile * U * fall(corner, 0.2)[:, 0]
     mc = (L[13] + L[14]) / 2
     w = fall(mc, 0.3, (0.6, 1, 1))
     move[:, 1] += (body[:, 1] - mc[1]) * (lips - 1) * w[:, 0]
