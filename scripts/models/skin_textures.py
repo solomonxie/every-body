@@ -15,12 +15,15 @@ TONE = {
     "black": (92, 58, 40),
 }
 # per (heritage, sex) tone where it differs
-TONE_OVERRIDE = {("east-asian", "female"): (209, 164, 127)}
+TONE_OVERRIDE = {("east-asian", "female"): (216, 169, 140)}
 # face shading strength per heritage (cheeks, nose, lids)
 SHADE = {"east-asian": 1.5}
 SHADE_FEMALE = {"east-asian": 1.3}
-# blood-flush colour scale per heritage (a soft peach, not pink)
-FLUSH_TINT = {"east-asian": (1.0, 1.01, 1.0)}
+# blood-flush colour scale per heritage (a soft rose-peach)
+FLUSH_TINT = {"east-asian": (1.0, 0.99, 1.0)}
+# women's faces: how much of the skin's broad light and dark patches is kept (MakeHuman's Asian skin carries blotchy
+# baked shading that reads as streaks), 0 … 1
+FACE_EVEN = {"east-asian": 0.4}
 # lip colour scale per heritage
 LIP_TINT = {"east-asian": (1.0, 0.88, 0.88)}
 # per texture: brightness and warmth (men a shade deeper and ruddier, seniors a little duller, children lighter)
@@ -266,6 +269,12 @@ def finish(np, px, heritage, name, reg):
     broad = blur3(np, src * cov[..., None], 24) / np.maximum(blur(np, cov, 24), 1e-3)[..., None]
     broad = np.where(covered[..., None], broad, px)
     broad = broad * (1 - (1 - BODY_SHADE[name]) * (1 - head)) + med * (1 - BODY_SHADE[name]) * (1 - head)
+    if name.startswith("female") and heritage in FACE_EVEN:
+        # the face's brightness toward its wide average (hue kept; the lips keep their own)
+        lum = broad @ np.array([0.3, 0.59, 0.11])
+        wide = blur(np, lum * cov, 64) / np.maximum(blur(np, cov, 64), 1e-3)
+        k = (1 - FACE_EVEN[heritage]) * reg["head"] * (1 - np.clip(reg["lips"] * 2, 0, 1))
+        broad = broad * ((np.maximum(wide, 1) / np.maximum(lum, 1)) ** k)[..., None]
     # brightness scaled, hue moved: regions that differ in hue from the body (palms, soles, lips) keep that difference
     Y = np.array([0.3, 0.59, 0.11])
     lum = np.maximum(broad @ Y, 1)[..., None]
