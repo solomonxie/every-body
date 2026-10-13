@@ -996,6 +996,16 @@ class Packer:
 # the back) their outline shows straight runs and corners. Their triangles are split in pack, per pass: (heights over
 # the adult woman, longest edge round a vertex worth splitting)
 HIP_REFINE = (((-0.7, 0.55), 0.03), ((-0.3, 0.42), 0.015))
+# where its coarse rows meet the fine ones a vertex sits all but on its triangle's far edge (area / longest edge² below
+# this): split, that edge's midpoint lands on the vertex and the skin folds round it (dark specks across the lower
+# belly), so those edges are flipped first
+SLIVER = 0.015
+# the fitted skin there is uneven by a few millimetres, which the refined surface shows as soft lumps (the belly, the
+# small of the back, XXL buttocks seen from above): its old vertices are faired too, each pulled to itself by this
+# against the bi-Laplacian (lower is smoother), fading out over heights (in, full, full, out); the navel and the
+# clefts (back, crotch) kept
+HIP_FAIR = (0.05, (-0.75, -0.55, 0.5, 0.68))
+NAVEL_VERT = 4120
 
 
 class HipRefine:
@@ -1013,6 +1023,8 @@ class HipRefine:
         p = (f0 + f0[twin] * np.array([-1, 1, 1])) / 2
         tri = index.reshape(-1, 3).astype(np.int64)
         vmap = vmap.astype(np.int64)
+        tri = self.unsliver(p, tri, vmap, (p[:, 1] > HIP_REFINE[0][0][0] - 0.05) & (p[:, 1] < HIP_REFINE[0][0][1] + 0.05)
+                            & (arms < 0.05))
         self.raw_tris = vmap[tri]
         self.passes = []
         for (lo, hi), longest in HIP_REFINE:
@@ -1084,15 +1096,55 @@ class HipRefine:
         bi = (lap @ lap).tocsr()
         self.solve = splu(bi[self.count:, self.count:].tocsc()).solve
         self.fixed = bi[self.count:, :self.count]
+        pull, (y0, y1, y2, y3) = HIP_FAIR
+        x, y, z = p.T
+        back = (z < 0) | (y < 0.1)
+        crotch = (y < 0.05) & (z > -0.02)
+        s = smoothstep(y0, y1, y) * (1 - smoothstep(y2, y3, y)) * (1 - smoothstep(0.02, 0.1, self.arms))
+        s *= np.where(back, smoothstep(0.025, 0.05, np.abs(x)), 1) * np.where(crotch, smoothstep(0.06, 0.12, np.abs(x)), 1)
+        s *= smoothstep(0.03, 0.07, np.linalg.norm(p - p[NAVEL_VERT], axis=1))
+        s[self.count:] = 1
+        self.free, self.kept = np.flatnonzero(s > 1e-3), np.flatnonzero(s <= 1e-3)
+        self.pull = np.where(np.arange(total) < self.count, pull / np.maximum(s, 1e-3), 0)[self.free]
+        e2 = (lap.T @ lap).tocsr()[self.free]
+        self.fair = splu((e2[:, self.free] + sps.diags(self.pull)).tocsc()).solve
+        self.fair_kept = e2[:, self.kept]
+
+    def unsliver(self, p, tri, vmap, near):
+        """render triangles with each sliver near the hips and its neighbour across the long edge turned into the
+        neighbour's two halves (same slots)"""
+        np = self.np
+        tri = tri.copy()
+        pt = vmap[tri]
+        ln = np.stack([np.linalg.norm(p[pt[:, (k + 1) % 3]] - p[pt[:, (k + 2) % 3]], axis=1) for k in range(3)], 1)
+        area = np.linalg.norm(np.cross(p[pt[:, 1]] - p[pt[:, 0]], p[pt[:, 2]] - p[pt[:, 0]]), axis=1) / 2
+        for t in np.flatnonzero((area / ln.max(1) ** 2 < SLIVER) & near[pt].all(1)):
+            o = int(ln[t].argmax())
+            a, b, c = tri[t, (o + 1) % 3], tri[t, (o + 2) % 3], tri[t, o]
+            # the neighbour runs b→a (same render vertices: no UV seam there)
+            k = np.flatnonzero(((tri == b) & (np.roll(tri, -1, 1) == a)).any(1))
+            if len(k) != 1:
+                continue
+            u = k[0]
+            d = tri[u][(list(tri[u]).index(a) + 1) % 3]
+            if ((vmap[tri] == vmap[c]).any(1) & (vmap[tri] == vmap[d]).any(1)).any():
+                continue
+            tri[t], tri[u] = (a, d, c), (d, b, c)
+        return tri
 
     def extend(self, v, sp):
         return self.np.concatenate([v, v[sp].mean(1)])
 
     def __call__(self, p):
-        """a body's positions refined (old vertices first, unchanged)"""
+        """a body's positions refined (old vertices first, faired about the hips)"""
         np = self.np
-        old = p[:self.count]
-        return np.concatenate([old, self.solve(-(self.fixed @ old))])
+        q = np.concatenate([p[:self.count], np.zeros((len(self.arms) - self.count, 3))])
+        q[self.free] = self.fair(self.pull[:, None] * q[self.free] - self.fair_kept @ q[self.kept])
+        return self.lay(q[:self.count])
+
+    def lay(self, old):
+        """the new vertices on the old ones"""
+        return self.np.concatenate([old, self.solve(-(self.fixed @ old))])
 
 
 def loader(np, body_tris):
