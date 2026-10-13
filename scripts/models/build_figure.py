@@ -992,19 +992,78 @@ class Packer:
         return p + (self.decode(b["ref"]) if b["ref"] is not None else 0)
 
 
+def loader(np, body_tris):
+    """build/models/figure/<name>.npz, the skin smoothed (the adult woman's fullness spread), cached"""
+    loaded, shaped = {}, {}
+
+    def smoothed(n):
+        if n not in loaded:
+            got = {k[4:]: v.astype(np.float64) for k, v in np.load(RAW / f"{n}.npz").items()}
+            eyes = got["eyes"] if "eyes" in got else smoothed(f"{n.split('.')[0]}.neutral")["eyes"]
+            loaded[n] = dict(got, body=smooth_skin(np, got["body"], eyes, body_tris))
+        return loaded[n]
+
+    def load(n):
+        if n not in shaped:
+            got = smoothed(n)
+            if n.startswith("female-adult."):
+                got = dict(got, body=spread_fullness(np, n, got["body"], lambda m: smoothed(m)["body"], body_tris))
+            shaped[n] = got
+        return {k: v.copy() for k, v in shaped[n].items()}
+    load.fitted = lambda n: smoothed(n)["body"].copy()
+    return load
+
+
+def body_options(np, load, body_tris):
+    """the adult female body and a function giving each option's change to it (below the neck)"""
+    f0 = load("female-adult.neutral")["body"]
+    f0_fit = load.fitted("female-adult.neutral")
+    y = f0_fit[:, 1]
+    gen = {k: reshape(v, "adult") for k, v in GEN.items()}
+    below = 1 - smoothstep(gen["shoulder"][1] + 0.3 * (gen["neck"][1] - gen["shoulder"][1]), gen["neck"][1], y)[:, None]
+    arms = np.load(RAW / "regions.npz")["arms"]
+
+    edges = np.unique(np.sort(np.concatenate([body_tris[:, [0, 1]], body_tris[:, [1, 2]], body_tris[:, [2, 0]]]), axis=1), axis=0)
+    degree = np.maximum(np.bincount(edges.ravel(), minlength=len(f0)), 1)[:, None]
+    # the hips' change eased into the waist (no shelf across the small of the back)
+    waist = (smoothstep(0.2, 0.32, y) * (1 - smoothstep(0.6, 0.75, y)))[:, None]
+
+    def shape_delta(name):
+        fit = load.fitted(f"female-adult.shape-{name}")
+        d = below * (fit - f0_fit)
+        if name.startswith("hips-"):
+            for _ in range(HIP_EASE):
+                acc = np.zeros_like(d)
+                np.add.at(acc, edges[:, 0], d[edges[:, 1]])
+                np.add.at(acc, edges[:, 1], d[edges[:, 0]])
+                d += 0.5 * waist * (acc / degree - d)
+            # nothing of it reaches the chest (the bra's band sits there)
+            d *= 1 - smoothstep(0.62, 0.78, y)[:, None]
+        # its fullness spread, less the base's
+        d += below * (load(f"female-adult.shape-{name}")["body"] - fit - (f0 - f0_fit))
+        # wider hips: the arms swing out about the shoulders just enough that the hands and forearms clear them
+        angle = ARM_OUT.get(name, 0.0)
+        if angle:
+            for side in (1, -1):
+                c = np.array(gen["shoulder"]) * np.array([side, 1, 1])
+                # the whole arm turns as one (full below the armpit, fading in above it), by its own weight: the side
+                # of the chest under it stays put
+                arm = np.maximum(smoothstep(0.2, 0.7, arms), (arms > 0.02) * smoothstep(c[1] - 0.2, c[1] - 0.35, f0[:, 1]))
+                sel = arm * (np.sign(f0[:, 0]) == side) * smoothstep(c[1] - 0.02, c[1] - 0.25, f0[:, 1])
+                q = f0 - c
+                a = -side * angle * sel
+                rot = np.stack([q[:, 0] * np.cos(a) + q[:, 1] * np.sin(a), -q[:, 0] * np.sin(a) + q[:, 1] * np.cos(a), q[:, 2]], 1)
+                d += rot - q
+        return d
+    return f0, shape_delta
+
+
 def pack():
     import numpy as np
     import hair
     topo = {p.name.split(".")[1]: dict(np.load(p)) for p in RAW.glob("topo.*.npz") if not p.name.startswith("topo.hair-")}
     body_tris = topo["body"]["vmap"][topo["body"]["index"].reshape(-1, 3)]
-    loaded = {}
-
-    def load(n):
-        if n not in loaded:
-            got = {k[4:]: v.astype(np.float64) for k, v in np.load(RAW / f"{n}.npz").items()}
-            eyes = got["eyes"] if "eyes" in got else load(f"{n.split('.')[0]}.neutral")["eyes"]
-            loaded[n] = dict(got, body=smooth_skin(np, got["body"], eyes, body_tris))
-        return {k: v.copy() for k, v in loaded[n].items()}
+    load = loader(np, body_tris)
     grooms = grow_hair(np, load, topo["body"])
     for gid, styles in grooms.items():
         for name, g in styles.items():
@@ -1067,41 +1126,7 @@ def pack():
                 pb = body + PREGNANT_GAIN * (1 - w) * (preg["body"] - body0)
                 variants[f"female.pregnant.{her}"] = {**entry, "body": put("body", pb, (gid, "body"))}
     # body options: deltas on the adult female body (not the head)
-    f0 = load("female-adult.neutral")["body"]
-    y = f0[:, 1]
-    gen = {k: reshape(v, "adult") for k, v in GEN.items()}
-    below = 1 - smoothstep(gen["shoulder"][1] + 0.3 * (gen["neck"][1] - gen["shoulder"][1]), gen["neck"][1], y)[:, None]
-    arms = np.load(RAW / "regions.npz")["arms"]
-
-    edges = np.unique(np.sort(np.concatenate([body_tris[:, [0, 1]], body_tris[:, [1, 2]], body_tris[:, [2, 0]]]), axis=1), axis=0)
-    degree = np.maximum(np.bincount(edges.ravel(), minlength=len(f0)), 1)[:, None]
-    # the hips' change eased into the waist (no shelf across the small of the back)
-    waist = (smoothstep(0.2, 0.32, y) * (1 - smoothstep(0.6, 0.75, y)))[:, None]
-
-    def shape_delta(name):
-        d = below * (load(f"female-adult.shape-{name}")["body"] - f0)
-        if name.startswith("hips-"):
-            for _ in range(HIP_EASE):
-                acc = np.zeros_like(d)
-                np.add.at(acc, edges[:, 0], d[edges[:, 1]])
-                np.add.at(acc, edges[:, 1], d[edges[:, 0]])
-                d += 0.5 * waist * (acc / degree - d)
-            # nothing of it reaches the chest (the bra's band sits there)
-            d *= 1 - smoothstep(0.62, 0.78, y)[:, None]
-        # wider hips: the arms swing out about the shoulders just enough that the hands and forearms clear them
-        angle = ARM_OUT.get(name, 0.0)
-        if angle:
-            for side in (1, -1):
-                c = np.array(gen["shoulder"]) * np.array([side, 1, 1])
-                # the whole arm turns as one (full below the armpit, fading in above it), by its own weight: the side
-                # of the chest under it stays put
-                arm = np.maximum(smoothstep(0.2, 0.7, arms), (arms > 0.02) * smoothstep(c[1] - 0.2, c[1] - 0.35, f0[:, 1]))
-                sel = arm * (np.sign(f0[:, 0]) == side) * smoothstep(c[1] - 0.02, c[1] - 0.25, f0[:, 1])
-                q = f0 - c
-                a = -side * angle * sel
-                rot = np.stack([q[:, 0] * np.cos(a) + q[:, 1] * np.sin(a), -q[:, 0] * np.sin(a) + q[:, 1] * np.cos(a), q[:, 2]], 1)
-                d += rot - q
-        return d
+    f0, shape_delta = body_options(np, load, body_tris)
     header["shapes"] = {name: pk.block(shape_delta(name)) for name in SHAPES}
     # each size's garments fit the body the app shows: that chest with its matching hips
     chests = {n[6:]: f0 + shape_delta(n) + shape_delta(f"hips-{n[6:]}") for n in SHAPES if n.startswith("chest-")}
@@ -1650,6 +1675,42 @@ def smooth_skin(np, p, eyes, tris):
     for _ in range(ARMPIT_FILL[2]):
         q = soften_armpits(np, q, tris)
     return q
+
+
+# MakeHuman's fuller breasts and buttocks end in a rim round their targets and come to a point: each option's fullness
+# (its change from the small option) is spread over the skin round them: (passes, how much of its peak it keeps, where:
+# reach round the chest centres / heights the hips' band fades in and out over)
+FULL_SPREAD = {"chest": (60, 0.0, 0.3), "hips": (60, 0.5, (-0.35, -0.2, 0.2, 0.32))}
+
+
+def spread_fullness(np, name, body, raw, tris):
+    """the adult woman's body with its fullness spread: the chest as its chest option's, the hips as its hips option's
+    (others as the base's, so each option stays its own delta and the small one is unchanged); raw(name): as fitted"""
+    f0 = raw("female-adult.neutral")
+    e = np.unique(np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), axis=1), axis=0)
+    deg = np.maximum(np.bincount(e.ravel(), minlength=len(f0)), 1)[:, None]
+    arms = 1 - smoothstep(0.1, 0.4, np.load(RAW / "regions.npz")["arms"])
+    x, y, z = f0.T
+    r = np.min([np.linalg.norm(f0 - f0[i], axis=1) for i in NIPPLE_VERTS], axis=0)
+    passes, keep, reach = FULL_SPREAD["chest"]
+    # (the chest centre keeps its shape)
+    chest = smoothstep(0.03, 0.07, r) * (1 - smoothstep(0.6 * reach, reach, r)) * arms
+    passes_h, keep_h, (lo, lo1, hi1, hi) = FULL_SPREAD["hips"]
+    hips = smoothstep(lo, lo1, y) * (1 - smoothstep(hi1, hi, y)) * arms
+    out = body.copy()
+    for part, w, n, k in (("chest", chest, passes, keep), ("hips", hips, passes_h, keep_h)):
+        src = body if f".shape-{part}-" in name else f0
+        d0 = src - raw(f"female-adult.shape-{part}-small")
+        d = d0.copy()
+        for _ in range(n):
+            acc = np.stack([np.bincount(e[:, 0], d[e[:, 1], c], len(d)) + np.bincount(e[:, 1], d[e[:, 0], c], len(d))
+                            for c in range(3)], 1)
+            d += 0.5 * w[:, None] * (acc / deg - d)
+        peak = np.linalg.norm(d * w[:, None], axis=1).max()
+        if k and peak > 1e-6:
+            d *= 1 + ((np.linalg.norm(d0 * w[:, None], axis=1).max() / peak) ** k - 1) * w[:, None]
+        out += d - d0
+    return out
 
 
 # the arm swung down by the fit meets the chest in a step at the front of the armpit (a nub, a pocket below it):
