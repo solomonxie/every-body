@@ -15,14 +15,14 @@ TONE = {
     "black": (92, 58, 40),
 }
 # per (heritage, sex) tone where it differs
-TONE_OVERRIDE = {("east-asian", "female"): (205, 160, 120)}
+TONE_OVERRIDE = {("east-asian", "female"): (209, 164, 127)}
 # face shading strength per heritage (cheeks, nose, lids)
 SHADE = {"east-asian": 1.5}
 SHADE_FEMALE = {"east-asian": 1.3}
-# blood-flush colour scale per heritage (yellower, less pink)
-FLUSH_TINT = {"east-asian": (1.0, 1.03, 1.04)}
+# blood-flush colour scale per heritage (a soft peach, not pink)
+FLUSH_TINT = {"east-asian": (1.0, 1.01, 1.0)}
 # lip colour scale per heritage
-LIP_TINT = {"east-asian": (1.0, 0.82, 0.84)}
+LIP_TINT = {"east-asian": (1.0, 0.88, 0.88)}
 # per texture: brightness and warmth (men a shade deeper and ruddier, seniors a little duller, children lighter)
 VARIANT = {"male-young": (0.97, (1.0, 0.985, 0.97)), "male-old": (0.95, (1.0, 0.99, 0.98)), "female-young": (1.0, (1, 1, 1)),
            "female-old": (0.98, (1.0, 0.995, 0.99)), "kid": (1.03, (1.0, 0.995, 0.995))}
