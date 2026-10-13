@@ -763,7 +763,7 @@ def soften_jaw(pieces, gid, her, passes):
 
 
 # faces whose cheeks are smoothed (the heritage difference leaves ripples that read as streaks): Taubin passes
-SMOOTH_CHEEKS = {"female-adult.east-asian": 60}
+SMOOTH_CHEEKS = {"female-adult.east-asian": 200}
 
 
 def smooth_cheeks(pieces, gid, her, passes):
@@ -780,10 +780,15 @@ def smooth_cheeks(pieces, gid, her, passes):
         w *= smoothstep(0.45 * U, 0.65 * U, np.linalg.norm(body - e[np.sign(e[:, 0]) == side].mean(0), axis=1))
     nose = (1 - smoothstep(0.25 * U, 0.4 * U, np.abs(body[:, 0]))) * smoothstep(L[2, 1] - 0.1 * U, L[2, 1] + 0.05 * U, y)
     mouth = (L[13] + L[14]) / 2
-    lips = 1 - smoothstep(0.3, 0.5, np.linalg.norm((body - mouth) * np.array([0.6, 1.2, 1]), axis=1) / U)
+    lips = 1 - smoothstep(0.3, 0.45, np.linalg.norm((body - mouth) * np.array([0.7, 1.4, 1]), axis=1) / U)
+    # nor the mouth's lining behind them
+    lips = np.maximum(lips, smoothstep(mouth[2] - 0.4 * U, mouth[2] - 0.55 * U, z) * (1 - smoothstep(0.5 * U, 0.6 * U, np.abs(body[:, 0])))
+                      * (1 - smoothstep(0.4 * U, 0.5 * U, np.abs(y - mouth[1]))))
     # the chin rounded too (its point and the edge under it)
     chin = 1 - smoothstep(0.35 * U, 0.6 * U, np.linalg.norm(body - L[152], axis=1))
-    w = np.maximum(w, chin) * (1 - nose) * (1 - lips)
+    w = np.maximum(w, 0.5 * chin) * (1 - nose) * (1 - lips)
+    # the jaw's underside less (soften_jaw's too; smoothed more, it folds)
+    w *= 0.3 + 0.7 * smoothstep(-0.7, -0.35, vertex_normals(body)[:, 1])
     return dict(pieces, body=smooth_along_normals(body, w, passes))
 
 
