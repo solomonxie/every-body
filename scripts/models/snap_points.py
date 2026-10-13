@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
-from build_figure import FIGURE, HERITAGES, read_figure  # noqa: E402
+from build_figure import FIGURE, HERITAGES, RAW, HipRefine, read_figure  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 POINTS = ROOT / "Resources" / "Data" / "points.json"
@@ -149,7 +149,12 @@ def skins():
         bodies = [block(header["variants"][f"{sex}.adult.{h}"]["body"]) for h in HERITAGES]
         final = Skin(np.mean(bodies, 0), tris)
         refs = [PREFIT / f"{sex}-adult.{h}.npz" for h in HERITAGES]
-        ref = Skin(np.mean([np.load(f)["pos:body"].astype(np.float64) for f in refs], 0), tris) if all(f.exists() for f in refs) else final
+        if all(f.exists() for f in refs):
+            # (refined as pack refines the shipped hips)
+            refine = HipRefine(np, dict(np.load(RAW / "topo.body.npz")))
+            ref = Skin(refine(np.mean([np.load(f)["pos:body"].astype(np.float64) for f in refs], 0)), tris)
+        else:
+            ref = final
         out[sex] = Carried(ref, final)
     return out
 
