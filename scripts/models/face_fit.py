@@ -566,8 +566,8 @@ def seat_brows(pieces, arch, drop):
     return out
 
 
-# profile touches (eye spacings): lower lip back, chin forward
-PROFILE = {"female-adult.east-asian": (0.1, 0.06), "female-adult.hispanic": (0.08, 0.04), "female-adult.southeast-asian": (0.06, 0.03)}
+# profile touches (eye spacings): lower lip back, chin forward (negative: back)
+PROFILE = {"female-adult.east-asian": (0.06, -0.015), "female-adult.hispanic": (0.08, 0.04), "female-adult.southeast-asian": (0.06, 0.03)}
 
 
 def profile(pieces, lip_back, chin_out, gid):
@@ -602,16 +602,18 @@ def profile(pieces, lip_back, chin_out, gid):
 
 # the drawn-ideal touches after the fit, by group: eyes (scale of each eye with its eyeball), nose (scale),
 # jaw (how much narrower the chin's width gets), lips (height scale), mid (height scale of the face below the eyes),
-# wide (width scale of the lower face), bridge (the nose ridge forward), smile (the mouth corners up; both in eye spacings)
+# wide (width scale of the lower face), bridge (the nose ridge forward), smile (the mouth corners up; both in eye spacings),
+# lid (the upper lid lowered over the eyeball, degrees)
 # (by group, or group.heritage)
 IDEAL = {"kid-infant": dict(nose=0.95), "kid-toddler": dict(nose=0.9, eyes=1.05), "kid-child": dict(nose=0.9),
          # (measured against the photo samples)
          "female-adult.hispanic": dict(eyes=1.05, nose=0.97, jaw=0.06, wide=0.97),
          "female-adult.southeast-asian": dict(eyes=1.05, lips=0.97, jaw=0.04, wide=0.96),
-         "female-adult.east-asian": dict(eyes=1.08, nose=1.0, jaw=0.1, lips=0.95, wide=0.93, bridge=0.08, smile=0.03)}
+         "female-adult.east-asian": dict(eyes=1.02, nose=1.0, jaw=0.05, lips=0.95, mid=0.985, wide=0.93, bridge=0.08, smile=0.015,
+                                        lid=5.0)}
 
 
-def idealize(pieces, gid, her, eyes=1.0, nose=1.0, jaw=0.0, lips=1.0, mid=1.0, wide=1.0, bridge=0.0, smile=0.0):
+def idealize(pieces, gid, her, eyes=1.0, nose=1.0, jaw=0.0, lips=1.0, mid=1.0, wide=1.0, bridge=0.0, smile=0.0, lid=0.0):
     """local, smooth reshapes about landmarks found on this face"""
     uv, vmap, tris = topo("body")
     body = pieces["body"]
@@ -631,6 +633,13 @@ def idealize(pieces, gid, her, eyes=1.0, nose=1.0, jaw=0.0, lips=1.0, mid=1.0, w
         # the lids and the skin round them grow with the eyeball (full out to the brow's start, gone by the cheek)
         move += (body - c) * (eyes - 1) * fall(c, 0.42)
         ev[sel] = c + (e[sel] - c) * eyes
+        if lid:
+            # the upper lid turned down about the eyeball's centre (it stays on the ball), fading toward the brow
+            d = body - c
+            a = np.radians(lid) * smoothstep(-0.08 * U, 0.04 * U, d[:, 1]) * (1 - smoothstep(0.3 * U, 0.55 * U, np.linalg.norm(d, axis=1)))
+            a *= smoothstep(-0.1 * U, 0.05 * U, d[:, 2])
+            move[:, 1] += d[:, 1] * np.cos(a) - d[:, 2] * np.sin(a) - d[:, 1]
+            move[:, 2] += d[:, 1] * np.sin(a) + d[:, 2] * np.cos(a) - d[:, 2]
     out["eyes"] = ev
     tip, base = L[1], L[2]
     move += (body - base) * (nose - 1) * fall((tip + base) / 2, 0.32)
@@ -750,6 +759,31 @@ def soften_jaw(pieces, gid, her, passes):
     w = smoothstep(chin - 1.6 * U, chin - 0.9 * U, y) * (1 - smoothstep(mouth - 0.55 * U, mouth - 0.25 * U, y))
     w *= smoothstep((L[234, 2] + L[454, 2]) / 2 - 0.4 * U, (L[234, 2] + L[454, 2]) / 2 + 0.4 * U, z)
     w *= 1 - 0.5 * (1 - smoothstep(0.15 * U, 0.4 * U, np.linalg.norm(body - L[152], axis=1)))
+    return dict(pieces, body=smooth_along_normals(body, w, passes))
+
+
+# faces whose cheeks are smoothed (the heritage difference leaves ripples that read as streaks): Taubin passes
+SMOOTH_CHEEKS = {"female-adult.east-asian": 60}
+
+
+def smooth_cheeks(pieces, gid, her, passes):
+    uv, vmap, tris = topo("body")
+    body, e = pieces["body"], pieces["eyes"]
+    _, t, b, _ = on_mesh(pieces, gid, her)
+    L = mesh_points(body, t, b, tris, vmap)
+    U = np.linalg.norm(e[e[:, 0] > 0].mean(0) - e[e[:, 0] < 0].mean(0))
+    y, z = body[:, 1], body[:, 2]
+    # below the eyes to the jaw's underside, in front of the ears; not the eyes, nose or lips
+    w = smoothstep(L[152, 1] - 0.4 * U, L[152, 1] + 0.1 * U, y) * (1 - smoothstep(e[:, 1].mean() - 0.3 * U, e[:, 1].mean(), y))
+    w *= smoothstep((L[234, 2] + L[454, 2]) / 2 - 0.3 * U, (L[234, 2] + L[454, 2]) / 2 + 0.3 * U, z)
+    for side in (1, -1):
+        w *= smoothstep(0.45 * U, 0.65 * U, np.linalg.norm(body - e[np.sign(e[:, 0]) == side].mean(0), axis=1))
+    nose = (1 - smoothstep(0.25 * U, 0.4 * U, np.abs(body[:, 0]))) * smoothstep(L[2, 1] - 0.1 * U, L[2, 1] + 0.05 * U, y)
+    mouth = (L[13] + L[14]) / 2
+    lips = 1 - smoothstep(0.3, 0.5, np.linalg.norm((body - mouth) * np.array([0.6, 1.2, 1]), axis=1) / U)
+    # the chin rounded too (its point and the edge under it)
+    chin = 1 - smoothstep(0.35 * U, 0.6 * U, np.linalg.norm(body - L[152], axis=1))
+    w = np.maximum(w, chin) * (1 - nose) * (1 - lips)
     return dict(pieces, body=smooth_along_normals(body, w, passes))
 
 
@@ -874,6 +908,8 @@ def save(name, pieces):
             pieces = dict(pieces, **{k: v})
     if gid in SOFT_JAW and "eyes" in pieces and not name.endswith(".pregnant"):
         pieces = soften_jaw(pieces, gid, name.split(".")[1], SOFT_JAW[gid])
+    if name in SMOOTH_CHEEKS and "eyes" in pieces:
+        pieces = smooth_cheeks(pieces, gid, name.split(".")[1], SMOOTH_CHEEKS[name])
     if gid in TUCK_LIPS and "eyes" in pieces:
         pieces = tuck_lips(pieces, *TUCK_LIPS[gid])
     if gid in SMOOTH_CHEST:
