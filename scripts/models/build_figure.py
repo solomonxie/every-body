@@ -992,6 +992,109 @@ class Packer:
         return p + (self.decode(b["ref"]) if b["ref"] is not None else 0)
 
 
+# MakeHuman's hips, buttocks and thighs are a few times coarser than the trunk above: at the fuller hips (and bent at
+# the back) their outline shows straight runs and corners. Their triangles are split in pack, per pass: (heights over
+# the adult woman, longest edge round a vertex worth splitting)
+HIP_REFINE = (((-0.7, 0.55), 0.03), ((-0.3, 0.42), 0.015))
+
+
+class HipRefine:
+    """the body's hips split 1→4 (their neighbours 1→2 along a split edge; old vertices and triangles keep their
+    indices), the new vertices placed on the smoothest surface through the old ones; the same on every body"""
+
+    def __init__(self, np, topo):
+        self.np = np
+        uv, vmap, index, poly = (topo[k] for k in ("uv", "vmap", "index", "poly"))
+        f0 = np.load(RAW / "female-adult.neutral.npz")["pos:body"].astype(np.float64)
+        self.count = len(f0)
+        twin = np.load(RAW / "body-groups.npz")["mirror"].astype(np.int64)
+        arms = np.load(RAW / "regions.npz")["arms"].astype(np.float64)
+        # (chosen on the woman made symmetric: both sides split alike)
+        p = (f0 + f0[twin] * np.array([-1, 1, 1])) / 2
+        tri = index.reshape(-1, 3).astype(np.int64)
+        vmap = vmap.astype(np.int64)
+        self.raw_tris = vmap[tri]
+        self.passes = []
+        for (lo, hi), longest in HIP_REFINE:
+            pt = vmap[tri]
+            e = np.concatenate([pt[:, [0, 1]], pt[:, [1, 2]], pt[:, [2, 0]]])
+            ln = np.linalg.norm(p[e[:, 0]] - p[e[:, 1]], axis=1)
+            reach = np.zeros(len(p))
+            np.maximum.at(reach, e[:, 0], ln)
+            np.maximum.at(reach, e[:, 1], ln)
+            mark = (p[:, 1] > lo) & (p[:, 1] < hi) & (arms < 0.05) & (reach > longest)
+            mark |= mark[twin]
+            sel = mark[pt].all(1)
+            edges, te = np.unique(np.sort(e, 1), axis=0, return_inverse=True)
+            te = te.reshape(3, -1).T
+            split = np.zeros(len(edges), bool)
+            split[te[sel].ravel()] = True
+            # a triangle with two split edges has its third split too
+            while True:
+                two = split[te].sum(1) == 2
+                if not two.any():
+                    break
+                split[te[two].ravel()] = True
+            ids = -np.ones(len(edges), np.int64)
+            ids[split] = len(p) + np.arange(split.sum())
+            sp = edges[split]
+            # render vertices: one per (render) edge split, so a UV seam keeps both its sides
+            re = np.concatenate([tri[:, [0, 1]], tri[:, [1, 2]], tri[:, [2, 0]]])
+            cut = split[te.T.ravel()]
+            rkeys, rinv = np.unique(np.sort(re[cut], 1), axis=0, return_inverse=True)
+            rmid = -np.ones(len(re), np.int64)
+            rmid[cut] = len(vmap) + rinv.ravel()
+            rmid = rmid.reshape(3, -1).T
+            uv = np.concatenate([uv, uv[rkeys].mean(1)])
+            vmap = np.concatenate([vmap, ids[te.T.ravel()][cut][np.unique(rinv.ravel(), return_index=True)[1]]])
+            out, opoly = [tri.copy()], [poly]
+            n = split[te].sum(1)
+            a, b, c = tri.T
+            m01, m12, m20 = rmid.T
+            full = np.flatnonzero(n == 3)
+            out[0][full] = np.stack([a, m01, m20], 1)[full]
+            for t in ([m01, b, m12], [m20, m12, c], [m01, m12, m20]):
+                out.append(np.stack(t, 1)[full])
+                opoly.append(poly[full])
+            for k, (x, y, z, m) in enumerate(((a, b, c, m01), (b, c, a, m12), (c, a, b, m20))):
+                one = np.flatnonzero((n == 1) & split[te[:, k]])
+                out[0][one] = np.stack([x, m, z], 1)[one]
+                out.append(np.stack([m, y, z], 1)[one])
+                opoly.append(poly[one])
+            tri, poly = np.concatenate(out), np.concatenate(opoly)
+            self.passes.append(sp)
+            new_twin = {tuple(k): i for k, i in zip(sp.tolist(), ids[split].tolist())}
+            twin = np.concatenate([twin, [new_twin.get(tuple(sorted((twin[i], twin[j]))), k)
+                                          for (i, j), k in zip(sp.tolist(), ids[split].tolist())]])
+            arms, p = self.extend(arms, sp), self.extend(p, sp)
+        self.topo = dict(uv=uv.astype(np.float32), vmap=vmap.astype(np.uint32), index=tri.reshape(-1).astype(np.uint32),
+                         poly=poly.astype(np.uint32))
+        self.tris = vmap[tri]
+        self.arms = arms
+        # a bi-Laplacian solve (rounding each split toward its ends' tangent planes, as refine_chest, leaves small
+        # lumps), its edges weighted by their length on the symmetric woman split flat (no fold where a finer split meets
+        # a coarser one)
+        import scipy.sparse as sps
+        from scipy.sparse.linalg import splu
+        e = np.unique(np.sort(np.concatenate([self.tris[:, [0, 1]], self.tris[:, [1, 2]], self.tris[:, [2, 0]]]), 1), axis=0)
+        total = len(self.arms)
+        w = 1 / np.maximum(((p[e[:, 0]] - p[e[:, 1]]) ** 2).sum(1), 1e-10)
+        adj = sps.coo_matrix((np.r_[w, w], (np.r_[e[:, 0], e[:, 1]], np.r_[e[:, 1], e[:, 0]])), (total, total)).tocsr()
+        lap = sps.diags(1 / np.asarray(adj.sum(1)).ravel()) @ adj - sps.eye(total)
+        bi = (lap @ lap).tocsr()
+        self.solve = splu(bi[self.count:, self.count:].tocsc()).solve
+        self.fixed = bi[self.count:, :self.count]
+
+    def extend(self, v, sp):
+        return self.np.concatenate([v, v[sp].mean(1)])
+
+    def __call__(self, p):
+        """a body's positions refined (old vertices first, unchanged)"""
+        np = self.np
+        old = p[:self.count]
+        return np.concatenate([old, self.solve(-(self.fixed @ old))])
+
+
 def loader(np, body_tris):
     """build/models/figure/<name>.npz, the skin smoothed (the adult woman's fullness spread), cached"""
     loaded, shaped = {}, {}
@@ -1070,6 +1173,10 @@ def pack():
             topo[f"hair-{name}"] = g.topo
             if len(g.shell_pos):
                 topo[f"hair-{name}.shell"] = g.shell_topo
+    # (everything is shaped on MakeHuman's mesh; the body ships with its hips refined)
+    raw_topo = topo["body"]
+    refine = HipRefine(np, raw_topo)
+    topo["body"] = refine.topo
     pk = Packer(np)
     header = {"pieces": {}, "blocks": pk.blocks, "variants": {}, "garments": {}, "shapes": {}}
     for k, t in topo.items():
@@ -1096,6 +1203,7 @@ def pack():
             neutral[f"hair-{name}"] = g.pos
             if len(g.shell_pos):
                 neutral[f"hair-{name}.shell"] = g.shell_pos
+        neutral["body"] = refine(neutral["body"])
         for k, v in neutral.items():
             base_block[(gid, k)] = put(k, v)
             neutral[k] = pk.decode(base_block[(gid, k)])
@@ -1108,11 +1216,13 @@ def pack():
         preg = load(f"{gid}.pregnant") if gid == "female-adult" else None
         for her in HERITAGES:
             got = {k: v for k, v in load(f"{gid}.{her}").items() if not k.startswith("hair-")}
-            body = body0 + w * (got["body"] - body0)
+            body = body0 + w * (refine(got["body"]) - body0)
+            # (the head's vertices come first)
+            head = body[:refine.count]
             for name in hair.styles_for(hairs, her):
-                got[f"hair-{name}"] = grooms[gid][name].follow(np, body)
+                got[f"hair-{name}"] = grooms[gid][name].follow(np, head)
                 if len(grooms[gid][name].shell_pos):
-                    got[f"hair-{name}.shell"] = grooms[gid][name].follow_shell(np, body)
+                    got[f"hair-{name}.shell"] = grooms[gid][name].follow_shell(np, head)
             entry = {"body": put("body", body, (gid, "body"))}
             for k, v in got.items():
                 if k != "body":
@@ -1123,24 +1233,25 @@ def pack():
                 pieces = {k: v for k, v in entry.items() if not k.startswith("hair-") or k[5:].split(".")[0] in mine}
                 variants[f"{s}.{age}.{her}"] = pieces
             if preg is not None:
-                pb = body + PREGNANT_GAIN * (1 - w) * (preg["body"] - body0)
+                pb = body + PREGNANT_GAIN * (1 - w) * (refine(preg["body"]) - body0)
                 variants[f"female.pregnant.{her}"] = {**entry, "body": put("body", pb, (gid, "body"))}
     # body options: deltas on the adult female body (not the head)
     f0, shape_delta = body_options(np, load, body_tris)
-    header["shapes"] = {name: pk.block(shape_delta(name)) for name in SHAPES}
+    f1 = refine(f0)
+    header["shapes"] = {name: pk.block(refine(f0 + shape_delta(name)) - f1) for name in SHAPES}
     # each size's garments fit the body the app shows: that chest with its matching hips
-    chests = {n[6:]: f0 + shape_delta(n) + shape_delta(f"hips-{n[6:]}") for n in SHAPES if n.startswith("chest-")}
-    chests["senior"] = load("female-senior.neutral")["body"]
-    header["garments"] = garments(np, pk, topo["body"], load("male-adult.neutral")["body"], f0 + shape_delta("hips-large"),
-                                  load("kid-toddler.neutral")["body"], chests, load("kid-child.neutral")["body"],
-                                  nipple_ids(np, load("female-adult.neutral")))
+    chests = {n[6:]: refine(f0 + shape_delta(n) + shape_delta(f"hips-{n[6:]}")) for n in SHAPES if n.startswith("chest-")}
+    chests["senior"] = refine(load("female-senior.neutral")["body"])
+    header["garments"] = garments(np, pk, topo["body"], refine(load("male-adult.neutral")["body"]), refine(f0 + shape_delta("hips-large")),
+                                  refine(load("kid-toddler.neutral")["body"]), chests, refine(load("kid-child.neutral")["body"]),
+                                  nipple_ids(np, load("female-adult.neutral")), arms=refine.arms, refined_from=refine.count)
     payload = b"".join(pk.chunks)
     comp = zlib.compressobj(9, zlib.DEFLATED, -15)
     data = comp.compress(payload) + comp.flush()
     head = json.dumps(header, separators=(",", ":")).encode()
     FIGURE.write_bytes(b"EBF1" + len(head).to_bytes(4, "little") + len(payload).to_bytes(4, "little") + head + data)
     print(f"FIGURE {FIGURE.name}: {len(variants)} variants, {len(pk.blocks)} blocks, payload {len(payload) // 1024} KB → {FIGURE.stat().st_size // 1024} KB")
-    textures(scalp_masks(np, topo["body"], grooms))
+    textures(scalp_masks(np, raw_topo, grooms))
     index = load_index()
     index.pop("skins", None)
     index["figure"] = {"file": FIGURE.name, "source": "MakeHuman (MPFB2)", "license": "CC0",
@@ -1159,7 +1270,7 @@ CELL = 0.009
 WING = (-0.08, 0.12)
 
 
-def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=None, only_bra=False):
+def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=None, only_bra=False, arms=None, refined_from=None):
     """Underwear as the parts of the body where a smooth field is positive, cut exactly along its zero line.
     Each garment vertex is a point in a body triangle, so it follows every sex/age/heritage variant.
     Fields are written on the neutral adult male / female and the toddler (children share them: same topology); the
@@ -1255,15 +1366,20 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
         strap = np.minimum.reduce([hw - np.abs(ax - sx), 1.2 - y, y - 0.9])
         return np.maximum(body, strap)
 
-    arms = np.load(RAW / "regions.npz")["arms"]
+    arms = np.load(RAW / "regions.npz")["arms"] if arms is None else arms
 
     def clip(field, pos, arms_anywhere=False):
         """positive part of the body, each triangle split so the cut follows the field smoothly: every edge into
         segments about CELL long (the same on both sides, so neighbours share their points), fanned from the middle.
         A vertex is a barycentric point of a body triangle ((a, b, c), weights of a and b) plus its field value:
         about its distance to the garment's edge (hem shading, a softer lift at the edge)."""
-        cand = tris[field(pos)[tris].max(1) > -0.04]
+        fv = field(pos)
+        cand = tris[fv[tris].max(1) > -0.04]
         segs = np.clip(np.ceil(np.linalg.norm(pos[cand] - np.roll(pos[cand], -1, axis=1), axis=2) / CELL), 1, 4).astype(int)
+        if refined_from is not None:
+            # the refined hips' triangles are fine enough as they are, away from the cut
+            ends = np.stack([cand, np.roll(cand, -1, axis=1)], 2)
+            segs[(fv[ends].min(2) > 0.015) & (ends.max(2) >= refined_from)] = 1
         # never onto the arms (a hanging hand lies against the hip)
         arm = np.clip(arms * 2 - 0.4, 0, 1)
         verts, fval, out = {}, [], []

@@ -274,7 +274,31 @@ BASE_VERTS = 13380
 def skin_weights(n, J, pos, tris):
     """(n, len(BONES)) for the skin: MakeHuman's weights per base vertex; the chest's refined vertices (past the
     base mesh, see build_figure.refine_chest) take the average of their mesh neighbours' weights, spread inward
-    (by distance alone, a chest vertex would pick up the arm's weights across the armpit)"""
+    (by distance alone, a chest vertex would pick up the arm's weights across the armpit); the hips' (refined in
+    pack, build_figure.HipRefine) their two parents' mean, as they were placed (no ripples where the hips fold)"""
+    hips = hip_refine(n)
+    if hips is None:
+        return base_weights(n, J, pos, tris)
+    w = base_weights(hips.count, J, pos[:hips.count], hips.raw_tris)
+    for sp in hips.passes:
+        w = np.concatenate([w, w[sp].mean(1)])
+    return w
+
+
+_hips = {}
+
+
+def hip_refine(n):
+    """build_figure.HipRefine when the shipped body (n vertices) is MakeHuman's with its hips refined, else None"""
+    if "r" not in _hips:
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent))
+        from build_figure import RAW as FIGURE_RAW, HipRefine
+        _hips["r"] = HipRefine(np, dict(np.load(FIGURE_RAW / "topo.body.npz")))
+    return _hips["r"] if len(_hips["r"].arms) == n else None
+
+
+def base_weights(n, J, pos, tris):
     y = pos[:, 1]
     ws = json.loads(weights_file().read_text())["weights"]
     w = np.zeros((n, len(BONES)))
@@ -477,6 +501,15 @@ def skin(p, w, T):
     return out
 
 
+def skin_body(p, w, T):
+    """the skin posed: the refined hips' new vertices laid on the posed old ones as build_figure placed them at rest
+    (blended on their own they ripple where the hip folds)"""
+    hips = hip_refine(len(p))
+    if hips is None:
+        return skin(p, w, T)
+    return hips(skin(p[:hips.count], w[:hips.count], T))
+
+
 # ------------------------------------------------------------------ topics
 
 # relative intradiscal pressure at L3 (standing = 100): Nachemson 1981
@@ -553,7 +586,7 @@ def rest_hands(spec, J, bodies, rest, gap=0.006):
     spec = dict(spec, hand_up={s: spec["hand_lift"][1] for s in SIDES})
     for _ in range(8):
         T = pose(spec, J)
-        c = {s: min(rest.clearance(skin(b, rest.W, T))[s] for b in bodies) for s in SIDES}
+        c = {s: min(rest.clearance(skin_body(b, rest.W, T))[s] for b in bodies) for s in SIDES}
         spec["hand_up"] = {s: spec["hand_up"][s] + gap - c[s] for s in SIDES}
         if all(abs(gap - c[s]) < 0.001 for s in SIDES):
             break
@@ -698,7 +731,7 @@ def pack(topics=None):
             return [pose(rest_hands({**common, **blend_spec(ka, kb, t)}, J, bodies, fit), J) for t in topic["steps"]]
         poses = posed_keys("male")
         pelvis_pts = np.concatenate([parts[k][0] for k in ("sacrum", "coccyx", "hip-bone-l", "hip-bone-r")])
-        chair = chair_for(J, poses, skin(rest["male"]["body"], W["male"], poses[0]), common["seat_point"], pelvis_pts)
+        chair = chair_for(J, poses, skin_body(rest["male"]["body"], W["male"], poses[0]), common["seat_point"], pelvis_pts)
         pk = Packer()
         header = {"keys": topic["order"], "steps": topic["steps"], "chair": chair, "sexes": {}, "body": {}, "inner": {}}
         header["body"] = {"vertices": len(rest["male"]["body"]), "render": len(btopo["vmap"]), "triangles": len(btopo["index"]),
@@ -740,7 +773,7 @@ def pack(topics=None):
                 entry["transforms"] = bone_keys(mine)
             posed = []
             for T in mine:
-                p = press(skin(r["body"], W[sex], T), chair)
+                p = press(skin_body(r["body"], W[sex], T), chair)
                 posed.append(p)
                 entry["body"].append(pk.block(p, entry["body"][0] if entry["body"] else None))
             for h in HERITAGES:
@@ -751,7 +784,7 @@ def pack(topics=None):
             for shape, d in shapes[sex].items():
                 keys = []
                 for T, p in zip(mine, posed):
-                    q = press(skin(r["body"] + d, W[sex], T), chair) - p
+                    q = press(skin_body(r["body"] + d, W[sex], T), chair) - p
                     keys.append(pk.block(q, keys[0] if keys else None))
                 entry.setdefault("shapes", {})[shape] = keys
             for g in GARMENTS[sex]:
