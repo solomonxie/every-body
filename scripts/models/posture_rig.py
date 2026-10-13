@@ -502,8 +502,8 @@ def skin(p, w, T):
 
 
 def skin_body(p, w, T):
-    """the skin posed: the refined hips' new vertices laid on the posed old ones as build_figure placed them at rest
-    (blended on their own they ripple where the hip folds)"""
+    """the skin posed: the hips' posed old vertices faired and the refined ones laid on them, as build_figure does at
+    rest (blended on their own they ripple where the hip folds)"""
     hips = hip_refine(len(p))
     if hips is None:
         return skin(p, w, T)
