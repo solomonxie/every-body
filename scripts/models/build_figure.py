@@ -254,6 +254,8 @@ def face_targets(sex, age, heritage=None):
 PREGNANT = {"stomach/stomach-pregnant-incr": 1.0, "stomach/stomach-navel-out": 0.6}
 # MakeHuman's full "pregnant" is about 30 weeks: the bump is scaled up to term (fundus under the ribs)
 PREGNANT_GAIN = 1.45
+# chest options whose bra is cut on the bump
+PREGNANT_BRAS = ("xlarge", "xxlarge")
 
 # BodyScene.proportions / reshape, mirrored: children's bodies are reshaped adults
 PROPS = {  # body, head, leg length, leg girth, arm length, arm girth, trunk width, trunk depth, neck
@@ -1286,6 +1288,7 @@ def pack():
                 variants[f"{s}.{age}.{her}"] = pieces
             if preg is not None:
                 pb = body + PREGNANT_GAIN * (1 - w) * (refine(preg["body"]) - body0)
+                pregnant0 = body0 + PREGNANT_GAIN * (1 - w) * (refine(preg["body"]) - body0)
                 variants[f"female.pregnant.{her}"] = {**entry, "body": put("body", pb, (gid, "body"))}
     # body options: deltas on the adult female body (not the head)
     f0, shape_delta = body_options(np, load, body_tris)
@@ -1294,9 +1297,12 @@ def pack():
     # each size's garments fit the body the app shows: that chest with its matching hips
     chests = {n[6:]: refine(f0 + shape_delta(n) + shape_delta(f"hips-{n[6:]}")) for n in SHAPES if n.startswith("chest-")}
     chests["senior"] = refine(load("female-senior.neutral")["body"])
+    # (smaller chests sit above the bump: the plain cut fits)
+    pregnant = {n: (pregnant0 + refine(f0 + shape_delta(f"chest-{n}")) - f1, chests[n]) for n in PREGNANT_BRAS}
     header["garments"] = garments(np, pk, topo["body"], refine(load("male-adult.neutral")["body"]), refine(f0 + shape_delta("hips-large")),
                                   refine(load("kid-toddler.neutral")["body"]), chests, refine(load("kid-child.neutral")["body"]),
-                                  nipple_ids(np, load("female-adult.neutral")), arms=refine.arms, refined_from=refine.count)
+                                  nipple_ids(np, load("female-adult.neutral")), arms=refine.arms, refined_from=refine.count,
+                                  pregnant=pregnant)
     payload = b"".join(pk.chunks)
     comp = zlib.compressobj(9, zlib.DEFLATED, -15)
     data = comp.compress(payload) + comp.flush()
@@ -1322,11 +1328,13 @@ CELL = 0.009
 WING = (-0.08, 0.12)
 
 
-def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=None, only_bra=False, arms=None, refined_from=None):
+def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=None, only_bra=False, arms=None, refined_from=None,
+             pregnant=None):
     """Underwear as the parts of the body where a smooth field is positive, cut exactly along its zero line.
     Each garment vertex is a point in a body triangle, so it follows every sex/age/heritage variant.
     Fields are written on the neutral adult male / female and the toddler (children share them: same topology); the
-    child's top on the child."""
+    child's top on the child. pregnant: {chest: (pregnant body, the same chest without the bump)}, bras cut on the bump
+    (the plain cut's band, stretched over it, would cover its top)"""
     vmap, index = topo["vmap"], topo["index"].reshape(-1, 3)
     tris = np.unique(vmap[index], axis=0)  # position-vertex triangles (seams collapse)
 
@@ -1363,11 +1371,11 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
         dip = 0.12 * ramp(z, 0.0, 0.08) * (1 - ramp(np.abs(x), 0.06, 0.2))
         return np.minimum.reduce([0.25 - dip - y, legs(x, y, z, -0.05, 1.0, -0.075, 0.5, 0.15), 0.46 - np.abs(x)])
 
-    def bra_for(body):
-        """the bra cut on this body"""
+    def bra_for(body, ref=None):
+        """the bra cut on this body (the breast's depth measured on ref: a bump stands out further than the breast)"""
         if nipples:
             i = max(nipples, key=lambda i: body[i, 0])
-            return lambda p: bra(p, body[i], body[i, 1] - breast_depth(np, body, i))
+            return lambda p: bra(p, body[i], body[i, 1] - breast_depth(np, body if ref is None else ref, i))
         apex = body[(body[:, 1] > 0.6) & (body[:, 1] < 0.95) & (body[:, 0] > 0.02) & (body[:, 0] < 0.32)]
         apex = apex[np.argmax(apex[:, 2])]
         return lambda p: bra(p, apex, apex[1] - 0.1)
@@ -1495,6 +1503,7 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
             ("briefs-pregnant", female, briefs_pregnant, 0.004, "#4A2F42"),
             ("bra", female, bra_for(female), 0.0065, "#4A2F42"),
             *[(f"bra-{n}", body, bra_for(body), 0.0065, "#4A2F42") for n, body in (chests or {}).items()],
+            *[(f"bra-pregnant-{n}", body, bra_for(body, ref), 0.0065, "#4A2F42") for n, (body, ref) in (pregnant or {}).items()],
             ("nappy", kid, nappy, 0.014, "#F4F2EE"),
             ("briefs-kid", kid, briefs_kid, 0.004, "#2C5A6E"),
             ("top-kid", kid if child is None else child, top_kid, 0.006, "#2C5A6E")):
@@ -1509,7 +1518,8 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
                             for i in range(0, len(p), 512)]).astype(np.float32)
         offset = None
         if name.startswith("bra") and nipples:
-            abc, w, offset = cup(np, pos, tris, p, abc, w, tri, nipples, lift * (0.8 + 0.2 * np.minimum(f / 0.01, 1)))
+            ref = (pregnant or {}).get(name[len("bra-pregnant-"):], (None, None))[1] if name.startswith("bra-pregnant-") else None
+            abc, w, offset = cup(np, pos, tris, p, abc, w, tri, nipples, lift * (0.8 + 0.2 * np.minimum(f / 0.01, 1)), ref=ref)
         out[name] = {"vertices": len(f), "triangles": len(tri), "abc": pk.add(abc), "w": pk.add(w), "f": pk.add(f),
                      "index": pk.add(tri), "lift": lift, "color": color}
         if offset is not None:
@@ -1568,7 +1578,7 @@ def tutte(np, x, free, se):
     return out
 
 
-def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03):
+def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
     from scipy.spatial import cKDTree
     """a cup over each chest centre: the skin's height (along the cup's axis) evened out over the cup, raised to
     clear the tip and easing back onto the skin by `outer`; the fabric lies on the higher of that and the skin. The
@@ -1600,7 +1610,7 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03):
     outers, axes = [], []
     for i in nipples:
         # the cup reaches over the whole breast
-        outer = float(np.clip(0.75 * breast_depth(np, body, i), 0.075, 0.13))
+        outer = float(np.clip(0.75 * breast_depth(np, body if ref is None else ref, i), 0.075, 0.13))
         outers.append(outer)
         t = body[i]
         d = body - t
