@@ -49,6 +49,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `*.*.adult.*.*.back*\|left\|low-up.shoulder-160`: back-of-armpit crumple
 - `*.*.adult\|senior\|child.bare.base.face-*\|front-3q-*\|low-up.rest`: mouth lining poke-through, nostril/eye/ear seams
 
 ## Log
