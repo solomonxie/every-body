@@ -180,7 +180,7 @@ EYE_GROW, EYE_SHAPE = 0.25, (1.0, 0.96, 1.0)
 # (young children's eyes a little bigger)
 EYE_GROW_BY = {"female-adult": 0.4, "kid-infant": 0.1, "kid-toddler": 0.6, "kid-child": 0.4}
 # (young children's lids stay open)
-EYE_SHAPE_BY = {"kid-infant": (1.0, 1.06, 1.0), "kid-toddler": (1.0, 1.05, 1.0), "kid-child": (1.0, 1.02, 1.0)}
+EYE_SHAPE_BY = {"kid-infant": (1.0, 1.06, 1.0), "kid-toddler": (1.0, 1.05, 1.0), "kid-child": (1.0, 1.07, 1.0)}
 # (a dict: per heritage, "*" the rest; the base head evens faces out, so some heritages keep more)
 BASE = {"female-adult": ("rain", {"*": 0.5, "hispanic": 0.85, "southeast-asian": 0.9, "east-asian": 0.6, "south-asian": 0.85}, 0.7),
         "male-adult": ("snow", {"*": 0.5, "southeast-asian": 0.85, "south-asian": 0.85}, 0.85), "female-senior": ("rain", 0.5, 0.55),
@@ -208,6 +208,9 @@ def body_groups():
 
 # how far below the chin (eye spacings) the base head's warp reaches
 FACE_REACH = {"kid-toddler": 1.0, "kid-child": 1.4}
+# round each eye, where the warp's own shape gives way to the base head's surface (eye spacings): a child drawn all the
+# way onto Rain gets a wide blend, or Rain's deeper sockets print a shelf ringing the lower lid
+KEEP_EYES = {"kid-child": (0.5, 1.2)}
 
 
 def with_base_head(neutral, gid, source):
@@ -267,9 +270,10 @@ def with_base_head(neutral, gid, source):
     sel = face > 0.01
     # round the eyes the warp's shape stays (the source's own eye rims are cartoon-big)
     keep_eyes = np.ones(len(body))
+    k0, k1 = KEEP_EYES.get(gid, (0.35, 0.6))
     for side in (1, -1):
         c = eyes[np.sign(eyes[:, 0]) == side].mean(0)
-        keep_eyes *= smoothstep(0.35 * U, 0.6 * U, np.linalg.norm(moved - c, axis=1))
+        keep_eyes *= smoothstep(k0 * U, k1 * U, np.linalg.norm(moved - c, axis=1))
     # the mouth's and nostrils' insides (well within the base head) stay where the warp put them
     _, i0 = tree.query(head)
     sel &= ((head - bpos[i0]) * bn[i0]).sum(1) > -0.06 * U
