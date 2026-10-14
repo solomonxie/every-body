@@ -61,6 +61,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `*.female.adult.*.XXL-*.back*.rest`, `*.female.adult.*.S-*.*.back-90`: cleft mark, flank lumps
 
 ## Log
 
