@@ -48,6 +48,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `*.*.adult\|senior\|child.bare.base.face-*\|front-3q-*\|low-up.rest`: mouth lining poke-through, nostril/eye/ear seams
 - `*.female.adult\|pregnant.dressed.M-M\|XL-XL\|XXL-XXL.*.back-60\|back-90\|back-60+shoulder-90\|shoulder-160`: bra band/strap waves, breast into bump
 
 ## Log
