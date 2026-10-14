@@ -42,6 +42,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.XXL-XXL.top-down\|back-3q-*.*` | butt/thigh lumps | improved afcef5f, unconfirmed |
 | `east-asian.female.adult.*.*.face-side.rest` | chin, eyes, sallow skin | improved 8200035, unconfirmed |
 
+## In progress
+
+- `*.female.adult\|pregnant.dressed.XXL-XXL.*.rest\|back-*\|shoulder-160\|knee-135\|sitting`: underwear fit
+- `*.*.senior\|child\|toddler\|infant.bare.base.face-*\|low-up\|top-down.rest`: faces, skin colour
+
 ## Log
 
 | Date | Cells | Result | Commit |
