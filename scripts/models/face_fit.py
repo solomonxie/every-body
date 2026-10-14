@@ -7,6 +7,7 @@ drawn onto the head's surface, faded out down the neck and behind the ears.
 
   venv/bin/python scripts/models/face_fit.py [group]   # after `build_figure.py fit`, rewrites RAW <group>.*.npz
   venv/bin/python scripts/models/face_fit.py render <group> <variant> out.png
+  venv/bin/python scripts/models/face_fit.py seat [group]   # only the mouth's lining seated behind the lips
 """
 
 import sys
@@ -706,6 +707,108 @@ def lip_weights(n):
     return _ORIS[n]
 
 
+_LINING = []
+
+
+def mouth_lining():
+    """the mouth's lining (its own patch of the skin's UV): per triangle, and per vertex those not on the lips' rim"""
+    if not _LINING:
+        from scipy.sparse import coo_matrix
+        from scipy.sparse.csgraph import connected_components
+        uv, vmap, tris = topo("body")
+        t, tuv = vmap[tris], uv[tris].mean(1)
+        n = int(vmap.max()) + 1
+        lin = (tuv[:, 0] > 0.72) & (tuv[:, 1] < 0.12)
+        e = np.concatenate([t[lin][:, [0, 1]], t[lin][:, [1, 2]]])
+        _, lab = connected_components(coo_matrix((np.ones(len(e)), (e[:, 0], e[:, 1])), shape=(n, n)), directed=False)
+        # (the patch touching the lips; the same UV corner holds other bits)
+        lin &= np.isin(lab[t[:, 0]], lab[lip_weights(n).max(1) > 0.3])
+        inner = np.zeros(n, bool)
+        inner[t[lin].ravel()] = True
+        inner[t[~lin].ravel()] = False
+        _LINING.extend([lin, inner])
+    return _LINING
+
+
+# the lining kept this far behind the lips' skin (scene units) where it lies at most LINING_OVER over it (further, it's
+# skin far behind: the other cheek), as seen from these views (yaw, pitch in degrees),
+# moving back at most so far
+LINING_GAP, LINING_OVER, LINING_VIEWS, LINING_BACK = 0.0005, 0.003, [(y, p) for y in (0, -30, 30, -55, 55) for p in (0, -35, 25)], 0.006
+
+
+def zbuffer(X, Y, Z, T, W, H):
+    """per pixel: the front-most triangle (index into T, -1 for none) and its depth"""
+    zb, tid = np.full((H, W), -np.inf), np.full((H, W), -1)
+    x0, y0 = np.floor(X[T].min(1)).astype(int), np.floor(Y[T].min(1)).astype(int)
+    x1, y1 = np.ceil(X[T].max(1)).astype(int), np.ceil(Y[T].max(1)).astype(int)
+    for i, (a, b, c) in enumerate(T):
+        xs, ys = np.arange(max(x0[i], 0), min(x1[i] + 1, W)), np.arange(max(y0[i], 0), min(y1[i] + 1, H))
+        d = (Y[b] - Y[c]) * (X[a] - X[c]) + (X[c] - X[b]) * (Y[a] - Y[c])
+        if not len(xs) or not len(ys) or abs(d) < 1e-12:
+            continue
+        gx, gy = np.meshgrid(xs + 0.5, ys + 0.5)
+        l1 = ((Y[b] - Y[c]) * (gx - X[c]) + (X[c] - X[b]) * (gy - Y[c])) / d
+        l2 = ((Y[c] - Y[a]) * (gx - X[c]) + (X[a] - X[c]) * (gy - Y[c])) / d
+        z = l1 * Z[a] + l2 * Z[b] + (1 - l1 - l2) * Z[c]
+        iy, ix = gy.astype(int), gx.astype(int)
+        m = (l1 >= 0) & (l2 >= 0) & (l1 + l2 <= 1) & (z > zb[iy, ix])
+        zb[iy[m], ix[m]], tid[iy[m], ix[m]] = z[m], i
+    return tid, zb
+
+
+def seat_lining(body, px=0.0001, rounds=4):
+    """the mouth's lining moved back wherever it shows in front of the lips' skin (the face's fit and the lips' tuck
+    can lay it over the lips at their seam, where it reads as dark slivers): in each view, the lining's triangles
+    in front of the skin push their off-rim vertices straight back, in proportion to their share"""
+    lin, inner = mouth_lining()
+    _, vmap, tris = topo("body")
+    t = vmap[tris]
+    w = lip_weights(len(body))
+    lip = w.max(1) > 0.3
+    mc, half, zf = body[lip].mean(0), np.abs(body[lip, 0]).max(), body[lip, 2].max()
+    c = body[t].mean(1)
+    near = (np.abs(c[:, 0]) < half + 0.012) & (np.abs(c[:, 1] - mc[1]) < 0.03) & (c[:, 2] > zf - 0.04)
+    skin, lining = t[~lin & near], t[lin & near]
+    out, back = body.copy(), np.zeros(len(body))
+    W, H = int(2 * (half + 0.02) / px), int(0.08 / px)
+    for _ in range(rounds):
+        seen = False
+        for yaw, pitch in LINING_VIEWS:
+            a, b = np.radians(yaw), np.radians(pitch)
+            R = (np.array([[1, 0, 0], [0, np.cos(b), -np.sin(b)], [0, np.sin(b), np.cos(b)]])
+                 @ np.array([[np.cos(a), 0, np.sin(a)], [0, 1, 0], [-np.sin(a), 0, np.cos(a)]]))
+            r = (out - mc) @ R.T
+            X, Y = (r[:, 0] + half + 0.02) / px, (0.04 - r[:, 1]) / px
+            ts, zs = zbuffer(X, Y, r[:, 2], skin, W, H)
+            tl, zl = zbuffer(X, Y, r[:, 2], lining, W, H)
+            # over the skin's face turned to the eye (over a back face, it's the mouth seen through the seam)
+            S = skin[ts.clip(0)]
+            facing = np.cross(r[S[..., 1]] - r[S[..., 0]], r[S[..., 2]] - r[S[..., 0]])[..., 2] > 0
+            iy, ix = np.nonzero((tl >= 0) & (ts >= 0) & (zl > zs) & (zl < zs + LINING_OVER) & facing)
+            if not len(iy):
+                continue
+            seen = True
+            T = lining[tl[iy, ix]]
+            gx, gy = ix + 0.5, iy + 0.5
+            p0, p1, p2 = T[:, 0], T[:, 1], T[:, 2]
+            d = (Y[p1] - Y[p2]) * (X[p0] - X[p2]) + (X[p2] - X[p1]) * (Y[p0] - Y[p2])
+            l1 = ((Y[p1] - Y[p2]) * (gx - X[p2]) + (X[p2] - X[p1]) * (gy - Y[p2])) / d
+            l2 = ((Y[p2] - Y[p0]) * (gx - X[p2]) + (X[p0] - X[p2]) * (gy - Y[p2])) / d
+            share = np.stack([l1, l2, 1 - l1 - l2], 1).clip(0, 1) * inner[T]
+            # (not by the rim: what shows there is the lips' own seam)
+            need = (zl[iy, ix] - zs[iy, ix] + LINING_GAP) / share.sum(1).clip(1e-9) * (share.sum(1) > 0.3)
+            push = np.zeros(len(out))
+            for k in range(3):
+                np.maximum.at(push, T[:, k], need * (share[:, k] > 0))
+            # (straight back: its depth in this view changes by R[2, 2] of that)
+            push = np.minimum(push / R[2, 2], LINING_BACK - back).clip(0)
+            back += push
+            out[:, 2] -= push
+        if not seen:
+            break
+    return out
+
+
 def tuck_lips(pieces, depth, reach):
     from skin_textures import lip_seam
     body = pieces["body"]
@@ -718,7 +821,8 @@ def tuck_lips(pieces, depth, reach):
     # the front layer from just under the seam to the lip's fullest point: a steep, rounded roll
     top = np.minimum(zu, zb) - depth
     want = top + (zb - top) * smoothstep(0.001, reach, d)
-    sel = lower & (d > 0.0008) & (d < reach + 0.002)
+    # (not the lining behind it: brought forward it'd lie over the lip)
+    sel = lower & (d > 0.0008) & (d < reach + 0.002) & ~mouth_lining()[1]
     k_sel = k * (1 - smoothstep(reach, reach + 0.002, d))
     out[sel, 2] = np.maximum(body[sel, 2], (body[:, 2] + k_sel * (want - body[:, 2]))[sel])
     # the lining at the seam: up behind the upper lip (no lit shelf between the lips)
@@ -924,6 +1028,8 @@ def save(name, pieces):
     if gid in SMOOTH_CHEST:
         eyes = pieces["eyes"] if "eyes" in pieces else load(f"{gid}.neutral")["eyes"]
         pieces = dict(pieces, body=smooth_chest(pieces["body"], eyes, SMOOTH_CHEST[gid]))
+    if "eyes" in pieces:
+        pieces = dict(pieces, body=seat_lining(pieces["body"]))
     before = load(name)
     if "eyes" in before:
         e = before["eyes"]
@@ -1018,6 +1124,21 @@ def fit_group(gid, avgs, moves):
         save(f"{gid}.{v}", carry(p, m, _local_warp(p["body"], m)))
 
 
+def seat_all(only=None):
+    """seat_lining on the faces as they stand (no refit)"""
+    for f in sorted(RAW.glob(f"{only or '*-*'}.*.npz")):
+        got = dict(np.load(f))
+        if "pos:eyes" not in got:
+            continue
+        body = got["pos:body"].astype(np.float64)
+        new = seat_lining(body)
+        moved = np.linalg.norm(new - body, axis=1)
+        if moved.max() > 0:
+            print(f"  {f.stem}: {(moved > 0).sum()} lining vertices back, at most {moved.max() * 1000:.1f} mm")
+            got["pos:body"] = new.astype(np.float32)
+            np.savez_compressed(f, **got)
+
+
 def _local_warp(body, move):
     """a warp following a per-vertex move (for pieces carried along): the move of the nearest body vertices"""
     def f(q):
@@ -1039,5 +1160,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "render":
         gid, v, out = sys.argv[2:5]
         Image.fromarray(render(load(f"{gid}.{v}", fitted=True), gid, v)[0]).save(out)
+    elif len(sys.argv) > 1 and sys.argv[1] == "seat":
+        seat_all(sys.argv[2] if len(sys.argv) > 2 else None)
     else:
         main(sys.argv[1] if len(sys.argv) > 1 else None)
