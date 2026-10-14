@@ -1326,6 +1326,8 @@ CELL = 0.009
 
 # the bra's side wing falls to the band over this depth (z, m: back, front)
 WING = (-0.08, 0.12)
+# the bra strap's centre line over the shoulder, at most this far out (|x|, m)
+STRAP_TOP = 0.17
 
 
 def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=None, only_bra=False, arms=None, refined_from=None,
@@ -1387,6 +1389,9 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
         ax = np.abs(x)
         ay = apex[1]
         sx = apex[0] - 0.01 - 0.02 * ramp(-z, -0.03, 0.03)  # strap line: over the cup in front, a little inward at the back
+        # over the shoulder no further out than STRAP_TOP at any size (a full cup's line would run onto the arm, whose
+        # region notches the strap's edge and turns with the arm)
+        sx = sx + (np.minimum(sx, STRAP_TOP) - sx) * ramp(y, ay + 0.15, ay + 0.35)
         lo, hi = fold - 0.055, fold + 0.012
         top = ay - 0.005 + 0.11 * np.clip((ax - 0.03) / (sx - 0.03), 0, 1.2)
         # past the strap, kept low (the arm meets the chest in a tight crease above)
