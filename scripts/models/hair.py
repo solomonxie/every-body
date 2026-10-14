@@ -17,6 +17,8 @@ SHELL_U = (STRIPS + 0.5) / (STRIPS + 1)
 # strip brightness by depth in the hair (inner cards darker: baked occlusion)
 LEVEL_SHADE = (1.0, 0.8, 0.64, 0.5)
 
+# smoothing passes over a short cut's rim line (2° picks)
+RIM_SMOOTH = 12
 # hairline height (cm above the eyes) by azimuth around the head (deg, 0 = front)
 HAIRLINE = [(0, 6.4), (30, 6.0), (55, 4.2), (70, 1.5), (80, -1.2), (86, -2.2), (92, 2.6), (128, 2.6), (145, -3.5),
             (160, -5.8), (180, -6.6)]
@@ -198,6 +200,10 @@ class Head:
             d = np.radians(((az - a + 180) % 360) - 180) * r
             out.append(self.pts[np.argmin(d ** 2 + (y - h) ** 2)])
         out = np.array(out)
+        # each pick snaps to a skin vertex: where the line climbs (a receding hairline) they step across the
+        # forehead's rows, printing notches and holes in the edge; smoothed
+        for _ in range(RIM_SMOOTH):
+            out[1:-1] = 0.25 * out[:-2] + 0.5 * out[1:-1] + 0.25 * out[2:]
         # finer steps, laid back onto the skin
         seg = np.linalg.norm(np.diff(out, axis=0), axis=1)
         cum = np.concatenate([[0], np.cumsum(seg)])
