@@ -58,6 +58,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `*.female.adult.dressed.S-*.*.rest`, `*.female.adult.*.*.*.knee-90`: briefs clip at rest, knee-front facets
 - `*.female.adult.*.*.face-side\|front-3q-*.rest`: earlobe-jaw crease, black lip-corner folds
 
 ## Log
