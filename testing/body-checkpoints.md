@@ -51,7 +51,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
-| `*.female.adult.*.base.front-3q-*.rest` | caruncle (inner eye corner) too saturated: painted salmon in the shared skin texture | open (texture, all groups) |
+| `*.female.adult.*.base.front-3q-*.rest` | caruncle (inner eye corner) too saturated: painted salmon in the shared skin texture | in progress |
+| `*.female.adult.bare.base.top-down\|front-3q-*\|face-side.rest` | grey/pink lower-lid rim; lips parted (dark slit) in profile | in progress |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
 | `*.female.adult.dressed.XXL-XXL.*.*` | bra-xxlarge under-breast band crease (144 pts, ≤3.8 mm) | open |
@@ -60,7 +61,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - `*.female.adult.*.XL-*\|XXL-*.*.rest\|back-60\|back-90`: under-breast crease, bra band
-- `*.female.adult.bare.base.face-side\|front-3q-*\|low-up\|top-down.rest`: profile prettiness, hairline
+- `*.female.adult.bare.base.face-*\|front-3q-*\|top-down\|low-up.rest`: caruncle tone, lower-lid rim, parted-lip slit
 
 ## Log
 
@@ -89,3 +90,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-14 | `*.female.adult.dressed.*.rest\|knee-*`, knee front, armpit/bra on wide hips | briefs bridge creases (clip →0); knee front refined (+1.5k verts); arm-swing mask smooth (bra-small clip 143→22); XXL bra 782→144 | f93760f |
 | 2026-10-14 | `*.*.*.dressed.*` | underwear black for women, white below adult (user request) | fb1d669 |
 | 2026-10-14 | `*.female.adult.*.XXL-*.back*`, `*.female.adult.*.S-*.*.back-60` | briefs film pushed along own normal (cleft notch gone, clip 0); hip-front edges even + trunk front faired (lumps 0.98→0.19 mm) | 85e1872 |
+| 2026-10-14 | `*.female.adult.bare.base.face-side\|front-3q-*\|low-up\|top-down.rest` | inner-corner panel over the eyeball tucked behind the ball; under-eye/nose-side line smoothed (all heritages) | 773505d, repack |
