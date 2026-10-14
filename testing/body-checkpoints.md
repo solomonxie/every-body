@@ -46,7 +46,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.XXL-XXL.top-down\|back-3q-*.*` | butt/thigh lumps | improved afcef5f, unconfirmed |
 | `east-asian.female.adult.*.*.face-side.rest` | chin, eyes, sallow skin | improved 8200035, unconfirmed |
 | `*.*.adult\|pregnant\|child.*.*.*.shoulder-90\|shoulder-160\|back-*+shoulder-*` | side-chest balloon; armpit skin stretched into thin sheets/flaps (deltoid skin bound to the shoulder blade, turn ramped over a few triangles) | fixed in Blender port (shoulder share: arm/torso split + 0.14 band by distance over the skin, chord blend), uncommitted, installed; check on device. Left: shoulder top squashes (hidden), kid top armhole shows a speck of skin at 160 |
-| `*.female.adult\|pregnant.dressed.XL+.*.back-60\|back-90` | band edge follows the skin's under-breast crease (not a garment bug); ~56 folded bra tris in the crease at rest | open (skin crease) |
+| `*.female.adult\|pregnant.dressed.XL+.*.back-60\|back-90` | under-breast fold fixed (93261b8); crumple remains at the top of the bra centre panel between the breasts | in progress |
 | `*.female.pregnant.*.base.*.*` with XL/XXL chest | breast underside sinks up to 2 cm into the bump (hidden in the crease) | open (prototype: lift along the bump normal, /tmp/uw/tools/bumpfit.py) |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
@@ -55,12 +55,12 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.bare.base.top-down\|front-3q-*\|face-side.rest` | grey/pink lower-lid rim; lips parted (dark slit) in profile | in progress |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
-| `*.female.adult.dressed.XXL-XXL.*.*` | bra-xxlarge under-breast band crease (144 pts, ≤3.8 mm) | open |
+| `*.female.*.dressed.*.*.*` | bra shoulder-strap clip, 22–24 pts ≤3.8 mm, every size | open |
 | `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
 
 ## In progress
 
-- `*.female.adult.*.XL-*\|XXL-*.*.rest\|back-60\|back-90`: under-breast crease, bra band
+- `*.female.adult.dressed.L+-*.front\|front-3q-*\|top-down\|low-up.rest\|back-*`: bra centre panel crumple, strap clip
 - `*.female.adult.bare.base.face-*\|front-3q-*\|top-down\|low-up.rest`: caruncle tone, lower-lid rim, parted-lip slit
 
 ## Log
@@ -91,3 +91,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-14 | `*.*.*.dressed.*` | underwear black for women, white below adult (user request) | fb1d669 |
 | 2026-10-14 | `*.female.adult.*.XXL-*.back*`, `*.female.adult.*.S-*.*.back-60` | briefs film pushed along own normal (cleft notch gone, clip 0); hip-front edges even + trunk front faired (lumps 0.98→0.19 mm) | 85e1872 |
 | 2026-10-14 | `*.female.adult.bare.base.face-side\|front-3q-*\|low-up\|top-down.rest` | inner-corner panel over the eyeball tucked behind the ball; under-eye/nose-side line smoothed (all heritages) | 773505d, repack |
+| 2026-10-14 | `*.female.adult.*.XL\|XXL-*.*.rest\|back-60\|back-90` | under-breast fold opened (gap 0.9→15 mm), breast carries the hips change; bra-xxlarge under-breast clip 120→0 | 93261b8, repack |
