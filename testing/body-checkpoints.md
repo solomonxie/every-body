@@ -59,6 +59,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `*.female.adult.*.XL-*\|XXL-*.*.rest\|back-60\|back-90`: under-breast crease, bra band
 - `*.female.adult.bare.base.face-side\|front-3q-*\|low-up\|top-down.rest`: profile prettiness, hairline
 
 ## Log
