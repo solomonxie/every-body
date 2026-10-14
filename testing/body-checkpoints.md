@@ -24,6 +24,10 @@ ID: `heritage.sex.age.clothing.shape.view.pose`, e.g. `east-asian.female.adult.b
 - joints: limbs detaching, candy-wrapper twist, skin pinching, internals poking out
 - garments, hair, eyes, lashes: gaps, clipping, floating
 
+## Focus
+
+Until 2026-11-13: adult woman only (`*.female.adult.*`). Other rows wait.
+
 ## Pick order
 
 1. User-reported cells (below), until signed off on device
@@ -52,8 +56,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- face: child ear flap, adult earlobe-jaw crease, black lip-corner folds, low-up eye sliver
-- `*.*.*.*.*.*.knee-90\|knee-135\|elbow-90\|elbow-145` (sampled): knee/elbow bends
+- `*.female.adult.*.*.face-side\|front-3q-*.rest`: earlobe-jaw crease, black lip-corner folds
 
 ## Log
 
