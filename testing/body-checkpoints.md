@@ -44,12 +44,14 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.*.adult\|pregnant\|child.*.*.*.shoulder-90\|shoulder-160\|back-*+shoulder-*` | side-chest balloon; armpit skin stretched into thin sheets/flaps (deltoid skin bound to the shoulder blade, turn ramped over a few triangles) | fixed in Blender port (shoulder share: arm/torso split + 0.14 band by distance over the skin, chord blend), uncommitted, installed; check on device. Left: shoulder top squashes (hidden), kid top armhole shows a speck of skin at 160 |
 | `*.female.adult\|pregnant.dressed.XL+.*.back-60\|back-90` | band edge follows the skin's under-breast crease (not a garment bug); ~56 folded bra tris in the crease at rest | open (skin crease) |
 | `*.female.pregnant.*.base.*.*` with XL/XXL chest | breast underside sinks up to 2 cm into the bump (hidden in the crease) | open (prototype: lift along the bump normal, /tmp/uw/tools/bumpfit.py) |
-| `*.female.adult.*.base.face-front\|front-3q-*.rest` (clearest white, east-asian) | tiny dark triangles at lower-lip corners: mouth lining pokes through the lip seam | open |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
+| `black.female.adult.*.base.front-3q-*.rest` | dark specks at lower-lip corners: folded lip skin from tuck_lips' rim lift | open |
+| `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
+| `white\|east-asian.female.adult.*.base.face-side.rest` | crease from earlobe forward along the jaw | open |
+| `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
 
 ## In progress
 
-- `*.*.adult\|senior\|child.bare.base.face-*\|front-3q-*\|low-up.rest`: mouth lining poke-through, nostril/eye/ear seams
 
 ## Log
 
@@ -71,3 +73,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-13 | `*.*.adult\|senior.bare.base.back*\|face-*.*` | skins clean; upper-back patch + lip smear were a QA tool artifact (pose.py flipped UV v) | — |
 | 2026-10-13 | `*.female.*.dressed.*.*.rest\|back-*\|back-60+shoulder-90` | strap line kept ≤0.17 out over the shoulder: ruffle/notches gone (edge wave 17–25→9–10 mm) | 0499f0b |
 | 2026-10-13 | `*.*.adult.*.*.back*\|left\|low-up.shoulder-160` | shoulder shares band 0.2 + 40 smoothing passes: armpit creases →0, strap straight | uncommitted |
+| 2026-10-13 | `*.female.adult\|senior.*.base.face-*\|front-3q-*.rest` | mouth lining out of tuck_lips push + seat_lining guard: lip-corner triangles gone | f755006 |
