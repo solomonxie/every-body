@@ -48,7 +48,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `*.*.senior\|child\|toddler\|infant.bare.base.face-*\|low-up\|top-down.rest`: faces, skin colour
+- `*.*.adult\|senior.bare.base.back*\|face-front\|front-3q-left.*`: skin texture marks (upper-back patch, lip smear)
+- `*.female.adult\|pregnant.dressed.M-M\|XL-XL\|XXL-XXL.*.back-60\|back-90\|back-60+shoulder-90\|shoulder-160`: bra band/strap waves, breast into bump
 
 ## Log
 
