@@ -295,6 +295,8 @@ def with_base_head(neutral, gid, source):
         # no vertex drawn further than a little from where the warp left it
         off = head - moved
         head = moved + off * np.minimum(1, 0.25 * U / np.maximum(np.linalg.norm(off, axis=1, keepdims=True), 1e-12))
+    if groups is not None and gid in EAR_SKIN:
+        head = ears_with_skin(body, head, ears, rim, U, vmap[tris], *EAR_SKIN[gid])
     if groups is not None:
         # one face on both sides (the source head isn't quite mirrored)
         twin = groups["mirror"]
@@ -319,6 +321,39 @@ def with_base_head(neutral, gid, source):
     # the chin's underside (facing down, below the lips): a variant's own difference there is carried evened out
     under = face * smoothstep(L[14, 1] - 0.3 * U, L[14, 1] - 0.5 * U, body[:, 1]) * smoothstep(-0.15, -0.5, vertex_normals(head)[:, 1])
     return out, face, placed, under
+
+
+# groups whose ears turn with the skin round them once it lies on the base head (moved with their base's average,
+# they lag the skin pulled forward in front of them: a crease runs from the lobe along the jaw), that skin easing
+# between the two over this band (eye spacings from the ear)
+EAR_SKIN = {"female-adult": (0.05, 0.3)}
+
+
+def ears_with_skin(body, head, ears, rim, U, t, r0, r1, passes=400):
+    """each ear moved rigidly as the skin at its base moved (best-fit turn and shift), the skin round it eased
+    between the ear's move and its own (harmonic), fading out from r0 to r1"""
+    from scipy.spatial import cKDTree
+    out = head.copy()
+    for side in (1, -1):
+        on = np.sign(body[:, 0]) == side
+        a, b = body[rim & on], head[rim & on]
+        ca, cb = a.mean(0), b.mean(0)
+        u, _, vt = np.linalg.svd((a - ca).T @ (b - cb))
+        R = vt.T @ np.diag([1, 1, np.sign(np.linalg.det(vt.T @ u.T))]) @ u.T
+        e = ears & on
+        out[e] = (body[e] - ca) @ R.T + cb
+    s = 1 - smoothstep(r0 * U, r1 * U, cKDTree(body[ears]).query(body)[0])
+    near = (s > 0) & ~ears
+    e = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
+    cnt = np.maximum(np.bincount(e.ravel(), minlength=len(body)), 1).astype(float)[:, None]
+    m = out - body
+    h = m.copy()
+    for _ in range(passes):
+        acc = np.zeros_like(h)
+        np.add.at(acc, e[:, 0], h[e[:, 1]])
+        np.add.at(acc, e[:, 1], h[e[:, 0]])
+        h[near] = (acc / cnt)[near]
+    return body + m + (s * near)[:, None] * (h - m)
 
 
 # a group's hair style taken from its source character (hair.CHARACTER_HAIR)
@@ -736,6 +771,13 @@ def mouth_lining():
 LINING_GAP, LINING_OVER, LINING_VIEWS, LINING_BACK = 0.0005, 0.003, [(y, p) for y in (0, -30, 30, -55, 55) for p in (0, -35, 25)], 0.006
 
 
+def turned(yaw, pitch):
+    """the rotation turning the figure to a view (degrees)"""
+    a, b = np.radians(yaw), np.radians(pitch)
+    return (np.array([[1, 0, 0], [0, np.cos(b), -np.sin(b)], [0, np.sin(b), np.cos(b)]])
+            @ np.array([[np.cos(a), 0, np.sin(a)], [0, 1, 0], [-np.sin(a), 0, np.cos(a)]]))
+
+
 def zbuffer(X, Y, Z, T, W, H):
     """per pixel: the front-most triangle (index into T, -1 for none) and its depth"""
     zb, tid = np.full((H, W), -np.inf), np.full((H, W), -1)
@@ -774,9 +816,7 @@ def seat_lining(body, px=0.0001, rounds=4):
     for _ in range(rounds):
         seen = False
         for yaw, pitch in LINING_VIEWS:
-            a, b = np.radians(yaw), np.radians(pitch)
-            R = (np.array([[1, 0, 0], [0, np.cos(b), -np.sin(b)], [0, np.sin(b), np.cos(b)]])
-                 @ np.array([[np.cos(a), 0, np.sin(a)], [0, 1, 0], [-np.sin(a), 0, np.cos(a)]]))
+            R = turned(yaw, pitch)
             r = (out - mc) @ R.T
             X, Y = (r[:, 0] + half + 0.02) / px, (0.04 - r[:, 1]) / px
             ts, zs = zbuffer(X, Y, r[:, 2], skin, W, H)
@@ -828,7 +868,40 @@ def tuck_lips(pieces, depth, reach):
     # the lining at the seam: up behind the upper lip (no lit shelf between the lips)
     sel = lower & (d <= 0.0008) & (d > -0.002) & (body[:, 2] < top - 0.001)
     out[sel, 1] = np.maximum(body[sel, 1], (y0 + k * 0.003)[sel])
-    return dict(pieces, body=out)
+    return dict(pieces, body=ease_folds(body, out))
+
+
+# views a tucked lip's triangles may not turn their backs to (yaw, pitch in degrees)
+TUCK_VIEWS = [(y, p) for y in (0, -35, 35) for p in (0, -35, 25)]
+
+
+def ease_folds(body, out, px=0.0002, rounds=10):
+    """the lips' move `body` → `out` eased back where it folds the skin (at the mouth's corners the roll's push and the
+    lining's lift meet and fold triangles over, read as dark specks): each round, the vertices of every triangle
+    seen from its back in a view move half as far"""
+    _, vmap, tris = topo("body")
+    t = vmap[tris]
+    lip = lip_weights(len(body)).max(1) > 0.3
+    mc, half, zf = body[lip].mean(0), np.abs(body[lip, 0]).max(), body[lip, 2].max()
+    c = body[t].mean(1)
+    t = t[(np.abs(c[:, 0]) < half + 0.012) & (np.abs(c[:, 1] - mc[1]) < 0.03) & (c[:, 2] > zf - 0.04)]
+    W, H = int(2 * (half + 0.02) / px), int(0.08 / px)
+    move, k = out - body, np.ones(len(body))
+    moved = np.abs(move).max(1) > 0
+    for _ in range(rounds):
+        q = body + k[:, None] * move
+        back = np.zeros(len(t), bool)
+        for yaw, pitch in TUCK_VIEWS:
+            r = (q - mc) @ turned(yaw, pitch).T
+            tid, _ = zbuffer((r[:, 0] + half + 0.02) / px, (0.04 - r[:, 1]) / px, r[:, 2], t, W, H)
+            seen = np.unique(tid[tid >= 0])
+            back[seen[np.cross(r[t[seen, 1]] - r[t[seen, 0]], r[t[seen, 2]] - r[t[seen, 0]])[:, 2] < 0]] = True
+        v = np.unique(t[back])
+        v = v[moved[v] & (k[v] > 0.01)]
+        if not len(v):
+            break
+        k[v] *= 0.5
+    return q
 
 
 # groups whose chest surface is smoothed (MakeHuman's coarse mesh leaves facets): Taubin passes
