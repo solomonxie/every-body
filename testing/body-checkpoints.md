@@ -48,7 +48,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `*.female.adult\|pregnant.dressed.XXL-XXL.*.rest\|back-*\|shoulder-160\|knee-135\|sitting`: underwear fit
+- `*.*.adult.*.*.*.shoulder-90\|shoulder-160\|elbow-145`: armpit skin sheets
 - `*.*.senior\|child\|toddler\|infant.bare.base.face-*\|low-up\|top-down.rest`: faces, skin colour
 
 ## Log
