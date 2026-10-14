@@ -1009,6 +1009,10 @@ SLIVER = 0.015
 # against the bi-Laplacian (lower is smoother), fading out over heights (in, full, full, out); the navel and the
 # clefts (back, crotch) kept
 HIP_FAIR = (0.05, (-0.75, -0.55, 0.5, 0.68))
+# in front, where its coarse rows meet the waist's finer ones in long thin fans, weighted by length the new vertices
+# bunch on them and the skin creases across the hip bone: there the edges count alike (heights in, full, full, out;
+# depths in, full)
+HIP_EVEN = ((0.0, 0.08, 0.34, 0.42), (0.08, 0.13))
 NAVEL_VERT = 4120
 
 
@@ -1097,6 +1101,12 @@ class HipRefine:
         e = np.unique(np.sort(np.concatenate([self.tris[:, [0, 1]], self.tris[:, [1, 2]], self.tris[:, [2, 0]]]), 1), axis=0)
         total = len(self.arms)
         w = 1 / np.maximum(((p[e[:, 0]] - p[e[:, 1]]) ** 2).sum(1), 1e-10)
+        if HIP_EVEN:
+            (y0, y1, y2, y3), (z0, z1) = HIP_EVEN
+            even = smoothstep(y0, y1, p[:, 1]) * (1 - smoothstep(y2, y3, p[:, 1])) * smoothstep(z0, z1, p[:, 2])
+            even *= 1 - smoothstep(0.02, 0.1, self.arms)
+            even = np.minimum(even[e[:, 0]], even[e[:, 1]])
+            w = (1 - even) * w / np.median(w[even > 0.5]) + even
         adj = sps.coo_matrix((np.r_[w, w], (np.r_[e[:, 0], e[:, 1]], np.r_[e[:, 1], e[:, 0]])), (total, total)).tocsr()
         lap = sps.diags(1 / np.asarray(adj.sum(1)).ravel()) @ adj - sps.eye(total)
         bi = (lap @ lap).tocsr()
@@ -1155,13 +1165,21 @@ class HipRefine:
 
 def loader(np, body_tris):
     """build/models/figure/<name>.npz, the skin smoothed (the adult woman's fullness spread), cached"""
-    loaded, shaped = {}, {}
+    loaded, shaped, evened = {}, {}, {}
 
     def smoothed(n):
         if n not in loaded:
             got = {k[4:]: v.astype(np.float64) for k, v in np.load(RAW / f"{n}.npz").items()}
             eyes = got["eyes"] if "eyes" in got else smoothed(f"{n.split('.')[0]}.neutral")["eyes"]
-            loaded[n] = dict(got, body=smooth_skin(np, got["body"], eyes, body_tris))
+            body = smooth_skin(np, got["body"], eyes, body_tris)
+            if n == "female-adult.pregnant":
+                # (the bump keeps its shape: the base's evening carried over)
+                smoothed("female-adult.neutral")
+                body = body + evened["female-adult.neutral"]
+            elif n.startswith("female-adult."):
+                evened[n] = fair_trunk(np, body, body_tris) - body
+                body = body + evened[n]
+            loaded[n] = dict(got, body=body)
         return loaded[n]
 
     def load(n):
@@ -1547,8 +1565,9 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
 
 # the hips the briefs' bridge is fitted on (the narrowest first)
 BRIDGE_HIPS = ("small", "medium", "large", "xlarge", "xxlarge")
-# (crease: closer to the skin than this share of the lift; smoothing passes; the skin cleared by this share of the lift)
-BRIDGE = (0.6, 60, 1.0)
+# (crease: closer to the skin than this share of the lift; smoothing passes; the skin cleared by this share of the lift;
+# smoothing passes over the sheet's normal it's pushed out along)
+BRIDGE = (0.6, 60, 1.0, 8)
 
 
 def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
@@ -1557,7 +1576,7 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
     of the bodies, it's smoothed over its own mesh, each pass pushed back off the skin (it spans the crease, stays on a
     bulge), on each body; those points re-bound to a skin triangle round them and stored as offsets (see cup)"""
     from scipy.spatial import cKDTree
-    near, passes, clear = BRIDGE
+    near, passes, clear, spread = BRIDGE
     trunk = np.flatnonzero(arms < 0.05)
     tris = tris[(tris[:, 0] != tris[:, 1]) & (tris[:, 1] != tris[:, 2]) & (tris[:, 0] != tris[:, 2])]
     wc = 1 - w.sum(1)
@@ -1600,6 +1619,19 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
         region[ge[region[ge[:, 1]], 0]] = True
     r = np.arange(len(w))
 
+    def sheet_normals(q):
+        f = np.cross(q[gtri[:, 1]] - q[gtri[:, 0]], q[gtri[:, 2]] - q[gtri[:, 0]])
+        n = np.zeros_like(q)
+        for k in range(3):
+            np.add.at(n, gtri[:, k], f)
+        for _ in range(spread):
+            n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+            acc = n.copy()
+            np.add.at(acc, ge[:, 0], n[ge[:, 1]])
+            np.add.at(acc, ge[:, 1], n[ge[:, 0]])
+            n = acc
+        return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+
     def film(body, vn):
         tree = cKDTree(body[trunk])
         q = lifted(body, vn)
@@ -1607,13 +1639,17 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
             acc = np.zeros_like(q)
             np.add.at(acc, to[:, 0], q[to[:, 1]])
             q[region] += 0.5 * (acc / gdeg - q)[region]
+            sn = sheet_normals(q)
             for _ in range(3 if it < passes - 1 else 40):
                 dots, i = depth(tree, body, vn, q)
                 k = dots.argmin(1)
                 low = region & (dots[r, k] < clear * lift)
                 if not low.any():
                     break
-                q[low] += vn[i[r, k]][low] * (clear * lift - dots[r, k])[low, None]
+                # out along the sheet's smoothed normal (along the skin's, a narrow crease's walls face each other and
+                # push it across: it stayed folded down the deep XXL cleft, a dark mark)
+                out = sn * np.sign((sn * vn[i[r, k]]).sum(1, keepdims=True) + 1e-9)
+                q[low] += out[low] * (clear * lift - dots[r, k])[low, None]
         return q
 
     sel = np.flatnonzero(region)
@@ -1979,6 +2015,46 @@ def smooth_skin(np, p, eyes, tris):
                 q = q + step * w * (mean(q) - q)
     for _ in range(ARMPIT_FILL[2]):
         q = soften_armpits(np, q, tris)
+    return q
+
+
+# the adult woman's fitted front shows her hip bones as knobs (a dimple beside each, sharpest on the small hips, worst
+# lit bent at the back): smoothed along the normal without shrinking (Taubin) over (passes, heights in, full, full,
+# out); the sides (the waist's outline), the back, the midline, the navel and the arms kept
+TRUNK_FAIR = (30, (0.05, 0.14, 0.5, 0.6))
+
+
+def fair_trunk(np, p, tris):
+    """the adult woman's front between the groin and the breasts, evened (the same weights on every option: taken on
+    the base)"""
+    passes, (y0, y1, y2, y3) = TRUNK_FAIR
+    if not passes:
+        return p
+    e = np.unique(np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), axis=1), axis=0)
+    f0 = np.load(RAW / "female-adult.neutral.npz")["pos:body"].astype(np.float64)
+    # (edges weighted by their length on the base: plain averaging lifts a ridge where finer triangles meet coarser)
+    k = 1 / np.maximum(((f0[e[:, 0]] - f0[e[:, 1]]) ** 2).sum(1), 1e-8)[:, None]
+    deg = (np.bincount(e[:, 0], k[:, 0], len(p)) + np.bincount(e[:, 1], k[:, 0], len(p)) + 1e-8)[:, None]
+
+    def mean(q):
+        acc = np.zeros_like(q)
+        np.add.at(acc, e[:, 0], k * q[e[:, 1]])
+        np.add.at(acc, e[:, 1], k * q[e[:, 0]])
+        return acc / deg
+
+    x, y, _ = f0.T
+    nz = vertex_normals(np, f0, tris)[:, 2]
+    w = smoothstep(y0, y1, y) * (1 - smoothstep(y2, y3, y)) * smoothstep(0.2, 0.5, nz) * smoothstep(0.03, 0.07, np.abs(x))
+    w *= smoothstep(0.04, 0.08, np.linalg.norm(f0 - f0[NAVEL_VERT], axis=1))
+    w *= 1 - smoothstep(0.01, 0.05, np.load(RAW / "regions.npz")["arms"])
+    w = w[:, None]
+    for _ in range(3):
+        w = np.minimum(w, mean(w) + 0.25)
+    q = p.copy()
+    for _ in range(passes):
+        n = vertex_normals(np, q, tris)
+        for step in (0.5, -0.53):
+            q = q + step * w * ((mean(q) - q) * n).sum(1, keepdims=True) * n
     return q
 
 
