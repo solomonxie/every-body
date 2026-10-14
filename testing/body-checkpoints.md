@@ -52,6 +52,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- face: child ear flap, adult earlobe-jaw crease, black lip-corner folds, low-up eye sliver
+- `*.*.*.*.*.*.knee-90\|knee-135\|elbow-90\|elbow-145` (sampled): knee/elbow bends
 
 ## Log
 
