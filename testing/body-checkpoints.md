@@ -49,17 +49,16 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult\|pregnant.dressed.XL+.*.back-60\|back-90` | band edge follows the skin's under-breast crease (not a garment bug); ~56 folded bra tris in the crease at rest | open (skin crease) |
 | `*.female.pregnant.*.base.*.*` with XL/XXL chest | breast underside sinks up to 2 cm into the bump (hidden in the crease) | open (prototype: lift along the bump normal, /tmp/uw/tools/bumpfit.py) |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
-| `black.female.adult.*.base.front-3q-*.rest` | dark specks at lower-lip corners: folded lip skin from tuck_lips' rim lift | open |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
-| `white\|east-asian.female.adult.*.base.face-side.rest` | crease from earlobe forward along the jaw | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
 | `*.female.adult.*.*.front\|low-up.knee-90` | front of knee slightly faceted (~2 cm edges over the curve) | open |
 | `*.female.adult.dressed.S-S.*.rest` | briefs clip into skin at rest (107 verts, ≤9.6 mm) | open |
+| `*.female.adult.*.base.front-3q-*.rest` | caruncle (inner eye corner) too saturated: painted salmon in the shared skin texture | open (texture, all groups) |
+| `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 
 ## In progress
 
 - `*.female.adult.dressed.S-*.*.rest`, `*.female.adult.*.*.*.knee-90`: briefs clip at rest, knee-front facets
-- `*.female.adult.*.*.face-side\|front-3q-*.rest`: earlobe-jaw crease, black lip-corner folds
 
 ## Log
 
@@ -83,3 +82,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-13 | `*.*.adult.*.*.back*\|left\|low-up.shoulder-160` | shoulder shares band 0.2 + 40 smoothing passes: armpit creases →0, strap straight | uncommitted |
 | 2026-10-13 | `*.female.adult\|senior.*.base.face-*\|front-3q-*.rest` | mouth lining out of tuck_lips push + seat_lining guard: lip-corner triangles gone | f755006 |
 | 2026-10-14 | `*.female.adult.*.*.*.knee-*\|elbow-*` | outer-side hinge share widened; inner skin pressed to the mid plane: crossing 350 verts/83 mm → 0 | uncommitted |
+| 2026-10-14 | `*.female.adult.*.base.face-side\|front-3q-*.rest` | ears turn with their skin (no lobe-jaw ledge); lip-corner folds eased (back-facing px ~1000→0) | a166c77, repack |
