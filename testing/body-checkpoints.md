@@ -56,6 +56,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `*.female.adult.*.*.*.knee-90\|knee-135\|elbow-90\|elbow-145`: knee/elbow bends
 - `*.female.adult.*.*.face-side\|front-3q-*.rest`: earlobe-jaw crease, black lip-corner folds
 
 ## Log
