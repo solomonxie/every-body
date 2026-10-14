@@ -1514,14 +1514,14 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
     out = {}
     for name, pos, field, lift, color in (
             ("briefs-male", male, briefs_male, 0.004, "#2F3947"),
-            ("briefs-female", female, briefs_female, 0.004, "#4A2F42"),
-            ("briefs-pregnant", female, briefs_pregnant, 0.004, "#4A2F42"),
-            ("bra", female, bra_for(female), 0.0065, "#4A2F42"),
-            *[(f"bra-{n}", body, bra_for(body), 0.0065, "#4A2F42") for n, body in (chests or {}).items()],
-            *[(f"bra-pregnant-{n}", body, bra_for(body, ref), 0.0065, "#4A2F42") for n, (body, ref) in (pregnant or {}).items()],
+            ("briefs-female", female, briefs_female, 0.004, "#1C1C1F"),
+            ("briefs-pregnant", female, briefs_pregnant, 0.004, "#1C1C1F"),
+            ("bra", female, bra_for(female), 0.0065, "#1C1C1F"),
+            *[(f"bra-{n}", body, bra_for(body), 0.0065, "#1C1C1F") for n, body in (chests or {}).items()],
+            *[(f"bra-pregnant-{n}", body, bra_for(body, ref), 0.0065, "#1C1C1F") for n, (body, ref) in (pregnant or {}).items()],
             ("nappy", kid, nappy, 0.014, "#F4F2EE"),
-            ("briefs-kid", kid, briefs_kid, 0.004, "#2C5A6E"),
-            ("top-kid", kid if child is None else child, top_kid, 0.006, "#2C5A6E")):
+            ("briefs-kid", kid, briefs_kid, 0.004, "#F4F2EE"),
+            ("top-kid", kid if child is None else child, top_kid, 0.006, "#F4F2EE")):
         if only_bra and name != "bra":
             continue
         abc, w, f, tri = clip(field, pos, arms_anywhere=name == "top-kid" or name.startswith("bra"))
