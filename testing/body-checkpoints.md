@@ -53,16 +53,13 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
 | `*.female.adult.*.base.front-3q-*.rest` | caruncle (inner eye corner) too saturated: painted salmon in the shared skin texture | open (texture, all groups) |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
-| `*.female.adult.*.S-*.*.back-90` | hip-bone/rib lumps on the flank with S hips | open |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
 | `*.female.adult.dressed.XXL-XXL.*.*` | bra-xxlarge under-breast band crease (144 pts, ≤3.8 mm) | open |
-| `*.female.adult.*.XXL-*.back\|back-3q-*.rest` | faint dark mark mid-cleft | open |
 | `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
 
 ## In progress
 
 - `*.female.adult.bare.base.face-side\|front-3q-*\|low-up\|top-down.rest`: profile prettiness, hairline
-- `*.female.adult.*.XXL-*.back*.rest`, `*.female.adult.*.S-*.*.back-90`: cleft mark, flank lumps
 
 ## Log
 
@@ -90,3 +87,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-14 | mixed shapes × back/shoulder/elbow | neck, elbow+back, belly clean; model defects found (above) | — |
 | 2026-10-14 | `*.female.adult.dressed.*.rest\|knee-*`, knee front, armpit/bra on wide hips | briefs bridge creases (clip →0); knee front refined (+1.5k verts); arm-swing mask smooth (bra-small clip 143→22); XXL bra 782→144 | f93760f |
 | 2026-10-14 | `*.*.*.dressed.*` | underwear black for women, white below adult (user request) | fb1d669 |
+| 2026-10-14 | `*.female.adult.*.XXL-*.back*`, `*.female.adult.*.S-*.*.back-60` | briefs film pushed along own normal (cleft notch gone, clip 0); hip-front edges even + trunk front faired (lumps 0.98→0.19 mm) | 85e1872 |
