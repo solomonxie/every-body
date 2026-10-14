@@ -1187,6 +1187,8 @@ def loader(np, body_tris):
             got = smoothed(n)
             if n.startswith("female-adult."):
                 got = dict(got, body=spread_fullness(np, n, got["body"], lambda m: smoothed(m)["body"], body_tris))
+            if n.startswith("female-adult.shape-chest-"):
+                got = dict(got, body=open_fold(np, got["body"], body_tris))
             shaped[n] = got
         return {k: v.copy() for k, v in shaped[n].items()}
     load.fitted = lambda n: smoothed(n)["body"].copy()
@@ -1207,6 +1209,18 @@ def body_options(np, load, body_tris):
     # the hips' change eased into the waist (no shelf across the small of the back)
     waist = (smoothstep(0.2, 0.32, y) * (1 - smoothstep(0.6, 0.75, y)))[:, None]
     breast = np.linalg.norm(load.fitted("female-adult.shape-chest-xxlarge") - f0_fit, axis=1)
+    # the fullest breasts ride on the chest wall in their fold: there the hips' change is the wall's under them (by
+    # |x|), so both sides of the fold move alike and it stays open on every hips
+    wall = fold_wall(np, load.fitted("female-adult.shape-chest-xxlarge"), body_tris, edges, degree)
+    carried = smoothstep(0.01, 0.04, breast) * smoothstep(0.42, 0.5, y) * (1 - wall)
+    inner, under = np.flatnonzero(carried > 1e-3), np.flatnonzero(wall > 0.5)
+    k = np.exp(-0.5 * ((f0_fit[inner, None, 0] - f0_fit[None, under, 0]) / FOLD_CARRY) ** 2)
+    k /= k.sum(1, keepdims=True)
+
+    def carry_on(d):
+        full = d.copy()
+        full[inner] = k @ d[under]
+        return d + carried[:, None] * (full - d)
 
     def shape_delta(name):
         fit = load.fitted(f"female-adult.shape-{name}")
@@ -1220,9 +1234,9 @@ def body_options(np, load, body_tris):
         # its fullness spread, less the base's
         d += below * (load(f"female-adult.shape-{name}")["body"] - fit - (f0 - f0_fit))
         if name.startswith("hips-"):
-            # nothing of it (its spread fullness too) reaches the chest or the fullest breasts' undersides: the bra's
-            # band sits there (fitted per chest, it holds on every hips)
-            d *= ((1 - smoothstep(0.62, 0.78, y)) * (1 - smoothstep(0.01, 0.04, breast) * smoothstep(0.42, 0.5, y)))[:, None]
+            # nothing of it (its spread fullness too) reaches the chest; the breasts ride on the trunk under them (the
+            # bra's band, fitted per chest, holds on every hips)
+            d = carry_on(d) * (1 - smoothstep(0.62, 0.78, y))[:, None]
         # wider hips: the arms swing out about the shoulders just enough that the hands and forearms clear them
         angle = ARM_OUT.get(name, 0.0)
         if angle:
@@ -2074,8 +2088,9 @@ def spread_fullness(np, name, body, raw, tris):
     x, y, z = f0.T
     r = np.min([np.linalg.norm(f0 - f0[i], axis=1) for i in NIPPLE_VERTS], axis=0)
     passes, keep, reach = FULL_SPREAD["chest"]
-    # (the chest centre keeps its shape)
+    # (the chest centre keeps its shape, the chest wall under the fold its own)
     chest = smoothstep(0.03, 0.07, r) * (1 - smoothstep(0.6 * reach, reach, r)) * arms
+    chest *= 1 - fold_wall(np, raw("female-adult.shape-chest-xxlarge"), tris, e, deg)
     passes_h, keep_h, (lo, lo1, hi1, hi) = FULL_SPREAD["hips"]
     hips = smoothstep(lo, lo1, y) * (1 - smoothstep(hi1, hi, y)) * arms
     out = body.copy()
@@ -2092,6 +2107,81 @@ def spread_fullness(np, name, body, raw, tris):
             d *= 1 + ((np.linalg.norm(d0 * w[:, None], axis=1).max() / peak) ** k - 1) * w[:, None]
         out += d - d0
     return out
+
+
+# spread over it, the fullest breasts' underside drags the chest wall below into the fold (the slot under it pinched
+# to a millimetre, its top curled over: the bra's band folds in it). That wall (skin the underside overhangs: within
+# this reach above it and in front, on the fullest option; widened over some passes) keeps its own fullness
+FOLD_WALL = (0.05, 4)
+# (the wall's change taken from under each breast point within about this |x|)
+FOLD_CARRY = 0.02
+
+
+def fold_wall(np, p, tris, e, deg):
+    from scipy.spatial import cKDTree
+    reach, passes = FOLD_WALL
+    vn = vertex_normals(np, p, tris)
+    x, y, z = p.T
+    front = (z > 0.03) & (np.abs(x) > 0.02)
+    under = front & (vn[:, 1] < -0.4)
+    wall = np.zeros(len(p))
+    if not under.any():
+        return wall
+    tree, ids = cKDTree(p[under]), np.flatnonzero(under)
+    for i in np.flatnonzero(front & (vn[:, 1] > -0.2) & (vn[:, 2] > 0.3)):
+        nb = ids[tree.query_ball_point(p[i], reach)]
+        if ((p[nb, 1] > y[i] + 0.002) & (p[nb, 2] > z[i] - 0.005)).any():
+            wall[i] = 1.0
+    for _ in range(passes):
+        acc = np.bincount(e[:, 0], wall[e[:, 1]], len(p)) + np.bincount(e[:, 1], wall[e[:, 0]], len(p))
+        wall = np.maximum(wall, acc / deg[:, 0])
+    return wall
+
+
+# the fuller breasts' fold is a slot (its sides a few millimetres apart, facing each other: a garment lifted off them
+# folds through itself). Where it's narrower than this (m) it's smoothed (shrinking: its top comes out, it opens), over
+# (passes, rings widened, rings eased)
+FOLD_OPEN = (0.016, 45, 4, 8)
+
+
+def slot_width(np, p, vn, sel, reach=0.04):
+    """per vertex: how far along its normal the skin facing back is (inf where none)"""
+    from scipy.spatial import cKDTree
+    tree = cKDTree(p)
+    out = np.full(len(p), np.inf)
+    for i in np.flatnonzero(sel):
+        nb = np.array(tree.query_ball_point(p[i], reach))
+        d = p[nb] - p[i]
+        along = d @ vn[i]
+        ok = (vn[nb] @ vn[i] < -0.3) & (along > 0) & (np.linalg.norm(d - along[:, None] * vn[i], axis=1) < 0.5 * along + 0.002)
+        if ok.any():
+            out[i] = along[ok].min()
+    return out
+
+
+def open_fold(np, p, tris):
+    width, passes, widen, ease = FOLD_OPEN
+    e = np.unique(np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), axis=1), axis=0)
+    deg = np.maximum(np.bincount(e.ravel(), minlength=len(p)), 1)[:, None]
+
+    def mean(q):
+        return np.stack([np.bincount(e[:, 0], q[e[:, 1], c], len(q)) + np.bincount(e[:, 1], q[e[:, 0], c], len(q))
+                         for c in range(q.shape[1])], 1) / deg
+
+    x, y, z = p.T
+    zone = (z > 0.03) & (np.abs(x) > 0.02) & (np.abs(x) < 0.38) & (y > 0.44) & (y < 0.66)
+    g = slot_width(np, p, vertex_normals(np, p, tris), zone)
+    w = (1 - np.clip(g / width - 1, 0, 1))[:, None]
+    if not w.any():
+        return p
+    for _ in range(widen):
+        w = np.maximum(w, mean(w))
+    for _ in range(ease):
+        w = mean(w)
+    q = p.copy()
+    for _ in range(passes):
+        q += 0.5 * w * (mean(q) - q)
+    return q
 
 
 # the arm swung down by the fit meets the chest in a step at the front of the armpit (a nub, a pocket below it):
