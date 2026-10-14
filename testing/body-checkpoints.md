@@ -58,6 +58,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `*.female.adult.*.S-XXL\|XXL-S\|S-S\|XXL-XXL\|L-L.*.rest\|back-60\|back-90+elbow-90\|shoulder-160`: mixed shapes, hanging/lifted breasts, neck at back-90
 - `*.female.adult.dressed.S-*.*.rest`, `*.female.adult.*.*.*.knee-90`: briefs clip at rest, knee-front facets
 
 ## Log
