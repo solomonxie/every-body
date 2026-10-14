@@ -21,6 +21,9 @@ SHADE = {"east-asian": 1.5}
 SHADE_FEMALE = {"east-asian": 1.3}
 # blood-flush colour scale per heritage (a soft rose-peach)
 FLUSH_TINT = {"east-asian": (1.0, 0.99, 1.0)}
+# young women's cheek flush: (strength scale, share spread evenly over the face, spread sigma px). A rose disc on a
+# yellower face prints its lower edge as a line from under the eye to the jaw once the lower face is in shade
+FLUSH_SPREAD = {"east-asian": (0.75, 0.7, 90)}
 # women's faces: how much of the skin's broad light, dark and olive patches is kept (MakeHuman's Asian skin carries blotchy
 # baked shading that reads as streaks), 0 … 1
 FACE_EVEN = {"east-asian": 0.2}
@@ -290,7 +293,13 @@ def finish(np, px, heritage, name, reg):
     flush = np.array([1.02, 0.88, 0.87]) * (1 - dark) + np.array([0.96, 0.88, 0.86]) * dark
     if name.startswith("female"):
         flush = flush * np.array(FLUSH_TINT.get(heritage, (1.0, 1.0, 1.0)))
-    px = mix(px, reg["cheeks"], flush, min(0.55 * f * sh, 0.95))
+    cheeks, k_cheeks = reg["cheeks"], min(0.55 * f * sh, 0.95)
+    if name == "female-young" and heritage in FLUSH_SPREAD:
+        scale, share, r = FLUSH_SPREAD[heritage]
+        wide = blur(np, cheeks, r)
+        wide = np.clip(wide / wide[reg["head"] > 0.5].max(), 0, 1) * reg["head"] * (1 - np.clip(reg["lips"] * 2, 0, 1))
+        cheeks, k_cheeks = (1 - share) * cheeks + share * wide, k_cheeks * scale
+    px = mix(px, cheeks, flush, k_cheeks)
     px = mix(px, reg["nose"], flush, min(0.45 * sh, 0.95))
     px = mix(px, reg["ears"], flush, 0.35)
     # lids a touch deeper and browner (defines the eye), a faint shadow under the eyes
