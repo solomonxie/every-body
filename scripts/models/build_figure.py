@@ -71,7 +71,7 @@ SHAPES = {
 # smoothing passes over the hips shapes' change about the waist
 HIP_EASE = 40
 # arm swing (radians, out from the body) that goes with a shape
-ARM_OUT = {"hips-large": 0.03, "hips-xlarge": 0.065, "hips-xxlarge": 0.1}
+ARM_OUT = {"hips-medium": 0.018, "hips-large": 0.04, "hips-xlarge": 0.065, "hips-xxlarge": 0.1}
 # group: (sex build, age, hair styles (hair.STYLES), eyebrows, eyelashes)
 GROUPS = {
     "male-adult": ("male", "adult", ["man"], "eyebrow012", "eyelashes02"),
@@ -998,6 +998,8 @@ class Packer:
 # the back) their outline shows straight runs and corners. Their triangles are split in pack, per pass: (heights over
 # the adult woman, longest edge round a vertex worth splitting)
 HIP_REFINE = (((-0.7, 0.55), 0.03), ((-0.3, 0.42), 0.015))
+# the front of the knees likewise (bent, its long edges show over the kneecap): (heights, longest, in front of this z)
+KNEE_REFINE = (((-0.88, -0.52), 0.02, -0.06),)
 # where its coarse rows meet the fine ones a vertex sits all but on its triangle's far edge (area / longest edge² below
 # this): split, that edge's midpoint lands on the vertex and the skin folds round it (dark specks across the lower
 # belly), so those edges are flipped first
@@ -1025,11 +1027,11 @@ class HipRefine:
         p = (f0 + f0[twin] * np.array([-1, 1, 1])) / 2
         tri = index.reshape(-1, 3).astype(np.int64)
         vmap = vmap.astype(np.int64)
-        tri = self.unsliver(p, tri, vmap, (p[:, 1] > HIP_REFINE[0][0][0] - 0.05) & (p[:, 1] < HIP_REFINE[0][0][1] + 0.05)
+        tri = self.unsliver(p, tri, vmap, (p[:, 1] > KNEE_REFINE[0][0][0] - 0.05) & (p[:, 1] < HIP_REFINE[0][0][1] + 0.05)
                             & (arms < 0.05))
         self.raw_tris = vmap[tri]
         self.passes = []
-        for (lo, hi), longest in HIP_REFINE:
+        for (lo, hi), longest, front in [(b, l, None) for b, l in HIP_REFINE] + list(KNEE_REFINE):
             pt = vmap[tri]
             e = np.concatenate([pt[:, [0, 1]], pt[:, [1, 2]], pt[:, [2, 0]]])
             ln = np.linalg.norm(p[e[:, 0]] - p[e[:, 1]], axis=1)
@@ -1037,6 +1039,8 @@ class HipRefine:
             np.maximum.at(reach, e[:, 0], ln)
             np.maximum.at(reach, e[:, 1], ln)
             mark = (p[:, 1] > lo) & (p[:, 1] < hi) & (arms < 0.05) & (reach > longest)
+            if front is not None:
+                mark &= (p[:, 2] > front) & (np.abs(p[:, 0]) > 0.04)
             mark |= mark[twin]
             sel = mark[pt].all(1)
             edges, te = np.unique(np.sort(e, 1), axis=0, return_inverse=True)
@@ -1184,6 +1188,7 @@ def body_options(np, load, body_tris):
     degree = np.maximum(np.bincount(edges.ravel(), minlength=len(f0)), 1)[:, None]
     # the hips' change eased into the waist (no shelf across the small of the back)
     waist = (smoothstep(0.2, 0.32, y) * (1 - smoothstep(0.6, 0.75, y)))[:, None]
+    breast = np.linalg.norm(load.fitted("female-adult.shape-chest-xxlarge") - f0_fit, axis=1)
 
     def shape_delta(name):
         fit = load.fitted(f"female-adult.shape-{name}")
@@ -1194,10 +1199,12 @@ def body_options(np, load, body_tris):
                 np.add.at(acc, edges[:, 0], d[edges[:, 1]])
                 np.add.at(acc, edges[:, 1], d[edges[:, 0]])
                 d += 0.5 * waist * (acc / degree - d)
-            # nothing of it reaches the chest (the bra's band sits there)
-            d *= 1 - smoothstep(0.62, 0.78, y)[:, None]
         # its fullness spread, less the base's
         d += below * (load(f"female-adult.shape-{name}")["body"] - fit - (f0 - f0_fit))
+        if name.startswith("hips-"):
+            # nothing of it (its spread fullness too) reaches the chest or the fullest breasts' undersides: the bra's
+            # band sits there (fitted per chest, it holds on every hips)
+            d *= ((1 - smoothstep(0.62, 0.78, y)) * (1 - smoothstep(0.01, 0.04, breast) * smoothstep(0.42, 0.5, y)))[:, None]
         # wider hips: the arms swing out about the shoulders just enough that the hands and forearms clear them
         angle = ARM_OUT.get(name, 0.0)
         if angle:
@@ -1205,7 +1212,8 @@ def body_options(np, load, body_tris):
                 c = np.array(gen["shoulder"]) * np.array([side, 1, 1])
                 # the whole arm turns as one (full below the armpit, fading in above it), by its own weight: the side
                 # of the chest under it stays put
-                arm = np.maximum(smoothstep(0.2, 0.7, arms), (arms > 0.02) * smoothstep(c[1] - 0.2, c[1] - 0.35, f0[:, 1]))
+                # (the trunk's skin by the armpit, arms up to 0.1, stays: a step there creased the breast's side)
+                arm = np.maximum(smoothstep(0.2, 0.7, arms), smoothstep(0.1, 0.25, arms) * smoothstep(c[1] - 0.2, c[1] - 0.35, f0[:, 1]))
                 sel = arm * (np.sign(f0[:, 0]) == side) * smoothstep(c[1] - 0.02, c[1] - 0.25, f0[:, 1])
                 q = f0 - c
                 a = -side * angle * sel
@@ -1302,7 +1310,8 @@ def pack():
     header["garments"] = garments(np, pk, topo["body"], refine(load("male-adult.neutral")["body"]), refine(f0 + shape_delta("hips-large")),
                                   refine(load("kid-toddler.neutral")["body"]), chests, refine(load("kid-child.neutral")["body"]),
                                   nipple_ids(np, load("female-adult.neutral")), arms=refine.arms, refined_from=refine.count,
-                                  pregnant=pregnant)
+                                  pregnant=pregnant, bridged={"briefs-female": [refine(f0 + shape_delta(f"hips-{n}")) for n in BRIDGE_HIPS],
+                                                              "briefs-pregnant": [pregnant0]})
     payload = b"".join(pk.chunks)
     comp = zlib.compressobj(9, zlib.DEFLATED, -15)
     data = comp.compress(payload) + comp.flush()
@@ -1331,12 +1340,13 @@ STRAP_TOP = 0.17
 
 
 def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=None, only_bra=False, arms=None, refined_from=None,
-             pregnant=None):
+             pregnant=None, bridged=None):
     """Underwear as the parts of the body where a smooth field is positive, cut exactly along its zero line.
     Each garment vertex is a point in a body triangle, so it follows every sex/age/heritage variant.
     Fields are written on the neutral adult male / female and the toddler (children share them: same topology); the
     child's top on the child. pregnant: {chest: (pregnant body, the same chest without the bump)}, bras cut on the bump
-    (the plain cut's band, stretched over it, would cover its top)"""
+    (the plain cut's band, stretched over it, would cover its top). bridged: {garment: bodies}, its creases bridged
+    (see bridge)"""
     vmap, index = topo["vmap"], topo["index"].reshape(-1, 3)
     tris = np.unique(vmap[index], axis=0)  # position-vertex triangles (seams collapse)
 
@@ -1525,12 +1535,124 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
         if name.startswith("bra") and nipples:
             ref = (pregnant or {}).get(name[len("bra-pregnant-"):], (None, None))[1] if name.startswith("bra-pregnant-") else None
             abc, w, offset = cup(np, pos, tris, p, abc, w, tri, nipples, lift * (0.8 + 0.2 * np.minimum(f / 0.01, 1)), ref=ref)
+        if name in (bridged or {}):
+            abc, w, offset = bridge(np, bridged[name], tris, abc, w, tri, lift * (0.8 + 0.2 * np.minimum(f / 0.01, 1)), arms)
         out[name] = {"vertices": len(f), "triangles": len(tri), "abc": pk.add(abc), "w": pk.add(w), "f": pk.add(f),
                      "index": pk.add(tri), "lift": lift, "color": color}
         if offset is not None:
             out[name]["offset"] = pk.add(offset)
         print("GARMENT", name, len(f), len(tri))
     return out
+
+
+# the hips the briefs' bridge is fitted on (the narrowest first)
+BRIDGE_HIPS = ("small", "medium", "large", "xlarge", "xxlarge")
+# (crease: closer to the skin than this share of the lift; smoothing passes; the skin cleared by this share of the lift)
+BRIDGE = (0.6, 60, 1.0)
+
+
+def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
+    """fabric over the skin's creases (the buttocks' cleft, the groin), not down into them: lifted along the normal, a
+    narrow crease's walls push it through each other. Where it comes closer to the trunk's skin than it's lifted on any
+    of the bodies, it's smoothed over its own mesh, each pass pushed back off the skin (it spans the crease, stays on a
+    bulge), on each body; those points re-bound to a skin triangle round them and stored as offsets (see cup)"""
+    from scipy.spatial import cKDTree
+    near, passes, clear = BRIDGE
+    trunk = np.flatnonzero(arms < 0.05)
+    tris = tris[(tris[:, 0] != tris[:, 1]) & (tris[:, 1] != tris[:, 2]) & (tris[:, 0] != tris[:, 2])]
+    wc = 1 - w.sum(1)
+    carry = lambda x: w[:, :1] * x[abc[:, 0]] + w[:, 1:] * x[abc[:, 1]] + wc[:, None] * x[abc[:, 2]]
+
+    def normals(body):
+        f = np.cross(body[tris[:, 1]] - body[tris[:, 0]], body[tris[:, 2]] - body[tris[:, 0]])
+        vn = np.zeros_like(body)
+        for k in range(3):
+            np.add.at(vn, tris[:, k], f)
+        return vn / np.maximum(np.linalg.norm(vn, axis=1, keepdims=True), 1e-12)
+
+    def lifted(body, vn):
+        n = carry(vn)
+        return carry(body) + lift[:, None] * n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+
+    def depth(tree, body, vn, q):
+        """how far out of the trunk's skin (Figure.Surface.depthNormal: the lowest over the near vertices' planes)"""
+        d, i = tree.query(q, k=12)
+        i = trunk[i]
+        dots = ((q[:, None] - body[i]) * vn[i]).sum(2)
+        dots[d > 1.5 * d[:, :1] + 0.005] = np.inf
+        return dots, i
+
+    ge, count = np.unique(np.sort(np.concatenate([gtri[:, [0, 1]], gtri[:, [1, 2]], gtri[:, [2, 0]]]), axis=1), axis=0,
+                          return_counts=True)
+    ge = ge.astype(np.int64)
+    rim = np.zeros(len(w), bool)
+    rim[ge[count == 1].ravel()] = True
+    # (the cut edge smoothed along itself only: pulled toward the inside it'd notch)
+    to = np.concatenate([ge, ge[:, ::-1]])
+    to = to[~rim[to[:, 0]] | np.tile(count == 1, 2)]
+    gdeg = np.maximum(np.bincount(to[:, 0], minlength=len(w)), 1)[:, None]
+    region = np.zeros(len(w), bool)
+    for body in bodies:
+        vn = normals(body)
+        region |= depth(cKDTree(body[trunk]), body, vn, lifted(body, vn))[0].min(1) < near * lift
+    for _ in range(2):
+        region[ge[region[ge[:, 0]], 1]] = True
+        region[ge[region[ge[:, 1]], 0]] = True
+    r = np.arange(len(w))
+
+    def film(body, vn):
+        tree = cKDTree(body[trunk])
+        q = lifted(body, vn)
+        for it in range(passes):
+            acc = np.zeros_like(q)
+            np.add.at(acc, to[:, 0], q[to[:, 1]])
+            q[region] += 0.5 * (acc / gdeg - q)[region]
+            for _ in range(3 if it < passes - 1 else 40):
+                dots, i = depth(tree, body, vn, q)
+                k = dots.argmin(1)
+                low = region & (dots[r, k] < clear * lift)
+                if not low.any():
+                    break
+                q[low] += vn[i[r, k]][low] * (clear * lift - dots[r, k])[low, None]
+        return q
+
+    sel = np.flatnonzero(region)
+    vns = [normals(body) for body in bodies]
+    films = [film(body, vn)[sel] for body, vn in zip(bodies, vns)]
+    # re-bound to one of the triangles nearest the first body's sheet, at the closest point on it: the one whose
+    # frame carries a single offset closest to the sheet on every body (one side of the cleft or the other would fold)
+    body = bodies[0]
+    _, cand = cKDTree(body[tris].mean(1)).query(films[0], k=10)
+    a, b, c = (body[tris[cand, k]] for k in range(3))
+    v0, v1, v2 = b - a, c - a, films[0][:, None] - a
+    d00, d01, d11 = (v0 * v0).sum(2), (v0 * v1).sum(2), (v1 * v1).sum(2)
+    d20, d21 = (v2 * v0).sum(2), (v2 * v1).sum(2)
+    den = np.maximum(d00 * d11 - d01 * d01, 1e-18)
+    bv, bw = (d11 * d20 - d01 * d21) / den, (d00 * d21 - d01 * d20) / den
+    bary = np.clip(np.stack([1 - bv - bw, bv, bw], 2), 0, None)
+    bary /= bary.sum(2, keepdims=True)
+    local = []
+    for body, vn, q in zip(bodies, vns, films):
+        corner = [body[tris[cand, k]] for k in range(3)]
+        base = sum(bary[..., k:k + 1] * corner[k] for k in range(3))
+        n = sum(bary[..., k:k + 1] * vn[tris[cand, k]] for k in range(3))
+        t1, t2, nt = (x.reshape(cand.shape + (3,)) for x in tri_frame(np, *(x.reshape(-1, 3) for x in corner), n.reshape(-1, 3)))
+        local.append((base, (t1, t2, nt), q[:, None] - base))
+    o = sum(np.stack([(d * t).sum(2) for t in fr], 2) for _, fr, d in local) / len(bodies)
+    err = np.zeros(cand.shape)
+    for body, vn, (base, fr, d) in zip(bodies, vns, local):
+        got = base + sum(o[..., k:k + 1] * fr[k] for k in range(3))
+        err += ((got - (base + d)) ** 2).sum(2)
+        # (never one that lands under the skin on any body)
+        dots, _ = depth(cKDTree(body[trunk]), body, vn, got.reshape(-1, 3))
+        err += (dots.min(1).reshape(cand.shape) < 0) * 1.0
+    best = err.argmin(1)
+    s = np.arange(len(sel))
+    abc, w = abc.copy(), w.copy()
+    abc[sel], w[sel] = tris[cand[s, best]], bary[s, best, :2]
+    offset = np.zeros((len(w), 3))
+    offset[sel] = o[s, best]
+    return abc, w.astype(np.float32), offset.astype(np.float32)
 
 
 def nipple_ids(np, got):
