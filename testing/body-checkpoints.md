@@ -55,10 +55,14 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.dressed.S-S.*.rest` | briefs clip into skin at rest (107 verts, ≤9.6 mm) | open |
 | `*.female.adult.*.base.front-3q-*.rest` | caruncle (inner eye corner) too saturated: painted salmon in the shared skin texture | open (texture, all groups) |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
+| `*.female.adult.*.*-L\|*-XL\|*-XXL.*.*` (worst S-XXL) | outer-breast/front-armpit crease, crumpled bra-small cup: ARM_OUT mask hard step | handed to briefs/knee agent |
+| `*.female.adult.dressed.XXL-S\|L-L.*.rest` | briefs clip in crotch / side waistband | handed to briefs/knee agent |
+| `*.female.adult.dressed.XXL-XXL.*.*` | bra-xxlarge clips under breast (hidden): refined deltas summed ≠ refined sum | handed to briefs/knee agent |
+| `*.female.adult.*.S-*.*.back-90` | hip-bone/rib lumps on the flank with S hips | open |
+| `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, ask user |
 
 ## In progress
 
-- `*.female.adult.*.S-XXL\|XXL-S\|S-S\|XXL-XXL\|L-L.*.rest\|back-60\|back-90+elbow-90\|shoulder-160`: mixed shapes, hanging/lifted breasts, neck at back-90
 - `*.female.adult.dressed.S-*.*.rest`, `*.female.adult.*.*.*.knee-90`: briefs clip at rest, knee-front facets
 
 ## Log
@@ -84,3 +88,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-13 | `*.female.adult\|senior.*.base.face-*\|front-3q-*.rest` | mouth lining out of tuck_lips push + seat_lining guard: lip-corner triangles gone | f755006 |
 | 2026-10-14 | `*.female.adult.*.*.*.knee-*\|elbow-*` | outer-side hinge share widened; inner skin pressed to the mid plane: crossing 350 verts/83 mm → 0 | uncommitted |
 | 2026-10-14 | `*.female.adult.*.base.face-side\|front-3q-*.rest` | ears turn with their skin (no lobe-jaw ledge); lip-corner folds eased (back-facing px ~1000→0) | a166c77, repack |
+| 2026-10-14 | mixed shapes × back/shoulder/elbow | neck, elbow+back, belly clean; model defects found (above) | — |
