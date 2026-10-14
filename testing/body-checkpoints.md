@@ -51,19 +51,16 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
-| `*.female.adult.*.*.front\|low-up.knee-90` | front of knee slightly faceted (~2 cm edges over the curve) | open |
-| `*.female.adult.dressed.S-S.*.rest` | briefs clip into skin at rest (107 verts, ≤9.6 mm) | open |
 | `*.female.adult.*.base.front-3q-*.rest` | caruncle (inner eye corner) too saturated: painted salmon in the shared skin texture | open (texture, all groups) |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
-| `*.female.adult.*.*-L\|*-XL\|*-XXL.*.*` (worst S-XXL) | outer-breast/front-armpit crease, crumpled bra-small cup: ARM_OUT mask hard step | handed to briefs/knee agent |
-| `*.female.adult.dressed.XXL-S\|L-L.*.rest` | briefs clip in crotch / side waistband | handed to briefs/knee agent |
-| `*.female.adult.dressed.XXL-XXL.*.*` | bra-xxlarge clips under breast (hidden): refined deltas summed ≠ refined sum | handed to briefs/knee agent |
 | `*.female.adult.*.S-*.*.back-90` | hip-bone/rib lumps on the flank with S hips | open |
-| `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, ask user |
+| `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
+| `*.female.adult.dressed.XXL-XXL.*.*` | bra-xxlarge under-breast band crease (144 pts, ≤3.8 mm) | open |
+| `*.female.adult.*.XXL-*.back\|back-3q-*.rest` | faint dark mark mid-cleft | open |
+| `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
 
 ## In progress
 
-- `*.female.adult.dressed.S-*.*.rest`, `*.female.adult.*.*.*.knee-90`: briefs clip at rest, knee-front facets
 
 ## Log
 
@@ -89,3 +86,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-14 | `*.female.adult.*.*.*.knee-*\|elbow-*` | outer-side hinge share widened; inner skin pressed to the mid plane: crossing 350 verts/83 mm → 0 | uncommitted |
 | 2026-10-14 | `*.female.adult.*.base.face-side\|front-3q-*.rest` | ears turn with their skin (no lobe-jaw ledge); lip-corner folds eased (back-facing px ~1000→0) | a166c77, repack |
 | 2026-10-14 | mixed shapes × back/shoulder/elbow | neck, elbow+back, belly clean; model defects found (above) | — |
+| 2026-10-14 | `*.female.adult.dressed.*.rest\|knee-*`, knee front, armpit/bra on wide hips | briefs bridge creases (clip →0); knee front refined (+1.5k verts); arm-swing mask smooth (bra-small clip 143→22); XXL bra 782→144 | f93760f |
