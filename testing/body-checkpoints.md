@@ -42,14 +42,14 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.XXL-XXL.top-down\|back-3q-*.*` | butt/thigh lumps | improved afcef5f, unconfirmed |
 | `east-asian.female.adult.*.*.face-side.rest` | chin, eyes, sallow skin | improved 8200035, unconfirmed |
 | `*.*.adult\|pregnant\|child.*.*.*.shoulder-90\|shoulder-160\|back-*+shoulder-*` | side-chest balloon; armpit skin stretched into thin sheets/flaps (deltoid skin bound to the shoulder blade, turn ramped over a few triangles) | fixed in Blender port (shoulder share: arm/torso split + 0.14 band by distance over the skin, chord blend), uncommitted, installed; check on device. Left: shoulder top squashes (hidden), kid top armhole shows a speck of skin at 160 |
-| `*.female.adult\|pregnant.dressed.XL+.*.back-60\|back-90` | bra band's lower edge scallops under the hanging breasts | open |
+| `*.female.adult\|pregnant.dressed.XL+.*.back-60\|back-90` | band edge follows the skin's under-breast crease (not a garment bug); ~56 folded bra tris in the crease at rest | open (skin crease) |
 | `*.female.pregnant.*.base.*.*` with XL/XXL chest | breast underside sinks up to 2 cm into the bump (hidden in the crease) | open (prototype: lift along the bump normal, /tmp/uw/tools/bumpfit.py) |
 | `*.female.adult.*.base.face-front\|front-3q-*.rest` (clearest white, east-asian) | tiny dark triangles at lower-lip corners: mouth lining pokes through the lip seam | open |
+| `*.female.*.dressed.*.*.shoulder-160` | strap behind the armpit torn/wavy: skin crumples there | open (armpit skin) |
 
 ## In progress
 
 - `*.*.adult\|senior\|child.bare.base.face-*\|front-3q-*\|low-up.rest`: mouth lining poke-through, nostril/eye/ear seams
-- `*.female.adult\|pregnant.dressed.M-M\|XL-XL\|XXL-XXL.*.back-60\|back-90\|back-60+shoulder-90\|shoulder-160`: bra band/strap waves, breast into bump
 
 ## Log
 
@@ -69,3 +69,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-13 | `*.*.toddler.*.base.face-front.rest` | mouth-corner line = Blender cast shadow (app lights cast none), not a defect | — |
 | 2026-10-13 | `*.female\|male.adult.*.M-M\|XXL-XXL\|base.*.shoulder-90\|shoulder-160\|elbow-145\|back-60+shoulder-90`, pregnant + child shoulder-160 | armpit sheets gone: max edge stretch 41–49× → 3.5–4.4×, creases 60–99 → 9–26 (shoulder-160); elbow unchanged and clean | uncommitted |
 | 2026-10-13 | `*.*.adult\|senior.bare.base.back*\|face-*.*` | skins clean; upper-back patch + lip smear were a QA tool artifact (pose.py flipped UV v) | — |
+| 2026-10-13 | `*.female.*.dressed.*.*.rest\|back-*\|back-60+shoulder-90` | strap line kept ≤0.17 out over the shoulder: ruffle/notches gone (edge wave 17–25→9–10 mm) | 0499f0b |
