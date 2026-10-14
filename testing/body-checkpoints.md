@@ -53,10 +53,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `white\|east-asian.female.adult.*.base.face-side.rest` | crease from earlobe forward along the jaw | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
+| `*.female.adult.*.*.front\|low-up.knee-90` | front of knee slightly faceted (~2 cm edges over the curve) | open |
+| `*.female.adult.dressed.S-S.*.rest` | briefs clip into skin at rest (107 verts, ≤9.6 mm) | open |
 
 ## In progress
 
-- `*.female.adult.*.*.*.knee-90\|knee-135\|elbow-90\|elbow-145`: knee/elbow bends
 - `*.female.adult.*.*.face-side\|front-3q-*.rest`: earlobe-jaw crease, black lip-corner folds
 
 ## Log
@@ -80,3 +81,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-13 | `*.female.*.dressed.*.*.rest\|back-*\|back-60+shoulder-90` | strap line kept ≤0.17 out over the shoulder: ruffle/notches gone (edge wave 17–25→9–10 mm) | 0499f0b |
 | 2026-10-13 | `*.*.adult.*.*.back*\|left\|low-up.shoulder-160` | shoulder shares band 0.2 + 40 smoothing passes: armpit creases →0, strap straight | uncommitted |
 | 2026-10-13 | `*.female.adult\|senior.*.base.face-*\|front-3q-*.rest` | mouth lining out of tuck_lips push + seat_lining guard: lip-corner triangles gone | f755006 |
+| 2026-10-14 | `*.female.adult.*.*.*.knee-*\|elbow-*` | outer-side hinge share widened; inner skin pressed to the mid plane: crossing 350 verts/83 mm → 0 | uncommitted |
