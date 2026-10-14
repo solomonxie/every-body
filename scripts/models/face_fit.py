@@ -212,6 +212,18 @@ FACE_REACH = {"kid-toddler": 1.0, "kid-child": 1.4}
 # round each eye, where the warp's own shape gives way to the base head's surface (eye spacings): a child drawn all the
 # way onto Rain gets a wide blend, or Rain's deeper sockets print a shelf ringing the lower lid
 KEEP_EYES = {"kid-child": (0.5, 1.2)}
+# the landmarks round each eye (out to these radii, in eye-ring radii) move as its ring does: drawn to the source's
+# bigger sockets while the ring grows less, the skin below the lid buckled into a groove (a line in low and 3/4 views)
+EYE_SURROUND = {"female-adult": (1.3, 3.2)}
+# the skin within these radii of each eyeball (in ball radii) moves with the ball
+EYE_LINING = {"female-adult": (1.1, 1.45)}
+
+
+def ball_sphere(ball):
+    """an eyeball's centre and radius (fitted to its back, without the cornea's bulge)"""
+    P = ball[ball[:, 2] < np.percentile(ball[:, 2], 60)]
+    x = np.linalg.lstsq(np.c_[2 * P, np.ones(len(P))], (P ** 2).sum(1), rcond=None)[0]
+    return x[:3], np.sqrt(x[3] + x[:3] @ x[:3])
 
 
 def with_base_head(neutral, gid, source):
@@ -241,6 +253,15 @@ def with_base_head(neutral, gid, source):
         a, b_ = L[ring], L[ring] + delta[ring]
         s0 = np.sqrt(((b_ - b_.mean(0)) ** 2).sum() / ((a - a.mean(0)) ** 2).sum())
         delta[ring] = b_.mean(0) + (a - a.mean(0)) * (1 + EYE_GROW_BY.get(gid, EYE_GROW) * (s0 - 1)) * np.array(EYE_SHAPE_BY.get(gid, EYE_SHAPE)) - a
+    if gid in EYE_SURROUND:
+        r0, r1 = EYE_SURROUND[gid]
+        for ring in EYE_RING.values():
+            a = L[ring]
+            ac, rr = a.mean(0), np.sqrt(((a - a.mean(0)) ** 2).sum(1).mean())
+            s = np.sqrt((((a + delta[ring]) - (a + delta[ring]).mean(0)) ** 2).sum() / ((a - ac) ** 2).sum())
+            k = 1 - smoothstep(r0, r1, np.linalg.norm((L - ac) * np.array([1, 1.3, 1]), axis=1) / rr)
+            k[ring] = 0
+            delta += k[:, None] * ((a + delta[ring]).mean(0) + (L - ac) * s - L - delta)
     warp = smooth_warp(L[use], delta[use], 0.7 * U, 0.02)
     # the face: near the landmarks, in front of the ears, above the jaw's underside (a young child's chest sits
     # within reach of the chin's landmarks: the warp stops above it, or its edge prints a line across the collar)
@@ -297,6 +318,17 @@ def with_base_head(neutral, gid, source):
         head = moved + off * np.minimum(1, 0.25 * U / np.maximum(np.linalg.norm(off, axis=1, keepdims=True), 1e-12))
     if groups is not None and gid in EAR_SKIN:
         head = ears_with_skin(body, head, ears, rim, U, vmap[tris], *EAR_SKIN[gid])
+    if gid in EYE_LINING:
+        # the skin hugging each eyeball (inner corner, lid linings) moves with it, as its lid rim does: warped, the
+        # inner corner stood out in front of the ball and hid a third of it in 3/4 views
+        r0, r1 = EYE_LINING[gid]
+        for side, ring in EYE_RING.items():
+            ball = eyes[np.sign(eyes[:, 0]) == side]
+            c, R = ball_sphere(ball)
+            a, b_ = L[ring], L[ring] + delta[ring]
+            sc = np.clip(np.sqrt(((b_ - b_.mean(0)) ** 2).sum() / ((a - a.mean(0)) ** 2).sum()), 0.8, 1.8)
+            k = (1 - smoothstep(r0 * R, r1 * R, np.linalg.norm(body - c, axis=1)))[:, None]
+            head = head + k * ((body - a.mean(0)) * sc + b_.mean(0) - head)
     if groups is not None:
         # one face on both sides (the source head isn't quite mirrored)
         twin = groups["mirror"]
@@ -943,6 +975,64 @@ def soften_jaw(pieces, gid, her, passes):
     return dict(pieces, body=smooth_along_normals(body, w, passes))
 
 
+# groups whose nose sides, under-eyes and smile lines are evened (passes of plain smoothing, then a Taubin pass to
+# keep the volume): the heritage's nasojugal crease and the fit's folds there read as hard lines in low and 3/4 views
+EVEN_MIDFACE = {"female-adult": 15}
+
+
+def even_midface(pieces, gid, her, passes):
+    import base_head as bh
+    uv, vmap, tris = topo("body")
+    body, e = pieces["body"], pieces["eyes"]
+    _, t, b, _ = on_mesh(pieces, gid, her)
+    L = mesh_points(body, t, b, tris, vmap)
+    U = np.linalg.norm(e[e[:, 0] > 0].mean(0) - e[e[:, 0] < 0].mean(0))
+    x, y, z = body[:, 0], body[:, 1], body[:, 2]
+    ey = e[:, 1].mean()
+    balls = [ball_sphere(e[np.sign(e[:, 0]) == side]) for side in (1, -1)]
+    # below each eye, out across the cheek (not the lids)
+    w = np.zeros(len(body))
+    for side, (c, R) in zip((1, -1), balls):
+        r = np.linalg.norm((body - c) * np.array([1, 1.15, 1]), axis=1)
+        w = np.maximum(w, smoothstep(1.25 * R, 1.6 * R, r) * (1 - smoothstep(0.85 * U, 1.15 * U, r)) * (np.sign(x) == side)
+                       * (1 - smoothstep(c[1], c[1] + 0.15 * U, y)))
+    # the nose's sides up past the inner corners of the eyes
+    inner = np.abs(L[133, 0])
+    sides = (1 - smoothstep(inner + 0.05 * U, inner + 0.25 * U, np.abs(x))) * (1 - smoothstep(ey + 0.15 * U, ey + 0.35 * U, y))
+    for c, R in balls:
+        sides *= smoothstep(1.2 * R, 1.5 * R, np.linalg.norm(body - c, axis=1))
+    w = np.maximum(w, sides) * smoothstep(L[13, 1] + 0.2 * U, L[13, 1] + 0.4 * U, y)
+    # the smile lines, nose wing to mouth corner (outside the lips)
+    mouth = (L[13] + L[14]) / 2
+    for wing, corner in ((L[129], L[61]), (L[358], L[291])):
+        seg = corner - wing
+        s_ = np.clip(((body - wing) @ seg) / (seg @ seg), 0, 1)
+        d = np.linalg.norm(body - (wing + s_[:, None] * seg), axis=1)
+        w = np.maximum(w, (1 - smoothstep(0.12 * U, 0.25 * U, d)) * smoothstep(0.3, 0.45, np.linalg.norm((body - mouth) * np.array([0.7, 1.4, 1]), axis=1) / U))
+    # in front, off the nose's ridge, wings and nostrils
+    mid = (L[234, 2] + L[454, 2]) / 2
+    w *= smoothstep(mid, mid + 0.4 * U, z) * smoothstep(0.07 * U, 0.14 * U, np.abs(x))
+    w *= smoothstep(0.3 * U, 0.45 * U, np.linalg.norm((body - L[2]) * np.array([0.8, 1.4, 1]), axis=1))
+    flat = body + w[:, None] * (bh.smooth(np, body, vmap[tris], len(body), passes) - body)
+    return dict(pieces, body=untangle_w(flat, w, 10))
+
+
+def untangle_w(body, w, passes):
+    """Taubin passes where `w` (no shrinking)"""
+    _, vmap, tris = topo("body")
+    t = vmap[tris]
+    e = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
+    cnt = np.maximum(np.bincount(e.ravel(), minlength=len(body)), 1).astype(float)[:, None]
+    p = body.copy()
+    for _ in range(passes):
+        for step in (0.5, -0.53):
+            acc = np.zeros_like(p)
+            np.add.at(acc, e[:, 0], p[e[:, 1]])
+            np.add.at(acc, e[:, 1], p[e[:, 0]])
+            p = p + step * w[:, None] * (acc / cnt - p)
+    return p
+
+
 # faces whose cheeks are smoothed (the heritage difference leaves ripples that read as streaks): Taubin passes
 SMOOTH_CHEEKS = {"female-adult.east-asian": 200}
 
@@ -1096,6 +1186,9 @@ def save(name, pieces):
         pieces = soften_jaw(pieces, gid, name.split(".")[1], SOFT_JAW[gid])
     if name in SMOOTH_CHEEKS and "eyes" in pieces:
         pieces = smooth_cheeks(pieces, gid, name.split(".")[1], SMOOTH_CHEEKS[name])
+    if gid in EVEN_MIDFACE and "eyes" in pieces:
+        # (the pregnant figure wears the white skin)
+        pieces = even_midface(pieces, gid, name.split(".")[1].replace("pregnant", "white"), EVEN_MIDFACE[gid])
     if gid in TUCK_LIPS and "eyes" in pieces:
         pieces = tuck_lips(pieces, *TUCK_LIPS[gid])
     if gid in SMOOTH_CHEST:
