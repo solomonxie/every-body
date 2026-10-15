@@ -62,15 +62,15 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | Cells | Issue | State |
 |---|---|---|
 | `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | open |
-| `*.female.adult.*.*.side.elbow-*\|knee-*` | seam at the hinge sides (hingeShare extensor widening steps on sign(dz)) | in progress |
+| `*.female.adult.dressed.M-XL\|XXL.*.*` | bra-medium on wide hips still creases (162 edges); bra-xlarge small cluster below the nipple | open |
+| `*.female.adult.*.*.*.knee-135` | front-of-knee stretch (218 edges >2), small notch in the knee pit; thin bright sliver in inner elbow crease | open |
+| `*.female.adult.*.*.back.back-60` | buttock top reads as a shelf at back bend | open |
 | `*.female.adult.*.*.top-down.elbow-*` | forearm outline beyond the refined band still coarse | open |
 | `*.female.adult.dressed.M-*.*.low-up.*` | faint shading lumps where the cup meets the band; small band-edge kink at the side | open |
 | `*.male\|child.*.*.*.shoulder-*` | back-armpit slit (fix applied to the woman only) | waits |
 
 ## In progress
 
-- `*.female.adult.bare.M-M\|XXL-XXL.*.elbow-*\|knee-*`: hinge share seam
-- `southeast-asian.female.adult.dressed.XL-XXL.top-down.elbow-145`, `south-asian.female.adult.dressed.XL-S.back.back-60`, `white.female.adult.dressed.L-XL.top-down.knee-90`: sampled sweep
 
 ## Log
 
@@ -111,3 +111,6 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-15 | `*.female.adult.dressed.*.*.back-90` | bra band wraps over the sternum hollow as a hoop (dip 10→2 mm M, 3.6→0.9 mm XXL): straight hem when bent | ddc2a51, repack |
 | 2026-10-15 | `*.female.adult.*.*.*.shoulder-90\|shoulder-160` | chord-blend normals turn with the surface; band skin relaxed (min-dot −0.3→0.74, faces <0.5 dot ~27→0, bra clip 118→62) | uncommitted |
 | 2026-10-15 | `*.female.adult.*.*.*.elbow-*` | elbow back refined (+1704 verts): outline corner 28–40°→10–15° | 7e19560, repack |
+| 2026-10-15 | `*.female.adult.dressed.*.*.*` other-hips cups | hips delta eased over the breasts: cup creases near the nipple 34–137→0–22 edges | d59c4cf, repack |
+| 2026-10-15 | `*.female.adult.*.*.*.knee-*\|elbow-145` | pressed skin's normal faces the contact: lit crease sliver gone (>45° off 220→24) | uncommitted |
+| 2026-10-15 | `*.female.adult.*.*.side.elbow-*\|knee-*` | hinge extensor ramp over limb depth, not sign: side seam gone (stretch 2.53→1.76) | uncommitted |
