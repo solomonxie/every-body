@@ -53,9 +53,11 @@ struct PosturePanel: View {
     }
 
     private func summary(_ text: String, a: Float, b: Float, neck: Float) -> String {
-        text.replacingOccurrences(of: "{pct}", with: "\(Int(((b / a - 1) * 100).rounded()))")
-            .replacingOccurrences(of: "{x}", with: String(format: "%.1f", b / a))
+        let ratio = a > 0 ? b / a : 1
+        return text.replacingOccurrences(of: "{pct}", with: "\(Int(((ratio - 1) * 100).rounded()))")
+            .replacingOccurrences(of: "{x}", with: String(format: "%.1f", ratio))
             .replacingOccurrences(of: "{neck}", with: String(format: "%.1f", neck))
+            .replacingOccurrences(of: "{a}", with: topic.format(a)).replacingOccurrences(of: "{b}", with: topic.format(b))
     }
 
     private func side(_ title: Bilingual, disc: Float, neck: Float, on: Bool, action: @escaping () -> Void) -> some View {
@@ -91,7 +93,7 @@ struct PosturePanel: View {
             reading(settings.t(topic.gauge.title), value: topic.format(load), color: topic.color(load))
             LoadGauge(value: load, marks: topic.gauge.marks, max: topic.gauge.max, color: topic.color)
                 .frame(height: 50)
-            if topic.region == .neck {
+            if topic.region == .neck, topic.unit != .degrees {
                 Text(settings.t("Head tipped forward \(Int((neckLean * Float(blend)).rounded()))°", "头部前倾 \(Int((neckLean * Float(blend)).rounded()))°"))
                     .font(.footnote.weight(.medium).monospacedDigit()).foregroundStyle(.secondary)
             }

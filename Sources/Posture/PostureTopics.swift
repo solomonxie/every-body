@@ -38,7 +38,7 @@ struct PostureTopic: Identifiable {
     var neckGauge = true
     /// beside the value on each end's card
     var cardLabel = Bilingual("disc", "椎间盘")
-    /// under the slider; {pct} the second end's rise in percent, {x} its ratio, {neck} the neck's ratio
+    /// under the slider; {pct} the second end's rise in percent, {x} its ratio, {a} {b} the two ends, {neck} the neck's ratio
     var summary = Bilingual("Slumping: +{pct}% pressure on the lumbar discs, and the neck holds the head as if it weighed {neck}× as much.",
                             "瘫坐时：腰椎间盘压力 +{pct}%，颈部承受的头部重量约为 {neck} 倍。")
     /// what the 3D colours mean: the glowing discs (or other load) and the muscles
@@ -180,8 +180,39 @@ struct PostureTopic: Identifiable {
             doctor: Bilingual("Not medical advice. See a doctor for neck pain that lasts, spreads into an arm, or comes with numbness, tingling or weakness.",
                               "非医疗建议。颈痛持续不缓解、向手臂放射，或伴麻木、刺痛、无力时请就医。"),
             sceneLabel: Bilingual("3D figure standing, looking down at a phone", "站着低头看手机的 3D 人体")),
-        PostureTopic(id: "phone-bed", symbol: "bed.double", title: Bilingual("Phone in bed", "躺着玩手机"),
-                     note: Bilingual("Neck, shoulder and arm strain, and sleep", "颈、肩、手臂劳损与睡眠")),
+        PostureTopic(
+            id: "phone-bed", symbol: "bed.double", title: Bilingual("Phone in bed", "躺着玩手机"),
+            note: Bilingual("Neck, shoulder and arm strain, and sleep", "颈、肩、手臂劳损与睡眠"), ready: true,
+            ends: (Bilingual("Flat, phone up", "平躺举手机"), Bilingual("Propped, chin down", "垫高低头")),
+            loads: (0, 45),
+            gauge: (Bilingual("Neck bent toward the chest, degrees", "颈部向胸前弯曲的角度"),
+                    [Mark(value: 0, label: Bilingual("Neutral", "中立")), Mark(value: 15, label: Bilingual("15°", "15°")),
+                     Mark(value: 30, label: Bilingual("30°", "30°")), Mark(value: 45, label: Bilingual("45°", "45°"))], 60),
+            explain: ([Bilingual("The pillow carries the head; the neck rests near its neutral curve", "枕头托住头部，颈椎接近自然中立的曲线"),
+                       Bilingual("Arms held up over the face: the shoulders and arms tire, so you keep shifting", "手臂举在脸上方：肩膀和手臂会累，于是不停换姿势"),
+                       Bilingual("Screen light this close to the eyes still keeps you awake", "离眼睛这么近的屏幕光，依然会让人不困")],
+                      [Bilingual("Stacked pillows push the head forward: the neck stays bent about 45° toward the chest", "叠高的枕头把头往前推：颈部持续向胸前弯约 45°"),
+                       Bilingual("Ligaments and muscles at the back of the neck stay on stretch; the discs are squeezed at the front", "颈后韧带和肌肉持续被拉长，椎间盘前缘受挤压"),
+                       Bilingual("The upper back rounds and the shoulders roll in over the phone", "上背弓起，肩膀向手机内扣"),
+                       Bilingual("Lying back, gravity pulls on the head less than standing, but the bend is held for a long time", "半躺时重力对头部的拉力比站立时小，但这个弯曲会保持很久")]),
+            tips: [("bed.double", Bilingual("One pillow that keeps your head in line with your body", "用一个让头部与身体保持一条线的枕头")),
+                   ("arrow.triangle.2.circlepath", Bilingual("Lie on your side with the phone on the mattress at eye level, and switch sides", "侧躺，把手机放在床垫上与眼睛齐平，并左右轮换")),
+                   ("sun.min", Bilingual("Turn the brightness down and use night mode", "调低亮度，开启夜间模式")),
+                   ("moon.zzz", Bilingual("Put the phone away 30–60 minutes before sleep", "睡前 30–60 分钟放下手机"))],
+            sources: ["Chang AM et al. Evening use of light-emitting eReaders negatively affects sleep, circadian timing, and next-morning alertness. PNAS 2015;112(4):1232–1237.",
+                      "Exelmans L, Van den Bulck J. Bedtime mobile phone use and sleep in adults. Soc Sci Med 2016;148:93–101.",
+                      "Gustafsson E et al. Texting on mobile phones and musculoskeletal disorders in young adults: a five-year cohort study. Appl Ergon 2017;58:208–214."],
+            caveat: Bilingual("There is no good measurement of neck load lying down: the pillow carries much of the head, so standing figures (Hansraj) don't apply. The concern is a long bend near the end of the neck's range, and arms held up. Screen use in bed pushes back sleep (Chang 2015, Exelmans 2016).",
+                              "躺着时的颈部负荷没有可靠的实测数据：枕头承担了大部分头重，站立时的数据（Hansraj）并不适用。问题在于颈部长时间接近极限的弯曲，以及手臂一直举着。睡前在床上用手机会推迟入睡（Chang 2015、Exelmans 2016）。"),
+            pregnancy: Bilingual("Pregnant: from mid-pregnancy, lying flat on your back for long can press on the large vein behind the womb. Lie on your side with a pillow between your knees, and keep the phone at eye level on the mattress.",
+                                 "孕期：从孕中期起，长时间平躺可能压迫子宫后方的大静脉。请侧躺、两膝之间夹一个枕头，并把手机放在床垫上与眼睛齐平。"),
+            region: .neck, unit: .degrees, heat: [(0, 1), (15, 1.4), (30, 1.85), (45, 2.3), (60, 2.75)], neckGauge: false,
+            cardLabel: Bilingual("neck bend", "颈部弯曲"),
+            summary: Bilingual("Propped up: the neck stays bent {b} toward the chest for as long as you scroll.", "垫高低头时：只要还在刷手机，颈部就一直向胸前弯着 {b}。"),
+            legend: (Bilingual("Neck discs", "颈椎间盘"), Bilingual("Neck and shoulder muscles", "颈肩肌肉")),
+            doctor: Bilingual("Not medical advice. See a doctor for neck pain that lasts, spreads into an arm, or comes with numbness, tingling or weakness.",
+                              "非医疗建议。颈痛持续不缓解、向手臂放射，或伴麻木、刺痛、无力时请就医。"),
+            sceneLabel: Bilingual("3D figure lying in bed with a phone", "躺在床上玩手机的 3D 人体")),
     ]
 }
 
