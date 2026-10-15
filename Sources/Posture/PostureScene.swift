@@ -56,6 +56,7 @@ final class PostureScene {
     private var halos: [ModelEntity] = []
     /// bones that glow with the load (the wrist's carpals)
     private var hot: [ModelEntity] = []
+    private var vessels: [ModelEntity] = []
     private var props: [(entity: Entity, prop: PostureModel.Prop)] = []
     private var region: PostureRegion = .lumbar
     /// camera distance for the whole figure (a standing one needs more room)
@@ -91,7 +92,7 @@ final class PostureScene {
     func build(topic: String, region: PostureRegion = .lumbar, female: Bool, pregnant: Bool = false, heritage: Heritage, underwear: Bool = true,
                chest: BodySize = .small, hips: BodySize = .medium) {
         stage.children.removeAll()
-        meshes = []; skin = []; headPieces = []; hair = nil; garments = []; body = nil; bones = []; discs = []; muscles = []; dimmed = []; halos = []; props = []; hot = []
+        meshes = []; skin = []; headPieces = []; hair = nil; garments = []; body = nil; bones = []; discs = []; muscles = []; dimmed = []; halos = []; props = []; hot = []; vessels = []
         self.region = region
         shown = -1
         guard let model = (modelCache?.topic == topic ? modelCache?.data : nil) ?? PostureModel.load(topic) else { return }
@@ -188,6 +189,8 @@ final class PostureScene {
                     halos.append(halo)
                     stage.addChild(halo)
                 }
+            } else if region.vessels.contains(where: { piece.id.hasPrefix($0) }) {
+                vessels.append(entity)
             } else if region.muscles.map({ ids in ids.contains { piece.id.hasPrefix($0) } }) ?? true {
                 entity.components.set(ModelSortGroupComponent(group: sortGroup, order: 1))
                 muscles.append(entity)
@@ -235,6 +238,7 @@ final class PostureScene {
         for (entity, _) in discs { entity.isEnabled = inner }
         for halo in halos { halo.isEnabled = inner }
         for entity in muscles { entity.isEnabled = inner }
+        for entity in vessels { entity.isEnabled = inner }
         shown = -1
     }
 
@@ -513,7 +517,13 @@ final class PostureScene {
             m.emissiveIntensity = 0.3 + 1.4 * glow + 0.6 * beat
             entity.model?.materials = [m]
         }
-        let s = strain
+        for entity in vessels {
+            var m = BodyScene.material(heat, opacity: 1)
+            m.emissiveColor = .init(color: heat)
+            m.emissiveIntensity = 0.4 + 1.2 * glow + 0.5 * beat
+            entity.model?.materials = [m]
+        }
+        let s = region.workAtStart ? 1 - strain : strain
         for entity in muscles {
             var m = BodyScene.material(PostureColors.mix(UIColor(hex: "#A98683"), UIColor(hex: "#FF3B1F"), s), opacity: 0.3 + 0.5 * s, texture: Textures.muscle)
             m.emissiveColor = .init(color: UIColor(hex: "#FF3B1F"))

@@ -63,6 +63,7 @@ private struct PostureTopicView: View {
         case .lumbar: Bilingual("Low back", "腰椎")
         case .neck: Bilingual("Neck", "颈椎")
         case .wrist: Bilingual("Wrist", "手腕")
+        case .legs: Bilingual("Calf", "小腿")
         }
         return [(.side, Bilingual("Whole body", "全身")), (.spine, close),
                 (.back, Bilingual("Back", "背面")), (.front, Bilingual("Front", "正面"))]

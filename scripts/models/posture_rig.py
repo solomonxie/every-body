@@ -219,13 +219,19 @@ def joints(parts):
     J["ischium"] = (J["ischium-l"] + J["ischium-r"]) / 2
     # between the eyes: just behind the lacrimal bones
     J["eye"] = (P("lacrimal-bone-l").mean(0) + P("lacrimal-bone-r").mean(0)) / 2 - np.array([0, 0, 0.01])
+    for s in SIDES:
+        J[f"calf-{s}"] = (J[f"knee-{s}"] + J[f"ankle-{s}"]) / 2
+        # ball of the foot: the front ends of the metatarsals, on the floor
+        mt = np.concatenate([parts[k][0] for k in parts if k.startswith("metatarsal") and k.endswith(f"-{s}")])
+        front = mt[mt[:, 2] > np.percentile(mt[:, 2], 85)]
+        J[f"ball-{s}"] = np.array([front[:, 0].mean(), mt[:, 1].min(), front[:, 2].mean()])
     return J
 
 
 # ------------------------------------------------------------------ bones and skin weights
 
 BONES = (["pelvis"] + SPINE + ["head"] + [f"{b}-{s}" for s in SIDES for b in
-         ("clav", "uparm", "fore1", "fore2", "hand", "thigh", "shin", "foot", "ulna", "radius")])
+         ("clav", "uparm", "fore1", "fore2", "hand", "thigh", "shin", "foot", "ulna", "radius")] + ["toes-l", "toes-r"])
 BI = {b: i for i, b in enumerate(BONES)}
 
 FACE = ("jaw", "eye", "levator", "oculi", "oris", "orbicularis", "risorius", "temporalis", "special", "tongue")
@@ -248,7 +254,9 @@ def mpfb_bone(name):
         return f"{table[base]}-{side}"
     if base.startswith(("wrist", "metacarpal", "finger")):
         return f"hand-{side}"
-    if base.startswith(("foot", "toe")):
+    if base.startswith("toe"):
+        return f"toes-{side}"
+    if base.startswith("foot"):
         return f"foot-{side}"
     raise KeyError(name)
 
@@ -403,8 +411,19 @@ def inner_weights(pid, p, J):
         return one(f"thigh-{side}")
     if base in ("tibia", "fibula", "meniscus-lateral", "meniscus-medial"):
         return one(f"shin-{side}")
-    if base in ("talus", "calcaneus", "tarsals") or base.startswith(("metatarsal", "toe")):
+    if base.startswith("toe"):
+        return one(f"toes-{side}")
+    if base in ("talus", "calcaneus", "tarsals") or base.startswith("metatarsal"):
         return one(f"foot-{side}")
+    if base in ("gastrocnemius-medial", "gastrocnemius-lateral", "soleus", "small-saphenous", "leg-vein"):
+        # thigh above the knee, shin below, foot under the ankle (blended over a short band)
+        y = p[:, 1]
+        k = ramp(y, J[f"knee-{side}"][1] - 0.03, J[f"knee-{side}"][1] + 0.03)
+        a = ramp(y, J[f"ankle-{side}"][1] - 0.03, J[f"ankle-{side}"][1] + 0.03)
+        w[:, BI[f"thigh-{side}"]] = k
+        w[:, BI[f"shin-{side}"]] = (1 - k) * a
+        w[:, BI[f"foot-{side}"]] = 1 - a
+        return w
     if base in ("erector-spinae", "transversospinales", "spinal-cord", "splenius", "levator-scapulae"):
         return spine_weights(p[:, 1], J)
     return one("head")  # skull, face, teeth, ossicles…
@@ -448,6 +467,10 @@ def pose(spec, J):
         Rc = R_spine(T, "T2") @ rot((0, 1, 0), -spec.get("protract", 0) * sx) @ rot((0, 0, 1), spec.get("elevate", 0) * sx)
         T[f"clav-{s}"] = rigid(Rc, J[f"sc-{s}"], apply(T["T2"], J[f"sc-{s}"]))
 
+        if spec.get("arms") == "hang":
+            for b in ("uparm", "ulna", "radius", "fore1", "fore2", "hand"):
+                T[f"{b}-{s}"] = T[f"clav-{s}"]
+            continue
         # arm: the hand rests on the thigh, or holds something (a wrist target with the fingers' and palm's directions)
         mirror = np.array([sx, 1, 1])
         grip = spec.get("grip")
@@ -495,6 +518,18 @@ def pose(spec, J):
         h_flat = along * np.linalg.norm(h_now - down * np.dot(h_now, down)) + down * spec.get("finger_drop", 0.0) * np.linalg.norm(h_now)
         Rw = align(h_now, Rh @ np.array([0, 0, 1.0]), h_flat, down)
         T[f"hand-{s}"] = rigid(Rw @ Rh, wr0, wrist_p)
+    for s in SIDES:
+        # the toes move with the foot, except up on the toes
+        T[f"toes-{s}"] = T[f"foot-{s}"]
+    if spec.get("heels"):
+        # up on the toes: everything rises, each foot turns about the ball of the foot until its ankle meets the shin
+        up = np.eye(4)
+        up[1, 3] = spec["heels"]
+        T = {b: (m if b.startswith(("foot-", "toes-")) else up @ m) for b, m in T.items()}
+        for s in SIDES:
+            ball, ankle = J[f"ball-{s}"], J[f"ankle-{s}"]
+            phi = min(np.linspace(-40, 40, 801), key=lambda a: abs(apply(rigid(rot((1, 0, 0), -a), ball, ball), ankle)[1] - ankle[1] - spec["heels"]))
+            T[f"foot-{s}"] = rigid(rot((1, 0, 0), -phi), ball, ball)
     if spec.get("lie"):
         G = lie_matrix(spec)
         T = {b: G @ m for b, m in T.items()}
@@ -840,6 +875,19 @@ def at_computer(spec, J):
     return dict(spec, grip={"wrist": wrist.tolist(), "fingers": fingers.tolist()}, palm=(palm - np.array([0.2, 0, 0])).tolist(), props=props)
 
 
+# ------------------------------------------------------------------ standing: the calf pump
+
+# up on the toes (the calf muscles squeeze the deep veins empty) vs standing still (blood pools, ankle vein pressure climbs)
+STANDING = {
+    "pump": dict(heels=0.04 * M, flex={"head": 0}),
+    "still": dict(heels=0.0, flex={"head": 0}),
+}
+
+
+def standing_still(J):
+    return dict(stand=True, pelvis_tilt=0, arms="hang")
+
+
 # ------------------------------------------------------------------ a phone in bed
 
 MATTRESS_TOP = -0.62  # a bed about 52 cm high
@@ -907,7 +955,11 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
                             chair=False, sexes=["male"], heritages=["white"], neck="cervical", focus="C4", topology="sitting"),
           # keys at 0, 12, 23 and 35° of wrist extension; the camera's close view on the right wrist
           "computer": dict(keys=COMPUTER, order=["neutral", "high"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=seated_common, finish=at_computer,
-                           sexes=["male"], heritages=["white"], focus=("hand-r", "wrist-r"), topology="sitting")}
+                           sexes=["male"], heritages=["white"], focus=("hand-r", "wrist-r"), topology="sitting"),
+          # the calf muscles and leg veins as soft pieces; the close view on the left calf
+          "standing": dict(keys=STANDING, order=["pump", "still"], steps=[0.0, 0.5, 1.0], common=standing_still, finish=lambda sp, J: sp, chair=False,
+                           sexes=["male"], heritages=["white"], soft=("gastrocnemius", "soleus", "leg-vein", "small-saphenous"),
+                           focus=("shin-l", "calf-l"), topology="sitting")}
 SOFT = ("disc-", "erector-spinae", "transversospinales", "splenius", "levator-scapulae")
 SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pregnant"}
 HERITAGES = ["east-asian", "southeast-asian", "south-asian", "hispanic", "white", "black"]
@@ -1009,7 +1061,7 @@ def pack(topics=None):
             header["body"]["from"] = topic["topology"]
         else:
             header["body"].update(vmap=pk.add(btopo["vmap"].astype(np.uint16)), uv=pk.add(btopo["uv"]), index=pk.add(btopo["index"].astype(np.uint16)))
-        soft = [k for k in ids if k.startswith(SOFT)]
+        soft = [k for k in ids if k.startswith(SOFT + tuple(topic.get("soft", ())))]
         header["rigid"] = {k: BONES[int(np.argmax(IW[k][0]))] for k in ids if k not in soft}
         pieces, start = [], 0
         for k in soft:
