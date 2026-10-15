@@ -975,11 +975,12 @@ def close_lips(pieces, reach, keep):
 
 
 # groups whose lower lids' ledge (flat on the eyeball, facing up: a pale rim lit from above) is pushed in under the
-# ball's surface: at most this far from its centre (in ball radii)
-TUCK_LIDS = {"female-adult": 0.95}
+# ball's surface: at most this far from its centre, taken from within 1.1 of it and, toward the inner corner, `inner`
+# further (the ledge widens there: a white streak under the corner); in ball radii
+TUCK_LIDS = {"female-adult": (0.95, 0.12)}
 
 
-def tuck_lids(pieces, reach):
+def tuck_lids(pieces, reach, inner):
     body, eyes = pieces["body"], pieces["eyes"]
     n = vertex_normals(body)
     out = body.copy()
@@ -987,7 +988,8 @@ def tuck_lids(pieces, reach):
         c, r = ball_sphere(eyes[np.sign(eyes[:, 0]) == side])
         q = (body - c) / r
         d = np.linalg.norm(q, axis=1)
-        w = smoothstep(0.5, 0.85, n[:, 1]) * (d < 1.1) * (q[:, 1] < -0.1) * (q[:, 2] > 0.3)
+        far = 1.1 + inner * smoothstep(0.3, 0.6, -side * q[:, 0])
+        w = smoothstep(0.5, 0.85, n[:, 1]) * (d < far) * (q[:, 1] < -0.1) * (q[:, 2] > 0.3)
         out += (body - c) * (w * (np.minimum(d, reach) / np.maximum(d, 1e-9) - 1))[:, None]
     return dict(pieces, body=out)
 
@@ -1437,7 +1439,7 @@ def save(name, pieces):
     if gid in CLOSE_LIPS and "eyes" in pieces:
         pieces = close_lips(pieces, *CLOSE_LIPS[gid])
     if gid in TUCK_LIDS and "eyes" in pieces:
-        pieces = tuck_lids(pieces, TUCK_LIDS[gid])
+        pieces = tuck_lids(pieces, *TUCK_LIDS[gid])
     if gid in HOLLOW_CANTHUS and "eyes" in pieces:
         pieces = hollow_canthus(pieces, *HOLLOW_CANTHUS[gid])
     if gid in SEAT_LASHES and "eyes" in pieces:
