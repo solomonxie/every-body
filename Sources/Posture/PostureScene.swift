@@ -54,7 +54,7 @@ final class PostureScene {
     private var muscles: [ModelEntity] = []
     private var dimmed: [(entity: ModelEntity, base: PhysicallyBasedMaterial)] = []
     private var halos: [ModelEntity] = []
-    private var props: [(entity: Entity, keys: [simd_float4x4])] = []
+    private var props: [(entity: Entity, prop: PostureModel.Prop)] = []
     private var region: PostureRegion = .lumbar
     /// camera distance for the whole figure (a standing one needs more room)
     private var frame: Float = 4.4
@@ -269,12 +269,46 @@ final class PostureScene {
                                      materials: [UnlitMaterial(color: UIColor(hex: "#8FC4F2"))])
             screen.position = SIMD3(0, 0, s.z / 2 + 0.001)
             entity.addChild(screen)
+        case "laptop":
+            // the base, its screen opened about 110° from the back edge (+z of the base faces the user)
+            var shell = PhysicallyBasedMaterial()
+            shell.baseColor = .init(tint: UIColor(hex: "#B8BDC6"))
+            shell.roughness = .init(floatLiteral: 0.35)
+            shell.metallic = .init(floatLiteral: 0.7)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: s.y * 0.4), materials: [shell]))
+            let keys = ModelEntity(mesh: .generatePlane(width: s.x * 0.86, depth: s.z * 0.42), materials: [UnlitMaterial(color: UIColor(hex: "#30343C"))])
+            keys.position = SIMD3(0, s.y / 2 + 0.001, -s.z * 0.12)
+            entity.addChild(keys)
+            let lid = Entity()
+            lid.position = SIMD3(0, s.y / 2, -s.z / 2)
+            lid.orientation = simd_quatf(angle: -20 * .pi / 180, axis: SIMD3(1, 0, 0))
+            let h = s.z * 0.91, t = s.y * 0.35
+            let back = ModelEntity(mesh: .generateBox(width: s.x, height: h, depth: t, cornerRadius: t * 0.4), materials: [shell])
+            back.position = SIMD3(0, h / 2, -t / 2)
+            lid.addChild(back)
+            let screen = ModelEntity(mesh: .generatePlane(width: s.x * 0.92, height: h * 0.88), materials: [UnlitMaterial(color: UIColor(hex: "#8FC4F2"))])
+            screen.position = SIMD3(0, h / 2, 0.001)
+            lid.addChild(screen)
+            entity.addChild(lid)
+        case "desk":
+            // a top on four legs
+            var wood = PhysicallyBasedMaterial()
+            wood.baseColor = .init(tint: UIColor(hex: "#B58B63"))
+            wood.roughness = .init(floatLiteral: 0.7)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: 0.01), materials: [wood]))
+            let drop = prop.keys[0].columns.3.y - s.y / 2 + 1.6
+            for (dx, dz): (Float, Float) in [(-1, -1), (-1, 1), (1, -1), (1, 1)] {
+                let leg = ModelEntity(mesh: .generateBox(width: 0.045, height: drop, depth: 0.045, cornerRadius: 0.01), materials: [wood])
+                leg.position = SIMD3(dx * (s.x / 2 - 0.05), -s.y / 2 - drop / 2, dz * (s.z / 2 - 0.05))
+                entity.addChild(leg)
+            }
         default:
             var m = PhysicallyBasedMaterial()
-            m.baseColor = .init(tint: UIColor(hex: "#3C4250"))
-            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z), materials: [m]))
+            m.baseColor = .init(tint: UIColor(hex: id == "keyboard" ? "#3A3E46" : "#5B6170"))
+            m.roughness = .init(floatLiteral: 0.6)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: min(s.x, s.y, s.z) * 0.2), materials: [m]))
         }
-        props.append((entity, prop.keys))
+        props.append((entity, prop))
         stage.addChild(entity)
     }
 
@@ -391,7 +425,13 @@ final class PostureScene {
             guard ms.count > b else { return matrix_identity_float4x4 }
             return ms[a] * (1 - w) + ms[b] * w
         }
-        for (entity, keys) in props { entity.transform = Transform(matrix: lerp(keys)) }
+        for (entity, prop) in props {
+            entity.transform = Transform(matrix: lerp(prop.keys))
+            guard prop.alpha.count > b else { continue }
+            let o = prop.alpha[a] * (1 - w) + prop.alpha[b] * w
+            entity.isEnabled = o > 0.02
+            entity.components.set(OpacityComponent(opacity: o))
+        }
         let head = Transform(matrix: lerp(transforms["head"] ?? []))
         for e in headPieces { e.transform = head }
         hair?.set(head: lerp(transforms["head"] ?? []), chest: lerp(transforms["T1"] ?? []))

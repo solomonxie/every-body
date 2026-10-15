@@ -678,6 +678,81 @@ PHONE_STANDING = {
 }
 
 
+# ------------------------------------------------------------------ a laptop: raised on a desk, or on the lap
+
+LAPTOP_BASE = (0.33 * M, 0.018 * M, 0.23 * M)  # width, thickness, depth (the screen opens from the back edge in the app)
+LAPTOP_SCREEN = 0.21 * M
+DESK = (1.2 * M, 0.035 * M, 0.6 * M)
+KEYBOARD = (0.44 * M, 0.025 * M, 0.14 * M)
+
+# raised screen: sitting tall, head level, the laptop on a riser with its screen top at eye height, an external keyboard
+# on the lap: the trunk slumps and the head bows 45° over the laptop on the thighs; shoulders round forward
+LAPTOP = {
+    "raised": dict(pelvis_tilt=8, flex={"L5": 3, "L4": 3, "L3": 2, "L2": 1, "L1": 1, "T10": 1, "T8": 1, "T6": 1, "T3": 1, "C6": 1, "C3": -1, "head": 5},
+                   slide=0, protract=2, elevate=0, lap=0),
+    "lap": dict(pelvis_tilt=20, flex={"L5": 6, "L4": 7, "L3": 7, "L2": 6, "L1": 5, **{f"T{i}": 2 for i in range(1, 13)},
+                                      "C7": 5, "C6": 5, "C5": 4, "C4": 3, "C3": 2, "C2": 2, "head": 0},
+                slide=0.06, protract=14, elevate=-2, lap=1),
+}
+
+
+def matrix(x, y, z, c):
+    m = np.eye(4)
+    m[:3, :3] = np.stack([x, y, z], 1)
+    m[:3, 3] = c
+    return m
+
+
+def desk_setup(J):
+    """desk at elbow height, keyboard under the hands, laptop on a riser with its screen top at eye height (from the raised key)"""
+    sp = {**seated_common(J), **LAPTOP["raised"], "grip": {"wrist": J["wrist-l"].tolist(), "fingers": [0, -1, 0]}}
+    T = pose(sp, J)
+    sh = apply(T["clav-l"], J["shoulder-l"])
+    upper = np.linalg.norm(J["elbow-l"] - J["shoulder-l"])
+    fore = np.linalg.norm(J["wrist-l"] - J["elbow-l"])
+    top = sh[1] - upper * 0.95 - 0.02
+    wrist_z = sh[2] + 0.08 + fore * 0.9
+    eye = apply(T["head"], J["eye"])
+    X, Y, Z = np.eye(3)
+    desk = matrix(X, Y, Z, [0, top - DESK[1] / 2, wrist_z - 0.12 + DESK[2] / 2])
+    keyboard = matrix(X, Y, Z, [0, top + KEYBOARD[1] / 2, wrist_z + 0.02 + KEYBOARD[2] / 2])
+    base_z = eye[2] + 0.62 * M + LAPTOP_BASE[2] / 2
+    base_y = eye[1] - LAPTOP_SCREEN * math.cos(math.radians(15)) - LAPTOP_BASE[1] - 0.02
+    laptop = matrix(-X, Y, -Z, [0, base_y, base_z])  # +z of the base toward the user
+    riser_h = base_y - LAPTOP_BASE[1] / 2 - top
+    riser = matrix(X, Y, Z, [0, top + riser_h / 2, base_z])
+    return dict(top=top, wrist_z=wrist_z, desk=desk, keyboard=keyboard, laptop=laptop, riser=riser, riser_size=(LAPTOP_BASE[0] * 0.8, riser_h, LAPTOP_BASE[2] * 0.85))
+
+
+def use_laptop(spec, J):
+    """hands on the desk keyboard (lap 0) or on the laptop on the thighs (lap 1), in between a blend"""
+    d = desk_setup(J)
+    T = pose(dict(spec, grip={"wrist": J["wrist-l"].tolist(), "fingers": [0, -1, 0]}), J)
+    # on the lap: the base along the thighs, 55% of the way to the knees, resting on top of them
+    mids = [apply(T[f"thigh-{s}"], J[f"hip-{s}"] + 0.55 * (J[f"knee-{s}"] - J[f"hip-{s}"])) for s in SIDES]
+    along = unit(sum(apply(T[f"thigh-{s}"], J[f"knee-{s}"]) - apply(T[f"thigh-{s}"], J[f"hip-{s}"]) for s in SIDES))
+    n = unit(np.cross(along, (1, 0, 0)))
+    n = n if n[1] > 0 else -n
+    c = (mids[0] + mids[1]) / 2 + n * (0.15 + LAPTOP_BASE[1] / 2)
+    lap = matrix(np.cross(n, -along), n, -along, c)
+    t = spec["lap"]
+    m = (1 - t) * d["laptop"] + t * lap
+    m[:3, 0], m[:3, 1] = unit(m[:3, 0]), unit(m[:3, 1])
+    m[:3, 2] = np.cross(m[:3, 0], m[:3, 1])
+    # wrists at the keyboard's front edge, palms down, fingers forward
+    desk_wrist = np.array([0.14, d["top"] + 0.07, d["wrist_z"]])
+    lap_wrist = c - along * (LAPTOP_BASE[2] / 2 - 0.02) + n * 0.07 + np.array([0.14, 0, 0])
+    wrist = (1 - t) * desk_wrist + t * lap_wrist
+    fwd = unit((1 - t) * np.array([0, 0, 1.0]) + t * along)
+    up = unit((1 - t) * np.array([0, 1.0, 0]) + t * n)
+    # the desk setup fades out as the laptop moves to the lap
+    fade = max(0.0, 1 - 1.5 * t)
+    props = {"desk": (DESK, d["desk"], fade), "keyboard": (KEYBOARD, d["keyboard"], fade), "riser": (d["riser_size"], d["riser"], fade),
+             "laptop": ((LAPTOP_BASE[0], LAPTOP_BASE[1], LAPTOP_BASE[2]), m)}
+    return dict(spec, grip={"wrist": wrist.tolist(), "fingers": unit(fwd - np.array([0.2, 0, 0]) - up * 0.15).tolist()},
+                palm=unit(-up - np.array([0.25, 0, 0])).tolist(), props=props)
+
+
 # ------------------------------------------------------------------ pack
 
 # with a bump the trunk can't fold over the thighs: a pregnant slump sinks back into the chair instead
@@ -689,7 +764,10 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
                           variants={"pregnant": {"slouched": PREGNANT_SLUMP}}),
           # one figure (the app shows the male adult): keys at 0, 15, 30, 45 and 60° of head tilt
           "phone-standing": dict(keys=PHONE_STANDING, order=["up", "down"], steps=[0.0, 0.25, 0.5, 0.75, 1.0], common=standing_common,
-                                 finish=hold_phone, chair=False, sexes=["male"], heritages=["white"], neck="head", focus="C4", topology="sitting")}
+                                 finish=hold_phone, chair=False, sexes=["male"], heritages=["white"], neck="head", focus="C4", topology="sitting"),
+          # keys at 0, 15, 30 and 45° of head tilt
+          "laptop": dict(keys=LAPTOP, order=["raised", "lap"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=seated_common, finish=use_laptop,
+                         sexes=["male"], heritages=["white"], neck="head", focus="C4", topology="sitting")}
 SOFT = ("disc-", "erector-spinae", "transversospinales", "splenius", "levator-scapulae")
 SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pregnant"}
 HERITAGES = ["east-asian", "southeast-asian", "south-asian", "hispanic", "white", "black"]
@@ -823,8 +901,13 @@ def pack(topics=None):
         # things held or leant on, per key (a 4×4 each, columns first) and their size
         props = {}
         for sp in specs:
-            for pid, (size, m) in sp.get("props", {}).items():
-                props.setdefault(pid, {"size": [round(float(v), 4) for v in size], "keys": []})["keys"].append(np.asarray(m).T.reshape(-1).round(5).tolist())
+            for pid, (size, m, *alpha) in sp.get("props", {}).items():
+                e = props.setdefault(pid, {"size": [round(float(v), 4) for v in size], "keys": [], "alpha": []})
+                e["keys"].append(np.asarray(m).T.reshape(-1).round(5).tolist())
+                e["alpha"].append(round(float(alpha[0]) if alpha else 1.0, 3))
+        for e in props.values():
+            if all(a == 1 for a in e["alpha"]):
+                del e["alpha"]
         if props:
             header["props"] = props
         for sex in sexes:

@@ -23,6 +23,8 @@ struct PostureModel: Sendable {
     struct Prop: Sendable {
         let size: SIMD3<Float>
         let keys: [simd_float4x4]
+        /// opacity per key (empty: always shown)
+        var alpha: [Float] = []
     }
 
     struct Mesh: Sendable {
@@ -91,7 +93,7 @@ struct PostureModel: Sendable {
         }
         struct Piece: Decodable { let id: String; let start: Int; let count: Int; let triangles: Int; let index: Int }
         struct Inner: Decodable { let count: Int; let blocks: [Int]; let pieces: [Piece] }
-        struct Prop: Decodable { let size: [Float]; let keys: [[Float]] }
+        struct Prop: Decodable { let size: [Float]; let keys: [[Float]]; let alpha: [Float]? }
         let steps: [Float]
         let chair: Chair?
         let props: [String: Prop]?
@@ -165,7 +167,7 @@ struct PostureModel: Sendable {
         props = (h.props ?? [:]).mapValues { p in
             Prop(size: SIMD3(p.size[0], p.size[1], p.size[2]), keys: p.keys.map { m in
                 simd_float4x4(SIMD4(m[0], m[1], m[2], m[3]), SIMD4(m[4], m[5], m[6], m[7]), SIMD4(m[8], m[9], m[10], m[11]), SIMD4(m[12], m[13], m[14], m[15]))
-            })
+            }, alpha: p.alpha ?? [])
         }
         let (th, tp) = topology
         vmap = (array(th.body.vmap ?? 0, th.body.render, in: tp) as [UInt16]).map(UInt32.init)
