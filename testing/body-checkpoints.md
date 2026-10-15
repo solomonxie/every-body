@@ -51,8 +51,9 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
-| `*.female.adult.*.base.front-3q-*.rest` | caruncle (inner eye corner) too saturated: painted salmon in the shared skin texture | in progress |
-| `*.female.adult.bare.base.top-down\|front-3q-*\|face-side.rest` | grey/pink lower-lid rim; lips parted (dark slit) in profile | in progress |
+| `black.female.adult.bare.base.face-side\|front-3q-*.rest` | lower lip top sticks out past the upper, white highlight | in progress |
+| `black\|south-asian.female.adult.bare.base.face-*\|front-3q-*.rest` | light grey patch beside the inner eye corner | in progress |
+| `*.female.adult.bare.base.top-down.rest` | grey line at lower lash roots (lash geometry) | open |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
 | `*.female.*.dressed.*.*.*` | bra shoulder-strap clip, 22–24 pts ≤3.8 mm, every size | open |
@@ -61,7 +62,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - `*.female.adult.dressed.L+-*.front\|front-3q-*\|top-down\|low-up.rest\|back-*`: bra centre panel crumple, strap clip
-- `*.female.adult.bare.base.face-*\|front-3q-*\|top-down\|low-up.rest`: caruncle tone, lower-lid rim, parted-lip slit
+- `black\|south-asian.female.adult.bare.base.face-*\|front-3q-*\|low-up.rest`: lower-lip roll, inner-corner grey patch
 
 ## Log
 
@@ -92,3 +93,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-14 | `*.female.adult.*.XXL-*.back*`, `*.female.adult.*.S-*.*.back-60` | briefs film pushed along own normal (cleft notch gone, clip 0); hip-front edges even + trunk front faired (lumps 0.98→0.19 mm) | 85e1872 |
 | 2026-10-14 | `*.female.adult.bare.base.face-side\|front-3q-*\|low-up\|top-down.rest` | inner-corner panel over the eyeball tucked behind the ball; under-eye/nose-side line smoothed (all heritages) | 773505d, repack |
 | 2026-10-14 | `*.female.adult.*.XL\|XXL-*.*.rest\|back-60\|back-90` | under-breast fold opened (gap 0.9→15 mm), breast carries the hips change; bra-xxlarge under-breast clip 120→0 | 93261b8, repack |
+| 2026-10-14 | `*.female.adult.bare.base.face-*\|front-3q-*\|top-down.rest` | caruncle toned to soft pink; lower-lid ledge tucked under the ball (no pale rim); lips closed in profile (lining px ~500→0) | 7bb6857, repack |
