@@ -61,7 +61,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 | Cells | Issue | State |
 |---|---|---|
-| `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | open |
+| `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | fixed (Swift: convex cut fades behind the pivot, uncommitted), installed. Left: relax est. 3-8 ms/frame (flatten neighbour lists if slow) |
 | `*.female.adult.dressed.M-XL\|XXL.*.*` | bra-medium on wide hips still creases (162 edges); bra-xlarge small cluster below the nipple | fixed ef04b92/8ea3244, installed. Left: small dense patch above the nipple on bra-xlarge/xxlarge |
 | `*.female.adult.*.*.*.knee-135` | front-of-knee stretch (218 edges >2), small notch in the knee pit; thin bright sliver in inner elbow crease | fixed (Swift, uncommitted), installed. Left: elbow-145 sliver, faceted knee front outline at 135 |
 | `*.female.adult.*.XXL-XXL.back\|left.back-*` | second dip at the fullest point of large buttocks (hip pivot far from the skin) | halved (Swift BackBend raise, uncommitted), installed |
@@ -71,9 +71,9 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `*.female.adult.*.*.side\|back-3q-*\|back.shoulder-160`: back-of-shoulder bump, back armpit crease (agent, /tmp/sh2/)
-
 ## Log
+
+- 2026-10-15: shoulder-160 back knob and back armpit crease fixed (strap clip 55 -> 1, bent edges behind shoulder 36 -> 16). Swift only.
 
 - 2026-10-15: XXL buttock second dip halved in back bends (100 -> 46 deg/m at back-90): skin >10 cm behind the hip pivot turns higher (BackBend raiseFrom 0.1, raise 1). Swift only.
 
