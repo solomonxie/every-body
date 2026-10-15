@@ -62,18 +62,16 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | Cells | Issue | State |
 |---|---|---|
 | `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | open |
-| `*.female.adult.dressed.M-XL\|XXL.*.*` | bra-medium on wide hips still creases (162 edges); bra-xlarge small cluster below the nipple | in progress |
-| `*.female.adult.*.*.*.knee-135` | front-of-knee stretch (218 edges >2), small notch in the knee pit; thin bright sliver in inner elbow crease | in progress |
-| `*.female.adult.*.XXL-XXL.back\|left.back-*` | second dip at the fullest point of large buttocks (hip pivot far from the skin) | open |
+| `*.female.adult.dressed.M-XL\|XXL.*.*` | bra-medium on wide hips still creases (162 edges); bra-xlarge small cluster below the nipple | fixed ef04b92/8ea3244, installed. Left: small dense patch above the nipple on bra-xlarge/xxlarge |
+| `*.female.adult.*.*.*.knee-135` | front-of-knee stretch (218 edges >2), small notch in the knee pit; thin bright sliver in inner elbow crease | fixed (Swift, uncommitted), installed. Left: elbow-145 sliver, faceted knee front outline at 135 |
+| `*.female.adult.*.XXL-XXL.back\|left.back-*` | second dip at the fullest point of large buttocks (hip pivot far from the skin) | halved (Swift BackBend raise, uncommitted), installed |
 | `*.female.adult.*.*.top-down.elbow-*` | forearm outline beyond the refined band still coarse | open |
 | `*.female.adult.dressed.M-*.*.low-up.*` | faint shading lumps where the cup meets the band; small band-edge kink at the side | open |
 | `*.male\|child.*.*.*.shoulder-*` | back-armpit slit (fix applied to the woman only) | waits |
 
 ## In progress
 
-
-- `*.female.adult.dressed.M-XL\|M-XXL\|S-XXL\|XL-M\|XL-XXL.*.rest\|back-60\|shoulder-90`: medium/xlarge cup creases
-- `*.female.adult.bare.S-S\|M-M\|XXL-XXL.*.knee-*\|elbow-*`: knee front stretch, knee-pit notch, inner elbow sliver
+- `*.female.adult.*.*.side\|back-3q-*\|back.shoulder-160`: back-of-shoulder bump, back armpit crease (agent, /tmp/sh2/)
 
 ## Log
 
