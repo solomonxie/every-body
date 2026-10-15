@@ -7,8 +7,8 @@ import UIKit
 import AppKit
 #endif
 
-/// A posed figure on a chair, blending between two posture keys: see-through skin over the skeleton,
-/// the discs coloured by their load and the back muscles by their strain.
+/// A posed figure (on a chair, or standing with what it holds), blending between two posture keys: see-through skin
+/// over the skeleton, the topic's discs coloured by their load and its muscles by their strain.
 @MainActor
 final class PostureScene {
     enum View: CaseIterable { case side, back, front, spine }
@@ -54,12 +54,16 @@ final class PostureScene {
     private var muscles: [ModelEntity] = []
     private var dimmed: [(entity: ModelEntity, base: PhysicallyBasedMaterial)] = []
     private var halos: [ModelEntity] = []
+    private var props: [(entity: Entity, prop: PostureModel.Prop)] = []
+    private var region: PostureRegion = .lumbar
+    /// camera distance for the whole figure (a standing one needs more room)
+    private var frame: Float = 4.4
     private var shown: Float = -1
     private var clock: Float = 0
     private var load: Float = 1
     private var strain: Float = 0
-    /// load of each key (relative disc pressure, standing = 1), for the disc colour
-    var loads: [Float] = [1.4, 1.85]
+    /// blend → place on the load colour scale (1 green, 1.4 amber, 1.85 red), for the disc colour
+    var heat: (Float) -> Float = { 1.4 + 0.45 * $0 }
 
     init() {
         root.addChild(rig)
@@ -82,10 +86,11 @@ final class PostureScene {
 
     // MARK: build
 
-    func build(topic: String, female: Bool, pregnant: Bool = false, heritage: Heritage, underwear: Bool = true,
+    func build(topic: String, region: PostureRegion = .lumbar, female: Bool, pregnant: Bool = false, heritage: Heritage, underwear: Bool = true,
                chest: BodySize = .small, hips: BodySize = .medium) {
         stage.children.removeAll()
-        meshes = []; skin = []; headPieces = []; hair = nil; garments = []; body = nil; bones = []; discs = []; muscles = []; dimmed = []; halos = []
+        meshes = []; skin = []; headPieces = []; hair = nil; garments = []; body = nil; bones = []; discs = []; muscles = []; dimmed = []; halos = []; props = []
+        self.region = region
         shown = -1
         guard let model = (modelCache?.topic == topic ? modelCache?.data : nil) ?? PostureModel.load(topic) else { return }
         modelCache = (topic, model)
@@ -172,7 +177,7 @@ final class PostureScene {
             meshes.append(mesh)
             stage.addChild(entity)
             if piece.id.hasPrefix("disc-") {
-                let level = Self.lumbar.firstIndex(of: String(piece.id.dropFirst(5))) ?? -1
+                let level = region.discs.firstIndex(of: String(piece.id.dropFirst(5))) ?? -1
                 discs.append((entity, level))
                 if level >= 0 {
                     let halo = ModelEntity(mesh: .generateSphere(radius: 1))
@@ -180,19 +185,20 @@ final class PostureScene {
                     halos.append(halo)
                     stage.addChild(halo)
                 }
-            } else {
+            } else if region.muscles.map({ ids in ids.contains { piece.id.hasPrefix($0) } }) ?? true {
                 entity.components.set(ModelSortGroupComponent(group: sortGroup, order: 1))
                 muscles.append(entity)
+            } else {
+                entity.removeFromParent()
             }
         }
-        addChair(model.chair)
+        if let chair = model.chair { addChair(chair) } else { addFloor(keys.first ?? []) }
+        for (id, prop) in model.props { addProp(id, prop) }
         applyLook()
         apply(blend)
     }
 
     private var modelCache: (topic: String, data: PostureModel)?
-
-    private static let lumbar = ["L1", "L2", "L3", "L4", "L5"]
 
     private static func focusBone(_ id: String) -> Bool {
         id.hasPrefix("vertebra-") || ["sacrum", "coccyx"].contains(id)
@@ -227,6 +233,110 @@ final class PostureScene {
         for halo in halos { halo.isEnabled = inner }
         for entity in muscles { entity.isEnabled = inner }
         shown = -1
+    }
+
+    // MARK: standing and props
+
+    /// no chair: the figure stands on the floor (or lies on a bed), framed whole
+    private func addFloor(_ body: [SIMD3<Float>]) {
+        let floor: Float = -1.6
+        var lo = body.first ?? .zero, hi = lo
+        for p in body { lo = simd_min(lo, p); hi = simd_max(hi, p) }
+        let size = hi - lo, mid = (lo + hi) / 2
+        let lying = size.z > size.y
+        if lying {
+            // the bed under it stays in view below
+            stage.position = -SIMD3(0, mid.y - 0.2, mid.z)
+            frame = max(4.4, size.z * 1.9)
+        } else {
+            stage.position = -SIMD3(0, 0, mid.z * 0.5)
+            frame = 5.9
+        }
+        if let shade = Self.shadowTexture {
+            var m = UnlitMaterial()
+            m.color = .init(tint: .black, texture: .init(shade))
+            m.blending = .transparent(opacity: .init(floatLiteral: 0.3))
+            let plane = ModelEntity(mesh: .generatePlane(width: lying ? 2.6 : 1.3, depth: lying ? size.z * 1.3 : 1.3), materials: [m])
+            plane.position = SIMD3(0, floor + 0.002, lying ? mid.z : 0.05)
+            stage.addChild(plane)
+        }
+    }
+
+    private func addProp(_ id: String, _ prop: PostureModel.Prop) {
+        let s = prop.size
+        let entity = Entity()
+        entity.name = "prop:" + id
+        switch id {
+        case "phone":
+            var body = PhysicallyBasedMaterial()
+            body.baseColor = .init(tint: UIColor(hex: "#2B2E35"))
+            body.roughness = .init(floatLiteral: 0.4)
+            body.metallic = .init(floatLiteral: 0.6)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: s.x * 0.12), materials: [body]))
+            // the lit screen faces +z (the eyes)
+            let screen = ModelEntity(mesh: .generatePlane(width: s.x * 0.9, height: s.y * 0.92, cornerRadius: s.x * 0.08),
+                                     materials: [UnlitMaterial(color: UIColor(hex: "#8FC4F2"))])
+            screen.position = SIMD3(0, 0, s.z / 2 + 0.001)
+            entity.addChild(screen)
+        case "laptop":
+            // the base, its screen opened about 110° from the back edge (+z of the base faces the user)
+            var shell = PhysicallyBasedMaterial()
+            shell.baseColor = .init(tint: UIColor(hex: "#B8BDC6"))
+            shell.roughness = .init(floatLiteral: 0.35)
+            shell.metallic = .init(floatLiteral: 0.7)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: s.y * 0.4), materials: [shell]))
+            let keys = ModelEntity(mesh: .generatePlane(width: s.x * 0.86, depth: s.z * 0.42), materials: [UnlitMaterial(color: UIColor(hex: "#30343C"))])
+            keys.position = SIMD3(0, s.y / 2 + 0.001, -s.z * 0.12)
+            entity.addChild(keys)
+            let lid = Entity()
+            lid.position = SIMD3(0, s.y / 2, -s.z / 2)
+            lid.orientation = simd_quatf(angle: -20 * .pi / 180, axis: SIMD3(1, 0, 0))
+            let h = s.z * 0.91, t = s.y * 0.35
+            let back = ModelEntity(mesh: .generateBox(width: s.x, height: h, depth: t, cornerRadius: t * 0.4), materials: [shell])
+            back.position = SIMD3(0, h / 2, -t / 2)
+            lid.addChild(back)
+            let screen = ModelEntity(mesh: .generatePlane(width: s.x * 0.92, height: h * 0.88), materials: [UnlitMaterial(color: UIColor(hex: "#8FC4F2"))])
+            screen.position = SIMD3(0, h / 2, 0.001)
+            lid.addChild(screen)
+            entity.addChild(lid)
+        case "desk":
+            // a top on four legs
+            var wood = PhysicallyBasedMaterial()
+            wood.baseColor = .init(tint: UIColor(hex: "#B58B63"))
+            wood.roughness = .init(floatLiteral: 0.7)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: 0.01), materials: [wood]))
+            let drop = prop.keys[0].columns.3.y - s.y / 2 + 1.6
+            for (dx, dz): (Float, Float) in [(-1, -1), (-1, 1), (1, -1), (1, 1)] {
+                let leg = ModelEntity(mesh: .generateBox(width: 0.045, height: drop, depth: 0.045, cornerRadius: 0.01), materials: [wood])
+                leg.position = SIMD3(dx * (s.x / 2 - 0.05), -s.y / 2 - drop / 2, dz * (s.z / 2 - 0.05))
+                entity.addChild(leg)
+            }
+        case "bed":
+            // a mattress on a low frame
+            var sheet = PhysicallyBasedMaterial()
+            sheet.baseColor = .init(tint: UIColor(hex: "#C9D3E0"), texture: Self.texture("fabric.png").map { .init($0) })
+            sheet.roughness = .init(floatLiteral: 0.95)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: s.y * 0.3), materials: [sheet]))
+            var wood = PhysicallyBasedMaterial()
+            wood.baseColor = .init(tint: UIColor(hex: "#8A6A4F"))
+            wood.roughness = .init(floatLiteral: 0.7)
+            let drop = prop.keys[0].columns.3.y - s.y / 2 + 1.6
+            let frame = ModelEntity(mesh: .generateBox(width: s.x + 0.06, height: drop, depth: s.z + 0.06, cornerRadius: 0.02), materials: [wood])
+            frame.position = SIMD3(0, -s.y / 2 - drop / 2, 0)
+            entity.addChild(frame)
+        case let id where id.hasPrefix("pillow"):
+            var cloth = PhysicallyBasedMaterial()
+            cloth.baseColor = .init(tint: UIColor(hex: "#F1F3F6"), texture: Self.texture("fabric.png").map { .init($0) })
+            cloth.roughness = .init(floatLiteral: 0.95)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: s.y * 0.48), materials: [cloth]))
+        default:
+            var m = PhysicallyBasedMaterial()
+            m.baseColor = .init(tint: UIColor(hex: id == "keyboard" ? "#3A3E46" : "#5B6170"))
+            m.roughness = .init(floatLiteral: 0.6)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: min(s.x, s.y, s.z) * 0.2), materials: [m]))
+        }
+        props.append((entity, prop))
+        stage.addChild(entity)
     }
 
     // MARK: chair and floor
@@ -342,13 +452,20 @@ final class PostureScene {
             guard ms.count > b else { return matrix_identity_float4x4 }
             return ms[a] * (1 - w) + ms[b] * w
         }
+        for (entity, prop) in props {
+            entity.transform = Transform(matrix: lerp(prop.keys))
+            guard prop.alpha.count > b else { continue }
+            let o = prop.alpha[a] * (1 - w) + prop.alpha[b] * w
+            entity.isEnabled = o > 0.02
+            entity.components.set(OpacityComponent(opacity: o))
+        }
         let head = Transform(matrix: lerp(transforms["head"] ?? []))
         for e in headPieces { e.transform = head }
         hair?.set(head: lerp(transforms["head"] ?? []), chest: lerp(transforms["T1"] ?? []))
         for (entity, bone, rest) in bones {
             entity.transform = Transform(matrix: lerp(transforms[bone] ?? []) * rest)
         }
-        load = loads.count > 1 ? loads[0] + (loads[1] - loads[0]) * t : 1
+        load = heat(t)
         strain = t
         paintLoad()
         shown = t
@@ -398,7 +515,7 @@ final class PostureScene {
         }
         goalYaw = target + ((yaw - target) / (2 * .pi)).rounded() * 2 * .pi
         goalPitch = view == .back ? 0.12 : 0.06
-        goalDistance = view == .spine ? 2.3 : view == .side ? 4.4 : 4.6
+        goalDistance = view == .spine ? 2.3 : view == .side ? frame : frame + 0.2
         goalFocusY = 0
         goalPanX = 0
         if view == .spine, let model {

@@ -1,4 +1,5 @@
 import AppKit
+import Metal
 import RealityKit
 
 // Renders the real RealityKit body to PNGs on the Mac.
@@ -151,7 +152,14 @@ extension Renderer {
         let env = ProcessInfo.processInfo.environment
         let scene = PostureScene()
         let heritage = env["HERITAGE"].flatMap(Heritage.init(rawValue:)) ?? .white
-        scene.build(topic: topic, female: female, pregnant: env["PREGNANT"] == "1", heritage: heritage, underwear: env["UNDERWEAR"] != "0",
+        // REGION=neck picks out the neck; HEAT=1,1.4,2.75 sets the load colour along the slider (evenly spaced)
+        if let stops = env["HEAT"]?.split(separator: ",").compactMap({ Float($0) }), stops.count > 1 {
+            scene.heat = { t in
+                let x = min(max(t, 0), 1) * Float(stops.count - 1), i = min(Int(x), stops.count - 2)
+                return stops[i] + (stops[i + 1] - stops[i]) * (x - Float(i))
+            }
+        }
+        scene.build(topic: topic, region: env["REGION"] == "neck" ? .neck : .lumbar, female: female, pregnant: env["PREGNANT"] == "1", heritage: heritage, underwear: env["UNDERWEAR"] != "0",
                     chest: env["CHEST"].flatMap(BodySize.init(rawValue:)) ?? .small, hips: env["HIPS"].flatMap(BodySize.init(rawValue:)) ?? .medium)
         scene.seeThrough = env["SOLID"] != "1"
         scene.goalBlend = env["BLEND"].flatMap(Float.init) ?? 0
@@ -162,6 +170,13 @@ extension Renderer {
         if let d = env["DIST"].flatMap(Float.init) { scene.goalDistance = d }
         if let y = env["FOCUSY"].flatMap(Float.init) { scene.goalFocusY = y }
         scene.settle()
+        // OFFSCREEN=1: RealityRenderer into a texture (works with the screen locked)
+        if env["OFFSCREEN"] == "1" {
+            let w = Int(view.frame.width) * 2, h = Int(view.frame.height) * 2
+            offscreen(scene.root, camera: scene.camera, width: w, height: h, background: NSColor(hex: env["BG"] ?? "#DADCE2"), out: out)
+            NSApp.terminate(nil)
+            return
+        }
         let anchor = AnchorEntity(world: .zero)
         anchor.addChild(scene.root)
         self.view.scene.addAnchor(anchor)
@@ -180,6 +195,33 @@ extension Renderer {
 }
 
 extension Renderer {
+    func offscreen(_ root: Entity, camera: Entity, width: Int, height: Int, background: NSColor, out: String) {
+        guard let device = MTLCreateSystemDefaultDevice(), let renderer = try? RealityRenderer() else { print("no renderer"); return }
+        let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm_srgb, width: width, height: height, mipmapped: false)
+        d.usage = [.renderTarget, .shaderRead]
+        d.storageMode = .shared
+        guard let texture = device.makeTexture(descriptor: d), let output = try? RealityRenderer.CameraOutput(.singleProjection(colorTexture: texture)) else { return }
+        renderer.entities.append(root)
+        renderer.activeCamera = camera
+        renderer.cameraSettings.colorBackground = .color(background.cgColor)
+        final class Flag: @unchecked Sendable { var done = false }
+        let flag = Flag()
+        // a few frames so meshes and materials settle
+        for i in 0..<4 {
+            try? renderer.updateAndRender(deltaTime: 1 / 60, cameraOutput: output, onComplete: { _ in if i == 3 { flag.done = true } })
+        }
+        let start = Date()
+        while !flag.done && Date().timeIntervalSince(start) < 20 { RunLoop.current.run(until: Date().addingTimeInterval(0.02)) }
+        var bytes = [UInt8](repeating: 0, count: width * height * 4)
+        texture.getBytes(&bytes, bytesPerRow: width * 4, from: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
+        guard let ctx = CGContext(data: &bytes, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue),
+              let image = ctx.makeImage() else { return }
+        let rep = NSBitmapImageRep(cgImage: image)
+        try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: out))
+        print(out)
+    }
+
     /// TRAINER = check | find-miss | find | compress | compress-down | tilt | breath | bump | aed | aed-drag | aed-placed
     /// Env: PREGNANT=1, GLASS=1, AZ / EL / DIST (camera), HERITAGE
     func renderTrainer(_ state: String, out: String, female: Bool, age: AgeGroup) async {

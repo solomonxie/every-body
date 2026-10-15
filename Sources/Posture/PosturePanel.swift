@@ -9,12 +9,12 @@ import AppKit
 struct PosturePanel: View {
     let topic: PostureTopic
     @Binding var blend: Double
-    /// forward lean of the neck (degrees from sitting tall) at the slumped end, from the posed model
+    /// forward lean of the neck (degrees from the first end) at the second end, from the posed model
     var neckLean: Float = 34
     var pregnant = false
     @Environment(Settings.self) private var settings
 
-    private var load: Float { topic.loads.0 + (topic.loads.1 - topic.loads.0) * Float(blend) }
+    private var load: Float { topic.load(Float(blend)) }
     private var neck: Float { Neck.kg(neckLean * Float(blend)) }
 
     var body: some View {
@@ -33,7 +33,7 @@ struct PosturePanel: View {
     // MARK: before / after
 
     private var compare: some View {
-        let tall = (disc: topic.loads.0, neck: Neck.kg(0)), slump = (disc: topic.loads.1, neck: Neck.kg(neckLean))
+        let tall = (disc: topic.load(0), neck: Neck.kg(0)), slump = (disc: topic.load(1), neck: Neck.kg(neckLean))
         return VStack(alignment: .leading, spacing: Space.m) {
             HStack(spacing: Space.s) {
                 side(topic.ends.0, disc: tall.disc, neck: tall.neck, on: blend < 0.5) { blend = 0 }
@@ -41,14 +41,10 @@ struct PosturePanel: View {
                 side(topic.ends.1, disc: slump.disc, neck: slump.neck, on: blend >= 0.5) { blend = 1 }
             }
             Slider(value: $blend, in: 0...1)
-                .tint(Color(uiColor: PostureColors.load(load)))
+                .tint(Color(uiColor: topic.color(load)))
                 .accessibilityLabel(settings.t("Posture", "姿势"))
                 .accessibilityValue(settings.t(blend < 0.5 ? topic.ends.0 : topic.ends.1))
-            let more = Int(((slump.disc / tall.disc - 1) * 100).rounded())
-            let times = String(format: "%.1f", slump.neck / tall.neck)
-            Label(settings.t("Slumping: +\(more)% pressure on the lumbar discs, and the neck holds the head as if it weighed \(times)× as much.",
-                             "瘫坐时：腰椎间盘压力 +\(more)%，颈部承受的头部重量约为 \(times) 倍。"),
-                  systemImage: "arrow.up.right")
+            Label(summary(settings.t(topic.summary), a: tall.disc, b: slump.disc, neck: slump.neck / tall.neck), systemImage: "arrow.up.right")
                 .font(.footnote.weight(.medium))
                 .foregroundStyle(Color.caution)
                 .fixedSize(horizontal: false, vertical: true)
@@ -56,19 +52,29 @@ struct PosturePanel: View {
         .card()
     }
 
+    private func summary(_ text: String, a: Float, b: Float, neck: Float) -> String {
+        let ratio = a > 0 ? b / a : 1
+        return text.replacingOccurrences(of: "{pct}", with: "\(Int(((ratio - 1) * 100).rounded()))")
+            .replacingOccurrences(of: "{x}", with: String(format: "%.1f", ratio))
+            .replacingOccurrences(of: "{neck}", with: String(format: "%.1f", neck))
+            .replacingOccurrences(of: "{a}", with: topic.format(a)).replacingOccurrences(of: "{b}", with: topic.format(b))
+    }
+
     private func side(_ title: Bilingual, disc: Float, neck: Float, on: Bool, action: @escaping () -> Void) -> some View {
-        let color = Color(uiColor: PostureColors.load(disc))
+        let color = Color(uiColor: topic.color(disc))
         return Button { withAnimation(.snappy) { action() } } label: {
             VStack(alignment: .leading, spacing: 4) {
                 Text(settings.t(title)).font(.subheadline.weight(.bold)).foregroundStyle(on ? Color.primary : .secondary)
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("\(Int((disc * 100).rounded()))%").font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(color)
-                    Text(settings.t("disc", "椎间盘")).font(.caption).foregroundStyle(.secondary)
+                    Text(topic.format(disc)).font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(color)
+                    Text(settings.t(topic.cardLabel)).font(.caption).foregroundStyle(.secondary)
                 }
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("≈\(Int(neck.rounded())) kg").font(.subheadline.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(Color(uiColor: Neck.color(neck)))
-                    Text(settings.t("on the neck", "颈部")).font(.caption).foregroundStyle(.secondary)
+                if topic.neckGauge {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("≈\(Int(neck.rounded())) kg").font(.subheadline.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(Color(uiColor: Neck.color(neck)))
+                        Text(settings.t("on the neck", "颈部")).font(.caption).foregroundStyle(.secondary)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -84,19 +90,28 @@ struct PosturePanel: View {
 
     private var gauges: some View {
         VStack(alignment: .leading, spacing: Space.m) {
-            reading(settings.t(topic.gauge.title), value: "\(Int((load * 100).rounded()))%", color: PostureColors.load(load))
-            LoadGauge(value: load, marks: topic.gauge.marks, max: topic.gauge.max, color: PostureColors.load)
+            reading(settings.t(topic.gauge.title), value: topic.format(load), color: topic.color(load))
+            LoadGauge(value: load, marks: topic.gauge.marks, max: topic.gauge.max, color: topic.color)
                 .frame(height: 50)
-            Divider()
-            reading(settings.t("Load on the neck from the head, ≈ kg", "头部对颈椎的负荷，约 kg"), value: "≈\(Int(neck.rounded())) kg", color: Neck.color(neck))
-            LoadGauge(value: neck, marks: Neck.marks, max: 30, color: Neck.color)
-                .frame(height: 50)
+            if topic.region == .neck, topic.unit != .degrees {
+                Text(settings.t("Head tipped forward \(Int((neckLean * Float(blend)).rounded()))°", "头部前倾 \(Int((neckLean * Float(blend)).rounded()))°"))
+                    .font(.footnote.weight(.medium).monospacedDigit()).foregroundStyle(.secondary)
+            }
+            if topic.neckGauge {
+                Divider()
+                reading(settings.t("Load on the neck from the head, ≈ kg", "头部对颈椎的负荷，约 kg"), value: "≈\(Int(neck.rounded())) kg", color: Neck.color(neck))
+                LoadGauge(value: neck, marks: Neck.marks, max: 30, color: Neck.color)
+                    .frame(height: 50)
+            }
             if let caveat = topic.caveat {
                 Text(settings.t(caveat)).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            Text(settings.t("Neck: head tipped forward by the angle shown (Hansraj 2014, a computer model). A slump pushes the head \(Int(neckLean.rounded()))° forward.",
-                            "颈部：按图中头部前倾角度估算（Hansraj 2014，计算模型）。瘫坐时头部前倾约 \(Int(neckLean.rounded()))°。"))
-                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            if topic.neckGauge {
+                let end = topic.ends.1
+                Text(settings.t("Neck: head tipped forward by the angle shown (Hansraj 2014, a computer model). At “\(end.en)” the head tips \(Int(neckLean.rounded()))° forward.",
+                                "颈部：按图中头部前倾角度估算（Hansraj 2014，计算模型）。“\(end.zh)”时头部前倾约 \(Int(neckLean.rounded()))°。"))
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
         }
         .card()
         .accessibilityElement(children: .combine)
@@ -117,13 +132,13 @@ struct PosturePanel: View {
             Eyebrow(settings.t("What's happening", "身体里发生了什么"))
             ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                 Label { Text(settings.t(line)).fixedSize(horizontal: false, vertical: true) } icon: {
-                    Circle().fill(Color(uiColor: PostureColors.load(load))).frame(width: 8, height: 8)
+                    Circle().fill(Color(uiColor: topic.color(load))).frame(width: 8, height: 8)
                 }
                 .font(.subheadline)
             }
             HStack(spacing: Space.m) {
-                legend(PostureColors.load(load), settings.t("Lumbar discs", "腰椎间盘"))
-                legend(UIColor(hex: blend < 0.5 ? "#C1443C" : "#FF7A2F"), settings.t("Back and neck muscles", "腰背与颈部肌肉"))
+                legend(topic.color(load), settings.t(topic.legend.0))
+                legend(UIColor(hex: blend < 0.5 ? "#C1443C" : "#FF7A2F"), settings.t(topic.legend.1))
             }
             .padding(.top, Space.xs)
         }
@@ -155,8 +170,7 @@ struct PosturePanel: View {
         VStack(alignment: .leading, spacing: Space.xs) {
             Eyebrow(settings.t("Sources", "参考资料"))
             ForEach(topic.sources, id: \.self) { Text($0).font(.caption).foregroundStyle(.secondary) }
-            Text(settings.t("Not medical advice. See a doctor for back pain that lasts, spreads down a leg, or comes with numbness or weakness.",
-                            "非医疗建议。腰痛持续不缓解、向腿部放射，或伴麻木无力时请就医。"))
+            Text(settings.t(topic.doctor))
                 .font(.caption).foregroundStyle(.secondary).padding(.top, Space.xs)
         }
         .card()
@@ -205,6 +219,8 @@ private struct LoadGauge: View {
 /// Effective weight of the head on the cervical spine by forward tilt (Hansraj 2014): 0° ≈ 5 kg … 60° ≈ 27 kg.
 enum Neck {
     static let table: [(deg: Float, kg: Float)] = [(0, 5), (15, 12), (30, 18), (45, 22), (60, 27)]
+    /// kg → place on the shared colour scale: green upright, amber, red past ~18 kg
+    static let heat: [(value: Float, heat: Float)] = [(5, 1), (12, 1.4), (18, 1.85), (27, 2.75)]
 
     static func kg(_ deg: Float) -> Float {
         let d = min(max(deg, 0), 60)
