@@ -52,8 +52,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
-| `black.female.adult.bare.base.face-side\|front-3q-*.rest` | lower lip top sticks out past the upper, white highlight | in progress |
-| `black\|south-asian.female.adult.bare.base.face-*\|front-3q-*.rest` | light grey patch beside the inner eye corner | in progress |
+| `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | open |
 | `*.female.adult.bare.base.top-down.rest` | grey line at lower lash roots (lash geometry) | open |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
@@ -62,7 +61,6 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - `east-asian.female.adult.bare.XL-L.low-up.back-60+shoulder-90`, `white.female.adult.bare.M-L.low-up.shoulder-160`, `black.female.adult.bare.M-XXL.top-down.back-90+elbow-90` (+dressed, 3q views): sampled sweep
-- `black\|south-asian.female.adult.bare.base.face-*\|front-3q-*\|low-up.rest`: lower-lip roll, inner-corner grey patch
 
 ## Log
 
@@ -95,3 +93,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-14 | `*.female.adult.*.XL\|XXL-*.*.rest\|back-60\|back-90` | under-breast fold opened (gap 0.9→15 mm), breast carries the hips change; bra-xxlarge under-breast clip 120→0 | 93261b8, repack |
 | 2026-10-14 | `*.female.adult.bare.base.face-*\|front-3q-*\|top-down.rest` | caruncle toned to soft pink; lower-lid ledge tucked under the ball (no pale rim); lips closed in profile (lining px ~500→0) | 7bb6857, repack |
 | 2026-10-14 | `*.female.adult.dressed.L+-*.*.rest\|back-*` | bra V tip rounded, cup sheet spans the centre panel (facets 16→0); strap clear of skin (clip 22–24→≤2 pts, −3.8→−1.3 mm) | af1cd1b, repack |
+| 2026-10-14 | `black\|south-asian.female.adult.bare.base.face-*\|front-3q-*.rest` | lower lip tucked under the upper (rim-light px 513→85 at 3/4); inner-corner sheen hollowed (grey px 4204→1200 black, 221→6 south-asian) | aef1e52, repack |
