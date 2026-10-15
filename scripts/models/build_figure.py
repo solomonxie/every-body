@@ -1766,6 +1766,56 @@ STRAP_CLEAR = 0.0005
 STRAP_SPREAD = 10
 
 
+# the band's front pulled taut over the sternum's hollow: (chord reach, slab height, deepest hollow bridged, radius the
+# cut's slivers move as one in, zone height over the hem and its fade, half width and its fade (m); fairing passes)
+BAND_WRAP = (0.08, 0.0025, 0.015, 0.0015, 0.06, 0.06, 0.1, 0.06, 30)
+
+
+def wrap_band(np, target, n, ge):
+    """a band is a hoop under tension: across a hollow (the sternum's between the ribs) it runs straight, not down into
+    it. Each point out along the skin's normal to the highest chord over it between band points of its height within
+    reach either side (not the breasts standing out above), faded out up toward the cups, to the sides and under the
+    breasts; then faired over the mesh (along the normal, never in), the chords' corners softened"""
+    from scipy.spatial import cKDTree
+    reach, slab, deep, sigma, top, fade, half, edge, passes = BAND_WRAP
+    hem = target[(target[:, 2] > 0) & (np.abs(target[:, 0]) < 0.05), 1].min()
+    k = (1 - smoothstep(hem + top, hem + top + fade, target[:, 1])) * (1 - smoothstep(half, half + edge, np.abs(target[:, 0])))
+    # (not under a breast: the cup's underside faces down)
+    k *= (target[:, 2] > 0) * smoothstep(-0.5, -0.25, n[:, 1])
+    nh = n * [1.0, 0, 1.0]
+    nh /= np.maximum(np.linalg.norm(nh, axis=1, keepdims=True), 1e-9)
+    side = np.cross([0, 1.0, 0], nh)
+    flat = cKDTree(target[:, [0, 2]])
+    s = np.zeros(len(target))
+    zone = np.flatnonzero(k > 1e-3)
+    for i in zone:
+        nb = np.array(flat.query_ball_point(target[i, [0, 2]], reach))
+        d = target[nb[np.abs(target[nb, 1] - target[i, 1]) < slab]] - target[i]
+        u, v = d @ side[i], d @ nh[i]
+        L, R = (u < -1e-4) & (v < deep), (u > 1e-4) & (v < deep)
+        if L.any() and R.any():
+            ul, vl = u[L][:, None], v[L][:, None]
+            s[i] = max((vl + (v[R][None] - vl) * -ul / (u[R][None] - ul)).max(), 0)
+    # (in space: the cut's slivers, their corners a hair apart, rise as one, the same way)
+    out, dirn = np.zeros(len(s)), n.copy()
+    near = cKDTree(target).query_ball_point(target[zone], 2.5 * sigma)
+    for i, nb in zip(zone, near):
+        g = np.exp(-((target[nb] - target[i]) ** 2).sum(1) / sigma ** 2)
+        out[i] = (g * s[nb]).sum() / g.sum()
+        dirn[i] = g @ n[nb]
+    s = out * k
+    dirn /= np.linalg.norm(dirn, axis=1, keepdims=True)
+    to = np.concatenate([ge, ge[:, ::-1]]).astype(np.int64)
+    cnt = np.maximum(np.bincount(to[:, 0], minlength=len(s)), 1)[:, None]
+    step = 0.5 * (k > 1e-3)
+    for _ in range(int(passes)):
+        q = target + s[:, None] * dirn
+        acc = np.zeros_like(q)
+        np.add.at(acc, to[:, 0], q[to[:, 1]])
+        s = np.maximum(s + step * ((acc / cnt - q) * dirn).sum(1), 0)
+    return target + s[:, None] * dirn, s > 1e-6
+
+
 def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
     from scipy.spatial import cKDTree
     """a cup over each chest centre: the skin's height (along the cup's axis) evened out over the cup, raised to
@@ -1898,6 +1948,9 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
         gn[(gn * n).sum(1) < 0] *= -1
         h = ((target - p) * n).sum(1)
         target += (np.maximum(lift - h, 0) * moved * open_ / np.maximum((gn * n).sum(1), 0.3))[:, None] * gn
+    if ref is None:
+        target, wrapped = wrap_band(np, target, n, ge)
+        moved = moved | wrapped
     # the cup clears the tip for sure: the most the skin there comes through, as one broad rise over the whole cup
     for i, outer, axis in zip(nipples, outers, axes):
         t = body[i]
