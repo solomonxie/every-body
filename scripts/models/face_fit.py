@@ -1012,6 +1012,138 @@ def hollow_canthus(pieces, centre, radius, depth):
     return dict(pieces, body=out)
 
 
+# groups whose upper lash strands are re-angled at the lid's edge: they left it flat (a shelf under the edge, then a
+# stretch rising ~30°), seen edge-on from the front and from above: a grey line of sheen and sclera through the
+# strands. (root's climb into the lid, the strand's lowest climb past row 1, in degrees; tip clearance in ball radii)
+SEAT_LASHES = {"female-adult": (60, 55, 0.03)}
+
+
+def lash_strands(key, lash, eyes):
+    """per strip (upper / lower, each side) its strands, root → tip: (strands, rows) vertex indices"""
+    uv, _, tri = topo(key)
+    poly = np.load(RAW / f"topo.{key}.npz")["poly"]
+    n = len(uv)
+    nb = [set() for _ in range(n)]
+    quads = [set() for _ in range(n)]
+    edges = {}
+    for t, q in zip(tri, poly):
+        for a, b in ((0, 1), (1, 2), (2, 0)):
+            nb[t[a]].add(t[b]); nb[t[b]].add(t[a])
+            e = (min(t[a], t[b]), max(t[a], t[b]))
+            edges[e] = edges.get(e, 0) + 1
+        for v in t:
+            quads[v].add(q)
+    rim = {}
+    for (a, b), m in edges.items():
+        if m == 1:
+            rim.setdefault(a, []).append(b); rim.setdefault(b, []).append(a)
+    seen, out = set(), []
+    for start in (v for v in rim if len(quads[v]) == 1):
+        if start in seen:
+            continue
+        # the strip's rim from a corner, cut at its corners into sides; the root is the long side nearest the ball
+        loop, prev = [start], None
+        while True:
+            nxt = next(y for y in rim[loop[-1]] if y != prev)
+            if nxt == start:
+                break
+            prev = loop[-1]; loop.append(nxt)
+        seen |= set(loop)
+        cut = [i for i, v in enumerate(loop) if len(quads[v]) == 1] + [len(loop)]
+        sides = sorted((loop[cut[i]:cut[i + 1]] + [loop[cut[i + 1] % len(loop)]] for i in range(len(cut) - 1)), key=len)[-2:]
+        c = ball_sphere(eyes[np.sign(eyes[:, 0]) == np.sign(lash[loop, 0].mean())])[0]
+        rows = [min(sides, key=lambda s: np.linalg.norm(lash[s] - c, axis=1).mean())]
+        done = set(rows[0])
+        while True:
+            # the next row: the unvisited neighbours, walked as a path from the end beside the last row's first
+            layer = {y for x in rows[-1] for y in nb[x]} - done
+            if len(layer) != len(rows[0]):
+                break
+            ends = [y for y in layer if len(nb[y] & layer) == 1]
+            path = [min(ends, key=lambda y: np.linalg.norm(lash[y] - lash[rows[-1][0]]))]
+            while len(path) < len(layer):
+                path.append(next(y for y in nb[path[-1]] & layer if y not in path))
+            rows.append(path); done |= layer
+        out.append(np.array(rows).T)
+    return out
+
+
+def closest_on(body, tris, p):
+    """the nearest point of `tris` to p and that triangle's unit normal"""
+    a, b, c = (body[tris[:, k]] for k in range(3))
+    ab, ac = b - a, c - a
+    n = np.cross(ab, ac)
+    nn = n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-30)
+    q = p - ((p - a) * nn).sum(1, keepdims=True) * nn
+    # barycentric of the projection; outside the triangle: the nearest of its edges
+    v2 = q - a
+    d00, d01, d11 = (ab * ab).sum(1), (ab * ac).sum(1), (ac * ac).sum(1)
+    d20, d21 = (v2 * ab).sum(1), (v2 * ac).sum(1)
+    den = np.maximum(d00 * d11 - d01 * d01, 1e-30)
+    v, w = (d11 * d20 - d01 * d21) / den, (d00 * d21 - d01 * d20) / den
+    inside = (v >= 0) & (w >= 0) & (v + w <= 1)
+    best = np.where(inside[:, None], q, np.nan)
+    for s, e in ((a, b), (b, c), (c, a)):
+        t = np.clip(((p - s) * (e - s)).sum(1) / np.maximum(((e - s) ** 2).sum(1), 1e-30), 0, 1)
+        r = s + t[:, None] * (e - s)
+        nearer = ~inside & (np.isnan(best[:, 0]) | (np.linalg.norm(r - p, axis=1) < np.linalg.norm(best - p, axis=1)))
+        best[nearer] = r[nearer]
+    i = np.argmin(np.linalg.norm(best - p, axis=1))
+    return best[i], nn[i]
+
+
+def depth_in(body, tris, pts):
+    """per point: signed distance to the skin (negative: inside)"""
+    cen = body[tris].mean(1)
+    out = np.zeros(len(pts))
+    for i, p in enumerate(pts):
+        near = tris[np.argsort(np.linalg.norm(cen - p, axis=1))[:40]]
+        q, n = closest_on(body, near, p)
+        out[i] = np.linalg.norm(p - q) * np.sign((p - q) @ n)
+    return out
+
+
+def seat_lashes(pieces, climb, rise, clear):
+    body, eyes = pieces["body"], pieces["eyes"]
+    _, vmap, tris = topo("body")
+    t = vmap[tris]
+    out = dict(pieces)
+    up = np.array([0.0, 1.0, 0.0])
+    for key in [k for k in pieces if k.startswith("lashes-")]:
+        lash = pieces[key].copy()
+        for strands in lash_strands(key, pieces[key], eyes):
+            P0 = pieces[key][strands]
+            side = np.sign(P0[..., 0].mean())
+            c, r = ball_sphere(eyes[np.sign(eyes[:, 0]) == side])
+            if P0[..., 1].mean() < c[1]:
+                continue
+            near = t[(np.linalg.norm(body[t].mean(1) - c, axis=1) < 2.5 * r)]
+            for ch, P in zip(strands, P0):
+                f = (P[-1] - P[0]) * np.array([1, 0, 1])
+                f /= np.linalg.norm(f)
+                a = np.cross(f, up)
+                a /= np.linalg.norm(a)
+                # the root up and back into the lid, behind row 1 (kept where it was)
+                l01 = np.linalg.norm(P[1] - P[0])
+                lash[ch[0]] = P[1] + l01 * (np.sin(np.radians(climb)) * up - np.cos(np.radians(climb)) * f)
+                # the strand past row 1 turned up about it till it leaves at `rise`, less where it would near the lid
+                v = P[2:] - P[1]
+                ang = max(rise - np.degrees(np.arctan2(v[0] @ up, v[0] @ f)), 0.0)
+                turn = lambda x, g: x * np.cos(g) + np.cross(a, x) * np.sin(g) + np.outer(x @ a, a) * (1 - np.cos(g))
+                if (turn(f[None], 0.1)[0] @ up) < 0:
+                    a = -a
+                while True:
+                    lash[ch[2:]] = P[1] + turn(v, np.radians(ang))
+                    if ang <= 0 or depth_in(body, near, lash[ch[2:]]).min() >= clear * r:
+                        break
+                    ang = max(ang - 3, 0)
+        out[key] = lash
+    return out
+
+
+# views a tucked lip's
+
+
 # views a tucked lip's triangles may not turn their backs to (yaw, pitch in degrees)
 TUCK_VIEWS = [(y, p) for y in (0, -35, 35) for p in (0, -35, 25)]
 
@@ -1308,6 +1440,8 @@ def save(name, pieces):
         pieces = tuck_lids(pieces, TUCK_LIDS[gid])
     if gid in HOLLOW_CANTHUS and "eyes" in pieces:
         pieces = hollow_canthus(pieces, *HOLLOW_CANTHUS[gid])
+    if gid in SEAT_LASHES and "eyes" in pieces:
+        pieces = seat_lashes(pieces, *SEAT_LASHES[gid])
     if gid in SMOOTH_CHEST:
         eyes = pieces["eyes"] if "eyes" in pieces else load(f"{gid}.neutral")["eyes"]
         pieces = dict(pieces, body=smooth_chest(pieces["body"], eyes, SMOOTH_CHEST[gid]))
