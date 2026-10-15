@@ -76,6 +76,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## Log
 
+- 2026-10-15: cup creases fixed on M-XL/M-XXL/S-XXL/XL-M/XL-XXL (bent edges near nipple 162 -> 0 worst); hips move each breast rigidly, nipple patch bound to one triangle. Left: small dense patch above nipple on bra-xlarge/xxlarge (2-12 mild edges).
+
 - 2026-10-15: knee-135 front stretch fixed (0 edges >2x, was 218), knee-pit notch and elbow-90 spot mostly gone; Swift only, installed. Elbow-145 sliver and faceted knee front outline still open.
 
 | Date | Cells | Result | Commit |
