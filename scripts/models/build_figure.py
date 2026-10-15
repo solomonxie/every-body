@@ -1171,7 +1171,7 @@ def loader(np, body_tris):
         if n not in loaded:
             got = {k[4:]: v.astype(np.float64) for k, v in np.load(RAW / f"{n}.npz").items()}
             eyes = got["eyes"] if "eyes" in got else smoothed(f"{n.split('.')[0]}.neutral")["eyes"]
-            body = smooth_skin(np, got["body"], eyes, body_tris)
+            body = smooth_skin(np, got["body"], eyes, body_tris, back=n.startswith("female-adult."))
             if n == "female-adult.pregnant":
                 # (the bump keeps its shape: the base's evening carried over)
                 smoothed("female-adult.neutral")
@@ -2018,7 +2018,7 @@ SKIN_RELAX = (4, 25)
 SKIN_EVEN = 0.7
 
 
-def smooth_skin(np, p, eyes, tris):
+def smooth_skin(np, p, eyes, tris, back=False):
     e = np.unique(np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), axis=1), axis=0)
     cnt = np.maximum(np.bincount(e.ravel(), minlength=len(p)), 1).astype(np.float64)
 
@@ -2063,6 +2063,8 @@ def smooth_skin(np, p, eyes, tris):
                 q = q + step * w * (mean(q) - q)
     for _ in range(ARMPIT_FILL[2]):
         q = soften_armpits(np, q, tris)
+    if back:
+        q = soften_armpits(np, q, tris, ARMPIT_BACK_VERTS)
     return q
 
 
@@ -2222,9 +2224,12 @@ def open_fold(np, p, tris):
 # skin vertices on that step (each side) and (reach, Gaussian width, passes), scene units
 ARMPIT_VERTS = (8124, 1436)
 ARMPIT_FILL = (0.08, 0.03, 3)
+# the adult woman's narrow groove at the back of the armpit: the raised arm's blend pinches it into a slit (one pass;
+# more crushes the groove's walls through each other)
+ARMPIT_BACK_VERTS = (17148, 17038)
 
 
-def soften_armpits(np, p, tris):
+def soften_armpits(np, p, tris, verts=ARMPIT_VERTS):
     """a Gaussian in space (not along the mesh, so arm and chest blend across the gap) round each armpit's front,
     feathered from full at half the reach to none at the reach"""
     reach, sigma, _ = ARMPIT_FILL
@@ -2233,7 +2238,7 @@ def soften_armpits(np, p, tris):
     for k in range(3):
         np.add.at(area, tris[:, k], fn / 6)
     out = p.copy()
-    for s in ARMPIT_VERTS:
+    for s in verts:
         d = np.linalg.norm(p - p[s], axis=1)
         near = np.flatnonzero(d < reach + 3 * sigma)
         mine = near[d[near] < reach]
