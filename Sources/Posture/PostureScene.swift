@@ -54,6 +54,9 @@ final class PostureScene {
     private var muscles: [ModelEntity] = []
     private var dimmed: [(entity: ModelEntity, base: PhysicallyBasedMaterial)] = []
     private var halos: [ModelEntity] = []
+    /// bones that glow with the load (the wrist's carpals)
+    private var hot: [ModelEntity] = []
+    private var vessels: [ModelEntity] = []
     private var props: [(entity: Entity, prop: PostureModel.Prop)] = []
     private var region: PostureRegion = .lumbar
     /// camera distance for the whole figure (a standing one needs more room)
@@ -89,7 +92,7 @@ final class PostureScene {
     func build(topic: String, region: PostureRegion = .lumbar, female: Bool, pregnant: Bool = false, heritage: Heritage, underwear: Bool = true,
                chest: BodySize = .small, hips: BodySize = .medium) {
         stage.children.removeAll()
-        meshes = []; skin = []; headPieces = []; hair = nil; garments = []; body = nil; bones = []; discs = []; muscles = []; dimmed = []; halos = []; props = []
+        meshes = []; skin = []; headPieces = []; hair = nil; garments = []; body = nil; bones = []; discs = []; muscles = []; dimmed = []; halos = []; props = []; hot = []; vessels = []
         self.region = region
         shown = -1
         guard let model = (modelCache?.topic == topic ? modelCache?.data : nil) ?? PostureModel.load(topic) else { return }
@@ -163,10 +166,11 @@ final class PostureScene {
             guard let bone = model.rigid[piece.id], let part = ModelLibrary.part(piece.id) else { continue }
             let entity = ModelEntity(mesh: piece.mesh)
             entity.name = piece.id
-            let focus = Self.focusBone(piece.id)
+            let focus = Self.focusBone(piece.id) || region.bones.contains(piece.id)
             let m = BodyScene.material(UIColor(hex: part.color), opacity: 1, texture: Textures.bone)
             entity.model?.materials = [m]
             if !focus { dimmed.append((entity, m)) }
+            if region.bones.contains(piece.id) { hot.append(entity) }
             bones.append((entity, bone, piece.transform.matrix))
             stage.addChild(entity)
         }
@@ -185,6 +189,8 @@ final class PostureScene {
                     halos.append(halo)
                     stage.addChild(halo)
                 }
+            } else if region.vessels.contains(where: { piece.id.hasPrefix($0) }) {
+                vessels.append(entity)
             } else if region.muscles.map({ ids in ids.contains { piece.id.hasPrefix($0) } }) ?? true {
                 entity.components.set(ModelSortGroupComponent(group: sortGroup, order: 1))
                 muscles.append(entity)
@@ -232,6 +238,7 @@ final class PostureScene {
         for (entity, _) in discs { entity.isEnabled = inner }
         for halo in halos { halo.isEnabled = inner }
         for entity in muscles { entity.isEnabled = inner }
+        for entity in vessels { entity.isEnabled = inner }
         shown = -1
     }
 
@@ -299,6 +306,15 @@ final class PostureScene {
             screen.position = SIMD3(0, h / 2, 0.001)
             lid.addChild(screen)
             entity.addChild(lid)
+        case "monitor":
+            // a screen, lit face toward +z (the user)
+            var dark = PhysicallyBasedMaterial()
+            dark.baseColor = .init(tint: UIColor(hex: "#24272D"))
+            dark.roughness = .init(floatLiteral: 0.4)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: s.z * 0.4), materials: [dark]))
+            let screen = ModelEntity(mesh: .generatePlane(width: s.x * 0.95, height: s.y * 0.92), materials: [UnlitMaterial(color: UIColor(hex: "#8FC4F2"))])
+            screen.position = SIMD3(0, 0, s.z / 2 + 0.001)
+            entity.addChild(screen)
         case "desk":
             // a top on four legs
             var wood = PhysicallyBasedMaterial()
@@ -324,14 +340,14 @@ final class PostureScene {
             let frame = ModelEntity(mesh: .generateBox(width: s.x + 0.06, height: drop, depth: s.z + 0.06, cornerRadius: 0.02), materials: [wood])
             frame.position = SIMD3(0, -s.y / 2 - drop / 2, 0)
             entity.addChild(frame)
-        case let id where id.hasPrefix("pillow"):
+        case let id where id.hasPrefix("pillow") || id == "cushion":
             var cloth = PhysicallyBasedMaterial()
             cloth.baseColor = .init(tint: UIColor(hex: "#F1F3F6"), texture: Self.texture("fabric.png").map { .init($0) })
             cloth.roughness = .init(floatLiteral: 0.95)
             entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: s.y * 0.48), materials: [cloth]))
         default:
             var m = PhysicallyBasedMaterial()
-            m.baseColor = .init(tint: UIColor(hex: id == "keyboard" ? "#3A3E46" : "#5B6170"))
+            m.baseColor = .init(tint: UIColor(hex: id == "keyboard" || id == "stand" ? "#2E3238" : "#5B6170"))
             m.roughness = .init(floatLiteral: 0.6)
             entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: min(s.x, s.y, s.z) * 0.2), materials: [m]))
         }
@@ -341,7 +357,84 @@ final class PostureScene {
 
     // MARK: chair and floor
 
+    /// a sofa: a long seat cushion on a base, and a thick, reclined back from the seat up
+    private func addCouch(_ c: PostureModel.Chair) {
+        var fabric = PhysicallyBasedMaterial()
+        fabric.baseColor = .init(tint: UIColor(hex: "#5E6B7D"), texture: Self.texture("fabric.png").map { .init($0) })
+        fabric.roughness = .init(floatLiteral: 0.95)
+        fabric.metallic = .init(floatLiteral: 0)
+        var back = fabric
+        back.blending = .transparent(opacity: .init(floatLiteral: 0.55))
+        back.writesDepth = false
+        let floor: Float = -1.6
+        let couch = Entity()
+        couch.name = "couch"
+        let front = c.seatFront, rear = c.seatBack - 0.25
+        let depth = front - rear, mid = (front + rear) / 2
+        let cushion = ModelEntity(mesh: .generateBox(width: c.seatWidth, height: 0.18, depth: depth, cornerRadius: 0.06), materials: [fabric])
+        cushion.position = SIMD3(0, c.seatY - 0.09, mid)
+        couch.addChild(cushion)
+        let baseTop = c.seatY - 0.18, baseLow = floor + 0.08
+        let base = ModelEntity(mesh: .generateBox(width: c.seatWidth + 0.1, height: baseTop - baseLow, depth: depth, cornerRadius: 0.03), materials: [fabric])
+        base.position = SIMD3(0, (baseTop + baseLow) / 2, mid)
+        couch.addChild(base)
+        let tilt = c.backTilt * .pi / 180
+        let up = SIMD3<Float>(0, cos(tilt), -sin(tilt)), normal = SIMD3<Float>(0, sin(tilt), cos(tilt))
+        // the back's plane, carried down to the seat
+        let origin = SIMD3<Float>(0, c.backY, c.backZ) + up * ((c.seatY - c.backY) / cos(tilt))
+        let height = c.backHeight + (c.backY - c.seatY) / cos(tilt), thick: Float = 0.32
+        let rest = ModelEntity(mesh: .generateBox(width: c.backWidth, height: height, depth: thick, cornerRadius: 0.08), materials: [back])
+        rest.position = origin + up * (height / 2) - normal * (thick / 2)
+        rest.orientation = simd_quatf(angle: -tilt, axis: SIMD3(1, 0, 0))
+        rest.components.set(ModelSortGroupComponent(group: sortGroup, order: 0))
+        couch.addChild(rest)
+        stage.addChild(couch)
+        stage.position = -SIMD3(0, -0.45, c.seatFront * 0.5 + 0.1)
+        if let shade = Self.shadowTexture {
+            var m = UnlitMaterial()
+            m.color = .init(tint: .black, texture: .init(shade))
+            m.blending = .transparent(opacity: .init(floatLiteral: 0.3))
+            let plane = ModelEntity(mesh: .generatePlane(width: c.seatWidth + 0.6, depth: 2.6), materials: [m])
+            plane.position = SIMD3(0, floor + 0.002, mid + 0.4)
+            stage.addChild(plane)
+        }
+    }
+
+    /// on the floor: a mat under the figure and a wall behind it (see-through, so the spine still shows from behind)
+    private func addFloorSeat(_ c: PostureModel.Chair) {
+        let floor: Float = -1.6
+        var mat = PhysicallyBasedMaterial()
+        mat.baseColor = .init(tint: UIColor(hex: "#6E8B74"), texture: Self.texture("fabric.png").map { .init($0) })
+        mat.roughness = .init(floatLiteral: 0.95)
+        let mid = (c.seatFront + c.seatBack) / 2 + 0.2
+        let pad = ModelEntity(mesh: .generateBox(width: c.seatWidth, height: 0.03, depth: 1.5, cornerRadius: 0.012), materials: [mat])
+        pad.position = SIMD3(0, floor + 0.015, mid)
+        stage.addChild(pad)
+        var wall = PhysicallyBasedMaterial()
+        wall.baseColor = .init(tint: UIColor(hex: "#E9E4DA"))
+        wall.roughness = .init(floatLiteral: 0.9)
+        wall.blending = .transparent(opacity: .init(floatLiteral: 0.45))
+        wall.writesDepth = false
+        wall.faceCulling = .none
+        let height: Float = 2.4
+        let panel = ModelEntity(mesh: .generateBox(width: c.backWidth, height: height, depth: 0.06), materials: [wall])
+        panel.position = SIMD3(0, floor + height / 2, c.backZ - 0.03)
+        panel.components.set(ModelSortGroupComponent(group: sortGroup, order: 0))
+        stage.addChild(panel)
+        stage.position = -SIMD3(0, -0.8, mid)
+        if let shade = Self.shadowTexture {
+            var m = UnlitMaterial()
+            m.color = .init(tint: .black, texture: .init(shade))
+            m.blending = .transparent(opacity: .init(floatLiteral: 0.25))
+            let plane = ModelEntity(mesh: .generatePlane(width: 1.6, depth: 1.6), materials: [m])
+            plane.position = SIMD3(0, floor + 0.032, mid)
+            stage.addChild(plane)
+        }
+    }
+
     private func addChair(_ c: PostureModel.Chair) {
+        if c.kind == "couch" { addCouch(c); return }
+        if c.kind == "floor" { addFloorSeat(c); return }
         var cushion = PhysicallyBasedMaterial()
         cushion.baseColor = .init(tint: UIColor(hex: "#3C4250"))
         cushion.roughness = .init(floatLiteral: 0.85)
@@ -495,7 +588,19 @@ final class PostureScene {
             m.writesDepth = false
             halo.model?.materials = [m]
         }
-        let s = strain
+        for entity in hot {
+            var m = BodyScene.material(heat, opacity: 1, texture: Textures.bone)
+            m.emissiveColor = .init(color: heat)
+            m.emissiveIntensity = 0.3 + 1.4 * glow + 0.6 * beat
+            entity.model?.materials = [m]
+        }
+        for entity in vessels {
+            var m = BodyScene.material(heat, opacity: 1)
+            m.emissiveColor = .init(color: heat)
+            m.emissiveIntensity = 0.4 + 1.2 * glow + 0.5 * beat
+            entity.model?.materials = [m]
+        }
+        let s = region.workAtStart ? 1 - strain : strain
         for entity in muscles {
             var m = BodyScene.material(PostureColors.mix(UIColor(hex: "#A98683"), UIColor(hex: "#FF3B1F"), s), opacity: 0.3 + 0.5 * s, texture: Textures.muscle)
             m.emissiveColor = .init(color: UIColor(hex: "#FF3B1F"))
