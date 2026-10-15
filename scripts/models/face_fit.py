@@ -903,6 +903,36 @@ def tuck_lips(pieces, depth, reach):
     return dict(pieces, body=ease_folds(body, out))
 
 
+# faces whose lower lip's top tucks under the upper lip: its front above the fullest point at most `top` per unit
+# below `gap` behind the upper lip's edge, and the upper lip's edge reaching `over` past it (its top stood out past
+# the upper lip, facing up: the back light's glint, a white line between the lips); (top, gap, over, reach)
+TUCK_LOWER = {"female-adult.black": (0.35, 0.0005, 0.0003, 0.0065)}
+
+
+def tuck_lower(pieces, top, gap, over, reach):
+    from skin_textures import lip_seam
+    body = pieces["body"]
+    w = lip_weights(len(body))
+    inner = mouth_lining()[1]
+    y0, zu, zb, _ = lip_seam(np, body, w[:, 0] > 0.3, w[:, 1] > 0.3)
+    d = y0 - body[:, 1]
+    front = (w.max(1) > 0.3) & ~inner & (body[:, 2] > zb - 0.008)
+    up, lo = front & (w[:, 0] > w[:, 1]), front & (w[:, 1] > w[:, 0])
+    # (fading out toward the mouth's corners)
+    corner = np.abs(body[w[:, 1] > 0.5, 0]).max()
+    k = smoothstep(corner, 0.6 * corner, np.abs(body[:, 0]))
+    out = body.copy()
+    sel = lo & (d > 0) & (d < reach)
+    out[sel, 2] -= (k * np.clip(body[:, 2] - (zu - gap + top * d), 0, None))[sel]
+    tops = np.flatnonzero(lo & (d > -0.001) & (d < 0.002))
+    for i in np.flatnonzero(up & (d > -0.004) & (d < 0.0015)):
+        l = tops[np.abs(out[tops, 0] - out[i, 0]) < 0.003]
+        if len(l):
+            want = out[l, 2].max() + over - top * max(0, -d[i] - 0.001)
+            out[i, 2] += k[i] * max(0, want - out[i, 2])
+    return dict(pieces, body=ease_folds(body, out))
+
+
 # groups whose lips are closed: the lower lip's top under the upper lip lifted to meet it (an open slit at the sides
 # read as parted lips in profile); (reach below the upper lip, gap kept) in scene units
 CLOSE_LIPS = {"female-adult": (0.003, 0.0001)}
@@ -959,6 +989,26 @@ def tuck_lids(pieces, reach):
         d = np.linalg.norm(q, axis=1)
         w = smoothstep(0.5, 0.85, n[:, 1]) * (d < 1.1) * (q[:, 1] < -0.1) * (q[:, 2] > 0.3)
         out += (body - c) * (w * (np.minimum(d, reach) / np.maximum(d, 1e-9) - 1))[:, None]
+    return dict(pieces, body=out)
+
+
+# groups whose skin beside each eye's inner corner, toward the nose, is hollowed (left flat, it caught the key
+# light's sheen in one broad patch: light grey on deep skins); (centre: medial, down, forward; radius; depth) in
+# ball radii
+HOLLOW_CANTHUS = {"female-adult": ((1.1, -0.4, 1.4), 1.0, 0.2)}
+
+
+def hollow_canthus(pieces, centre, radius, depth):
+    body, eyes = pieces["body"], pieces["eyes"]
+    n = vertex_normals(body)
+    out = body.copy()
+    for side in (1, -1):
+        c, r = ball_sphere(eyes[np.sign(eyes[:, 0]) == side])
+        q = (body - c) / r
+        q0 = np.array([-side * centre[0], centre[1], centre[2]])
+        w = 1 - smoothstep(0, radius, np.linalg.norm(q - q0, axis=1))
+        w *= smoothstep(1.25, 1.45, np.linalg.norm(q, axis=1)) * smoothstep(0.15, 0.45, side * body[:, 0] / r)
+        out -= (depth * r * w)[:, None] * n
     return dict(pieces, body=out)
 
 
@@ -1250,10 +1300,14 @@ def save(name, pieces):
         pieces = even_midface(pieces, gid, name.split(".")[1].replace("pregnant", "white"), EVEN_MIDFACE[gid])
     if gid in TUCK_LIPS and "eyes" in pieces:
         pieces = tuck_lips(pieces, *TUCK_LIPS[gid])
+    if name in TUCK_LOWER and "eyes" in pieces:
+        pieces = tuck_lower(pieces, *TUCK_LOWER[name])
     if gid in CLOSE_LIPS and "eyes" in pieces:
         pieces = close_lips(pieces, *CLOSE_LIPS[gid])
     if gid in TUCK_LIDS and "eyes" in pieces:
         pieces = tuck_lids(pieces, TUCK_LIDS[gid])
+    if gid in HOLLOW_CANTHUS and "eyes" in pieces:
+        pieces = hollow_canthus(pieces, *HOLLOW_CANTHUS[gid])
     if gid in SMOOTH_CHEST:
         eyes = pieces["eyes"] if "eyes" in pieces else load(f"{gid}.neutral")["eyes"]
         pieces = dict(pieces, body=smooth_chest(pieces["body"], eyes, SMOOTH_CHEST[gid]))
