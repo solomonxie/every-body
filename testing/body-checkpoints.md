@@ -58,9 +58,18 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
 | `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
 
+## Open (sweep 2026-10-14)
+
+| Cells | Issue | State |
+|---|---|---|
+| `*.*.adult.*.*.side.shoulder-160` | hard arm/torso edge, shallow back-armpit groove | open |
+| `*.female.adult.*.*.*.elbow-*` | outer elbow outline faceted (mesh density) | open |
+| `*.female.adult.dressed.XXL-*.*.back-90` | bra cup lower edge crumples, band edge wavy | open |
+| `*.male\|child.*.*.*.shoulder-*` | back-armpit slit (fix applied to the woman only) | waits |
+
 ## In progress
 
-- `east-asian.female.adult.bare.XL-L.low-up.back-60+shoulder-90`, `white.female.adult.bare.M-L.low-up.shoulder-160`, `black.female.adult.bare.M-XXL.top-down.back-90+elbow-90` (+dressed, 3q views): sampled sweep
+- (none)
 
 ## Log
 
@@ -94,3 +103,5 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-14 | `*.female.adult.bare.base.face-*\|front-3q-*\|top-down.rest` | caruncle toned to soft pink; lower-lid ledge tucked under the ball (no pale rim); lips closed in profile (lining px ~500→0) | 7bb6857, repack |
 | 2026-10-14 | `*.female.adult.dressed.L+-*.*.rest\|back-*` | bra V tip rounded, cup sheet spans the centre panel (facets 16→0); strap clear of skin (clip 22–24→≤2 pts, −3.8→−1.3 mm) | af1cd1b, repack |
 | 2026-10-14 | `black\|south-asian.female.adult.bare.base.face-*\|front-3q-*.rest` | lower lip tucked under the upper (rim-light px 513→85 at 3/4); inner-corner sheen hollowed (grey px 4204→1200 black, 221→6 south-asian) | aef1e52, repack |
+| 2026-10-14 | `*.female.adult.dressed.*.*.shoulder-*\|back-*+shoulder-*` | briefs no longer stretch to the hanging hand (garmentShare fallback: same-holder skin; float 174→14 mm) | uncommitted |
+| 2026-10-14 | `*.female.adult.*.*.back\|low-up.shoulder-160\|back-60+shoulder-90` | slit behind the armpit softened (fold clusters 23–31→0) | 4a5b950, repack |
