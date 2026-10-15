@@ -7,6 +7,8 @@ private struct AudienceItem: Identifiable {
     let title: Bilingual
     let note: Bilingual
     var route: Route? = nil
+    /// child topics: the age the person switches to on open
+    var age: AgeGroup? = nil
 }
 
 /// Home section for pregnant women: each topic opens in its pregnancy version.
@@ -44,7 +46,7 @@ struct PregnancySection: View {
     var body: some View {
         AudienceCard(title: settings.t(embedded ? IllustrationGroup.pregnancy.title : Bilingual("Pregnancy", "孕期")),
                      subtitle: settings.t("Opens each topic for a pregnant woman.", "每个主题都按孕妇版本打开。"),
-                     symbol: IllustrationGroup.pregnancy.symbol, color: IllustrationGroup.pregnancy.color, items: items, embedded: embedded) {
+                     symbol: IllustrationGroup.pregnancy.symbol, color: IllustrationGroup.pregnancy.color, items: items, embedded: embedded) { _ in
             // these topics are about her: switch the person type so every page adapts
             settings.female = true
             settings.age = .adult
@@ -53,25 +55,29 @@ struct PregnancySection: View {
     }
 }
 
-/// Home section for children — not built yet.
+/// Home section for children: each topic opens for a child of the matching age.
 struct ChildrenSection: View {
     @Environment(Settings.self) private var settings
 
     private let items: [AudienceItem] = [
         AudienceItem(id: "growth", symbol: "ruler", title: Bilingual("Growth & milestones", "生长发育与里程碑"),
-                     note: Bilingual("Height, weight and skills by age", "各年龄的身高、体重与能力")),
+                     note: Bilingual("Height, weight and skills by age", "各年龄的身高、体重与能力"), route: .illustration(id: "child-growth"), age: .toddler),
         AudienceItem(id: "fever", symbol: "thermometer.medium", title: Bilingual("Fever in babies & children", "婴幼儿发热"),
-                     note: Bilingual("When it’s an emergency", "什么情况要紧急就医")),
+                     note: Bilingual("When it’s an emergency", "什么情况要紧急就医"), route: .illustration(id: "child-fever"), age: .toddler),
         AudienceItem(id: "first-aid", symbol: "cross.case", title: Bilingual("Baby & child first aid", "婴幼儿急救"),
-                     note: Bilingual("CPR, choking and burns for little ones", "小宝宝的心肺复苏、异物与烫伤")),
+                     note: Bilingual("CPR, choking and burns for little ones", "小宝宝的心肺复苏、异物与烫伤"), route: .illustration(id: "child-first-aid"), age: .infant),
         AudienceItem(id: "vaccines", symbol: "syringe", title: Bilingual("Vaccinations", "预防接种"),
-                     note: Bilingual("What each vaccine protects against", "每种疫苗预防什么")),
+                     note: Bilingual("What each vaccine protects against", "每种疫苗预防什么"), route: .illustration(id: "child-vaccines"), age: .infant),
     ]
 
     var body: some View {
         AudienceCard(title: settings.t("Children", "儿童"),
-                     subtitle: settings.t("Coming soon.", "即将推出。"),
-                     symbol: "figure.and.child.holdinghands", color: Color(hex: "#3F95D6"), items: items, embedded: false, onOpen: nil)
+                     subtitle: settings.t("Opens each topic for a child of that age.", "每个主题都按相应年龄的孩子打开。"),
+                     symbol: "figure.and.child.holdinghands", color: Color(hex: "#3F95D6"), items: items, embedded: false) { item in
+            // these topics are about a child: switch the person type so every page adapts
+            if let age = item.age { settings.age = age }
+            settings.pregnant = false
+        }
     }
 }
 
@@ -83,7 +89,7 @@ private struct AudienceCard: View {
     let color: Color
     let items: [AudienceItem]
     var embedded = false
-    let onOpen: (() -> Void)?
+    let onOpen: ((AudienceItem) -> Void)?
     @Environment(Settings.self) private var settings
 
     var body: some View {
@@ -117,7 +123,7 @@ private struct AudienceCard: View {
                     if let route = item.route {
                         NavigationLink(value: route) { row(item, soon: false) }
                             .buttonStyle(RowButtonStyle())
-                            .simultaneousGesture(TapGesture().onEnded { onOpen?() })
+                            .simultaneousGesture(TapGesture().onEnded { onOpen?(item) })
                     } else {
                         row(item, soon: true)
                     }
