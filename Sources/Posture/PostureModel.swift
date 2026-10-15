@@ -13,9 +13,11 @@ struct PostureModel: Sendable {
     struct Chair: Decodable, Sendable {
         let seatY: Float, seatFront: Float, seatBack: Float, seatWidth: Float
         let backZ: Float, backY: Float, backHeight: Float, backTilt: Float, backWidth: Float
+        /// nil: an office chair; "couch"; "floor" (a mat and a wall)
+        var kind: String?
         enum CodingKeys: String, CodingKey {
             case seatY = "seat_y", seatFront = "seat_front", seatBack = "seat_back", seatWidth = "seat_width"
-            case backZ = "back_z", backY = "back_y", backHeight = "back_height", backTilt = "back_tilt", backWidth = "back_width"
+            case backZ = "back_z", backY = "back_y", backHeight = "back_height", backTilt = "back_tilt", backWidth = "back_width", kind
         }
     }
 
@@ -221,12 +223,13 @@ struct PostureModel: Sendable {
 
 /// The part of the body a posture topic is about: its discs glow with the load, its muscles with the strain.
 enum PostureRegion: Sendable {
-    case lumbar, neck
+    case lumbar, neck, wrist, legs
 
     var discs: [String] {
         switch self {
         case .lumbar: ["L1", "L2", "L3", "L4", "L5"]
         case .neck: ["C2", "C3", "C4", "C5", "C6", "C7"]
+        case .wrist, .legs: []
         }
     }
 
@@ -235,6 +238,24 @@ enum PostureRegion: Sendable {
         switch self {
         case .lumbar: nil
         case .neck: ["splenius", "levator-scapulae"]
+        case .wrist: ["levator-scapulae"]
+        case .legs: ["gastrocnemius", "soleus"]
+        }
+    }
+
+    /// soft pieces that glow with the load (the leg veins)
+    var vessels: [String] {
+        self == .legs ? ["leg-vein", "small-saphenous"] : []
+    }
+
+    /// the muscles work at the first end (the calf pump), not the second
+    var workAtStart: Bool { self == .legs }
+
+    /// bones that glow with the load
+    var bones: [String] {
+        switch self {
+        case .wrist: ["carpals-l", "carpals-r"]
+        default: []
         }
     }
 }

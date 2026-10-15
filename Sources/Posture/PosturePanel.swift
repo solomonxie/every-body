@@ -66,8 +66,8 @@ struct PosturePanel: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(settings.t(title)).font(.subheadline.weight(.bold)).foregroundStyle(on ? Color.primary : .secondary)
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(topic.format(disc)).font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(color)
-                    Text(settings.t(topic.cardLabel)).font(.caption).foregroundStyle(.secondary)
+                    Text(topic.format(disc)).font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(color).fixedSize()
+                    Text(settings.t(topic.cardLabel)).font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
                 }
                 if topic.neckGauge {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {

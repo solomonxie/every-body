@@ -27,7 +27,11 @@ M = 1.86  # scene units per metre
 INNER = {
     "skeleton.usdz": None,  # all bones
     "muscles.usdz": ["erector-spinae-l", "erector-spinae-r", "transversospinales-l", "transversospinales-r",
-                     "splenius-l", "splenius-r", "levator-scapulae-l", "levator-scapulae-r"],
+                     "splenius-l", "splenius-r", "levator-scapulae-l", "levator-scapulae-r",
+                     # the calf pump (standing)
+                     "gastrocnemius-medial-l", "gastrocnemius-medial-r", "gastrocnemius-lateral-l", "gastrocnemius-lateral-r",
+                     "soleus-l", "soleus-r"],
+    "vessels.usdz": ["leg-vein-l", "leg-vein-r", "small-saphenous-l", "small-saphenous-r"],
 }
 
 

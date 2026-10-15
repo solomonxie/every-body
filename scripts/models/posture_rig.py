@@ -219,13 +219,19 @@ def joints(parts):
     J["ischium"] = (J["ischium-l"] + J["ischium-r"]) / 2
     # between the eyes: just behind the lacrimal bones
     J["eye"] = (P("lacrimal-bone-l").mean(0) + P("lacrimal-bone-r").mean(0)) / 2 - np.array([0, 0, 0.01])
+    for s in SIDES:
+        J[f"calf-{s}"] = (J[f"knee-{s}"] + J[f"ankle-{s}"]) / 2
+        # ball of the foot: the front ends of the metatarsals, on the floor
+        mt = np.concatenate([parts[k][0] for k in parts if k.startswith("metatarsal") and k.endswith(f"-{s}")])
+        front = mt[mt[:, 2] > np.percentile(mt[:, 2], 85)]
+        J[f"ball-{s}"] = np.array([front[:, 0].mean(), mt[:, 1].min(), front[:, 2].mean()])
     return J
 
 
 # ------------------------------------------------------------------ bones and skin weights
 
 BONES = (["pelvis"] + SPINE + ["head"] + [f"{b}-{s}" for s in SIDES for b in
-         ("clav", "uparm", "fore1", "fore2", "hand", "thigh", "shin", "foot", "ulna", "radius")])
+         ("clav", "uparm", "fore1", "fore2", "hand", "thigh", "shin", "foot", "ulna", "radius")] + ["toes-l", "toes-r"])
 BI = {b: i for i, b in enumerate(BONES)}
 
 FACE = ("jaw", "eye", "levator", "oculi", "oris", "orbicularis", "risorius", "temporalis", "special", "tongue")
@@ -248,7 +254,9 @@ def mpfb_bone(name):
         return f"{table[base]}-{side}"
     if base.startswith(("wrist", "metacarpal", "finger")):
         return f"hand-{side}"
-    if base.startswith(("foot", "toe")):
+    if base.startswith("toe"):
+        return f"toes-{side}"
+    if base.startswith("foot"):
         return f"foot-{side}"
     raise KeyError(name)
 
@@ -403,8 +411,19 @@ def inner_weights(pid, p, J):
         return one(f"thigh-{side}")
     if base in ("tibia", "fibula", "meniscus-lateral", "meniscus-medial"):
         return one(f"shin-{side}")
-    if base in ("talus", "calcaneus", "tarsals") or base.startswith(("metatarsal", "toe")):
+    if base.startswith("toe"):
+        return one(f"toes-{side}")
+    if base in ("talus", "calcaneus", "tarsals") or base.startswith("metatarsal"):
         return one(f"foot-{side}")
+    if base in ("gastrocnemius-medial", "gastrocnemius-lateral", "soleus", "small-saphenous", "leg-vein"):
+        # thigh above the knee, shin below, foot under the ankle (blended over a short band)
+        y = p[:, 1]
+        k = ramp(y, J[f"knee-{side}"][1] - 0.03, J[f"knee-{side}"][1] + 0.03)
+        a = ramp(y, J[f"ankle-{side}"][1] - 0.03, J[f"ankle-{side}"][1] + 0.03)
+        w[:, BI[f"thigh-{side}"]] = k
+        w[:, BI[f"shin-{side}"]] = (1 - k) * a
+        w[:, BI[f"foot-{side}"]] = 1 - a
+        return w
     if base in ("erector-spinae", "transversospinales", "spinal-cord", "splenius", "levator-scapulae"):
         return spine_weights(p[:, 1], J)
     return one("head")  # skull, face, teeth, ossicles…
@@ -448,6 +467,10 @@ def pose(spec, J):
         Rc = R_spine(T, "T2") @ rot((0, 1, 0), -spec.get("protract", 0) * sx) @ rot((0, 0, 1), spec.get("elevate", 0) * sx)
         T[f"clav-{s}"] = rigid(Rc, J[f"sc-{s}"], apply(T["T2"], J[f"sc-{s}"]))
 
+        if spec.get("arms") == "hang":
+            for b in ("uparm", "ulna", "radius", "fore1", "fore2", "hand"):
+                T[f"{b}-{s}"] = T[f"clav-{s}"]
+            continue
         # arm: the hand rests on the thigh, or holds something (a wrist target with the fingers' and palm's directions)
         mirror = np.array([sx, 1, 1])
         grip = spec.get("grip")
@@ -495,6 +518,18 @@ def pose(spec, J):
         h_flat = along * np.linalg.norm(h_now - down * np.dot(h_now, down)) + down * spec.get("finger_drop", 0.0) * np.linalg.norm(h_now)
         Rw = align(h_now, Rh @ np.array([0, 0, 1.0]), h_flat, down)
         T[f"hand-{s}"] = rigid(Rw @ Rh, wr0, wrist_p)
+    for s in SIDES:
+        # the toes move with the foot, except up on the toes
+        T[f"toes-{s}"] = T[f"foot-{s}"]
+    if spec.get("heels"):
+        # up on the toes: everything rises, each foot turns about the ball of the foot until its ankle meets the shin
+        up = np.eye(4)
+        up[1, 3] = spec["heels"]
+        T = {b: (m if b.startswith(("foot-", "toes-")) else up @ m) for b, m in T.items()}
+        for s in SIDES:
+            ball, ankle = J[f"ball-{s}"], J[f"ankle-{s}"]
+            phi = min(np.linspace(-40, 40, 801), key=lambda a: abs(apply(rigid(rot((1, 0, 0), -a), ball, ball), ankle)[1] - ankle[1] - spec["heels"]))
+            T[f"foot-{s}"] = rigid(rot((1, 0, 0), -phi), ball, ball)
     if spec.get("lie"):
         G = lie_matrix(spec)
         T = {b: G @ m for b, m in T.items()}
@@ -523,7 +558,11 @@ def seated_leg(spec, J, T, s, sx):
     e0 = np.array([1.0, 0, 0])
     T[f"thigh-{s}"] = rigid(align(th0, e0, th1, e1), J[f"hip-{s}"], hip)
     T[f"shin-{s}"] = rigid(align(sh0, e0, sh1, e1), J[f"knee-{s}"], knee)
-    T[f"foot-{s}"] = rigid(rot((0, 1, 0), spec.get("toe_out", 0) * sx), J[f"ankle-{s}"], ankle)
+    if spec.get("foot_follow"):
+        # the foot keeps its angle to the shin (pointed a little), lying on its side when the shin does
+        T[f"foot-{s}"] = rigid(T[f"shin-{s}"][:3, :3] @ rot((1, 0, 0), spec.get("plantar", 0.0)), J[f"ankle-{s}"], ankle)
+    else:
+        T[f"foot-{s}"] = rigid(rot((0, 1, 0), spec.get("toe_out", 0) * sx), J[f"ankle-{s}"], ankle)
     return th0, th1
 
 
@@ -645,15 +684,18 @@ def ramp(v, a, b):
     return t * t * (3 - 2 * t)
 
 
-def chair_for(J, poses, body_posed, seat_point, pelvis_pts):
-    """seat and backrest placed against the upright pose; the backrest starts above the pelvis in every pose"""
+def chair_for(J, poses, body_posed, seat_point, pelvis_pts, tilt=12.0, gap=0.0, upper=False, **seat):
+    """seat and backrest placed against the upright pose (gap behind it: room for a cushion); the backrest starts above
+    the pelvis in every pose. seat: the couch's or wall's own sizes and kind"""
     T = poses[0]
     seat_y = seat_point[1] - 0.03
     knee_z = min(apply(T[f"shin-{s}"], J[f"knee-{s}"])[2] for s in SIDES)
     lumbar_y = apply(T["L3"], J["L3"])[1]
     near = body_posed[(np.abs(body_posed[:, 0]) < 0.06) & (np.abs(body_posed[:, 1] - lumbar_y) < 0.04)]
-    back_z = near[:, 2].min()
-    tilt = 12.0
+    if upper:
+        # a wall: against the furthest-back point between the low back and the shoulders
+        near = body_posed[(np.abs(body_posed[:, 0]) < 0.08) & (body_posed[:, 1] > lumbar_y) & (body_posed[:, 1] < lumbar_y + 0.55)]
+    back_z = near[:, 2].min() - gap
     t = math.radians(tilt)
     up, n = np.array([0, math.cos(t), -math.sin(t)]), np.array([0, math.sin(t), math.cos(t)])
     lumbar = np.array([0, lumbar_y, back_z])
@@ -665,8 +707,8 @@ def chair_for(J, poses, body_posed, seat_point, pelvis_pts):
         if close.any():
             start = max(start, float(((q[close] - lumbar) @ up).max()) + 0.025)
     o = lumbar + up * start
-    return dict(seat_y=float(seat_y), seat_front=float(knee_z - 0.13), seat_back=float(back_z - 0.08), seat_width=0.92,
-                back_z=float(o[2]), back_y=float(o[1]), back_height=0.7, back_tilt=tilt, back_width=0.8)
+    return {**dict(seat_y=float(seat_y), seat_front=float(knee_z - 0.13), seat_back=float(back_z - 0.08), seat_width=0.92,
+                   back_z=float(o[2]), back_y=float(o[1]), back_height=0.7, back_tilt=tilt, back_width=0.8, lumbar_y=float(lumbar_y)), **seat}
 
 
 def press(p, chair):
@@ -802,6 +844,119 @@ def use_laptop(spec, J):
                 palm=unit(-up - np.array([0.25, 0, 0])).tolist(), props=props)
 
 
+# ------------------------------------------------------------------ at the computer: the wrists
+
+MONITOR = (0.55 * M, 0.33 * M, 0.02 * M)  # a 24" screen
+
+# keyboard at elbow height: shoulders relaxed, elbows by the sides, wrists straight
+# desk 7 cm too high: shoulders shrug, elbows drift out, wrists rest on the edge and bend back 35° to reach the keys
+COMPUTER = {
+    "neutral": dict(LAPTOP["raised"], protract=2, elevate=0, rise=0.0, ext=0.0, lap=0),
+    "high": dict(LAPTOP["raised"], protract=8, elevate=9, rise=0.07 * M, ext=35.0, lap=0),
+}
+
+
+def at_computer(spec, J):
+    """desk, keyboard and screen (the desk raised by spec["rise"]); wrists at the keyboard's edge, the hand bent back by spec["ext"]"""
+    d = desk_setup(J)
+    X, Y, Z = np.eye(3)
+    rise = spec["rise"]
+    lift = lambda m: m + np.pad(np.array([[0, 0, 0, 0], [0, 0, 0, rise], [0, 0, 0, 0]]), ((0, 1), (0, 0)))
+    top = d["top"] + rise
+    eye = apply(pose(dict(spec, grip={"wrist": J["wrist-l"].tolist(), "fingers": [0, -1, 0]}), J)["head"], J["eye"])
+    monitor = matrix(-X, Y, -Z, [0, eye[1] - MONITOR[1] / 2 - 0.03 + rise * 0.3, eye[2] + 0.65 * M])
+    # resting on the edge when the desk is high, hovering just over it when it's right
+    wrist = np.array([0.2, top + 0.07 - 0.045 * min(1, rise / (0.07 * M)), d["wrist_z"] + 0.02])
+    first = dict(spec, grip={"wrist": wrist.tolist(), "fingers": [0, 0, 1.0]}, palm=[-0.2, -1.0, 0])
+    T = pose(first, J)
+    fore = unit(wrist - apply(T["ulna-l"], J["elbow-l"]))
+    axis = unit(np.cross(fore, Y))
+    cands = [rot(axis, a * spec["ext"]) for a in (1, -1)]
+    R = max(cands, key=lambda R: (R @ fore)[1])
+    fingers = R @ unit(fore - np.array([0.05, 0, 0]))
+    palm = R @ unit(np.cross(axis, fore) * -1 if np.cross(axis, fore)[1] > 0 else np.cross(axis, fore))
+    low = monitor[1, 3] - MONITOR[1] / 2
+    stand = matrix(X, Y, Z, [0, (low + top) / 2, monitor[2, 3] + 0.04])
+    props = {"desk": (DESK, lift(d["desk"])), "keyboard": (KEYBOARD, lift(d["keyboard"])), "monitor": (MONITOR, monitor),
+             "stand": ((0.06 * M, low - top, 0.03 * M), stand)}
+    return dict(spec, grip={"wrist": wrist.tolist(), "fingers": fingers.tolist()}, palm=(palm - np.array([0.2, 0, 0])).tolist(), props=props)
+
+
+# ------------------------------------------------------------------ standing: the calf pump
+
+# up on the toes (the calf muscles squeeze the deep veins empty) vs standing still (blood pools, ankle vein pressure climbs)
+STANDING = {
+    "pump": dict(heels=0.04 * M, flex={"head": 0}),
+    "still": dict(heels=0.0, flex={"head": 0}),
+}
+
+
+def standing_still(J):
+    return dict(stand=True, pelvis_tilt=0, arms="hang")
+
+
+# ------------------------------------------------------------------ the couch
+
+CUSHION = (0.42 * M, 0.26 * M, 0.09 * M)
+
+# reclined against the back with a cushion filling the low back: the lumbar curve kept, the head level
+# sunk into soft cushions: hips slid forward, pelvis rolled far back, the low back rounded, the chin poked forward to see the TV
+COUCH = {
+    "supported": dict(pelvis_tilt=20, flex={"L4": -1, "L3": -1, "T10": 1, "T8": 1, "T6": 1, "C6": 3, "C5": 3, "C4": 3, "C3": 2, "head": 5},
+                      slide=0, protract=0, elevate=0, hand_on_thigh=0.62),
+    "sunk": dict(pelvis_tilt=56, flex={"L5": 6, "L4": 7, "L3": 7, "L2": 7, "L1": 6, **{f"T{i}": 0.5 for i in range(1, 13)},
+                                       "C7": 6, "C6": 5, "C5": 4, "C4": 3, "C3": 2, "head": 0},
+                 slide=0.3, protract=12, elevate=-2, hand_on_thigh=0.75),
+}
+
+
+def couch_common(J):
+    """a low, deep seat: knees above the hips, feet further out"""
+    out = seated_common(J)
+    shin = np.linalg.norm(J["ankle-l"] - J["knee-l"])
+    knee_y = J["ankle-l"][1] + shin * 0.99
+    hip_y = knee_y - 0.07
+    seat = np.array(out["seat_point"])
+    seat[1] = hip_y - (J["hip-l"][1] - J["ischium"][1])
+    ankle = np.array(out["ankle"]) + np.array([0, 0, 0.14])
+    return dict(out, seat_point=seat.tolist(), ankle=ankle.tolist())
+
+
+def lumbar_cushion(chair, steps):
+    """in the gap between the low back and the couch's back, fading out as the body sinks away from it"""
+    t = math.radians(chair["back_tilt"])
+    up, n = np.array([0, math.cos(t), -math.sin(t)]), np.array([0, math.sin(t), math.cos(t)])
+    c = np.array([0, chair["lumbar_y"], 0.0])
+    # on the back's surface at the lumbar height
+    o = np.array([0, chair["back_y"], chair["back_z"]])
+    c = o + up * ((chair["lumbar_y"] - o[1]) / math.cos(t)) + n * CUSHION[2] / 2
+    return {"cushion": (CUSHION, matrix(np.array([1.0, 0, 0]), up, n, c), [max(0.0, 1 - 1.5 * s) for s in steps])}
+
+
+# ------------------------------------------------------------------ on the floor
+
+MAT = 0.03  # a thin mat under the sit bones
+
+# cross-legged with the back against a wall: pelvis nearly upright, the low back's curve mostly kept
+# cross-legged and slouched, away from the wall: tight hips roll the pelvis back, the whole spine rounds, the chin pokes
+FLOOR = {
+    "wall": dict(pelvis_tilt=4, flex={"L5": 1, "L4": 1, "L3": 1, "C6": 1, "C5": 1, "head": -1},
+                 slide=0, protract=0, elevate=0, hand_on_thigh=0.7),
+    "slouch": dict(pelvis_tilt=30, flex={"L5": 8, "L4": 8, "L3": 8, "L2": 8, "L1": 8, **{f"T{i}": 2 for i in range(1, 13)},
+                                         "C7": 4, "C6": 2, "C4": -4, "C3": -6, "C2": -8, "head": -12},
+                   slide=0.04, protract=14, elevate=-2, hand_on_thigh=0.85),
+}
+
+
+def floor_common(J):
+    """sit bones on the mat; each ankle tucked under the other knee"""
+    out = seated_common(J)
+    seat = np.array([0.0, SOLE + MAT + 0.03, -0.02])
+    ankle = np.array([-0.2, SOLE + 0.09, seat[2] + 0.42])
+    return dict(out, seat_point=seat.tolist(), ankle=ankle.tolist(), knee_pole=[1.0, 0.35, 0.25], foot_follow=True, plantar=-25,
+                hand_lift=[0.04, 0.09, 0.0])
+
+
 # ------------------------------------------------------------------ a phone in bed
 
 MATTRESS_TOP = -0.62  # a bed about 52 cm high
@@ -866,7 +1021,21 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
                          sexes=["male"], heritages=["white"], neck="head", focus="C4", topology="sitting"),
           # keys at 0, 15, 30 and 45° of neck bend (the head against the upper back)
           "phone-bed": dict(keys=PHONE_BED, order=["flat", "propped"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=bed_common, finish=phone_in_bed,
-                            chair=False, sexes=["male"], heritages=["white"], neck="cervical", focus="C4", topology="sitting")}
+                            chair=False, sexes=["male"], heritages=["white"], neck="cervical", focus="C4", topology="sitting"),
+          # keys at 0, 12, 23 and 35° of wrist extension; the camera's close view on the right wrist
+          "computer": dict(keys=COMPUTER, order=["neutral", "high"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=seated_common, finish=at_computer,
+                           sexes=["male"], heritages=["white"], focus=("hand-r", "wrist-r"), topology="sitting"),
+          # the calf muscles and leg veins as soft pieces; the close view on the left calf
+          "standing": dict(keys=STANDING, order=["pump", "still"], steps=[0.0, 0.5, 1.0], common=standing_still, finish=lambda sp, J: sp, chair=False,
+                           sexes=["male"], heritages=["white"], soft=("gastrocnemius", "soleus", "leg-vein", "small-saphenous"),
+                           focus=("shin-l", "calf-l"), topology="sitting"),
+          # a reclined couch back with a gap for the lumbar cushion
+          "couch": dict(keys=COUCH, order=["supported", "sunk"], steps=[0.0, 0.5, 1.0], common=couch_common, sexes=["male"], heritages=["white"],
+                        seat=dict(tilt=22.0, gap=CUSHION[2], kind="couch", seat_width=1.3, back_width=1.3, back_height=1.0),
+                        chair_props=lumbar_cushion, topology="sitting"),
+          # a mat on the floor and a wall behind the upper back
+          "floor": dict(keys=FLOOR, order=["wall", "slouch"], steps=[0.0, 0.5, 1.0], common=floor_common, sexes=["male"], heritages=["white"],
+                        seat=dict(tilt=0.0, upper=True, kind="floor", seat_width=1.4, back_width=1.6, back_height=1.6), topology="sitting")}
 SOFT = ("disc-", "erector-spinae", "transversospinales", "splenius", "levator-scapulae")
 SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pregnant"}
 HERITAGES = ["east-asian", "southeast-asian", "south-asian", "hispanic", "white", "black"]
@@ -955,7 +1124,7 @@ def pack(topics=None):
         poses = [pose(sp, J) for sp in specs]
         male = figure("male")
         pelvis_pts = np.concatenate([parts[k][0] for k in ("sacrum", "coccyx", "hip-bone-l", "hip-bone-r")])
-        chair = chair_for(J, poses, skin_body(male["rest"]["body"], male["W"], poses[0]), common["seat_point"], pelvis_pts) \
+        chair = chair_for(J, poses, skin_body(male["rest"]["body"], male["W"], poses[0]), common["seat_point"], pelvis_pts, **topic.get("seat", {})) \
             if topic.get("chair", True) else None
         contact = (lambda q: press(q, chair)) if chair else (lambda q: q)
         pk = Packer()
@@ -968,7 +1137,7 @@ def pack(topics=None):
             header["body"]["from"] = topic["topology"]
         else:
             header["body"].update(vmap=pk.add(btopo["vmap"].astype(np.uint16)), uv=pk.add(btopo["uv"]), index=pk.add(btopo["index"].astype(np.uint16)))
-        soft = [k for k in ids if k.startswith(SOFT)]
+        soft = [k for k in ids if k.startswith(SOFT + tuple(topic.get("soft", ())))]
         header["rigid"] = {k: BONES[int(np.argmax(IW[k][0]))] for k in ids if k not in soft}
         pieces, start = [], 0
         for k in soft:
@@ -1011,6 +1180,11 @@ def pack(topics=None):
         for e in props.values():
             if all(a == 1 for a in e["alpha"]):
                 del e["alpha"]
+        # props placed against the chair (a cushion in the gap behind the low back)
+        if topic.get("chair_props") and chair:
+            for pid, (size, m, alpha) in topic["chair_props"](chair, topic["steps"]).items():
+                props[pid] = {"size": [round(float(v), 4) for v in size], "keys": [np.asarray(m).T.reshape(-1).round(5).tolist()] * len(topic["steps"]),
+                              "alpha": [round(float(a), 3) for a in alpha]}
         if props:
             header["props"] = props
         for sex in sexes:
@@ -1049,8 +1223,8 @@ def pack(topics=None):
             header["sexes"][sex] = entry
         header["blocks"] = pk.blocks
         # where the camera looks: the topic's part of the spine (the lumbar spine by default), per key
-        fj = topic.get("focus", "L3")
-        header["focus"] = [[round(float(c), 4) for c in apply(T[fj], J[fj])] for T in poses]
+        fb, fj = (lambda f: f if isinstance(f, tuple) else (f, f))(topic.get("focus", "L3"))
+        header["focus"] = [[round(float(c), 4) for c in apply(T[fb], J[fj])] for T in poses]
         payload = b"".join(pk.chunks)
         comp = zlib.compressobj(9, zlib.DEFLATED, -15)
         data = comp.compress(payload) + comp.flush()
