@@ -70,6 +70,8 @@ SHAPES = {
 }
 # smoothing passes over the hips shapes' change about the waist
 HIP_EASE = 40
+# and over the breasts
+BREAST_EASE = 40
 # arm swing (radians, out from the body) that goes with a shape
 ARM_OUT = {"hips-medium": 0.018, "hips-large": 0.04, "hips-xlarge": 0.065, "hips-xxlarge": 0.1}
 # group: (sex build, age, hair styles (hair.STYLES), eyebrows, eyelashes)
@@ -1222,6 +1224,7 @@ def body_options(np, load, body_tris):
     # |x|), so both sides of the fold move alike and it stays open on every hips
     wall = fold_wall(np, load.fitted("female-adult.shape-chest-xxlarge"), body_tris, edges, degree)
     carried = smoothstep(0.01, 0.04, breast) * smoothstep(0.42, 0.5, y) * (1 - wall)
+    on_breast = (smoothstep(0.01, 0.04, breast) * smoothstep(0.42, 0.5, y))[:, None]
     inner, under = np.flatnonzero(carried > 1e-3), np.flatnonzero(wall > 0.5)
     k = np.exp(-0.5 * ((f0_fit[inner, None, 0] - f0_fit[None, under, 0]) / FOLD_CARRY) ** 2)
     k /= k.sum(1, keepdims=True)
@@ -1246,6 +1249,12 @@ def body_options(np, load, body_tris):
             # nothing of it (its spread fullness too) reaches the chest; the breasts ride on the trunk under them (the
             # bra's band, fitted per chest, holds on every hips)
             d = carry_on(d) * (1 - smoothstep(0.62, 0.78, y))[:, None]
+            # evened over the breasts: a ripple there twists the bra cup's triangle frames apart on other hips (creases)
+            for _ in range(BREAST_EASE):
+                acc = np.zeros_like(d)
+                np.add.at(acc, edges[:, 0], d[edges[:, 1]])
+                np.add.at(acc, edges[:, 1], d[edges[:, 0]])
+                d += 0.5 * on_breast * (acc / degree - d)
         # wider hips: the arms swing out about the shoulders just enough that the hands and forearms clear them
         angle = ARM_OUT.get(name, 0.0)
         if angle:
