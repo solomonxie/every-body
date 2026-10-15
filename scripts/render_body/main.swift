@@ -159,7 +159,7 @@ extension Renderer {
                 return stops[i] + (stops[i + 1] - stops[i]) * (x - Float(i))
             }
         }
-        scene.build(topic: topic, region: env["REGION"] == "neck" ? .neck : .lumbar, female: female, pregnant: env["PREGNANT"] == "1", heritage: heritage, underwear: env["UNDERWEAR"] != "0",
+        scene.build(topic: topic, region: env["REGION"] == "neck" ? .neck : env["REGION"] == "wrist" ? .wrist : .lumbar, female: female, pregnant: env["PREGNANT"] == "1", heritage: heritage, underwear: env["UNDERWEAR"] != "0",
                     chest: env["CHEST"].flatMap(BodySize.init(rawValue:)) ?? .small, hips: env["HIPS"].flatMap(BodySize.init(rawValue:)) ?? .medium)
         scene.seeThrough = env["SOLID"] != "1"
         scene.goalBlend = env["BLEND"].flatMap(Float.init) ?? 0

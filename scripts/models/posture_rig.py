@@ -802,6 +802,44 @@ def use_laptop(spec, J):
                 palm=unit(-up - np.array([0.25, 0, 0])).tolist(), props=props)
 
 
+# ------------------------------------------------------------------ at the computer: the wrists
+
+MONITOR = (0.55 * M, 0.33 * M, 0.02 * M)  # a 24" screen
+
+# keyboard at elbow height: shoulders relaxed, elbows by the sides, wrists straight
+# desk 7 cm too high: shoulders shrug, elbows drift out, wrists rest on the edge and bend back 35° to reach the keys
+COMPUTER = {
+    "neutral": dict(LAPTOP["raised"], protract=2, elevate=0, rise=0.0, ext=0.0, lap=0),
+    "high": dict(LAPTOP["raised"], protract=8, elevate=9, rise=0.07 * M, ext=35.0, lap=0),
+}
+
+
+def at_computer(spec, J):
+    """desk, keyboard and screen (the desk raised by spec["rise"]); wrists at the keyboard's edge, the hand bent back by spec["ext"]"""
+    d = desk_setup(J)
+    X, Y, Z = np.eye(3)
+    rise = spec["rise"]
+    lift = lambda m: m + np.pad(np.array([[0, 0, 0, 0], [0, 0, 0, rise], [0, 0, 0, 0]]), ((0, 1), (0, 0)))
+    top = d["top"] + rise
+    eye = apply(pose(dict(spec, grip={"wrist": J["wrist-l"].tolist(), "fingers": [0, -1, 0]}), J)["head"], J["eye"])
+    monitor = matrix(-X, Y, -Z, [0, eye[1] - MONITOR[1] / 2 - 0.03 + rise * 0.3, eye[2] + 0.65 * M])
+    # resting on the edge when the desk is high, hovering just over it when it's right
+    wrist = np.array([0.2, top + 0.07 - 0.045 * min(1, rise / (0.07 * M)), d["wrist_z"] + 0.02])
+    first = dict(spec, grip={"wrist": wrist.tolist(), "fingers": [0, 0, 1.0]}, palm=[-0.2, -1.0, 0])
+    T = pose(first, J)
+    fore = unit(wrist - apply(T["ulna-l"], J["elbow-l"]))
+    axis = unit(np.cross(fore, Y))
+    cands = [rot(axis, a * spec["ext"]) for a in (1, -1)]
+    R = max(cands, key=lambda R: (R @ fore)[1])
+    fingers = R @ unit(fore - np.array([0.05, 0, 0]))
+    palm = R @ unit(np.cross(axis, fore) * -1 if np.cross(axis, fore)[1] > 0 else np.cross(axis, fore))
+    low = monitor[1, 3] - MONITOR[1] / 2
+    stand = matrix(X, Y, Z, [0, (low + top) / 2, monitor[2, 3] + 0.04])
+    props = {"desk": (DESK, lift(d["desk"])), "keyboard": (KEYBOARD, lift(d["keyboard"])), "monitor": (MONITOR, monitor),
+             "stand": ((0.06 * M, low - top, 0.03 * M), stand)}
+    return dict(spec, grip={"wrist": wrist.tolist(), "fingers": fingers.tolist()}, palm=(palm - np.array([0.2, 0, 0])).tolist(), props=props)
+
+
 # ------------------------------------------------------------------ a phone in bed
 
 MATTRESS_TOP = -0.62  # a bed about 52 cm high
@@ -866,7 +904,10 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
                          sexes=["male"], heritages=["white"], neck="head", focus="C4", topology="sitting"),
           # keys at 0, 15, 30 and 45° of neck bend (the head against the upper back)
           "phone-bed": dict(keys=PHONE_BED, order=["flat", "propped"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=bed_common, finish=phone_in_bed,
-                            chair=False, sexes=["male"], heritages=["white"], neck="cervical", focus="C4", topology="sitting")}
+                            chair=False, sexes=["male"], heritages=["white"], neck="cervical", focus="C4", topology="sitting"),
+          # keys at 0, 12, 23 and 35° of wrist extension; the camera's close view on the right wrist
+          "computer": dict(keys=COMPUTER, order=["neutral", "high"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=seated_common, finish=at_computer,
+                           sexes=["male"], heritages=["white"], focus=("hand-r", "wrist-r"), topology="sitting")}
 SOFT = ("disc-", "erector-spinae", "transversospinales", "splenius", "levator-scapulae")
 SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pregnant"}
 HERITAGES = ["east-asian", "southeast-asian", "south-asian", "hispanic", "white", "black"]
@@ -1049,8 +1090,8 @@ def pack(topics=None):
             header["sexes"][sex] = entry
         header["blocks"] = pk.blocks
         # where the camera looks: the topic's part of the spine (the lumbar spine by default), per key
-        fj = topic.get("focus", "L3")
-        header["focus"] = [[round(float(c), 4) for c in apply(T[fj], J[fj])] for T in poses]
+        fb, fj = (lambda f: f if isinstance(f, tuple) else (f, f))(topic.get("focus", "L3"))
+        header["focus"] = [[round(float(c), 4) for c in apply(T[fb], J[fj])] for T in poses]
         payload = b"".join(pk.chunks)
         comp = zlib.compressobj(9, zlib.DEFLATED, -15)
         data = comp.compress(payload) + comp.flush()

@@ -59,8 +59,13 @@ private struct PostureTopicView: View {
     // MARK: 3D controls
 
     private var views: [(view: PostureScene.View, label: Bilingual)] {
-        [(.side, Bilingual("Whole body", "全身")), (.spine, topic.region == .neck ? Bilingual("Neck", "颈椎") : Bilingual("Low back", "腰椎")),
-         (.back, Bilingual("Back", "背面")), (.front, Bilingual("Front", "正面"))]
+        let close = switch topic.region {
+        case .lumbar: Bilingual("Low back", "腰椎")
+        case .neck: Bilingual("Neck", "颈椎")
+        case .wrist: Bilingual("Wrist", "手腕")
+        }
+        return [(.side, Bilingual("Whole body", "全身")), (.spine, close),
+                (.back, Bilingual("Back", "背面")), (.front, Bilingual("Front", "正面"))]
     }
 
     private var rail: some View {

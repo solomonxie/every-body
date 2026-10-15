@@ -221,12 +221,13 @@ struct PostureModel: Sendable {
 
 /// The part of the body a posture topic is about: its discs glow with the load, its muscles with the strain.
 enum PostureRegion: Sendable {
-    case lumbar, neck
+    case lumbar, neck, wrist
 
     var discs: [String] {
         switch self {
         case .lumbar: ["L1", "L2", "L3", "L4", "L5"]
         case .neck: ["C2", "C3", "C4", "C5", "C6", "C7"]
+        case .wrist: []
         }
     }
 
@@ -235,6 +236,15 @@ enum PostureRegion: Sendable {
         switch self {
         case .lumbar: nil
         case .neck: ["splenius", "levator-scapulae"]
+        case .wrist: ["levator-scapulae"]
+        }
+    }
+
+    /// bones that glow with the load
+    var bones: [String] {
+        switch self {
+        case .wrist: ["carpals-l", "carpals-r"]
+        default: []
         }
     }
 }
