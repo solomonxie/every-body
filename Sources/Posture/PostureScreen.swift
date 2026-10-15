@@ -27,7 +27,7 @@ private struct PostureTopicView: View {
     var body: some View {
         VStack(spacing: 0) {
             ZStack {
-                PostureView(scene: scene) { scene.show(view) }
+                PostureView(scene: scene, label: topic.sceneLabel) { scene.show(view) }
                 if !ready {
                     LoadingBadge(text: settings.t("Loading 3D…", "正在载入 3D…"))
                 }
@@ -44,9 +44,9 @@ private struct PostureTopicView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await BodyScene.prepare()
-            scene.loads = [topic.loads.0, topic.loads.1]
+            scene.heat = { [topic] in topic.heat(of: topic.load($0)) }
             // one adult figure, always seen inside (no skin)
-            scene.build(topic: topic.id, female: false, pregnant: false, heritage: .white, underwear: true, chest: .large, hips: .medium)
+            scene.build(topic: topic.id, region: topic.region, female: false, pregnant: false, heritage: .white, underwear: true, chest: .large, hips: .medium)
             neckLean = scene.neck.last ?? neckLean
             scene.seeThrough = true
             if !ready { scene.show(view); scene.settle() }
@@ -58,17 +58,17 @@ private struct PostureTopicView: View {
 
     // MARK: 3D controls
 
-    private static let views: [(view: PostureScene.View, label: Bilingual)] = [
-        (.side, Bilingual("Whole body", "全身")), (.spine, Bilingual("Low back", "腰椎")),
-        (.back, Bilingual("Back", "背面")), (.front, Bilingual("Front", "正面")),
-    ]
+    private var views: [(view: PostureScene.View, label: Bilingual)] {
+        [(.side, Bilingual("Whole body", "全身")), (.spine, topic.region == .neck ? Bilingual("Neck", "颈椎") : Bilingual("Low back", "腰椎")),
+         (.back, Bilingual("Back", "背面")), (.front, Bilingual("Front", "正面"))]
+    }
 
     private var rail: some View {
         VStack(spacing: 0) {
             legend.frame(maxWidth: .infinity, alignment: .leading)
             Spacer()
             HStack(spacing: 2) {
-                ForEach(Self.views, id: \.label.en) { v in
+                ForEach(views, id: \.label.en) { v in
                     let on = view == v.view
                     Button { view = v.view; scene.show(v.view) } label: {
                         Text(settings.t(v.label))
@@ -113,6 +113,7 @@ private struct PostureTopicView: View {
 /// Full-bleed 3D posture view: one finger moves it, two fingers turn it, pinch zooms, double-tap resets.
 struct PostureView: View {
     let scene: PostureScene
+    var label = Bilingual("3D figure sitting on a chair", "坐在椅子上的 3D 人体")
     var reset: () -> Void = {}
     @Environment(Settings.self) private var settings
     @State private var dragStart: (yaw: Float, pitch: Float)?
@@ -136,7 +137,7 @@ struct PostureView: View {
             .gesture(SpatialTapGesture(count: 2).onEnded { _ in reset() })
         }
         .accessibilityElement()
-        .accessibilityLabel(settings.t("3D figure sitting on a chair", "坐在椅子上的 3D 人体"))
+        .accessibilityLabel(settings.t(label))
     }
 
     private func rotate(_ t: CGPoint) {

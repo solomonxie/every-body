@@ -8,7 +8,7 @@ import AppKit
 
 /// One posture topic's poses from Resources/Models/postures/<topic>.bin (scripts/models/build_postures.py):
 /// the skin figure's positions per key (topology shared with figure.bin), bone transforms per key, soft inner
-/// pieces (discs, back muscles, spinal cord) per key, and the chair they sit on. Keys blend linearly.
+/// pieces (discs, back muscles, spinal cord) per key, the chair they sit on (if any) and props they hold. Keys blend linearly.
 struct PostureModel: Sendable {
     struct Chair: Decodable, Sendable {
         let seatY: Float, seatFront: Float, seatBack: Float, seatWidth: Float
@@ -17,6 +17,14 @@ struct PostureModel: Sendable {
             case seatY = "seat_y", seatFront = "seat_front", seatBack = "seat_back", seatWidth = "seat_width"
             case backZ = "back_z", backY = "back_y", backHeight = "back_height", backTilt = "back_tilt", backWidth = "back_width"
         }
+    }
+
+    /// something held or leant on (a phone…): its size and its transform per key
+    struct Prop: Sendable {
+        let size: SIMD3<Float>
+        let keys: [simd_float4x4]
+        /// opacity per key (empty: always shown)
+        var alpha: [Float] = []
     }
 
     struct Mesh: Sendable {
@@ -57,7 +65,8 @@ struct PostureModel: Sendable {
     }
 
     let steps: [Float]
-    let chair: Chair
+    let chair: Chair?
+    let props: [String: Prop]
     let vmap: [UInt32]
     let uv: [SIMD2<Float>]
     let index: [UInt32]
@@ -75,7 +84,8 @@ struct PostureModel: Sendable {
 
     private struct Header: Decodable {
         struct Block: Decodable { let ref: Int?; let offset: Int; let count: Int; let lo: [Float]; let step: [Float] }
-        struct Body: Decodable { let vertices: Int; let render: Int; let triangles: Int; let vmap: Int; let uv: Int; let index: Int }
+        /// from: another topic's file holds the (shared) topology
+        struct Body: Decodable { let vertices: Int; let render: Int; let triangles: Int; let vmap: Int?; let uv: Int?; let index: Int?; let from: String? }
         struct Garment: Decodable { let name: String; let color: String; let vertices: Int; let triangles: Int; let lift: Float; let abc: Int; let w: Int; let f: Int; let index: Int; let offset: Int? }
         struct Sex: Decodable {
             let variant: String; let body: [Int]; let heritage: [String: Int]; let garments: [Garment]
@@ -83,8 +93,10 @@ struct PostureModel: Sendable {
         }
         struct Piece: Decodable { let id: String; let start: Int; let count: Int; let triangles: Int; let index: Int }
         struct Inner: Decodable { let count: Int; let blocks: [Int]; let pieces: [Piece] }
+        struct Prop: Decodable { let size: [Float]; let keys: [[Float]]; let alpha: [Float]? }
         let steps: [Float]
-        let chair: Chair
+        let chair: Chair?
+        let props: [String: Prop]?
         let body: Body
         let sexes: [String: Sex]
         let rigid: [String: String]
@@ -104,16 +116,23 @@ struct PostureModel: Sendable {
     }
 
     static func load(_ topic: String) -> PostureModel? {
+        guard let (h, payload) = read(topic) else { return nil }
+        guard let from = h.body.from else { return PostureModel(h, payload, topology: (h, payload)) }
+        guard let shared = read(from), shared.0.body.render == h.body.render, shared.0.body.vertices == h.body.vertices else { return nil }
+        return PostureModel(h, payload, topology: shared)
+    }
+
+    private static func read(_ topic: String) -> (Header, Data)? {
         guard let url = url(topic), let raw = try? Data(contentsOf: url), raw.count > 12, raw.prefix(4) == Data("EBP1".utf8) else { return nil }
         let n = Int(raw.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: 4, as: UInt32.self) })
         guard let h = try? JSONDecoder().decode(Header.self, from: raw.subdata(in: 12..<12 + n)),
               let payload = try? (raw.subdata(in: 12 + n..<raw.count) as NSData).decompressed(using: .zlib) as Data else { return nil }
-        return PostureModel(h, payload)
+        return (h, payload)
     }
 
-    private init(_ h: Header, _ payload: Data) {
-        func array<T>(_ offset: Int, _ count: Int) -> [T] {
-            payload.withUnsafeBytes { raw in (0..<count).map { raw.loadUnaligned(fromByteOffset: offset + $0 * MemoryLayout<T>.stride, as: T.self) } }
+    private init(_ h: Header, _ payload: Data, topology: (Header, Data)) {
+        func array<T>(_ offset: Int, _ count: Int, in data: Data? = nil) -> [T] {
+            (data ?? payload).withUnsafeBytes { raw in (0..<count).map { raw.loadUnaligned(fromByteOffset: offset + $0 * MemoryLayout<T>.stride, as: T.self) } }
         }
         var cache: [Int: [SIMD3<Float>]] = [:]
         func block(_ i: Int) -> [SIMD3<Float>] {
@@ -135,19 +154,25 @@ struct PostureModel: Sendable {
             cache[i] = out
             return out
         }
-        func uv16(_ offset: Int, _ count: Int) -> [SIMD2<Float>] {
-            let raw: [UInt16] = array(offset, count * 2)
+        func uv16(_ offset: Int, _ count: Int, in data: Data? = nil) -> [SIMD2<Float>] {
+            let raw: [UInt16] = array(offset, count * 2, in: data)
             return (0..<count).map { SIMD2(Float(raw[2 * $0]) / 65535, Float(raw[2 * $0 + 1]) / 65535) }
         }
-        func index16(_ offset: Int, _ triangles: Int) -> [UInt32] {
-            (array(offset, triangles * 3) as [UInt16]).map(UInt32.init)
+        func index16(_ offset: Int, _ triangles: Int, in data: Data? = nil) -> [UInt32] {
+            (array(offset, triangles * 3, in: data) as [UInt16]).map(UInt32.init)
         }
 
         steps = h.steps
         chair = h.chair
-        vmap = (array(h.body.vmap, h.body.render) as [UInt16]).map(UInt32.init)
-        uv = uv16(h.body.uv, h.body.render)
-        index = index16(h.body.index, h.body.triangles)
+        props = (h.props ?? [:]).mapValues { p in
+            Prop(size: SIMD3(p.size[0], p.size[1], p.size[2]), keys: p.keys.map { m in
+                simd_float4x4(SIMD4(m[0], m[1], m[2], m[3]), SIMD4(m[4], m[5], m[6], m[7]), SIMD4(m[8], m[9], m[10], m[11]), SIMD4(m[12], m[13], m[14], m[15]))
+            }, alpha: p.alpha ?? [])
+        }
+        let (th, tp) = topology
+        vmap = (array(th.body.vmap ?? 0, th.body.render, in: tp) as [UInt16]).map(UInt32.init)
+        uv = uv16(th.body.uv ?? 0, th.body.render, in: tp)
+        index = index16(th.body.index ?? 0, th.body.triangles, in: tp)
         func matrices(_ keys: [[String: [Float]]]) -> [String: [simd_float4x4]] {
             var out: [String: [simd_float4x4]] = [:]
             for key in keys {
@@ -191,6 +216,26 @@ struct PostureModel: Sendable {
             return (i, i + 1, (t - steps[i]) / max(steps[i + 1] - steps[i], 1e-6))
         }
         return (steps.count - 2, steps.count - 1, 1)
+    }
+}
+
+/// The part of the body a posture topic is about: its discs glow with the load, its muscles with the strain.
+enum PostureRegion: Sendable {
+    case lumbar, neck
+
+    var discs: [String] {
+        switch self {
+        case .lumbar: ["L1", "L2", "L3", "L4", "L5"]
+        case .neck: ["C2", "C3", "C4", "C5", "C6", "C7"]
+        }
+    }
+
+    /// muscles that strain (nil: every soft muscle)
+    var muscles: [String]? {
+        switch self {
+        case .lumbar: nil
+        case .neck: ["splenius", "levator-scapulae"]
+        }
     }
 }
 
