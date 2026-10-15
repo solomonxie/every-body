@@ -71,6 +71,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- XXL buttock second dip (agent, worktree, sheets /tmp/bdip/), 2026-10-15
+
 - `*.female.adult.dressed.M-XL\|M-XXL\|S-XXL\|XL-M\|XL-XXL.*.rest\|back-60\|shoulder-90`: medium/xlarge cup creases
 - `*.female.adult.bare.S-S\|M-M\|XXL-XXL.*.knee-*\|elbow-*`: knee front stretch, knee-pit notch, inner elbow sliver
 
