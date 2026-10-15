@@ -144,6 +144,7 @@ struct PlayerView: View {
                 }
                 .buttonStyle(SecondaryButtonStyle())
             }
+            if !scenario.related.isEmpty { related(scenario) }
             if let note = scenario.profileNote {
                 Banner(text: settings.t(note), symbol: "person.fill", ink: .note, fill: .noteFill)
             }
@@ -153,6 +154,30 @@ struct PlayerView: View {
         }
         .padding(.horizontal, Space.l)
         .padding(.vertical, Space.m)
+    }
+
+    /// links to the full step-by-step pages, in the same person type
+    private func related(_ scenario: Scenario) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Space.s) {
+                ForEach(scenario.related, id: \.self) { id in
+                    if let r = Illustrations.find(id, for: settings.profile) {
+                        NavigationLink(value: Route.illustration(id: id)) {
+                            Label(settings.t(r.title), systemImage: "arrow.right.circle.fill")
+                                .lineLimit(1)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.brand)
+                                .padding(.horizontal, 14)
+                                .frame(minHeight: 36)
+                                .background(Color.brand.opacity(0.12), in: .capsule)
+                                .frame(minHeight: minTap)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(PressableStyle())
+                    }
+                }
+            }
+        }
     }
 
     /// the scene keeps its 360 × 300 shape on a white card

@@ -59,7 +59,7 @@ struct Step: Sendable {
 }
 
 enum IllustrationGroup: String, CaseIterable, Sendable {
-    case firstAid, bones, blood, illness, pregnancy
+    case firstAid, bones, blood, illness, pregnancy, children
 
     var title: Bilingual {
         switch self {
@@ -68,6 +68,7 @@ enum IllustrationGroup: String, CaseIterable, Sendable {
         case .blood: Bilingual("Blood sugar, pressure & fats", "三高")
         case .illness: Bilingual("Common illnesses", "常见病")
         case .pregnancy: Bilingual("Pregnancy & birth", "孕产")
+        case .children: Bilingual("Children", "儿童")
         }
     }
 
@@ -78,6 +79,7 @@ enum IllustrationGroup: String, CaseIterable, Sendable {
         case .blood: Color(hex: "#E39B4B")
         case .illness: Color(hex: "#6C4F9E")
         case .pregnancy: Color(hex: "#C77DA0")
+        case .children: Color(hex: "#3F95D6")
         }
     }
 }
@@ -100,6 +102,8 @@ struct Scenario: Sendable, Identifiable {
     let sources: [String]
     /// extra search words: everyday names, symptoms
     var keywords: [String] = []
+    /// other illustrations linked under the scene
+    var related: [String] = []
 
     /// base values plus every step's targets up to `index`, so Prev is deterministic
     func targets(at index: Int) -> Params {

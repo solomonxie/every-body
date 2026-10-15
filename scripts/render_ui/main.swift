@@ -110,5 +110,9 @@ struct RenderUI {
         }
         if want("hidden") { sheet("hidden", out: out, height: 500) { IllustrationScreen(id: "blood-pressure") } }
         if want("player") { sheet("player", out: out, height: 760) { IllustrationScreen(id: "cpr") } }
+        // "page-<illustration id>": its player page
+        for page in only where page.hasPrefix("page-") {
+            sheet(page, out: out, height: 760) { IllustrationScreen(id: String(page.dropFirst(5))) }
+        }
     }
 }

@@ -8,6 +8,7 @@ extension IllustrationGroup {
         case .blood: "drop.fill"
         case .illness: "thermometer.medium"
         case .pregnancy: "figure.and.child.holdinghands"
+        case .children: "figure.2.and.child.holdinghands"
         }
     }
 }
@@ -23,8 +24,8 @@ struct IllustrationsSection: View {
                 Text(settings.t("Watch each step, then try it yourself.", "先看每一步，再动手试一试。"))
                     .font(.subheadline).foregroundStyle(.secondary)
             }
-            // pregnancy topics have their own section further down
-            ForEach(IllustrationGroup.allCases.filter { $0 != .pregnancy }, id: \.self) { group in
+            // pregnancy and children topics have their own sections further down
+            ForEach(IllustrationGroup.allCases.filter { $0 != .pregnancy && $0 != .children }, id: \.self) { group in
                 let items = Illustrations.all(for: settings.profile).filter { $0.group == group }
                 if !items.isEmpty { GroupCard(group: group, items: items) }
             }
