@@ -65,7 +65,7 @@ struct ChildrenSection: View {
         AudienceItem(id: "fever", symbol: "thermometer.medium", title: Bilingual("Fever in babies & children", "婴幼儿发热"),
                      note: Bilingual("When it’s an emergency", "什么情况要紧急就医"), route: .illustration(id: "child-fever"), age: .toddler),
         AudienceItem(id: "first-aid", symbol: "cross.case", title: Bilingual("Baby & child first aid", "婴幼儿急救"),
-                     note: Bilingual("CPR, choking and burns for little ones", "小宝宝的心肺复苏、异物与烫伤")),
+                     note: Bilingual("CPR, choking and burns for little ones", "小宝宝的心肺复苏、异物与烫伤"), route: .illustration(id: "child-first-aid"), age: .infant),
         AudienceItem(id: "vaccines", symbol: "syringe", title: Bilingual("Vaccinations", "预防接种"),
                      note: Bilingual("What each vaccine protects against", "每种疫苗预防什么")),
     ]

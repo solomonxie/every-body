@@ -102,6 +102,8 @@ struct Scenario: Sendable, Identifiable {
     let sources: [String]
     /// extra search words: everyday names, symptoms
     var keywords: [String] = []
+    /// other illustrations linked under the scene
+    var related: [String] = []
 
     /// base values plus every step's targets up to `index`, so Prev is deterministic
     func targets(at index: Int) -> Params {
