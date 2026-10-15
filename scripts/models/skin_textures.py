@@ -27,6 +27,9 @@ FLUSH_SPREAD = {"east-asian": (0.75, 0.7, 90)}
 # women's faces: how much of the skin's broad light, dark and olive patches is kept (MakeHuman's Asian skin carries blotchy
 # baked shading that reads as streaks), 0 … 1
 FACE_EVEN = {"east-asian": 0.2}
+# per texture: the inner eye corner (MakeHuman's salmon) → the skin round it moved toward a soft pink
+# (pink hue, deep skin's (hue, brightness), share of the hue, brightness scale)
+CARUNCLE = {"female-young": ((1.0, 0.76, 0.74), ((1.0, 0.70, 0.62), 0.8), 0.5, 0.9)}
 # lip colour scale per heritage
 LIP_TINT = {"east-asian": (1.0, 0.88, 0.88)}
 # per texture: brightness and warmth (men a shade deeper and ruddier, seniors a little duller, children lighter)
@@ -187,6 +190,21 @@ def regions(np, raw, mpfb, size):
     out["mouth-line"] = r.paint(np.maximum(line * lipv, lining * 0.8), 0.8)
     out["lids"] = r.paint(r.bone["orbicularis03.L"] + r.bone["orbicularis03.R"], 2.5)
     out["under-eyes"] = r.paint(r.bone["orbicularis04.L"] + r.bone["orbicularis04.R"], 3)
+    # the eye socket's lining behind the lids (shows at the inner corner as the caruncle)
+    t = r.tri_v
+    fn = np.cross(p[t[:, 1]] - p[t[:, 0]], p[t[:, 2]] - p[t[:, 0]])
+    vn = np.zeros_like(p)
+    for k in range(3):
+        np.add.at(vn, t[:, k], fn)
+    sock = np.zeros(len(p))
+    for c in (left, right):
+        el = eyes[np.sign(eyes[:, 0]) == np.sign(c[0])]
+        q = (p - c) / np.median(np.linalg.norm(el - c, axis=1))
+        d = np.linalg.norm(q, axis=1)
+        facing = (q * vn).sum(1) < -0.3 * d * np.linalg.norm(vn, axis=1)  # turned to the ball
+        sock[(d < 1.6) & (q[:, 2] <= 0.3) & facing] = 1
+    # (whole triangles only: those sharing a corner with the face's skin show beside the eye)
+    out["socket"] = blur(np, (r.paint(sock, 0) > 0.99).astype(np.float32), 1.0)
     # knees (front), elbows (back), knuckles and finger joints
     knees = sum(r.ring(f"upperleg02.{x}", f"lowerleg01.{x}") for x in "LR")
     front = smoothstep(-0.01 * s, 0.03 * s, p[:, 2] - np.median(p[knees > 0.3][:, 2]))
@@ -257,6 +275,16 @@ def mix(px, w, tint, k=1.0):
     return px * (1 - w) + px * tint * w
 
 
+def caruncle(np, px, s, dark, hue, deep, share, shade):
+    """the socket's lining `s` (MakeHuman's salmon) → the skin round it, moved toward a soft pink (`deep`: deep skin's)"""
+    Y = np.array([0.3, 0.59, 0.11])
+    hue = np.array(hue) * (1 - dark) + np.array(deep[0]) * dark
+    shade = shade * (1 - dark) + deep[1] * dark
+    ring = blur3(np, px * (1 - s)[..., None], 10) / np.maximum(blur(np, 1 - s, 10), 1e-3)[..., None]
+    pink = (ring * (1 - share) + (ring @ Y)[..., None] * np.array(hue) / (np.array(hue) @ Y) * share) * shade
+    return px * (1 - s[..., None]) + pink * s[..., None]
+
+
 def finish(np, px, heritage, name, reg):
     """blended MakeHuman skin → the heritage's tone with natural colour by region"""
     covered = reg["covered"]
@@ -305,6 +333,8 @@ def finish(np, px, heritage, name, reg):
     # lids a touch deeper and browner (defines the eye), a faint shadow under the eyes
     px = mix(px, reg["lids"], np.array([0.93, 0.89, 0.88]) * (1 - dark) + np.array([0.88, 0.85, 0.84]) * dark, min(0.55 * sh, 0.95))
     px = mix(px, reg["under-eyes"], np.array([0.96, 0.92, 0.94]), 0.4)
+    if name in CARUNCLE:
+        px = caruncle(np, px, reg["socket"], dark, *CARUNCLE[name])
     # lips: a tone that follows the skin's
     lip = np.array([0.94, 0.75, 0.76]) * (1 - dark) + np.array([0.82, 0.70, 0.74]) * dark
     lip = lip * np.array(LIP_TINT.get(heritage, (1.0, 1.0, 1.0)))
