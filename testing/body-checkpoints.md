@@ -71,6 +71,9 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `black.female.adult.bare.base.face-side\|front-3q-*.rest` lip corner wedge + `*.female.adult.*.*.face-*.rest` inner-corner lash sheen (agent, /tmp/lipc/)
+- `*.female.adult.dressed.M-*.*.low-up.*` cup/band lumps, band side kink, XL/XXL patch above nipple (agent, /tmp/band/)
+
 ## Log
 
 - 2026-10-15: shoulder-160 back knob and back armpit crease fixed (strap clip 55 -> 1, bent edges behind shoulder 36 -> 16). Swift only.
