@@ -7,6 +7,9 @@ struct PostureTopic: Identifiable {
         let label: Bilingual
     }
 
+    /// how the gauge's value reads
+    enum Unit { case percent, kg, mmHg, degrees }
+
     let id: String
     let symbol: String
     let title: Bilingual
@@ -24,6 +27,53 @@ struct PostureTopic: Identifiable {
     var caveat: Bilingual?
     /// shown for a pregnant profile
     var pregnancy: Bilingual?
+    /// the part of the body the 3D view picks out
+    var region: PostureRegion = .lumbar
+    var unit: Unit = .percent
+    /// value → place on the shared colour scale (1 green, 1.4 amber, 1.85 red), as stops
+    var heat: [(value: Float, heat: Float)] = [(0, 0), (3, 3)]
+    /// values at evenly spaced slider positions, when the load doesn't follow the slider in a straight line
+    var curve: [Float] = []
+    /// the neck's load (Hansraj) as a second gauge
+    var neckGauge = true
+    /// beside the value on each end's card
+    var cardLabel = Bilingual("disc", "椎间盘")
+    /// under the slider; {pct} the second end's rise in percent, {x} its ratio, {neck} the neck's ratio
+    var summary = Bilingual("Slumping: +{pct}% pressure on the lumbar discs, and the neck holds the head as if it weighed {neck}× as much.",
+                            "瘫坐时：腰椎间盘压力 +{pct}%，颈部承受的头部重量约为 {neck} 倍。")
+    /// what the 3D colours mean: the glowing discs (or other load) and the muscles
+    var legend = (Bilingual("Lumbar discs", "腰椎间盘"), Bilingual("Back and neck muscles", "腰背与颈部肌肉"))
+    var doctor = Bilingual("Not medical advice. See a doctor for back pain that lasts, spreads down a leg, or comes with numbness or weakness.",
+                           "非医疗建议。腰痛持续不缓解、向腿部放射，或伴麻木无力时请就医。")
+    var sceneLabel = Bilingual("3D figure sitting on a chair", "坐在椅子上的 3D 人体")
+
+    /// the load at slider position t (0…1)
+    func load(_ t: Float) -> Float {
+        let t = min(max(t, 0), 1)
+        guard curve.count > 1 else { return loads.0 + (loads.1 - loads.0) * t }
+        let x = t * Float(curve.count - 1), i = min(Int(x), curve.count - 2)
+        return curve[i] + (curve[i + 1] - curve[i]) * (x - Float(i))
+    }
+
+    func heat(of v: Float) -> Float {
+        guard let first = heat.first, v > first.value else { return heat.first?.heat ?? v }
+        for i in 1..<heat.count where v <= heat[i].value {
+            let a = heat[i - 1], b = heat[i]
+            return a.heat + (b.heat - a.heat) * (v - a.value) / (b.value - a.value)
+        }
+        return heat.last!.heat
+    }
+
+    func color(_ v: Float) -> UIColor { PostureColors.load(heat(of: v)) }
+
+    func format(_ v: Float) -> String {
+        switch unit {
+        case .percent: "\(Int((v * 100).rounded()))%"
+        case .kg: "≈\(Int(v.rounded())) kg"
+        case .mmHg: "\(Int(v.rounded())) mmHg"
+        case .degrees: "\(Int(v.rounded()))°"
+        }
+    }
 
     static func find(_ id: String) -> PostureTopic? { all.first { $0.id == id } }
 
@@ -66,8 +116,39 @@ struct PostureTopic: Identifiable {
                      note: Bilingual("Cross-legged and slouched vs against a wall", "盘腿弓背 vs 靠墙坐")),
         PostureTopic(id: "laptop", symbol: "laptopcomputer", title: Bilingual("Laptop on your lap", "笔记本放腿上"),
                      note: Bilingual("Bent neck and rounded shoulders vs a raised screen", "低头圆肩 vs 抬高屏幕")),
-        PostureTopic(id: "phone-standing", symbol: "iphone", title: Bilingual("Looking down at your phone", "低头看手机"),
-                     note: Bilingual("How the load on your neck grows as the head tips forward", "头越低，颈椎负荷越大")),
+        PostureTopic(
+            id: "phone-standing", symbol: "iphone", title: Bilingual("Looking down at your phone", "低头看手机"),
+            note: Bilingual("How the load on your neck grows as the head tips forward", "头越低，颈椎负荷越大"), ready: true,
+            ends: (Bilingual("Head up", "抬头平视"), Bilingual("Head down 60°", "低头 60°")),
+            loads: (5, 27),
+            gauge: (Bilingual("Load on the neck from the head, ≈ kg", "头部对颈椎的负荷，约 kg"), Neck.marks, 30),
+            explain: ([Bilingual("Ears over the shoulders: the neck carries just the head's own weight, about 5 kg", "耳朵在肩膀正上方：颈部只承受头部本身的重量，约 5 kg"),
+                       Bilingual("The neck keeps its gentle inward curve", "颈椎保持自然前凸"),
+                       Bilingual("The muscles at the back of the neck barely need to work", "颈后肌肉几乎不用费力"),
+                       Bilingual("Phone raised toward eye level, elbows close to the body", "手机抬到接近视线高度，手肘贴近身体")],
+                      [Bilingual("The further the head tips, the further its weight hangs in front of the spine, and the harder the neck muscles pull to hold it", "头越低，重心越偏离脊柱前方，颈后肌肉要越用力才能拉住它"),
+                       Bilingual("At 60° the neck works as if the head weighed about 27 kg, over five times its real weight", "低头 60° 时，颈部承受的负荷约相当于 27 kg，是头部实际重量的五倍多"),
+                       Bilingual("The neck's inward curve flattens: the discs are squeezed at the front", "颈椎前凸变直：椎间盘前缘受挤压"),
+                       Bilingual("Shoulders round forward; the muscles from the skull to the shoulder blades stay on stretch", "肩膀前扣，从颅底到肩胛骨的肌肉持续被拉长")]),
+            tips: [("iphone", Bilingual("Raise the phone toward eye level and lower your eyes, not your head", "把手机举高到接近视线，用眼睛往下看，而不是低头")),
+                   ("hand.raised", Bilingual("Rest your elbows on a table, your bag or your chest to hold it up without tiring", "手肘撑在桌上、包上或贴着胸口，举高手机也不累")),
+                   ("timer", Bilingual("Look up from the screen every 15–20 minutes", "每 15–20 分钟抬头离开屏幕")),
+                   ("arrow.uturn.backward", Bilingual("Chin tucks: glide the head straight back until the ears are over the shoulders, 10 times", "收下巴：头部水平向后移，直到耳朵在肩膀正上方，做 10 次"))],
+            sources: ["Hansraj KK. Assessment of stresses in the cervical spine caused by posture and position of the head. Surg Technol Int 2014;25:277–279.",
+                      "Lee S, Kang H, Shin G. Head flexion angle while using a smartphone. Ergonomics 2015;58(2):220–226.",
+                      "Vasavada AN et al. Gravitational demand on the neck musculature during tablet computer use. Ergonomics 2015;58(6):990–1004.",
+                      "Barrett JM, McKinnon C, Callaghan JP. Cervical spine joint loading with neck flexion. Ergonomics 2020;63(1):101–108."],
+            caveat: Bilingual("Hansraj's figures come from a simple computer model, not measurements in people. Later models (Vasavada 2015, Barrett 2020) give lower numbers but agree the load climbs steeply as the head tips. People texting typically hold the head about 35–45° forward (Lee 2015).",
+                              "Hansraj 的数据来自简化的计算模型，并非人体实测。后来的模型（Vasavada 2015、Barrett 2020）数值较低，但同样显示头越低负荷上升越快。人们发短信时头部通常前倾约 35–45°（Lee 2015）。"),
+            pregnancy: Bilingual("Pregnant: a growing bust and bump already pull the shoulders forward. Hold the phone higher with your elbows propped on a cushion or table, and look up often.",
+                                 "孕期：日渐增大的胸部和孕肚本身就会把肩膀往前拉。把手机举高、手肘垫在靠枕或桌上，并经常抬头。"),
+            region: .neck, unit: .kg, heat: Neck.heat, curve: Neck.table.map(\.kg), neckGauge: false,
+            cardLabel: Bilingual("on the neck", "颈部"),
+            summary: Bilingual("Head down 60°: the neck holds the head as if it weighed {x}× as much.", "低头 60° 时：颈部承受的头部重量约为平视时的 {x} 倍。"),
+            legend: (Bilingual("Neck discs", "颈椎间盘"), Bilingual("Neck and shoulder muscles", "颈肩肌肉")),
+            doctor: Bilingual("Not medical advice. See a doctor for neck pain that lasts, spreads into an arm, or comes with numbness, tingling or weakness.",
+                              "非医疗建议。颈痛持续不缓解、向手臂放射，或伴麻木、刺痛、无力时请就医。"),
+            sceneLabel: Bilingual("3D figure standing, looking down at a phone", "站着低头看手机的 3D 人体")),
         PostureTopic(id: "phone-bed", symbol: "bed.double", title: Bilingual("Phone in bed", "躺着玩手机"),
                      note: Bilingual("Neck, shoulder and arm strain, and sleep", "颈、肩、手臂劳损与睡眠")),
     ]

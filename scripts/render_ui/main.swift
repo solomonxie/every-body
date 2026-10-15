@@ -50,10 +50,13 @@ struct RenderUI {
 
         if want("home") { sheet("home", out: out) { HomeContent(query: .constant("")) } }
         if want("posture") {
-            let topic = PostureTopic.find("sitting")!
-            sheet("posture-tall", out: out) { PosturePanel(topic: topic, blend: .constant(0)) }
-            sheet("posture-slump", out: out) { PosturePanel(topic: topic, blend: .constant(1)) }
-            sheet("posture-mid", out: out) { PosturePanel(topic: topic, blend: .constant(0.5)) }
+            // TOPIC=phone-standing NECK=60 (the model's neck lean at the second end)
+            let env = ProcessInfo.processInfo.environment
+            let topic = PostureTopic.find(env["TOPIC"] ?? "sitting")!
+            let neck = env["NECK"].flatMap(Float.init) ?? 34
+            sheet("posture-tall", out: out) { PosturePanel(topic: topic, blend: .constant(0), neckLean: neck) }
+            sheet("posture-slump", out: out) { PosturePanel(topic: topic, blend: .constant(1), neckLean: neck) }
+            sheet("posture-mid", out: out) { PosturePanel(topic: topic, blend: .constant(0.5), neckLean: neck) }
         }
         if want("suggest") {
             let s = Settings()
