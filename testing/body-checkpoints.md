@@ -62,12 +62,13 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | Cells | Issue | State |
 |---|---|---|
 | `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | open |
-| `*.female.adult.*.*.*.elbow-*` | outer elbow outline faceted (mesh density) | open |
+| `*.female.adult.*.*.*.elbow-*` | outer elbow outline faceted (mesh density) | in progress |
 | `*.female.adult.dressed.M-*.*.low-up.*` | faint shading lumps where the cup meets the band; small band-edge kink at the side | open |
 | `*.male\|child.*.*.*.shoulder-*` | back-armpit slit (fix applied to the woman only) | waits |
 
 ## In progress
 
+- `*.female.adult.bare.M-M\|M-XXL\|XXL-XXL.*.elbow-*`: elbow refine
 - `southeast-asian.female.adult.dressed.XL-XXL.top-down.elbow-145`, `south-asian.female.adult.dressed.XL-S.back.back-60`, `white.female.adult.dressed.L-XL.top-down.knee-90`: sampled sweep
 
 ## Log
