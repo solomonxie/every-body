@@ -70,8 +70,8 @@ SHAPES = {
 }
 # smoothing passes over the hips shapes' change about the waist
 HIP_EASE = 40
-# and over the breasts
-BREAST_EASE = 40
+# the breasts' mask (on the fullest option) softened over this many rings: the hips' change is one move over it
+BREAST_EASE = 10
 # arm swing (radians, out from the body) that goes with a shape
 ARM_OUT = {"hips-medium": 0.018, "hips-large": 0.04, "hips-xlarge": 0.065, "hips-xxlarge": 0.1}
 # group: (sex build, age, hair styles (hair.STYLES), eyebrows, eyelashes)
@@ -1224,7 +1224,12 @@ def body_options(np, load, body_tris):
     # |x|), so both sides of the fold move alike and it stays open on every hips
     wall = fold_wall(np, load.fitted("female-adult.shape-chest-xxlarge"), body_tris, edges, degree)
     carried = smoothstep(0.01, 0.04, breast) * smoothstep(0.42, 0.5, y) * (1 - wall)
-    on_breast = (smoothstep(0.01, 0.04, breast) * smoothstep(0.42, 0.5, y))[:, None]
+    on_breast = smoothstep(0.01, 0.04, breast) * smoothstep(0.42, 0.5, y)
+    for _ in range(BREAST_EASE):
+        on_breast = 0.5 * on_breast + 0.5 * (np.bincount(edges[:, 0], on_breast[edges[:, 1]], len(y)) +
+                                             np.bincount(edges[:, 1], on_breast[edges[:, 0]], len(y))) / degree[:, 0]
+    on_breast = on_breast[:, None]
+    left = f0_fit[:, :1] > 0
     inner, under = np.flatnonzero(carried > 1e-3), np.flatnonzero(wall > 0.5)
     k = np.exp(-0.5 * ((f0_fit[inner, None, 0] - f0_fit[None, under, 0]) / FOLD_CARRY) ** 2)
     k /= k.sum(1, keepdims=True)
@@ -1249,12 +1254,10 @@ def body_options(np, load, body_tris):
             # nothing of it (its spread fullness too) reaches the chest; the breasts ride on the trunk under them (the
             # bra's band, fitted per chest, holds on every hips)
             d = carry_on(d) * (1 - smoothstep(0.62, 0.78, y))[:, None]
-            # evened over the breasts: a ripple there twists the bra cup's triangle frames apart on other hips (creases)
-            for _ in range(BREAST_EASE):
-                acc = np.zeros_like(d)
-                np.add.at(acc, edges[:, 0], d[edges[:, 1]])
-                np.add.at(acc, edges[:, 1], d[edges[:, 0]])
-                d += 0.5 * on_breast * (acc / degree - d)
+            # one move over each breast (its mean there): any change across it, a fade or a ripple, turns the bra cup's
+            # triangle frames apart on other hips (creases)
+            mean = lambda side: (d * on_breast * side).sum(0) / (on_breast * side).sum()
+            d += on_breast * (np.where(left, mean(left), mean(~left)) - d)
         # wider hips: the arms swing out about the shoulders just enough that the hands and forearms clear them
         angle = ARM_OUT.get(name, 0.0)
         if angle:
@@ -2020,8 +2023,9 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
     target += s[:, None] * n
     moved = moved | (s > 0)
     # as offsets in each point's triangle frame: a moved point on a sliver (a corner or an edge stored with a corner
-    # repeated) or on the chest centre's small steep facets is re-bound to the nearest well-sized triangle round it,
-    # at the closest point on it (the cup there no longer hangs off the centre's own shape)
+    # repeated) is re-bound to the nearest well-sized triangle round it, at the closest point on it; one on the chest
+    # centre's small steep facets to a single triangle by the centre (the cup there moves as one: neighbours on
+    # different triangles a few cm off them turned apart and creased on any body but the fitted one)
     abc, w = abc.copy(), w.copy()
     area = np.linalg.norm(np.cross(body[tris[:, 1]] - body[tris[:, 0]], body[tris[:, 2]] - body[tris[:, 0]]), axis=1)
     own = {frozenset(t.tolist()): k for k, t in enumerate(tris)}
@@ -2029,9 +2033,12 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
                       for t in abc])
     big = tris[(area >= 1e-6) & ~tipzone[tris].any(1)]
     cent = body[big].mean(1)
+    anchor = [np.argmin(np.linalg.norm(cent - body[i], axis=1)) for i in nipples]
     for v in np.flatnonzero(moved & small):
         x = p[v]
         near = np.argsort(np.linalg.norm(cent - x, axis=1))[:8]
+        if tipzone[abc[v]].any():
+            near = [anchor[int(np.argmin([np.linalg.norm(x - body[i]) for i in nipples]))]]
         best = None
         for k in near:
             a, b, c = body[big[k]]
