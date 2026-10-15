@@ -71,12 +71,13 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- XXL buttock second dip (agent, worktree, sheets /tmp/bdip/), 2026-10-15
 
 - `*.female.adult.dressed.M-XL\|M-XXL\|S-XXL\|XL-M\|XL-XXL.*.rest\|back-60\|shoulder-90`: medium/xlarge cup creases
 - `*.female.adult.bare.S-S\|M-M\|XXL-XXL.*.knee-*\|elbow-*`: knee front stretch, knee-pit notch, inner elbow sliver
 
 ## Log
+
+- 2026-10-15: XXL buttock second dip halved in back bends (100 -> 46 deg/m at back-90): skin >10 cm behind the hip pivot turns higher (BackBend raiseFrom 0.1, raise 1). Swift only.
 
 - 2026-10-15: cup creases fixed on M-XL/M-XXL/S-XXL/XL-M/XL-XXL (bent edges near nipple 162 -> 0 worst); hips move each breast rigidly, nipple patch bound to one triangle. Left: small dense patch above nipple on bra-xlarge/xxlarge (2-12 mild edges).
 
