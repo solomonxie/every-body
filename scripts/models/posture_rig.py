@@ -471,7 +471,19 @@ def pose(spec, J):
         h_flat = along * np.linalg.norm(h_now - down * np.dot(h_now, down)) + down * spec.get("finger_drop", 0.0) * np.linalg.norm(h_now)
         Rw = align(h_now, Rh @ np.array([0, 0, 1.0]), h_flat, down)
         T[f"hand-{s}"] = rigid(Rw @ Rh, wr0, wrist_p)
+    if spec.get("lie"):
+        G = lie_matrix(spec)
+        T = {b: G @ m for b, m in T.items()}
     return T
+
+
+def lie_matrix(spec):
+    """lying on the back, head toward -z, the back on a mattress whose top is at spec["lie"]["top"]"""
+    G = np.eye(4)
+    if spec.get("lie"):
+        G[:3, :3] = rot((1, 0, 0), -90)
+        G[:3, 3] = [0, spec["lie"]["top"] + spec["lie"]["back"], spec["lie"].get("z", 0.0)]
+    return G
 
 
 def seated_leg(spec, J, T, s, sx):
@@ -665,7 +677,11 @@ def hold_phone(spec, J):
     m = np.eye(4)
     m[:3, :3] = np.stack([-side, up, -gaze], 1)  # right-handed: x × y = z, the screen toward the eyes
     m[:3, 3] = c
-    return dict(spec, grip={"wrist": wrist.tolist(), "fingers": fingers.tolist()}, palm=palm.tolist(), props={"phone": (PHONE, m)})
+    # the arm targets are in the body's frame (lying turns the pose afterwards)
+    Gi = np.linalg.inv(lie_matrix(spec))
+    wrist, fingers, palm = apply(Gi, wrist), Gi[:3, :3] @ fingers, Gi[:3, :3] @ palm
+    props = {"phone": (PHONE, m), **{k: v for k, v in spec.get("props", {}).items()}}
+    return dict(spec, grip={"wrist": wrist.tolist(), "fingers": fingers.tolist()}, palm=palm.tolist(), props=props)
 
 
 # Hansraj 2014: the head's effective weight on the neck at 0, 15, 30, 45 and 60° of forward tilt
@@ -753,6 +769,53 @@ def use_laptop(spec, J):
                 palm=unit(-up - np.array([0.25, 0, 0])).tolist(), props=props)
 
 
+# ------------------------------------------------------------------ a phone in bed
+
+MATTRESS_TOP = -0.62  # a bed about 52 cm high
+BED = (1.0 * M, 0.2 * M, 2.05 * M)
+PILLOW = (0.6 * M, 0.11 * M, 0.4 * M)
+
+# head on one low pillow, elbows on the mattress, the phone held up over the face
+# propped on stacked pillows: the trunk inclined, the chin pulled 45° toward the chest, the phone low on the chest
+PHONE_BED = {
+    "flat": dict(flex={"head": 0}, protract=6, elevate=4, eyes_down=24, reach=0.32, prop=0),
+    "propped": dict(flex={"L2": 3, "L1": 3, "T12": 3, "T11": 3, "T10": 3, "T9": 3, "T8": 3, "T7": 3, "T6": 2, "T5": 2,
+                          "C7": 8, "C6": 8, "C5": 7, "C4": 7, "C3": 6, "C2": 4, "head": 5},
+                    protract=10, elevate=0, eyes_down=18, reach=0.32, prop=1),
+}
+
+
+def bed_common(J):
+    return dict(stand=True, pelvis_tilt=0, palm=[-0.6, 0.0, -1.0], elbow_pole=[0.6, -0.2, -1.0],
+                lie={"top": MATTRESS_TOP, "back": 0.16, "z": 0.2})
+
+
+def phone_in_bed(spec, J):
+    """the bed and pillows under the body (one pillow flat; a stack behind the shoulders and head propped), then the phone"""
+    G = lie_matrix(spec)
+    T = pose(dict(spec, grip={"wrist": J["wrist-l"], "fingers": [0, -1, 0]}), J)
+    X, Y, Z = np.eye(3)
+    hips = apply(G, (J["hip-l"] + J["hip-r"]) / 2)
+    bed = matrix(X, Y, Z, [0, MATTRESS_TOP - BED[1] / 2, hips[2] - 0.35])
+    t = spec["prop"]
+    pillows = {}
+    occiput = apply(T["head"], np.array([0, 1.44, -0.16]))
+    # propped: one behind the mid back, one behind the base of the neck, one behind the head (each against the back's surface)
+    behind = [(T["T7"], J["T7"], 0.13), (T["T1"], J["T1"], 0.1), (T["head"], np.array([0, 1.44, -0.16]), 0.0)]
+    for i in range(3):
+        # flat: all three in a low pile under the head (only the top one shows above the mattress)
+        flat = matrix(X, Y, Z, occiput - Y * PILLOW[1] * (0.45 + (2 - i)))
+        bone, at, depth = behind[i]
+        n = unit(bone[:3, :3] @ Z)
+        slope = matrix(X, n, np.cross(X, n), apply(bone, at) - n * (depth + PILLOW[1] * 0.45))
+        m = (1 - t) * flat + t * slope
+        m[:3, 0] = unit(m[:3, 0])
+        m[:3, 1] = unit(m[:3, 1] - m[:3, 0] * np.dot(m[:3, 1], m[:3, 0]))
+        m[:3, 2] = np.cross(m[:3, 0], m[:3, 1])
+        pillows[f"pillow{i}"] = (PILLOW, m)
+    return hold_phone(dict(spec, props={"bed": (BED, bed), **pillows}), J)
+
+
 # ------------------------------------------------------------------ pack
 
 # with a bump the trunk can't fold over the thighs: a pregnant slump sinks back into the chair instead
@@ -767,7 +830,10 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
                                  finish=hold_phone, chair=False, sexes=["male"], heritages=["white"], neck="head", focus="C4", topology="sitting"),
           # keys at 0, 15, 30 and 45° of head tilt
           "laptop": dict(keys=LAPTOP, order=["raised", "lap"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=seated_common, finish=use_laptop,
-                         sexes=["male"], heritages=["white"], neck="head", focus="C4", topology="sitting")}
+                         sexes=["male"], heritages=["white"], neck="head", focus="C4", topology="sitting"),
+          # keys at 0, 15, 30 and 45° of neck bend (the head against the upper back)
+          "phone-bed": dict(keys=PHONE_BED, order=["flat", "propped"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=bed_common, finish=phone_in_bed,
+                            chair=False, sexes=["male"], heritages=["white"], neck="cervical", focus="C4", topology="sitting")}
 SOFT = ("disc-", "erector-spinae", "transversospinales", "splenius", "levator-scapulae")
 SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pregnant"}
 HERITAGES = ["east-asian", "southeast-asian", "south-asian", "hispanic", "white", "black"]
@@ -890,7 +956,11 @@ def pack(topics=None):
 
         def neck(ps):
             """forward lean relative to the first key (degrees): of the C7 → skull-base line, or of the head itself"""
-            if topic.get("neck") == "head":
+            if topic.get("neck") == "cervical":
+                # the head's bend against the first thoracic vertebra
+                ang = lambda R: math.degrees(math.atan2(*(lambda u: (u[2], u[1]))(R @ np.array([0, 1.0, 0]))))
+                lean = [ang(T["head"][:3, :3]) - ang(T["T1"][:3, :3]) for T in ps]
+            elif topic.get("neck") == "head":
                 lean = [math.degrees(math.atan2(*(lambda u: (u[2], u[1]))(T["head"][:3, :3] @ np.array([0, 1.0, 0])))) for T in ps]
             else:
                 lean = [math.degrees(math.atan2(*(lambda v: (v[2], v[1]))(apply(T["head"], J["head"]) - apply(T["C7"], J["C7"])))) for T in ps]

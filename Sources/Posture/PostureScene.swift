@@ -192,7 +192,7 @@ final class PostureScene {
                 entity.removeFromParent()
             }
         }
-        if let chair = model.chair { addChair(chair) } else { addFloor(model) }
+        if let chair = model.chair { addChair(chair) } else { addFloor(keys.first ?? []) }
         for (id, prop) in model.props { addProp(id, prop) }
         applyLook()
         apply(blend)
@@ -237,18 +237,27 @@ final class PostureScene {
 
     // MARK: standing and props
 
-    /// no chair: the figure stands on the floor, framed whole
-    private func addFloor(_ model: PostureModel) {
+    /// no chair: the figure stands on the floor (or lies on a bed), framed whole
+    private func addFloor(_ body: [SIMD3<Float>]) {
         let floor: Float = -1.6
-        let z = model.focus.map(\.z).reduce(0, +) / Float(max(model.focus.count, 1)) * 0.5
-        stage.position = -SIMD3(0, 0, z)
-        frame = 5.9
+        var lo = body.first ?? .zero, hi = lo
+        for p in body { lo = simd_min(lo, p); hi = simd_max(hi, p) }
+        let size = hi - lo, mid = (lo + hi) / 2
+        let lying = size.z > size.y
+        if lying {
+            // the bed under it stays in view below
+            stage.position = -SIMD3(0, mid.y - 0.2, mid.z)
+            frame = max(4.4, size.z * 1.9)
+        } else {
+            stage.position = -SIMD3(0, 0, mid.z * 0.5)
+            frame = 5.9
+        }
         if let shade = Self.shadowTexture {
             var m = UnlitMaterial()
             m.color = .init(tint: .black, texture: .init(shade))
             m.blending = .transparent(opacity: .init(floatLiteral: 0.3))
-            let plane = ModelEntity(mesh: .generatePlane(width: 1.3, depth: 1.3), materials: [m])
-            plane.position = SIMD3(0, floor + 0.002, 0.05)
+            let plane = ModelEntity(mesh: .generatePlane(width: lying ? 2.6 : 1.3, depth: lying ? size.z * 1.3 : 1.3), materials: [m])
+            plane.position = SIMD3(0, floor + 0.002, lying ? mid.z : 0.05)
             stage.addChild(plane)
         }
     }
@@ -302,6 +311,24 @@ final class PostureScene {
                 leg.position = SIMD3(dx * (s.x / 2 - 0.05), -s.y / 2 - drop / 2, dz * (s.z / 2 - 0.05))
                 entity.addChild(leg)
             }
+        case "bed":
+            // a mattress on a low frame
+            var sheet = PhysicallyBasedMaterial()
+            sheet.baseColor = .init(tint: UIColor(hex: "#C9D3E0"), texture: Self.texture("fabric.png").map { .init($0) })
+            sheet.roughness = .init(floatLiteral: 0.95)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: s.y * 0.3), materials: [sheet]))
+            var wood = PhysicallyBasedMaterial()
+            wood.baseColor = .init(tint: UIColor(hex: "#8A6A4F"))
+            wood.roughness = .init(floatLiteral: 0.7)
+            let drop = prop.keys[0].columns.3.y - s.y / 2 + 1.6
+            let frame = ModelEntity(mesh: .generateBox(width: s.x + 0.06, height: drop, depth: s.z + 0.06, cornerRadius: 0.02), materials: [wood])
+            frame.position = SIMD3(0, -s.y / 2 - drop / 2, 0)
+            entity.addChild(frame)
+        case let id where id.hasPrefix("pillow"):
+            var cloth = PhysicallyBasedMaterial()
+            cloth.baseColor = .init(tint: UIColor(hex: "#F1F3F6"), texture: Self.texture("fabric.png").map { .init($0) })
+            cloth.roughness = .init(floatLiteral: 0.95)
+            entity.addChild(ModelEntity(mesh: .generateBox(width: s.x, height: s.y, depth: s.z, cornerRadius: s.y * 0.48), materials: [cloth]))
         default:
             var m = PhysicallyBasedMaterial()
             m.baseColor = .init(tint: UIColor(hex: id == "keyboard" ? "#3A3E46" : "#5B6170"))
