@@ -903,6 +903,65 @@ def tuck_lips(pieces, depth, reach):
     return dict(pieces, body=ease_folds(body, out))
 
 
+# groups whose lips are closed: the lower lip's top under the upper lip lifted to meet it (an open slit at the sides
+# read as parted lips in profile); (reach below the upper lip, gap kept) in scene units
+CLOSE_LIPS = {"female-adult": (0.003, 0.0001)}
+
+
+def ray_up(body, tris, pts):
+    """per point: the lowest hit of a vertical ray up through `tris` (inf: none)"""
+    a, b, c = (body[tris[:, k]] for k in range(3))
+    d = (b[:, 2] - c[:, 2]) * (a[:, 0] - c[:, 0]) + (c[:, 0] - b[:, 0]) * (a[:, 2] - c[:, 2])
+    ok = np.abs(d) > 1e-14
+    d = np.where(ok, d, 1)
+    out = np.full(len(pts), np.inf)
+    for i, q in enumerate(pts):
+        l1 = ((b[:, 2] - c[:, 2]) * (q[0] - c[:, 0]) + (c[:, 0] - b[:, 0]) * (q[2] - c[:, 2])) / d
+        l2 = ((c[:, 2] - a[:, 2]) * (q[0] - c[:, 0]) + (a[:, 0] - c[:, 0]) * (q[2] - c[:, 2])) / d
+        y = l1 * a[:, 1] + l2 * b[:, 1] + (1 - l1 - l2) * c[:, 1]
+        m = ok & (l1 >= 0) & (l2 >= 0) & (l1 + l2 <= 1) & (y > q[1])
+        if m.any():
+            out[i] = y[m].min()
+    return out
+
+
+def close_lips(pieces, reach, keep):
+    from skin_textures import lip_seam
+    body = pieces["body"]
+    w = lip_weights(len(body))
+    lin, inner = mouth_lining()
+    _, vmap, tris = topo("body")
+    t = vmap[tris]
+    up = w[:, 0] > w[:, 1]
+    lo = ~up & (w.max(1) > 0.3) & ~inner
+    y0 = lip_seam(np, body, w[:, 0] > 0.3, w[:, 1] > 0.3)[0]
+    d = y0 - body[:, 1]
+    cand = np.flatnonzero(lo & (d < reach + 0.002) & (d > -0.002))
+    gap = ray_up(body, t[(up & (w.max(1) > 0.3))[t].all(1) & ~lin], body[cand]) - body[cand, 1]
+    gap = np.where(np.isfinite(gap), gap, 0)
+    out = body.copy()
+    out[cand, 1] += np.clip(gap - keep, 0, None) * (1 - smoothstep(0.5 * reach, reach, gap))
+    return dict(pieces, body=ease_folds(body, out))
+
+
+# groups whose lower lids' ledge (flat on the eyeball, facing up: a pale rim lit from above) is pushed in under the
+# ball's surface: at most this far from its centre (in ball radii)
+TUCK_LIDS = {"female-adult": 0.95}
+
+
+def tuck_lids(pieces, reach):
+    body, eyes = pieces["body"], pieces["eyes"]
+    n = vertex_normals(body)
+    out = body.copy()
+    for side in (1, -1):
+        c, r = ball_sphere(eyes[np.sign(eyes[:, 0]) == side])
+        q = (body - c) / r
+        d = np.linalg.norm(q, axis=1)
+        w = smoothstep(0.5, 0.85, n[:, 1]) * (d < 1.1) * (q[:, 1] < -0.1) * (q[:, 2] > 0.3)
+        out += (body - c) * (w * (np.minimum(d, reach) / np.maximum(d, 1e-9) - 1))[:, None]
+    return dict(pieces, body=out)
+
+
 # views a tucked lip's triangles may not turn their backs to (yaw, pitch in degrees)
 TUCK_VIEWS = [(y, p) for y in (0, -35, 35) for p in (0, -35, 25)]
 
@@ -1191,6 +1250,10 @@ def save(name, pieces):
         pieces = even_midface(pieces, gid, name.split(".")[1].replace("pregnant", "white"), EVEN_MIDFACE[gid])
     if gid in TUCK_LIPS and "eyes" in pieces:
         pieces = tuck_lips(pieces, *TUCK_LIPS[gid])
+    if gid in CLOSE_LIPS and "eyes" in pieces:
+        pieces = close_lips(pieces, *CLOSE_LIPS[gid])
+    if gid in TUCK_LIDS and "eyes" in pieces:
+        pieces = tuck_lids(pieces, TUCK_LIDS[gid])
     if gid in SMOOTH_CHEST:
         eyes = pieces["eyes"] if "eyes" in pieces else load(f"{gid}.neutral")["eyes"]
         pieces = dict(pieces, body=smooth_chest(pieces["body"], eyes, SMOOTH_CHEST[gid]))
