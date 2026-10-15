@@ -61,7 +61,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 | Cells | Issue | State |
 |---|---|---|
-| `*.*.adult.*.*.side.shoulder-160` | hard arm/torso edge, shallow back-armpit groove | in progress |
+| `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | open |
 | `*.female.adult.*.*.*.elbow-*` | outer elbow outline faceted (mesh density) | open |
 | `*.female.adult.dressed.M-*.*.low-up.*` | faint shading lumps where the cup meets the band; small band-edge kink at the side | open |
 | `*.male\|child.*.*.*.shoulder-*` | back-armpit slit (fix applied to the woman only) | waits |
@@ -69,7 +69,6 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - `southeast-asian.female.adult.dressed.XL-XXL.top-down.elbow-145`, `south-asian.female.adult.dressed.XL-S.back.back-60`, `white.female.adult.dressed.L-XL.top-down.knee-90`: sampled sweep
-- `*.female.adult.*.S-S\|M-L\|XXL-XXL.left\|right\|back-3q-right\|front-3q-left\|low-up.shoulder-160`: arm/torso edge
 
 ## Log
 
@@ -108,3 +107,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-14 | hip squeeze scene (user feature) | partner forearms reach back level, cuff blobs gone; installed | uncommitted |
 | 2026-10-15 | `*.female.adult.bare.base.top-down\|front-3q-*.rest` | grey line = upper lash roots edge-on; roots seated up into the lid: dark lash line | c9a039d, repack |
 | 2026-10-15 | `*.female.adult.dressed.*.*.back-90` | bra band wraps over the sternum hollow as a hoop (dip 10→2 mm M, 3.6→0.9 mm XXL): straight hem when bent | ddc2a51, repack |
+| 2026-10-15 | `*.female.adult.*.*.*.shoulder-90\|shoulder-160` | chord-blend normals turn with the surface; band skin relaxed (min-dot −0.3→0.74, faces <0.5 dot ~27→0, bra clip 118→62) | uncommitted |
