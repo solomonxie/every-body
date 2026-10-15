@@ -400,8 +400,41 @@ final class PostureScene {
         }
     }
 
+    /// on the floor: a mat under the figure and a wall behind it (see-through, so the spine still shows from behind)
+    private func addFloorSeat(_ c: PostureModel.Chair) {
+        let floor: Float = -1.6
+        var mat = PhysicallyBasedMaterial()
+        mat.baseColor = .init(tint: UIColor(hex: "#6E8B74"), texture: Self.texture("fabric.png").map { .init($0) })
+        mat.roughness = .init(floatLiteral: 0.95)
+        let mid = (c.seatFront + c.seatBack) / 2 + 0.2
+        let pad = ModelEntity(mesh: .generateBox(width: c.seatWidth, height: 0.03, depth: 1.5, cornerRadius: 0.012), materials: [mat])
+        pad.position = SIMD3(0, floor + 0.015, mid)
+        stage.addChild(pad)
+        var wall = PhysicallyBasedMaterial()
+        wall.baseColor = .init(tint: UIColor(hex: "#E9E4DA"))
+        wall.roughness = .init(floatLiteral: 0.9)
+        wall.blending = .transparent(opacity: .init(floatLiteral: 0.45))
+        wall.writesDepth = false
+        wall.faceCulling = .none
+        let height: Float = 2.4
+        let panel = ModelEntity(mesh: .generateBox(width: c.backWidth, height: height, depth: 0.06), materials: [wall])
+        panel.position = SIMD3(0, floor + height / 2, c.backZ - 0.03)
+        panel.components.set(ModelSortGroupComponent(group: sortGroup, order: 0))
+        stage.addChild(panel)
+        stage.position = -SIMD3(0, -0.8, mid)
+        if let shade = Self.shadowTexture {
+            var m = UnlitMaterial()
+            m.color = .init(tint: .black, texture: .init(shade))
+            m.blending = .transparent(opacity: .init(floatLiteral: 0.25))
+            let plane = ModelEntity(mesh: .generatePlane(width: 1.6, depth: 1.6), materials: [m])
+            plane.position = SIMD3(0, floor + 0.032, mid)
+            stage.addChild(plane)
+        }
+    }
+
     private func addChair(_ c: PostureModel.Chair) {
         if c.kind == "couch" { addCouch(c); return }
+        if c.kind == "floor" { addFloorSeat(c); return }
         var cushion = PhysicallyBasedMaterial()
         cushion.baseColor = .init(tint: UIColor(hex: "#3C4250"))
         cushion.roughness = .init(floatLiteral: 0.85)
