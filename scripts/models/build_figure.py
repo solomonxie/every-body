@@ -1369,6 +1369,8 @@ CELL = 0.009
 WING = (-0.08, 0.12)
 # the bra strap's centre line over the shoulder, at most this far out (|x|, m)
 STRAP_TOP = 0.17
+# the neckline's V between the cups, its tip rounded over this radius (m): a sharp tip notched the edge seen from above
+NECK_V = 0.01
 
 
 def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=None, only_bra=False, arms=None, refined_from=None,
@@ -1437,7 +1439,7 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
         lo, hi = fold - 0.055, fold + 0.012
         top = ay - 0.005 + 0.11 * np.clip((ax - 0.03) / (sx - 0.03), 0, 1.2)
         # past the strap, kept low (the arm meets the chest in a tight crease above)
-        top = top - 0.9 * np.clip(0.03 - ax, 0, None) - ramp(ax, sx + 0.03, sx + 0.07) * np.maximum(top - ay - 0.05, 0)
+        top = top - 0.9 * np.clip(0.03 - np.hypot(ax, NECK_V), 0, None) - ramp(ax, sx + 0.03, sx + 0.07) * np.maximum(top - ay - 0.05, 0)
         reach = ay - fold + 0.035
         cups = smin(smin(y - lo, top - y, 0.012), reach - np.hypot(1.1 * (ax - apex[0]), y - ay), 0.02)
         gore = smin(smin(y - lo, top - y, 0.012), apex[0] - ax, 0.02)
@@ -1755,6 +1757,15 @@ def tutte(np, x, free, se):
     return out
 
 
+# the cups' smoothed sheet fades out over this distance from each chest centre (shares of the cup's reach): out past
+# the gore, else its edge creased where the cups' inner sides meet the chest between them
+CUP_SHEET = (2.0, 3.4)
+# the rest of the bra kept this far off every near skin plane (m)
+STRAP_CLEAR = 0.0005
+# (that push eased out over this many rings round it)
+STRAP_SPREAD = 10
+
+
 def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
     from scipy.spatial import cKDTree
     """a cup over each chest centre: the skin's height (along the cup's axis) evened out over the cup, raised to
@@ -1860,7 +1871,11 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
     rim[uniq[count == 1].ravel()] = True
     around = np.zeros(len(p))
     for i, outer in zip(nipples, outers):
-        around = np.maximum(around, 1 - smoothstep(1.4 * outer, 2.2 * outer, np.linalg.norm(p - body[i], axis=1)))
+        r = np.linalg.norm(p - body[i], axis=1)
+        # (past the old reach only above the band: its hem, held, would notch)
+        wide = (1 - smoothstep(CUP_SHEET[0] * outer, CUP_SHEET[1] * outer, r)) * smoothstep(
+            body[i, 1] - 1.3 * outer, body[i, 1] - 0.8 * outer, p[:, 1])
+        around = np.maximum.reduce([around, 1 - smoothstep(1.4 * outer, 2.2 * outer, r), wide])
     open_ = 1 - np.clip(4 * carry(tipzone[:, None].astype(np.float64))[:, 0], 0, 1)
     hold = (np.maximum(np.clip(weight * 3, 0, 1), around) * ~rim)[:, None]
     moved = (weight > 0) | (around > 0)
@@ -1914,6 +1929,25 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
         np.add.at(acc, ge[:, 0], target[ge[:, 1]])
         np.add.at(acc, ge[:, 1], target[ge[:, 0]])
         target[bad] = (acc / gdeg)[bad]
+    # the rest (the strap over the shoulder's hollows) out along the normal till no near skin plane comes through it
+    free = ~moved
+    s = np.zeros(len(p))
+    skin = cKDTree(body)
+    for _ in range(20):
+        q = target + s[:, None] * n
+        dd, ii = skin.query(q, k=8)
+        dots = ((q[:, None] - body[ii]) * vn[ii]).sum(2)
+        dots[dd > 1.5 * dd[:, :1] + 0.005] = np.inf
+        k = dots.argmin(1)
+        r = np.arange(len(p))
+        s += np.maximum(STRAP_CLEAR - dots[r, k], 0) * free / np.maximum((n * vn[ii[r, k]]).sum(1), 0.3)
+    for _ in range(STRAP_SPREAD):
+        acc = np.zeros(len(p))
+        np.add.at(acc, ge[:, 0], s[ge[:, 1]])
+        np.add.at(acc, ge[:, 1], s[ge[:, 0]])
+        s = np.maximum(s, acc / gdeg[:, 0]) * free
+    target += s[:, None] * n
+    moved = moved | (s > 0)
     # as offsets in each point's triangle frame: a moved point on a sliver (a corner or an edge stored with a corner
     # repeated) or on the chest centre's small steep facets is re-bound to the nearest well-sized triangle round it,
     # at the closest point on it (the cup there no longer hangs off the centre's own shape)
