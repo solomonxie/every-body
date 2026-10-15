@@ -64,14 +64,13 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | open |
 | `*.female.adult.dressed.M-XL\|XXL.*.*` | bra-medium on wide hips still creases (162 edges); bra-xlarge small cluster below the nipple | open |
 | `*.female.adult.*.*.*.knee-135` | front-of-knee stretch (218 edges >2), small notch in the knee pit; thin bright sliver in inner elbow crease | open |
-| `*.female.adult.*.*.back.back-60` | buttock top reads as a shelf at back bend | in progress |
+| `*.female.adult.*.XXL-XXL.back\|left.back-*` | second dip at the fullest point of large buttocks (hip pivot far from the skin) | open |
 | `*.female.adult.*.*.top-down.elbow-*` | forearm outline beyond the refined band still coarse | open |
 | `*.female.adult.dressed.M-*.*.low-up.*` | faint shading lumps where the cup meets the band; small band-edge kink at the side | open |
 | `*.male\|child.*.*.*.shoulder-*` | back-armpit slit (fix applied to the woman only) | waits |
 
 ## In progress
 
-- `*.female.adult.*.XL-S\|M-M\|XXL-XXL.back\|back-3q-right\|left.back-*`: buttock shelf
 
 ## Log
 
@@ -115,3 +114,4 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-15 | `*.female.adult.dressed.*.*.*` other-hips cups | hips delta eased over the breasts: cup creases near the nipple 34–137→0–22 edges | d59c4cf, repack |
 | 2026-10-15 | `*.female.adult.*.*.*.knee-*\|elbow-145` | pressed skin's normal faces the contact: lit crease sliver gone (>45° off 220→24) | uncommitted |
 | 2026-10-15 | `*.female.adult.*.*.side.elbow-*\|knee-*` | hinge extensor ramp over limb depth, not sign: side seam gone (stretch 2.53→1.76) | uncommitted |
+| 2026-10-15 | `*.female.adult.*.*.back\|left.back-*` | hip share fades out higher (hipBandUp 0.30), into the spine curve: shelf dip 122–158→20–40 °/m (XXL 148→100) | uncommitted |
