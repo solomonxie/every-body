@@ -217,6 +217,8 @@ def joints(parts):
         J[f"ischium-{s}"] = hb[np.argsort(hb[:, 1])[:12]].mean(0)
         J[f"finger-{s}"] = P(f"phalanges-middle-{s}")[np.argmin(P(f"phalanges-middle-{s}")[:, 1])]
     J["ischium"] = (J["ischium-l"] + J["ischium-r"]) / 2
+    # between the eyes: just behind the lacrimal bones
+    J["eye"] = (P("lacrimal-bone-l").mean(0) + P("lacrimal-bone-r").mean(0)) / 2 - np.array([0, 0, 0.01])
     return J
 
 
@@ -393,9 +395,15 @@ def pose(spec, J):
     X = (1, 0, 0)
     # pelvis rolls on the ischial tuberosities, which rest on the seat
     Rp = rot(X, -spec["pelvis_tilt"])
-    # slumping, the hips slide forward on the seat
-    seat = np.array(spec["seat_point"]) + np.array([0, 0, spec.get("slide", 0.0)])
-    T["pelvis"] = rigid(Rp, J["ischium"], seat)
+    stand = spec.get("stand", False)
+    if stand:
+        # standing: the pelvis turns about the hip joints, the legs stay planted
+        hips = (J["hip-l"] + J["hip-r"]) / 2
+        T["pelvis"] = rigid(Rp, hips, hips)
+    else:
+        # slumping, the hips slide forward on the seat
+        seat = np.array(spec["seat_point"]) + np.array([0, 0, spec.get("slide", 0.0)])
+        T["pelvis"] = rigid(Rp, J["ischium"], seat)
     R, prev = Rp, "pelvis"
     for v in SPINE:
         R = R @ rot(X, spec["flex"].get(v, 0.0))
@@ -405,30 +413,29 @@ def pose(spec, J):
     T["head"] = rigid(R, J["head"], apply(T["C2"], J["head"]))
 
     for s, sx in (("l", 1), ("r", -1)):
-        # legs: hip over the seat, foot flat at a fixed spot on the floor
-        hip = apply(T["pelvis"], J[f"hip-{s}"])
-        ankle = np.array(spec["ankle"]) * np.array([sx, 1, 1])
-        l1 = np.linalg.norm(J[f"knee-{s}"] - J[f"hip-{s}"])
-        l2 = np.linalg.norm(J[f"ankle-{s}"] - J[f"knee-{s}"])
-        knee, ankle = two_bone(hip, ankle, l1, l2, np.array([0.12 * sx, 0.6, 1.0]))
-        th0, sh0 = J[f"knee-{s}"] - J[f"hip-{s}"], J[f"ankle-{s}"] - J[f"knee-{s}"]
-        th1, sh1 = knee - hip, ankle - knee
-        e1 = np.cross(th1, sh1)
-        e0 = np.array([1.0, 0, 0])
-        T[f"thigh-{s}"] = rigid(align(th0, e0, th1, e1), J[f"hip-{s}"], hip)
-        T[f"shin-{s}"] = rigid(align(sh0, e0, sh1, e1), J[f"knee-{s}"], knee)
-        T[f"foot-{s}"] = rigid(rot((0, 1, 0), spec.get("toe_out", 0) * sx), J[f"ankle-{s}"], ankle)
+        if stand:
+            for b, j in (("thigh", "hip"), ("shin", "knee"), ("foot", "ankle")):
+                T[f"{b}-{s}"] = rigid(np.eye(3), J[f"{j}-{s}"], J[f"{j}-{s}"])
+            th0 = th1 = J[f"knee-{s}"] - J[f"hip-{s}"]
+        else:
+            th0, th1 = seated_leg(spec, J, T, s, sx)
 
         # shoulder girdle: protraction (forward) and elevation about the sternoclavicular joint
         Rc = R_spine(T, "T2") @ rot((0, 1, 0), -spec.get("protract", 0) * sx) @ rot((0, 0, 1), spec.get("elevate", 0) * sx)
         T[f"clav-{s}"] = rigid(Rc, J[f"sc-{s}"], apply(T["T2"], J[f"sc-{s}"]))
 
-        # arm: the hand rests on the thigh
+        # arm: the hand rests on the thigh, or holds something (a wrist target with the fingers' and palm's directions)
+        mirror = np.array([sx, 1, 1])
+        grip = spec.get("grip")
         sh = apply(T[f"clav-{s}"], J[f"shoulder-{s}"])
         el0, wr0 = J[f"elbow-{s}"], J[f"wrist-{s}"]
         a0, f0 = el0 - J[f"shoulder-{s}"], wr0 - el0
-        hand_at = apply(T[f"thigh-{s}"], J[f"hip-{s}"] + spec["hand_on_thigh"] * th0) + np.array([spec["hand_lift"][0] * sx, spec.get("hand_up", {}).get(s, spec["hand_lift"][1]), spec["hand_lift"][2]])
-        elbow, wrist = two_bone(sh, hand_at, np.linalg.norm(a0), np.linalg.norm(f0), np.array([0.5 * sx, 0.0, -1.0]))
+        if grip:
+            hand_at = np.array(grip["wrist"]) * mirror
+        else:
+            hand_at = apply(T[f"thigh-{s}"], J[f"hip-{s}"] + spec["hand_on_thigh"] * th0) + np.array([spec["hand_lift"][0] * sx, spec.get("hand_up", {}).get(s, spec["hand_lift"][1]), spec["hand_lift"][2]])
+        pole = np.array(spec.get("elbow_pole", [0.5, 0.0, -1.0])) * mirror
+        elbow, wrist = two_bone(sh, hand_at, np.linalg.norm(a0), np.linalg.norm(f0), pole)
         a1, f1 = elbow - sh, wrist - elbow
         e0 = np.cross(a0, (0, 0, 1))
         e1 = np.cross(a1, f1)
@@ -455,12 +462,33 @@ def pose(spec, J):
         h0 = J[f"finger-{s}"] - wr0
         h_now = Rh @ h0
         down = unit(np.array(spec["palm"]) * np.array([sx, 1, 1]))
+        if grip:
+            Rw = align(h_now, Rh @ np.array([0, 0, 1.0]), np.array(grip["fingers"]) * mirror, down)
+            T[f"hand-{s}"] = rigid(Rw @ Rh, wr0, wrist_p)
+            continue
         # fingers point along the thigh toward the knee, turned slightly inward
         along = rot(down, spec.get("finger_in", 0.0) * sx) @ unit(th1 - down * np.dot(th1, down))
         h_flat = along * np.linalg.norm(h_now - down * np.dot(h_now, down)) + down * spec.get("finger_drop", 0.0) * np.linalg.norm(h_now)
         Rw = align(h_now, Rh @ np.array([0, 0, 1.0]), h_flat, down)
         T[f"hand-{s}"] = rigid(Rw @ Rh, wr0, wrist_p)
     return T
+
+
+def seated_leg(spec, J, T, s, sx):
+    """hip over the seat, foot flat at a fixed spot on the floor; the thigh's rest and posed directions"""
+    hip = apply(T["pelvis"], J[f"hip-{s}"])
+    ankle = np.array(spec["ankle"]) * np.array([sx, 1, 1])
+    l1 = np.linalg.norm(J[f"knee-{s}"] - J[f"hip-{s}"])
+    l2 = np.linalg.norm(J[f"ankle-{s}"] - J[f"knee-{s}"])
+    knee, ankle = two_bone(hip, ankle, l1, l2, np.array(spec.get("knee_pole", [0.12, 0.6, 1.0])) * np.array([sx, 1, 1]))
+    th0, sh0 = J[f"knee-{s}"] - J[f"hip-{s}"], J[f"ankle-{s}"] - J[f"knee-{s}"]
+    th1, sh1 = knee - hip, ankle - knee
+    e1 = np.cross(th1, sh1)
+    e0 = np.array([1.0, 0, 0])
+    T[f"thigh-{s}"] = rigid(align(th0, e0, th1, e1), J[f"hip-{s}"], hip)
+    T[f"shin-{s}"] = rigid(align(sh0, e0, sh1, e1), J[f"knee-{s}"], knee)
+    T[f"foot-{s}"] = rigid(rot((0, 1, 0), spec.get("toe_out", 0) * sx), J[f"ankle-{s}"], ankle)
+    return th0, th1
 
 
 def R_spine(T, v):
@@ -614,6 +642,42 @@ def press(p, chair):
     return q
 
 
+# ------------------------------------------------------------------ holding a phone
+
+PHONE = (0.072 * M, 0.147 * M, 0.008 * M)  # width, height, depth
+
+
+def standing_common(J):
+    return dict(stand=True, pelvis_tilt=0, palm=[-0.6, 0.0, -1.0], elbow_pole=[0.35, -1.0, -0.35])
+
+
+def hold_phone(spec, J):
+    """the phone along the line of sight (head tilt plus the eyes' own drop), screen to the eyes, both hands under it"""
+    X = (1, 0, 0)
+    T = pose(dict(spec, grip={"wrist": J["wrist-l"], "fingers": [0, -1, 0]}), J)
+    look = T["head"][:3, :3] @ rot(X, spec["eyes_down"])
+    gaze, up, side = look @ np.array([0, 0, 1.0]), look @ np.array([0, 1.0, 0]), np.array([1.0, 0, 0])
+    c = apply(T["head"], J["eye"]) + gaze * spec["reach"] * M
+    # wrists below and behind the phone's lower corners; fingers up its back, palms toward the face
+    wrist = c + side * 0.09 - up * 0.26 + gaze * 0.05
+    fingers = unit(up - side * 0.5 + gaze * 0.05)
+    palm = unit(-gaze - side * 0.6)
+    m = np.eye(4)
+    m[:3, :3] = np.stack([-side, up, -gaze], 1)  # right-handed: x × y = z, the screen toward the eyes
+    m[:3, 3] = c
+    return dict(spec, grip={"wrist": wrist.tolist(), "fingers": fingers.tolist()}, palm=palm.tolist(), props={"phone": (PHONE, m)})
+
+
+# Hansraj 2014: the head's effective weight on the neck at 0, 15, 30, 45 and 60° of forward tilt
+PHONE_STANDING = {
+    # head level, the phone raised to the eyes
+    "up": dict(flex={"head": 0}, protract=4, elevate=2, eyes_down=20, reach=0.3),
+    # head tipped 60° forward: most of it in the neck, a little in the upper back; shoulders drawn forward
+    "down": dict(flex={"T3": 2, "T2": 2, "T1": 3, "C7": 7, "C6": 8, "C5": 8, "C4": 8, "C3": 7, "C2": 6, "head": 9},
+                 protract=12, elevate=0, eyes_down=18, reach=0.34),
+}
+
+
 # ------------------------------------------------------------------ pack
 
 # with a bump the trunk can't fold over the thighs: a pregnant slump sinks back into the chair instead
@@ -622,7 +686,10 @@ PREGNANT_SLUMP = dict(pelvis_tilt=28, slide=0.15, flex={"L5": 6, "L4": 7, "L3": 
                                                     "C7": 7, "C6": 6, "C5": 2, "C4": -3, "C3": -6, "C2": -8, "head": -14},
                       hand_on_thigh=0.75)
 TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], steps=[0.0, 0.5, 1.0], common=seated_common,
-                          variants={"pregnant": {"slouched": PREGNANT_SLUMP}})}
+                          variants={"pregnant": {"slouched": PREGNANT_SLUMP}}),
+          # one figure (the app shows the male adult): keys at 0, 15, 30, 45 and 60° of head tilt
+          "phone-standing": dict(keys=PHONE_STANDING, order=["up", "down"], steps=[0.0, 0.25, 0.5, 0.75, 1.0], common=standing_common,
+                                 finish=hold_phone, chair=False, sexes=["male"], heritages=["white"], neck="head", focus="C4", topology="sitting")}
 SOFT = ("disc-", "erector-spinae", "transversospinales", "splenius", "levator-scapulae")
 SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pregnant"}
 HERITAGES = ["east-asian", "southeast-asian", "south-asian", "hispanic", "white", "black"]
@@ -647,8 +714,10 @@ class Packer:
         return off
 
     def block(self, pos, ref=None):
-        """positions as int16 steps (from a reference block when given)"""
-        d = pos - (self.decode(ref) if ref is not None else 0)
+        """positions as int16 steps (from a reference block when given: what didn't move stores as zeros)"""
+        self.raw = getattr(self, "raw", {})
+        self.raw[len(self.blocks)] = pos
+        d = pos - (self.raw[ref] if ref is not None else 0)
         step = np.maximum(np.abs(d).max(0) / 32000, 1.2e-4)
         lo = -32767 * step
         q = np.round((d - lo) / step - 32767).astype(np.int16)
@@ -672,38 +741,56 @@ def pack(topics=None):
     parts = inner()
     J = joints(parts)
     btopo = fig.topology("body")
-    rest = {sex: fig.pieces(f"{v}.white") for sex, v in SEXES.items()}
-    heritage = {sex: {h: fig.pieces(f"{v}.{h}")["body"] for h in HERITAGES} for sex, v in SEXES.items()}
     tris = btopo["vmap"][btopo["index"]]
-    W = {sex: skin_weights(len(r["body"]), J, r["body"], tris) for sex, r in rest.items()}
     ids = sorted(parts)
     IW = {k: inner_weights(k, parts[k][0], J) for k in ids}
-    # body options on the trunk and legs only: the rig poses the arms (a shape's own arm swing is dropped)
-    shapes = {}
-    for sex, r in rest.items():
-        keep = 1 - sum(W[sex][:, BI[f"{b}-{s}"]] for b in ("uparm", "fore1", "fore2", "hand") for s in SIDES)[:, None]
-        shapes[sex] = {k: keep * d for k in SHAPES.get(sex, []) if (d := fig.shape(k)) is not None}
+    cache = {}
+
+    def figure(sex):
+        """rest body, skin weights, heritage bodies and body options (trunk and legs only: the rig poses the arms)"""
+        if sex not in cache:
+            r = fig.pieces(f"{SEXES[sex]}.white")
+            w = skin_weights(len(r["body"]), J, r["body"], tris)
+            keep = 1 - sum(w[:, BI[f"{b}-{s}"]] for b in ("uparm", "fore1", "fore2", "hand") for s in SIDES)[:, None]
+            cache[sex] = dict(rest=r, W=w, shapes={k: keep * d for k in SHAPES.get(sex, []) if (d := fig.shape(k)) is not None})
+        return cache[sex]
     for name, topic in TOPICS.items():
         if topics and name not in topics:
             continue
         common = topic["common"](J)
+        sexes = topic.get("sexes", list(SEXES))
+        heritages = topic.get("heritages", HERITAGES)
+        finish = topic.get("finish")
 
-        def posed_keys(sex):
-            """this figure's keys, each hand resting on its thigh for every body option"""
+        def posed_specs(sex):
+            """this figure's key specs: each hand resting on its thigh for every body option, or holding what the topic gives it"""
             over = topic.get("variants", {}).get(sex, {})
             ka, kb = ({**topic["keys"][k], **over.get(k, {})} for k in topic["order"])
-            r = rest[sex]["body"]
-            bodies = [r] + [r + d for d in shapes[sex].values()]
-            fit = Rest(W[sex], btopo)
-            return [pose(rest_hands({**common, **blend_spec(ka, kb, t)}, J, bodies, fit), J) for t in topic["steps"]]
-        poses = posed_keys("male")
+            specs = [{**common, **blend_spec(ka, kb, t)} for t in topic["steps"]]
+            if finish:
+                return [finish(sp, J) for sp in specs]
+            f = figure(sex)
+            r = f["rest"]["body"]
+            bodies = [r] + [r + d for d in f["shapes"].values()]
+            fit = Rest(f["W"], btopo)
+            return [rest_hands(sp, J, bodies, fit) for sp in specs]
+        specs = posed_specs("male")
+        poses = [pose(sp, J) for sp in specs]
+        male = figure("male")
         pelvis_pts = np.concatenate([parts[k][0] for k in ("sacrum", "coccyx", "hip-bone-l", "hip-bone-r")])
-        chair = chair_for(J, poses, skin(rest["male"]["body"], W["male"], poses[0]), common["seat_point"], pelvis_pts)
+        chair = chair_for(J, poses, skin(male["rest"]["body"], male["W"], poses[0]), common["seat_point"], pelvis_pts) \
+            if topic.get("chair", True) else None
+        contact = (lambda q: press(q, chair)) if chair else (lambda q: q)
         pk = Packer()
-        header = {"keys": topic["order"], "steps": topic["steps"], "chair": chair, "sexes": {}, "body": {}, "inner": {}}
-        header["body"] = {"vertices": len(rest["male"]["body"]), "render": len(btopo["vmap"]), "triangles": len(btopo["index"]),
-                          "vmap": pk.add(btopo["vmap"].astype(np.uint16)), "uv": pk.add(btopo["uv"]),
-                          "index": pk.add(btopo["index"].astype(np.uint16))}
+        header = {"keys": topic["order"], "steps": topic["steps"], "sexes": {}, "body": {}, "inner": {}}
+        if chair:
+            header["chair"] = chair
+        header["body"] = {"vertices": len(male["rest"]["body"]), "render": len(btopo["vmap"]), "triangles": len(btopo["index"])}
+        if topic.get("topology"):
+            # the same figure.bin topology as that topic's file (re-pack both when figure.bin changes)
+            header["body"]["from"] = topic["topology"]
+        else:
+            header["body"].update(vmap=pk.add(btopo["vmap"].astype(np.uint16)), uv=pk.add(btopo["uv"]), index=pk.add(btopo["index"].astype(np.uint16)))
         soft = [k for k in ids if k.startswith(SOFT)]
         header["rigid"] = {k: BONES[int(np.argmax(IW[k][0]))] for k in ids if k not in soft}
         pieces, start = [], 0
@@ -724,15 +811,27 @@ def pack(topics=None):
             return [{b: T[b].T.reshape(-1).round(6).tolist() for b in BONES if b in T} for T in ps]
 
         def neck(ps):
-            """forward lean of the C7 → skull-base line, relative to the first key (degrees)"""
-            lean = [math.degrees(math.atan2(*(lambda v: (v[2], v[1]))(apply(T["head"], J["head"]) - apply(T["C7"], J["C7"])))) for T in ps]
+            """forward lean relative to the first key (degrees): of the C7 → skull-base line, or of the head itself"""
+            if topic.get("neck") == "head":
+                lean = [math.degrees(math.atan2(*(lambda u: (u[2], u[1]))(T["head"][:3, :3] @ np.array([0, 1.0, 0])))) for T in ps]
+            else:
+                lean = [math.degrees(math.atan2(*(lambda v: (v[2], v[1]))(apply(T["head"], J["head"]) - apply(T["C7"], J["C7"])))) for T in ps]
             return [round(x - lean[0], 1) for x in lean]
         header["transforms"], blocks = inner_keys(poses)
         header["inner"] = {"count": start, "blocks": blocks, "pieces": pieces}
         header["neck"] = neck(poses)
-        for sex, r in rest.items():
+        # things held or leant on, per key (a 4×4 each, columns first) and their size
+        props = {}
+        for sp in specs:
+            for pid, (size, m) in sp.get("props", {}).items():
+                props.setdefault(pid, {"size": [round(float(v), 4) for v in size], "keys": []})["keys"].append(np.asarray(m).T.reshape(-1).round(5).tolist())
+        if props:
+            header["props"] = props
+        for sex in sexes:
+            f = figure(sex)
+            r, Wsex = f["rest"], f["W"]
             entry = {"variant": f"{SEXES[sex]}.white", "body": [], "heritage": {}, "garments": []}
-            mine = poses if sex == "male" else posed_keys(sex)
+            mine = poses if sex == "male" else [pose(sp, J) for sp in posed_specs(sex)]
             if sex in topic.get("variants", {}):
                 entry["transforms"], entry["inner"] = inner_keys(mine)
                 entry["neck"] = neck(mine)
@@ -740,31 +839,32 @@ def pack(topics=None):
                 entry["transforms"] = bone_keys(mine)
             posed = []
             for T in mine:
-                p = press(skin(r["body"], W[sex], T), chair)
+                p = contact(skin(r["body"], Wsex, T))
                 posed.append(p)
                 entry["body"].append(pk.block(p, entry["body"][0] if entry["body"] else None))
-            for h in HERITAGES:
-                d = heritage[sex][h] - r["body"]
+            for h in heritages:
+                d = fig.pieces(f"{SEXES[sex]}.{h}")["body"] - r["body"]
                 if np.abs(d).max() > 1e-6:
                     entry["heritage"][h] = pk.block(d)
             # adult female body options, posed: the change each makes to the posed body
-            for shape, d in shapes[sex].items():
+            for shape, d in f["shapes"].items():
                 keys = []
                 for T, p in zip(mine, posed):
-                    q = press(skin(r["body"] + d, W[sex], T), chair) - p
+                    q = contact(skin(r["body"] + d, Wsex, T)) - p
                     keys.append(pk.block(q, keys[0] if keys else None))
                 entry.setdefault("shapes", {})[shape] = keys
             for g in GARMENTS[sex]:
-                abc, w, f, tri, lift, color, offset = fig.binding(g)
-                entry["garments"].append({"name": g, "color": color, "vertices": len(f), "triangles": len(tri), "lift": lift,
+                abc, w, fa, tri, lift, color, offset = fig.binding(g)
+                entry["garments"].append({"name": g, "color": color, "vertices": len(fa), "triangles": len(tri), "lift": lift,
                                           "abc": pk.add(abc.astype(np.uint16)), "w": pk.add(w.astype(np.float32)),
-                                          "f": pk.add(f.astype(np.float32)), "index": pk.add(tri.astype(np.uint16))})
+                                          "f": pk.add(fa.astype(np.float32)), "index": pk.add(tri.astype(np.uint16))})
                 if offset is not None:
                     entry["garments"][-1]["offset"] = pk.add(offset)
             header["sexes"][sex] = entry
         header["blocks"] = pk.blocks
-        # where the camera looks: the lumbar spine, per key
-        header["focus"] = [[round(float(c), 4) for c in apply(T["L3"], J["L3"])] for T in poses]
+        # where the camera looks: the topic's part of the spine (the lumbar spine by default), per key
+        fj = topic.get("focus", "L3")
+        header["focus"] = [[round(float(c), 4) for c in apply(T[fj], J[fj])] for T in poses]
         payload = b"".join(pk.chunks)
         comp = zlib.compressobj(9, zlib.DEFLATED, -15)
         data = comp.compress(payload) + comp.flush()
