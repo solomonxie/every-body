@@ -25,6 +25,16 @@ extension Illustrations {
         s.cardNote(en, zh, x + w / 2, y + h / 2, width: w - 12, size: 8.5, color: Anat.red, bold: true)
     }
 
+    /// 2 × 3 tiles: icon number and a wrapped line each
+    @MainActor static func tiles(_ s: inout Sketch, _ items: [(String, String)], color: Color, top: Double = 40) {
+        for (i, it) in items.enumerated() {
+            let x = 8 + Double(i % 2) * 176, y = top + Double(i / 2) * 84
+            s.card(x, y, 168, 76, accent: color)
+            badge(&s, x + 22, y + 38, "\(i + 1)", color)
+            s.noteLeft(it.0, it.1, x + 40, y + 38, width: 120, size: 9, color: Tone.ink, bold: true)
+        }
+    }
+
     /// tick or cross in a small circle, for do / don't lists
     @MainActor static func mark(_ s: inout Sketch, _ c: CGPoint, ok: Bool, r: Double = 7) {
         let col = ok ? Anat.green : Anat.red

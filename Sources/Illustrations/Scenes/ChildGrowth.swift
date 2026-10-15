@@ -72,16 +72,6 @@ extension Illustrations {
         }
     }
 
-    /// 2 × 3 tiles: icon number and a wrapped line each
-    @MainActor private static func tiles(_ s: inout Sketch, _ items: [(String, String)], color: Color, top: Double = 40) {
-        for (i, it) in items.enumerated() {
-            let x = 8 + Double(i % 2) * 176, y = top + Double(i / 2) * 84
-            s.card(x, y, 168, 76, accent: color)
-            badge(&s, x + 22, y + 38, "\(i + 1)", color)
-            s.noteLeft(it.0, it.1, x + 40, y + 38, width: 120, size: 9, color: Tone.ink, bold: true)
-        }
-    }
-
     @MainActor private static func growthFlags(_ s: inout Sketch) {
         s.stateChip("Talk to your doctor soon", "尽快咨询医生", 354, 6, color: Anat.amber, anchor: .end)
         s.label("Don’t wait and see", "不要一味等待", 8, 22, size: 10, color: Tone.ink, bold: true)
