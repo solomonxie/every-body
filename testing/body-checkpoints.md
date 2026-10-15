@@ -46,22 +46,23 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.XXL-XXL.top-down\|back-3q-*.*` | butt/thigh lumps | improved afcef5f, unconfirmed |
 | `east-asian.female.adult.*.*.face-side.rest` | chin, eyes, sallow skin | improved 8200035, unconfirmed |
 | `*.*.adult\|pregnant\|child.*.*.*.shoulder-90\|shoulder-160\|back-*+shoulder-*` | side-chest balloon; armpit skin stretched into thin sheets/flaps (deltoid skin bound to the shoulder blade, turn ramped over a few triangles) | fixed in Blender port (shoulder share: arm/torso split + 0.14 band by distance over the skin, chord blend), uncommitted, installed; check on device. Left: shoulder top squashes (hidden), kid top armhole shows a speck of skin at 160 |
-| `*.female.adult\|pregnant.dressed.XL+.*.back-60\|back-90` | under-breast fold fixed (93261b8); crumple remains at the top of the bra centre panel between the breasts | in progress |
+| `*.female.adult.dressed.XL+.*.*` | soft crease where the bra panel meets the steep inner breast wall | open |
+| `*.female.pregnant.dressed.XXL.*.*` | bra-pregnant-xxlarge ~2100 clip pts in pose.py (port may miss the pregnant chest shape) | waits |
 | `*.female.pregnant.*.base.*.*` with XL/XXL chest | breast underside sinks up to 2 cm into the bump (hidden in the crease) | open (prototype: lift along the bump normal, /tmp/uw/tools/bumpfit.py) |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
-| `*.female.adult.*.base.front-3q-*.rest` | caruncle (inner eye corner) too saturated: painted salmon in the shared skin texture | in progress |
-| `*.female.adult.bare.base.top-down\|front-3q-*\|face-side.rest` | grey/pink lower-lid rim; lips parted (dark slit) in profile | in progress |
+| `black.female.adult.bare.base.face-side\|front-3q-*.rest` | lower lip top sticks out past the upper, white highlight | in progress |
+| `black\|south-asian.female.adult.bare.base.face-*\|front-3q-*.rest` | light grey patch beside the inner eye corner | in progress |
+| `*.female.adult.bare.base.top-down.rest` | grey line at lower lash roots (lash geometry) | open |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
-| `*.female.*.dressed.*.*.*` | bra shoulder-strap clip, 22–24 pts ≤3.8 mm, every size | open |
 | `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
 
 ## In progress
 
-- `*.female.adult.dressed.L+-*.front\|front-3q-*\|top-down\|low-up.rest\|back-*`: bra centre panel crumple, strap clip
-- `*.female.adult.bare.base.face-*\|front-3q-*\|top-down\|low-up.rest`: caruncle tone, lower-lid rim, parted-lip slit
+- `east-asian.female.adult.bare.XL-L.low-up.back-60+shoulder-90`, `white.female.adult.bare.M-L.low-up.shoulder-160`, `black.female.adult.bare.M-XXL.top-down.back-90+elbow-90` (+dressed, 3q views): sampled sweep
+- `black\|south-asian.female.adult.bare.base.face-*\|front-3q-*\|low-up.rest`: lower-lip roll, inner-corner grey patch
 
 ## Log
 
@@ -92,3 +93,5 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-14 | `*.female.adult.*.XXL-*.back*`, `*.female.adult.*.S-*.*.back-60` | briefs film pushed along own normal (cleft notch gone, clip 0); hip-front edges even + trunk front faired (lumps 0.98→0.19 mm) | 85e1872 |
 | 2026-10-14 | `*.female.adult.bare.base.face-side\|front-3q-*\|low-up\|top-down.rest` | inner-corner panel over the eyeball tucked behind the ball; under-eye/nose-side line smoothed (all heritages) | 773505d, repack |
 | 2026-10-14 | `*.female.adult.*.XL\|XXL-*.*.rest\|back-60\|back-90` | under-breast fold opened (gap 0.9→15 mm), breast carries the hips change; bra-xxlarge under-breast clip 120→0 | 93261b8, repack |
+| 2026-10-14 | `*.female.adult.bare.base.face-*\|front-3q-*\|top-down.rest` | caruncle toned to soft pink; lower-lid ledge tucked under the ball (no pale rim); lips closed in profile (lining px ~500→0) | 7bb6857, repack |
+| 2026-10-14 | `*.female.adult.dressed.L+-*.*.rest\|back-*` | bra V tip rounded, cup sheet spans the centre panel (facets 16→0); strap clear of skin (clip 22–24→≤2 pts, −3.8→−1.3 mm) | af1cd1b, repack |
