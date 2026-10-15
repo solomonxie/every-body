@@ -13,9 +13,11 @@ struct PostureModel: Sendable {
     struct Chair: Decodable, Sendable {
         let seatY: Float, seatFront: Float, seatBack: Float, seatWidth: Float
         let backZ: Float, backY: Float, backHeight: Float, backTilt: Float, backWidth: Float
+        /// nil: an office chair; "couch"; "floor" (a mat and a wall)
+        var kind: String?
         enum CodingKeys: String, CodingKey {
             case seatY = "seat_y", seatFront = "seat_front", seatBack = "seat_back", seatWidth = "seat_width"
-            case backZ = "back_z", backY = "back_y", backHeight = "back_height", backTilt = "back_tilt", backWidth = "back_width"
+            case backZ = "back_z", backY = "back_y", backHeight = "back_height", backTilt = "back_tilt", backWidth = "back_width", kind
         }
     }
 

@@ -680,15 +680,15 @@ def ramp(v, a, b):
     return t * t * (3 - 2 * t)
 
 
-def chair_for(J, poses, body_posed, seat_point, pelvis_pts):
-    """seat and backrest placed against the upright pose; the backrest starts above the pelvis in every pose"""
+def chair_for(J, poses, body_posed, seat_point, pelvis_pts, tilt=12.0, gap=0.0, **seat):
+    """seat and backrest placed against the upright pose (gap behind it: room for a cushion); the backrest starts above
+    the pelvis in every pose. seat: the couch's or wall's own sizes and kind"""
     T = poses[0]
     seat_y = seat_point[1] - 0.03
     knee_z = min(apply(T[f"shin-{s}"], J[f"knee-{s}"])[2] for s in SIDES)
     lumbar_y = apply(T["L3"], J["L3"])[1]
     near = body_posed[(np.abs(body_posed[:, 0]) < 0.06) & (np.abs(body_posed[:, 1] - lumbar_y) < 0.04)]
-    back_z = near[:, 2].min()
-    tilt = 12.0
+    back_z = near[:, 2].min() - gap
     t = math.radians(tilt)
     up, n = np.array([0, math.cos(t), -math.sin(t)]), np.array([0, math.sin(t), math.cos(t)])
     lumbar = np.array([0, lumbar_y, back_z])
@@ -700,8 +700,8 @@ def chair_for(J, poses, body_posed, seat_point, pelvis_pts):
         if close.any():
             start = max(start, float(((q[close] - lumbar) @ up).max()) + 0.025)
     o = lumbar + up * start
-    return dict(seat_y=float(seat_y), seat_front=float(knee_z - 0.13), seat_back=float(back_z - 0.08), seat_width=0.92,
-                back_z=float(o[2]), back_y=float(o[1]), back_height=0.7, back_tilt=tilt, back_width=0.8)
+    return {**dict(seat_y=float(seat_y), seat_front=float(knee_z - 0.13), seat_back=float(back_z - 0.08), seat_width=0.92,
+                   back_z=float(o[2]), back_y=float(o[1]), back_height=0.7, back_tilt=tilt, back_width=0.8, lumbar_y=float(lumbar_y)), **seat}
 
 
 def press(p, chair):
@@ -888,6 +888,44 @@ def standing_still(J):
     return dict(stand=True, pelvis_tilt=0, arms="hang")
 
 
+# ------------------------------------------------------------------ the couch
+
+CUSHION = (0.42 * M, 0.26 * M, 0.09 * M)
+
+# reclined against the back with a cushion filling the low back: the lumbar curve kept, the head level
+# sunk into soft cushions: hips slid forward, pelvis rolled far back, the low back rounded, the chin poked forward to see the TV
+COUCH = {
+    "supported": dict(pelvis_tilt=20, flex={"L4": -1, "L3": -1, "T10": 1, "T8": 1, "T6": 1, "C6": 3, "C5": 3, "C4": 3, "C3": 2, "head": 5},
+                      slide=0, protract=0, elevate=0, hand_on_thigh=0.62),
+    "sunk": dict(pelvis_tilt=56, flex={"L5": 6, "L4": 7, "L3": 7, "L2": 7, "L1": 6, **{f"T{i}": 0.5 for i in range(1, 13)},
+                                       "C7": 6, "C6": 5, "C5": 4, "C4": 3, "C3": 2, "head": 0},
+                 slide=0.3, protract=12, elevate=-2, hand_on_thigh=0.75),
+}
+
+
+def couch_common(J):
+    """a low, deep seat: knees above the hips, feet further out"""
+    out = seated_common(J)
+    shin = np.linalg.norm(J["ankle-l"] - J["knee-l"])
+    knee_y = J["ankle-l"][1] + shin * 0.99
+    hip_y = knee_y - 0.07
+    seat = np.array(out["seat_point"])
+    seat[1] = hip_y - (J["hip-l"][1] - J["ischium"][1])
+    ankle = np.array(out["ankle"]) + np.array([0, 0, 0.14])
+    return dict(out, seat_point=seat.tolist(), ankle=ankle.tolist())
+
+
+def lumbar_cushion(chair, steps):
+    """in the gap between the low back and the couch's back, fading out as the body sinks away from it"""
+    t = math.radians(chair["back_tilt"])
+    up, n = np.array([0, math.cos(t), -math.sin(t)]), np.array([0, math.sin(t), math.cos(t)])
+    c = np.array([0, chair["lumbar_y"], 0.0])
+    # on the back's surface at the lumbar height
+    o = np.array([0, chair["back_y"], chair["back_z"]])
+    c = o + up * ((chair["lumbar_y"] - o[1]) / math.cos(t)) + n * CUSHION[2] / 2
+    return {"cushion": (CUSHION, matrix(np.array([1.0, 0, 0]), up, n, c), [max(0.0, 1 - 1.5 * s) for s in steps])}
+
+
 # ------------------------------------------------------------------ a phone in bed
 
 MATTRESS_TOP = -0.62  # a bed about 52 cm high
@@ -959,7 +997,11 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
           # the calf muscles and leg veins as soft pieces; the close view on the left calf
           "standing": dict(keys=STANDING, order=["pump", "still"], steps=[0.0, 0.5, 1.0], common=standing_still, finish=lambda sp, J: sp, chair=False,
                            sexes=["male"], heritages=["white"], soft=("gastrocnemius", "soleus", "leg-vein", "small-saphenous"),
-                           focus=("shin-l", "calf-l"), topology="sitting")}
+                           focus=("shin-l", "calf-l"), topology="sitting"),
+          # a reclined couch back with a gap for the lumbar cushion
+          "couch": dict(keys=COUCH, order=["supported", "sunk"], steps=[0.0, 0.5, 1.0], common=couch_common, sexes=["male"], heritages=["white"],
+                        seat=dict(tilt=22.0, gap=CUSHION[2], kind="couch", seat_width=1.3, back_width=1.3, back_height=1.0),
+                        chair_props=lumbar_cushion, topology="sitting")}
 SOFT = ("disc-", "erector-spinae", "transversospinales", "splenius", "levator-scapulae")
 SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pregnant"}
 HERITAGES = ["east-asian", "southeast-asian", "south-asian", "hispanic", "white", "black"]
@@ -1048,7 +1090,7 @@ def pack(topics=None):
         poses = [pose(sp, J) for sp in specs]
         male = figure("male")
         pelvis_pts = np.concatenate([parts[k][0] for k in ("sacrum", "coccyx", "hip-bone-l", "hip-bone-r")])
-        chair = chair_for(J, poses, skin_body(male["rest"]["body"], male["W"], poses[0]), common["seat_point"], pelvis_pts) \
+        chair = chair_for(J, poses, skin_body(male["rest"]["body"], male["W"], poses[0]), common["seat_point"], pelvis_pts, **topic.get("seat", {})) \
             if topic.get("chair", True) else None
         contact = (lambda q: press(q, chair)) if chair else (lambda q: q)
         pk = Packer()
@@ -1104,6 +1146,11 @@ def pack(topics=None):
         for e in props.values():
             if all(a == 1 for a in e["alpha"]):
                 del e["alpha"]
+        # props placed against the chair (a cushion in the gap behind the low back)
+        if topic.get("chair_props") and chair:
+            for pid, (size, m, alpha) in topic["chair_props"](chair, topic["steps"]).items():
+                props[pid] = {"size": [round(float(v), 4) for v in size], "keys": [np.asarray(m).T.reshape(-1).round(5).tolist()] * len(topic["steps"]),
+                              "alpha": [round(float(a), 3) for a in alpha]}
         if props:
             header["props"] = props
         for sex in sexes:

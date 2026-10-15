@@ -340,7 +340,7 @@ final class PostureScene {
             let frame = ModelEntity(mesh: .generateBox(width: s.x + 0.06, height: drop, depth: s.z + 0.06, cornerRadius: 0.02), materials: [wood])
             frame.position = SIMD3(0, -s.y / 2 - drop / 2, 0)
             entity.addChild(frame)
-        case let id where id.hasPrefix("pillow"):
+        case let id where id.hasPrefix("pillow") || id == "cushion":
             var cloth = PhysicallyBasedMaterial()
             cloth.baseColor = .init(tint: UIColor(hex: "#F1F3F6"), texture: Self.texture("fabric.png").map { .init($0) })
             cloth.roughness = .init(floatLiteral: 0.95)
@@ -357,7 +357,51 @@ final class PostureScene {
 
     // MARK: chair and floor
 
+    /// a sofa: a long seat cushion on a base, and a thick, reclined back from the seat up
+    private func addCouch(_ c: PostureModel.Chair) {
+        var fabric = PhysicallyBasedMaterial()
+        fabric.baseColor = .init(tint: UIColor(hex: "#5E6B7D"), texture: Self.texture("fabric.png").map { .init($0) })
+        fabric.roughness = .init(floatLiteral: 0.95)
+        fabric.metallic = .init(floatLiteral: 0)
+        var back = fabric
+        back.blending = .transparent(opacity: .init(floatLiteral: 0.55))
+        back.writesDepth = false
+        let floor: Float = -1.6
+        let couch = Entity()
+        couch.name = "couch"
+        let front = c.seatFront, rear = c.seatBack - 0.25
+        let depth = front - rear, mid = (front + rear) / 2
+        let cushion = ModelEntity(mesh: .generateBox(width: c.seatWidth, height: 0.18, depth: depth, cornerRadius: 0.06), materials: [fabric])
+        cushion.position = SIMD3(0, c.seatY - 0.09, mid)
+        couch.addChild(cushion)
+        let baseTop = c.seatY - 0.18, baseLow = floor + 0.08
+        let base = ModelEntity(mesh: .generateBox(width: c.seatWidth + 0.1, height: baseTop - baseLow, depth: depth, cornerRadius: 0.03), materials: [fabric])
+        base.position = SIMD3(0, (baseTop + baseLow) / 2, mid)
+        couch.addChild(base)
+        let tilt = c.backTilt * .pi / 180
+        let up = SIMD3<Float>(0, cos(tilt), -sin(tilt)), normal = SIMD3<Float>(0, sin(tilt), cos(tilt))
+        // the back's plane, carried down to the seat
+        let origin = SIMD3<Float>(0, c.backY, c.backZ) + up * ((c.seatY - c.backY) / cos(tilt))
+        let height = c.backHeight + (c.backY - c.seatY) / cos(tilt), thick: Float = 0.32
+        let rest = ModelEntity(mesh: .generateBox(width: c.backWidth, height: height, depth: thick, cornerRadius: 0.08), materials: [back])
+        rest.position = origin + up * (height / 2) - normal * (thick / 2)
+        rest.orientation = simd_quatf(angle: -tilt, axis: SIMD3(1, 0, 0))
+        rest.components.set(ModelSortGroupComponent(group: sortGroup, order: 0))
+        couch.addChild(rest)
+        stage.addChild(couch)
+        stage.position = -SIMD3(0, -0.45, c.seatFront * 0.5 + 0.1)
+        if let shade = Self.shadowTexture {
+            var m = UnlitMaterial()
+            m.color = .init(tint: .black, texture: .init(shade))
+            m.blending = .transparent(opacity: .init(floatLiteral: 0.3))
+            let plane = ModelEntity(mesh: .generatePlane(width: c.seatWidth + 0.6, depth: 2.6), materials: [m])
+            plane.position = SIMD3(0, floor + 0.002, mid + 0.4)
+            stage.addChild(plane)
+        }
+    }
+
     private func addChair(_ c: PostureModel.Chair) {
+        if c.kind == "couch" { addCouch(c); return }
         var cushion = PhysicallyBasedMaterial()
         cushion.baseColor = .init(tint: UIColor(hex: "#3C4250"))
         cushion.roughness = .init(floatLiteral: 0.85)
