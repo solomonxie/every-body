@@ -52,7 +52,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
-| `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | open |
+| `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | open: cause = rim light on lower-lip top band (no cast shadow under upper lip); geometry tries failed; next: specular mask along the lip seam (texture + Swift) |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
 | `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
@@ -71,10 +71,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `black.female.adult.bare.base.face-side\|front-3q-*.rest` lip corner wedge + `*.female.adult.*.*.face-*.rest` inner-corner lash sheen (agent, /tmp/lipc/)
 - `*.female.adult.dressed.M-*.*.low-up.*` cup/band lumps, band side kink, XL/XXL patch above nipple (agent, /tmp/band/)
 
 ## Log
+
+- 2026-10-15: inner-corner white streak fixed (TUCK_LIDS female-adult, eac2361; SE-Asian front 642 -> 1 bright px). 'Lash sheen' was rk.py default material, not the app. tuck_lips fade past mouth corners pushes cheek into upper lip (noted, not fixed).
 
 - 2026-10-15: shoulder-160 back knob and back armpit crease fixed (strap clip 55 -> 1, bent edges behind shoulder 36 -> 16). Swift only.
 
