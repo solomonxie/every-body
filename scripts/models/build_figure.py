@@ -1000,6 +1000,9 @@ class Packer:
 HIP_REFINE = (((-0.7, 0.55), 0.03), ((-0.3, 0.42), 0.015))
 # the front of the knees likewise (bent, its long edges show over the kneecap): (heights, longest, in front of this z)
 KNEE_REFINE = (((-0.88, -0.52), 0.02, -0.06),)
+# the elbows' back and sides too, then the point again (bent, the outer outline showed 2 cm facets; the inner crease
+# kept coarse, finer it folds): (heights, longest, behind this z)
+ELBOW_REFINE = (((0.33, 0.57), 0.015, 0.0), ((0.37, 0.53), 0.008, -0.045))
 # where its coarse rows meet the fine ones a vertex sits all but on its triangle's far edge (area / longest edge² below
 # this): split, that edge's midpoint lands on the vertex and the skin folds round it (dark specks across the lower
 # belly), so those edges are flipped first
@@ -1035,16 +1038,22 @@ class HipRefine:
                             & (arms < 0.05))
         self.raw_tris = vmap[tri]
         self.passes = []
-        for (lo, hi), longest, front in [(b, l, None) for b, l in HIP_REFINE] + list(KNEE_REFINE):
+        passes = ([(b, l, None, False) for b, l in HIP_REFINE] + [(*k, False) for k in KNEE_REFINE]
+                  + [(*k, True) for k in ELBOW_REFINE])
+        for (lo, hi), longest, side, elbow in passes:
             pt = vmap[tri]
             e = np.concatenate([pt[:, [0, 1]], pt[:, [1, 2]], pt[:, [2, 0]]])
             ln = np.linalg.norm(p[e[:, 0]] - p[e[:, 1]], axis=1)
             reach = np.zeros(len(p))
             np.maximum.at(reach, e[:, 0], ln)
             np.maximum.at(reach, e[:, 1], ln)
-            mark = (p[:, 1] > lo) & (p[:, 1] < hi) & (arms < 0.05) & (reach > longest)
-            if front is not None:
-                mark &= (p[:, 2] > front) & (np.abs(p[:, 0]) > 0.04)
+            mark = (p[:, 1] > lo) & (p[:, 1] < hi) & (reach > longest)
+            if elbow:
+                mark &= (arms > 0.5) & (np.abs(p[:, 0]) > 0.25) & ((p[:, 2] < side) if side is not None else True)
+            else:
+                mark &= arms < 0.05
+                if side is not None:
+                    mark &= (p[:, 2] > side) & (np.abs(p[:, 0]) > 0.04)
             mark |= mark[twin]
             sel = mark[pt].all(1)
             edges, te = np.unique(np.sort(e, 1), axis=0, return_inverse=True)
