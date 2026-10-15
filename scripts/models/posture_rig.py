@@ -558,7 +558,11 @@ def seated_leg(spec, J, T, s, sx):
     e0 = np.array([1.0, 0, 0])
     T[f"thigh-{s}"] = rigid(align(th0, e0, th1, e1), J[f"hip-{s}"], hip)
     T[f"shin-{s}"] = rigid(align(sh0, e0, sh1, e1), J[f"knee-{s}"], knee)
-    T[f"foot-{s}"] = rigid(rot((0, 1, 0), spec.get("toe_out", 0) * sx), J[f"ankle-{s}"], ankle)
+    if spec.get("foot_follow"):
+        # the foot keeps its angle to the shin (pointed a little), lying on its side when the shin does
+        T[f"foot-{s}"] = rigid(T[f"shin-{s}"][:3, :3] @ rot((1, 0, 0), spec.get("plantar", 0.0)), J[f"ankle-{s}"], ankle)
+    else:
+        T[f"foot-{s}"] = rigid(rot((0, 1, 0), spec.get("toe_out", 0) * sx), J[f"ankle-{s}"], ankle)
     return th0, th1
 
 
@@ -680,7 +684,7 @@ def ramp(v, a, b):
     return t * t * (3 - 2 * t)
 
 
-def chair_for(J, poses, body_posed, seat_point, pelvis_pts, tilt=12.0, gap=0.0, **seat):
+def chair_for(J, poses, body_posed, seat_point, pelvis_pts, tilt=12.0, gap=0.0, upper=False, **seat):
     """seat and backrest placed against the upright pose (gap behind it: room for a cushion); the backrest starts above
     the pelvis in every pose. seat: the couch's or wall's own sizes and kind"""
     T = poses[0]
@@ -688,6 +692,9 @@ def chair_for(J, poses, body_posed, seat_point, pelvis_pts, tilt=12.0, gap=0.0, 
     knee_z = min(apply(T[f"shin-{s}"], J[f"knee-{s}"])[2] for s in SIDES)
     lumbar_y = apply(T["L3"], J["L3"])[1]
     near = body_posed[(np.abs(body_posed[:, 0]) < 0.06) & (np.abs(body_posed[:, 1] - lumbar_y) < 0.04)]
+    if upper:
+        # a wall: against the furthest-back point between the low back and the shoulders
+        near = body_posed[(np.abs(body_posed[:, 0]) < 0.08) & (body_posed[:, 1] > lumbar_y) & (body_posed[:, 1] < lumbar_y + 0.55)]
     back_z = near[:, 2].min() - gap
     t = math.radians(tilt)
     up, n = np.array([0, math.cos(t), -math.sin(t)]), np.array([0, math.sin(t), math.cos(t)])
@@ -926,6 +933,30 @@ def lumbar_cushion(chair, steps):
     return {"cushion": (CUSHION, matrix(np.array([1.0, 0, 0]), up, n, c), [max(0.0, 1 - 1.5 * s) for s in steps])}
 
 
+# ------------------------------------------------------------------ on the floor
+
+MAT = 0.03  # a thin mat under the sit bones
+
+# cross-legged with the back against a wall: pelvis nearly upright, the low back's curve mostly kept
+# cross-legged and slouched, away from the wall: tight hips roll the pelvis back, the whole spine rounds, the chin pokes
+FLOOR = {
+    "wall": dict(pelvis_tilt=4, flex={"L5": 1, "L4": 1, "L3": 1, "C6": 1, "C5": 1, "head": -1},
+                 slide=0, protract=0, elevate=0, hand_on_thigh=0.7),
+    "slouch": dict(pelvis_tilt=30, flex={"L5": 8, "L4": 8, "L3": 8, "L2": 8, "L1": 8, **{f"T{i}": 2 for i in range(1, 13)},
+                                         "C7": 4, "C6": 2, "C4": -4, "C3": -6, "C2": -8, "head": -12},
+                   slide=0.04, protract=14, elevate=-2, hand_on_thigh=0.85),
+}
+
+
+def floor_common(J):
+    """sit bones on the mat; each ankle tucked under the other knee"""
+    out = seated_common(J)
+    seat = np.array([0.0, SOLE + MAT + 0.03, -0.02])
+    ankle = np.array([-0.2, SOLE + 0.09, seat[2] + 0.42])
+    return dict(out, seat_point=seat.tolist(), ankle=ankle.tolist(), knee_pole=[1.0, 0.35, 0.25], foot_follow=True, plantar=-25,
+                hand_lift=[0.04, 0.09, 0.0])
+
+
 # ------------------------------------------------------------------ a phone in bed
 
 MATTRESS_TOP = -0.62  # a bed about 52 cm high
@@ -1001,7 +1032,10 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
           # a reclined couch back with a gap for the lumbar cushion
           "couch": dict(keys=COUCH, order=["supported", "sunk"], steps=[0.0, 0.5, 1.0], common=couch_common, sexes=["male"], heritages=["white"],
                         seat=dict(tilt=22.0, gap=CUSHION[2], kind="couch", seat_width=1.3, back_width=1.3, back_height=1.0),
-                        chair_props=lumbar_cushion, topology="sitting")}
+                        chair_props=lumbar_cushion, topology="sitting"),
+          # a mat on the floor and a wall behind the upper back
+          "floor": dict(keys=FLOOR, order=["wall", "slouch"], steps=[0.0, 0.5, 1.0], common=floor_common, sexes=["male"], heritages=["white"],
+                        seat=dict(tilt=0.0, upper=True, kind="floor", seat_width=1.4, back_width=1.6, back_height=1.6), topology="sitting")}
 SOFT = ("disc-", "erector-spinae", "transversospinales", "splenius", "levator-scapulae")
 SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pregnant"}
 HERITAGES = ["east-asian", "southeast-asian", "south-asian", "hispanic", "white", "black"]
