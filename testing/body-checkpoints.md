@@ -64,12 +64,13 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 |---|---|---|
 | `*.*.adult.*.*.side.shoulder-160` | hard arm/torso edge, shallow back-armpit groove | open |
 | `*.female.adult.*.*.*.elbow-*` | outer elbow outline faceted (mesh density) | open |
-| `*.female.adult.dressed.XXL-*.*.back-90` | bra cup lower edge crumples, band edge wavy | open |
+| `*.female.adult.dressed.XXL-*.*.back-90` | bra cup lower edge crumples, band edge wavy | in progress |
 | `*.male\|child.*.*.*.shoulder-*` | back-armpit slit (fix applied to the woman only) | waits |
 
 ## In progress
 
-- (none)
+- `*.female.adult.dressed.XL\|XXL-*.front\|front-3q-left\|low-up\|left.back-60\|back-90`: bra cup lower edge, band wave
+- hip squeeze scene: partner forearms (user feature)
 
 ## Log
 
