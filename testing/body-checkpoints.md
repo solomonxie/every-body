@@ -71,6 +71,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `*.female.adult.dressed.XL+.*.*` cleavage crease at the bra centre panel (agent, /tmp/cleav/)
+- `*.female.adult.*.*.top-down.elbow-*` coarse forearm + elbow-145 crease line (+ knee-135 front facets) (agent, /tmp/arm2/)
 
 ## Log
 
