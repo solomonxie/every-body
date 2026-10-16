@@ -73,6 +73,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- elbow-145 / knee-135 crease lit lines: runtime contact occlusion (agent, /tmp/occ/)
+- verification sweep of today's fixes + unconfirmed rows + sample 6 (agent, /tmp/sweep3/)
 
 ## Log
 
