@@ -61,7 +61,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 | Cells | Issue | State |
 |---|---|---|
-| `*.female.adult.*.*-XXL.left\|right\|front-3q-*.rest\|back-*` | sharp diagonal crease at the waist side above the hip bone, XXL hips only, strongest at back-60 (sweep3 /tmp/sweep3/crops/xx-white-back-60-left-flank.png) | in progress |
+| `*.female.adult.*.*-XXL.left\|right\|front-3q-*.rest\|back-*` | sharp diagonal crease at the waist side above the hip bone, XXL hips only, strongest at back-60 (sweep3 /tmp/sweep3/crops/xx-white-back-60-left-flank.png) | fixed f282694 (fair_flank on hips-*), c31cf5c; install pending phone. Check S-XXL sitting hip-front edge |
 | `*.female.adult.*.*.top-down.*` | 3-4 ridges on the inner thigh (base mesh, all hips) | open |
 | `*.female.adult.*.*.back.back-60+shoulder-90` | bright vertical knob where the arm meets the back | fixed (Swift: exact chord Jacobian normals + band normal smoothing, uncommitted); install pending phone |
 | `*.female.adult.*.*.front-3q-left.back-60+shoulder-90` | lumpy chest/rib shading under the raised arm, sharp front-armpit line | fixed (same change); shoulder-45 arm normal error up slightly (11.7 -> 17.4 p90) |
@@ -79,9 +79,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `*.female.adult.*.*-XXL.left\|right\|front-3q-*.rest\|back-*` waist-side crease (agent, /tmp/flank/)
 
 ## Log
+
+- 2026-10-15: waist-side crease faired (XXL-XXL edges >15 deg 15 -> 0; L-XL 13-15 -> 2), clipping unchanged.
 
 - 2026-10-15: shoulder band normals now from the chord's full Jacobian (share gradient) + 20 smoothing passes; shoulder-90 back-pit normal error p90 37.7 -> 12.6 deg; positions unchanged.
 
