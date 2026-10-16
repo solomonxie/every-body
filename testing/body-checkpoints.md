@@ -79,6 +79,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- posture garment clipping: laptop L/M bra, phone-bed XXL bra, seated briefs/groin, pregnant bump line (agent)
+- `*.female.adult.*.base.top-down|front-3q-*|face-side.rest` lower-lid grey/pink rim, lip slit in profile (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
 ## Log
