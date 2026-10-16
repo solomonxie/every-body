@@ -61,19 +61,22 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 | Cells | Issue | State |
 |---|---|---|
+| `*.female.adult.*.*.*.elbow-145` | thin lit line at the inner crease end (no contact occlusion; 25% fewer bright px after refine) | open: needs crease darkening in shader/lighting |
+| `*.female.adult.*.*.*.knee-135` | bright sliver in the knee pit (~115 px in pit close-up) | open |
 | `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | fixed (Swift: convex cut fades behind the pivot, uncommitted), installed. Left: relax est. 3-8 ms/frame (flatten neighbour lists if slow) |
 | `*.female.adult.dressed.M-XL\|XXL.*.*` | bra-medium on wide hips still creases (162 edges); bra-xlarge small cluster below the nipple | fixed ef04b92/8ea3244, installed. Left: small dense patch above the nipple on bra-xlarge/xxlarge |
 | `*.female.adult.*.*.*.knee-135` | front-of-knee stretch (218 edges >2), small notch in the knee pit; thin bright sliver in inner elbow crease | fixed (Swift, uncommitted), installed. Left: elbow-145 sliver, faceted knee front outline at 135 |
 | `*.female.adult.*.XXL-XXL.back\|left.back-*` | second dip at the fullest point of large buttocks (hip pivot far from the skin) | halved (Swift BackBend raise, uncommitted), installed |
-| `*.female.adult.*.*.top-down.elbow-*` | forearm outline beyond the refined band still coarse | open |
+| `*.female.adult.*.*.top-down.elbow-*` | forearm outline beyond the refined band still coarse | fixed f38ba3f (FOREARM_REFINE, ELBOW_FRONT_REFINE, 2nd KNEE_REFINE; +4296 tris) |
 | `*.female.adult.dressed.M-*.*.low-up.*` | faint shading lumps where the cup meets the band; small band-edge kink at the side | fixed 148c59c (BAND_SHEET, CUP_RELAX, front panel stops inside band) |
 | `*.male\|child.*.*.*.shoulder-*` | back-armpit slit (fix applied to the woman only) | waits |
 
 ## In progress
 
-- `*.female.adult.*.*.top-down.elbow-*` coarse forearm + elbow-145 crease line (+ knee-135 front facets) (agent, /tmp/arm2/)
 
 ## Log
+
+- 2026-10-15: forearm edges 52 -> 28 mm (outline step 23 -> 16 deg), knee-135 front outline step 47 -> 24 deg, inner elbow 27 -> 14 mm edges. Body 84106 -> 88402 tris.
 
 - 2026-10-15: XL+ cleavage crease filled (valley curvature p99 XL 88 -> 31 rest, 138 -> 55 back-60); S/M/L also cleaner. Band-centre normal noise up slightly (1.4-4.0 deg p99), XL-M centre-line slivers 15 -> 24 (not visible).
 
