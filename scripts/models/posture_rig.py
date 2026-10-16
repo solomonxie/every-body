@@ -99,6 +99,36 @@ class FigureFile:
         return p, uv, self.array(g["index"], g["triangles"] * 3, np.uint32).reshape(-1, 3), g["color"]
 
 
+def off_arms(abc, w, body, tris, W):
+    """garment points bound to a triangle that moves with an arm (the hanging hand touches the hip at rest: they'd fly off
+    with it) bound to the nearest trunk triangle instead"""
+    from scipy.spatial import cKDTree
+    arm = sum(W[:, BI[f"{b}-{s}"]] for b in ("uparm", "fore1", "fore2", "hand") for s in SIDES)
+    bad = np.flatnonzero(arm[abc.astype(np.int64)].max(1) > 0.5)
+    if not len(bad):
+        return abc, w
+    abc, w = abc.copy(), w.copy()
+    a64 = abc[bad].astype(np.int64)
+    wc = 1 - w[bad].sum(1)
+    q = w[bad, :1] * body[a64[:, 0]] + w[bad, 1:] * body[a64[:, 1]] + wc[:, None] * body[a64[:, 2]]
+    ok = tris[(arm[tris] < 0.05).all(1)]
+    _, near = cKDTree(body[ok].mean(1)).query(q, k=24)
+    t = ok[near]
+    A, B, C = body[t[..., 0]], body[t[..., 1]], body[t[..., 2]]
+    Q = np.broadcast_to(q[:, None], A.shape)
+    ab, ac = B - A, C - A
+    # the closest of each candidate's points on a fine barycentric grid
+    g = np.array([(i, j) for i in range(21) for j in range(21 - i)], float) / 20
+    P = A[..., None, :] + g[:, 0, None] * ab[..., None, :] + g[:, 1, None] * ac[..., None, :]
+    d = np.linalg.norm(P - Q[..., None, :], axis=-1)
+    k = d.reshape(len(q), -1).argmin(1)
+    ti, gi = np.divmod(k, len(g))
+    r = np.arange(len(q))
+    abc[bad] = t[r, ti].astype(abc.dtype)
+    w[bad] = np.stack([1 - g[gi].sum(1), g[gi, 0]], 1).astype(w.dtype)
+    return abc, w
+
+
 def vertex_normals(p, topo):
     vm = topo["vmap"].astype(np.int64)
     t = vm[topo["index"].astype(np.int64)]
@@ -491,8 +521,10 @@ def pose(spec, J):
         T[f"clav-{s}"] = rigid(Rc, J[f"sc-{s}"], apply(T["T2"], J[f"sc-{s}"]))
 
         if spec.get("arms") == "hang":
+            # turned out at the shoulder by abduct degrees (clear of a woman's hips)
+            out = T[f"clav-{s}"] @ rigid(rot((0, 0, 1), spec.get("abduct", 0.0) * sx), J[f"shoulder-{s}"], J[f"shoulder-{s}"])
             for b in ("uparm", "ulna", "radius", "fore1", "fore2", "hand"):
-                T[f"{b}-{s}"] = T[f"clav-{s}"]
+                T[f"{b}-{s}"] = out
             continue
         # arm: the hand rests on the thigh, or holds something (a wrist target with the fingers' and palm's directions)
         mirror = np.array([sx, 1, 1])
@@ -683,6 +715,67 @@ class Rest:
         return out
 
 
+class Clear:
+    """forearms, hands (and the upper arms past the armpit) against the trunk (and the legs: legs=True), and what the hands hold"""
+
+    def __init__(self, W, topo, rest, J, legs=False):
+        self.W, self.topo = W, topo
+        limb = lambda bs: sum(W[:, BI[f"{b}-{s}"]] for b in bs for s in SIDES)
+        reach = np.min([np.linalg.norm(rest - J[f"shoulder-{s}"], axis=1) for s in SIDES], 0)
+        self.arm = np.flatnonzero((limb(("fore1", "fore2", "hand")) > 0.5) | ((limb(("uparm",)) > 0.5) & (reach > 0.2)))
+        other = limb(("uparm", "fore1", "fore2", "hand") + (() if legs else ("thigh", "shin"))) < 0.02
+        trunk = other & (rest[:, 1] > (-0.9 if legs else -0.3)) & (rest[:, 1] < 0.75)
+        t = topo["vmap"].astype(np.int64)[topo["index"].astype(np.int64)]
+        self.tris = t[trunk[t].all(1)]
+        g = np.array([(i, j) for i in range(4) for j in range(4 - i)], float) / 3
+        self.bary = np.c_[g, 1 - g.sum(1)] * 0.96 + 0.04 / 3
+
+    def clearance(self, p, props=()):
+        """the smallest signed distance from the arms and held things to the trunk's surface"""
+        from scipy.spatial import cKDTree
+        n = vertex_normals(p, self.topo)
+        q = np.einsum("sk,tkd->tsd", self.bary, p[self.tris]).reshape(-1, 3)
+        m = np.einsum("sk,tkd->tsd", self.bary, n[self.tris]).reshape(-1, 3)
+        u = np.linspace(-0.5, 0.5, 5)
+        grid = np.array([(a, b, c) for a in u for b in u for c in u if max(abs(a), abs(b), abs(c)) == 0.5])
+        a = np.concatenate([p[self.arm]] + [(grid * size) @ mat[:3, :3].T + mat[:3, 3] for size, mat in props])
+        d, i = cKDTree(q).query(a)
+        near = d < 0.08
+        return float(((a - q[i]) * m[i]).sum(1)[near].min()) if near.any() else 0.08
+
+
+def cheapest(steps):
+    return sorted(steps, key=lambda c: sum(abs(v) * CLEAR_COST.get(k, 1) for k, v in c.items()))
+
+
+# a woman's arms and what she holds clear her chest, bump and hips on every body option: the changes tried, cheapest
+# first (out: held further from the chest, metres; pole: elbows further out; lap_at/lap_lift: the laptop toward the
+# knees / higher; abduct: hanging arms turned out, degrees)
+CLEAR_COST = {"pole": 0.05, "abduct": 0.01, "lap_at": 0.3}
+CLEAR = {"phone": cheapest([dict(out=o, pole=dx) for o in np.arange(0, 0.205, 0.025) for dx in (0.0, 0.4, 0.8)]),
+         "laptop": cheapest([dict(lap_at=a, lap_lift=l) for a in (0.55, 0.62, 0.69, 0.76, 0.83, 0.9) for l in (0.0, 0.02)]),
+         "hang": cheapest([dict(abduct=float(a)) for a in range(0, 16, 2)])}
+HELD = ("phone", "laptop")
+
+
+def clear_arms(spec, J, finish, bodies, clear, steps, gap=0.008):
+    best = None
+    for c in steps:
+        sp = dict(spec, **{k: float(v) for k, v in c.items() if k != "pole"})
+        if c.get("pole"):
+            sp["elbow_pole"] = (np.array(spec["elbow_pole"], float) + np.array([c["pole"], 0, 0])).tolist()
+        sp = finish(sp, J)
+        T = pose(sp, J)
+        held = [(np.array(size), np.asarray(m)) for pid, (size, m, *alpha) in sp.get("props", {}).items()
+                if pid in HELD and (not alpha or alpha[0] > 0.5)]
+        d = min(clear.clearance(skin(b, clear.W, T), held) for b in bodies)
+        if best is None or d > best[0]:
+            best = (d, sp)
+        if d >= gap:
+            return sp
+    return best[1]
+
+
 def rest_hands(spec, J, bodies, rest, gap=0.006):
     """lift or lower each hand so it lies on the thigh, just clear of it on every body given"""
     spec = dict(spec, hand_up={s: spec["hand_lift"][1] for s in SIDES})
@@ -767,7 +860,8 @@ def hold_phone(spec, J):
     T = pose(dict(spec, grip={"wrist": J["wrist-l"], "fingers": [0, -1, 0]}), J)
     look = T["head"][:3, :3] @ rot(X, spec["eyes_down"])
     gaze, up, side = look @ np.array([0, 0, 1.0]), look @ np.array([0, 1.0, 0]), np.array([1.0, 0, 0])
-    c = apply(T["head"], J["eye"]) + gaze * spec["reach"] * M
+    # out: held further from the chest (along the chest's front)
+    c = apply(T["head"], J["eye"]) + gaze * spec["reach"] * M + T["T6"][:3, :3] @ np.array([0, 0, spec.get("out", 0.0) * M])
     # wrists below and behind the phone's lower corners; fingers up its back, palms toward the face
     wrist = c + side * 0.09 - up * 0.26 + gaze * 0.05
     fingers = unit(up - side * 0.5 + gaze * 0.05)
@@ -843,11 +937,11 @@ def use_laptop(spec, J):
     d = desk_setup(J)
     T = pose(dict(spec, grip={"wrist": J["wrist-l"].tolist(), "fingers": [0, -1, 0]}), J)
     # on the lap: the base along the thighs, 55% of the way to the knees, resting on top of them
-    mids = [apply(T[f"thigh-{s}"], J[f"hip-{s}"] + 0.55 * (J[f"knee-{s}"] - J[f"hip-{s}"])) for s in SIDES]
+    mids = [apply(T[f"thigh-{s}"], J[f"hip-{s}"] + spec.get("lap_at", 0.55) * (J[f"knee-{s}"] - J[f"hip-{s}"])) for s in SIDES]
     along = unit(sum(apply(T[f"thigh-{s}"], J[f"knee-{s}"]) - apply(T[f"thigh-{s}"], J[f"hip-{s}"]) for s in SIDES))
     n = unit(np.cross(along, (1, 0, 0)))
     n = n if n[1] > 0 else -n
-    c = (mids[0] + mids[1]) / 2 + n * (0.15 + LAPTOP_BASE[1] / 2)
+    c = (mids[0] + mids[1]) / 2 + n * (0.15 + LAPTOP_BASE[1] / 2 + spec.get("lap_lift", 0.0) * M)
     lap = matrix(np.cross(n, -along), n, -along, c)
     t = spec["lap"]
     m = (1 - t) * d["laptop"] + t * lap
@@ -1036,28 +1130,30 @@ PREGNANT_SLUMP = dict(pelvis_tilt=28, slide=0.15, flex={"L5": 6, "L4": 7, "L3": 
                       hand_on_thigh=0.75)
 TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], steps=[0.0, 0.5, 1.0], common=seated_common,
                           variants={"pregnant": {"slouched": PREGNANT_SLUMP}}),
-          # one figure (the app shows the male adult): keys at 0, 15, 30, 45 and 60° of head tilt
+          # keys at 0, 15, 30, 45 and 60° of head tilt
           "phone-standing": dict(keys=PHONE_STANDING, order=["up", "down"], steps=[0.0, 0.25, 0.5, 0.75, 1.0], common=standing_common,
-                                 finish=hold_phone, chair=False, sexes=["male"], heritages=["white"], neck="head", focus="C4", topology="sitting"),
+                                 finish=hold_phone, chair=False, neck="head", focus="C4", topology="sitting", clear="phone"),
           # keys at 0, 15, 30 and 45° of head tilt
           "laptop": dict(keys=LAPTOP, order=["raised", "lap"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=seated_common, finish=use_laptop,
-                         sexes=["male"], heritages=["white"], neck="head", focus="C4", topology="sitting"),
+                         neck="head", focus="C4", topology="sitting", clear="laptop",
+                         # (no pregnant figure: the bump is in the way of the keyboard and the laptop; the app shows the woman)
+                         sexes=["male", "female"]),
           # keys at 0, 15, 30 and 45° of neck bend (the head against the upper back)
           "phone-bed": dict(keys=PHONE_BED, order=["flat", "propped"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=bed_common, finish=phone_in_bed,
-                            chair=False, sexes=["male"], heritages=["white"], neck="cervical", focus="C4", topology="sitting"),
+                            chair=False, neck="cervical", focus="C4", topology="sitting", clear="phone"),
           # keys at 0, 12, 23 and 35° of wrist extension; the camera's close view on the right wrist
           "computer": dict(keys=COMPUTER, order=["neutral", "high"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=seated_common, finish=at_computer,
-                           sexes=["male"], heritages=["white"], focus=("hand-r", "wrist-r"), topology="sitting"),
+                           focus=("hand-r", "wrist-r"), topology="sitting"),
           # the calf muscles and leg veins as soft pieces; the close view on the left calf
-          "standing": dict(keys=STANDING, order=["pump", "still"], steps=[0.0, 0.5, 1.0], common=standing_still, finish=lambda sp, J: sp, chair=False,
-                           sexes=["male"], heritages=["white"], soft=("gastrocnemius", "soleus", "leg-vein", "small-saphenous"),
+          "standing": dict(keys=STANDING, order=["pump", "still"], steps=[0.0, 0.5, 1.0], common=standing_still, finish=lambda sp, J: sp, chair=False, clear="hang",
+                           soft=("gastrocnemius", "soleus", "leg-vein", "small-saphenous"),
                            focus=("shin-l", "calf-l"), topology="sitting"),
           # a reclined couch back with a gap for the lumbar cushion
-          "couch": dict(keys=COUCH, order=["supported", "sunk"], steps=[0.0, 0.5, 1.0], common=couch_common, sexes=["male"], heritages=["white"],
+          "couch": dict(keys=COUCH, order=["supported", "sunk"], steps=[0.0, 0.5, 1.0], common=couch_common,
                         seat=dict(tilt=22.0, gap=CUSHION[2], kind="couch", seat_width=1.3, back_width=1.3, back_height=1.0),
                         chair_props=lumbar_cushion, topology="sitting"),
           # a mat on the floor and a wall behind the upper back
-          "floor": dict(keys=FLOOR, order=["wall", "slouch"], steps=[0.0, 0.5, 1.0], common=floor_common, sexes=["male"], heritages=["white"],
+          "floor": dict(keys=FLOOR, order=["wall", "slouch"], steps=[0.0, 0.5, 1.0], common=floor_common,
                         seat=dict(tilt=0.0, upper=True, kind="floor", seat_width=1.4, back_width=1.6, back_height=1.6), topology="sitting")}
 SOFT = ("disc-", "erector-spinae", "transversospinales", "splenius", "levator-scapulae")
 SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pregnant"}
@@ -1145,6 +1241,12 @@ def pack(topics=None):
             over = topic.get("variants", {}).get(sex, {})
             ka, kb = ({**topic["keys"][k], **over.get(k, {})} for k in topic["order"])
             specs = [{**common, **blend_spec(ka, kb, t)} for t in topic["steps"]]
+            if finish and topic.get("clear") and sex != "male":
+                f = figure(sex)
+                r = f["rest"]["body"]
+                bodies = [r] + [r + f["shapes"][k] for k in ("chest-xxlarge", "hips-xxlarge") if k in f["shapes"]]
+                fit = Clear(f["W"], btopo, r, J, legs=topic["clear"] == "hang")
+                return [clear_arms(sp, J, finish, bodies, fit, CLEAR[topic["clear"]]) for sp in specs]
             if finish:
                 return [finish(sp, J) for sp in specs]
             f = figure(sex)
@@ -1202,16 +1304,19 @@ def pack(topics=None):
         header["transforms"], blocks = inner_keys(poses)
         header["inner"] = {"count": start, "blocks": blocks, "pieces": pieces}
         header["neck"] = neck(poses)
-        # things held or leant on, per key (a 4×4 each, columns first) and their size
-        props = {}
-        for sp in specs:
-            for pid, (size, m, *alpha) in sp.get("props", {}).items():
-                e = props.setdefault(pid, {"size": [round(float(v), 4) for v in size], "keys": [], "alpha": []})
-                e["keys"].append(np.asarray(m).T.reshape(-1).round(5).tolist())
-                e["alpha"].append(round(float(alpha[0]) if alpha else 1.0, 3))
-        for e in props.values():
-            if all(a == 1 for a in e["alpha"]):
-                del e["alpha"]
+        def held(specs):
+            """things held or leant on, per key (a 4×4 each, columns first) and their size"""
+            props = {}
+            for sp in specs:
+                for pid, (size, m, *alpha) in sp.get("props", {}).items():
+                    e = props.setdefault(pid, {"size": [round(float(v), 4) for v in size], "keys": [], "alpha": []})
+                    e["keys"].append(np.asarray(m).T.reshape(-1).round(5).tolist())
+                    e["alpha"].append(round(float(alpha[0]) if alpha else 1.0, 3))
+            for e in props.values():
+                if all(a == 1 for a in e["alpha"]):
+                    del e["alpha"]
+            return props
+        props = held(specs)
         # props placed against the chair (a cushion in the gap behind the low back)
         if topic.get("chair_props") and chair:
             for pid, (size, m, alpha) in topic["chair_props"](chair, topic["steps"]).items():
@@ -1223,18 +1328,25 @@ def pack(topics=None):
             f = figure(sex)
             r, Wsex = f["rest"], f["W"]
             entry = {"variant": f"{SEXES[sex]}.white", "body": [], "heritage": {}, "garments": []}
-            mine = poses if sex == "male" else [pose(sp, J) for sp in posed_specs(sex)]
+            own = specs if sex == "male" else posed_specs(sex)
+            mine = poses if sex == "male" else [pose(sp, J) for sp in own]
+            if sex != "male" and held(own) != held(specs):
+                # held further out (a woman's forearms clear her chest)
+                entry["props"] = held(own)
             if sex in topic.get("variants", {}):
                 entry["transforms"], entry["inner"] = inner_keys(mine)
                 entry["neck"] = neck(mine)
-            elif sex != "male":
+            elif sex != "male" and bone_keys(mine) != header["transforms"]:
                 entry["transforms"] = bone_keys(mine)
             posed = []
             for T in mine:
                 p = contact(skin_body(r["body"], Wsex, T))
                 posed.append(p)
                 entry["body"].append(pk.block(p, entry["body"][0] if entry["body"] else None))
-            for h in heritages:
+            if topic.get("topology"):
+                # rest-pose heritage heads and garment bindings: the same arrays as the topology file's (which packs them all)
+                entry["shared"] = True
+            for h in [] if topic.get("topology") else heritages:
                 d = fig.pieces(f"{SEXES[sex]}.{h}")["body"] - r["body"]
                 if np.abs(d).max() > 1e-6:
                     entry["heritage"][h] = pk.block(d)
@@ -1245,8 +1357,9 @@ def pack(topics=None):
                     q = contact(skin_body(r["body"] + d, Wsex, T)) - p
                     keys.append(pk.block(q, keys[0] if keys else None))
                 entry.setdefault("shapes", {})[shape] = keys
-            for g in GARMENTS[sex]:
+            for g in [] if topic.get("topology") else GARMENTS[sex]:
                 abc, w, fa, tri, lift, color, offset = fig.binding(g)
+                abc, w = off_arms(abc, w, r["body"], tris.reshape(-1, 3).astype(np.int64), Wsex)
                 entry["garments"].append({"name": g, "color": color, "vertices": len(fa), "triangles": len(tri), "lift": lift,
                                           "abc": pk.add(abc.astype(np.uint16)), "w": pk.add(w.astype(np.float32)),
                                           "f": pk.add(fa.astype(np.float32)), "index": pk.add(tri.astype(np.uint16))})
