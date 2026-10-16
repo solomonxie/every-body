@@ -1259,6 +1259,7 @@ def body_options(np, load, body_tris):
         # its fullness spread, less the base's
         d += below * (load(f"female-adult.shape-{name}")["body"] - fit - (f0 - f0_fit))
         if name.startswith("hips-"):
+            d = fair_flank(np, f0 + d, body_tris, f0_fit) - f0
             # nothing of it (its spread fullness too) reaches the chest; the breasts ride on the trunk under them (the
             # bra's band, fitted per chest, holds on every hips)
             d = carry_on(d) * (1 - smoothstep(0.62, 0.78, y))[:, None]
@@ -2305,6 +2306,41 @@ def fair_trunk(np, p, tris):
         n = vertex_normals(np, q, tris)
         for step in (0.5, -0.53):
             q = q + step * w * ((mean(q) - q) * n).sum(1, keepdims=True) * n
+    return q
+
+
+# MakeHuman's waist side bends sharply where the hip flare starts (a diagonal ridge above the hip bone, lit as a
+# bright crease on the fuller hips, sharpest bent at the back): where the skin bends harder than the rest (curvature
+# in, full) it is smoothed along the normal over (passes, heights in, full, full, out, |x| in, full, curvature in,
+# full); the arms kept
+FLANK_FAIR = (60, (0.24, 0.3, 0.46, 0.54), (0.12, 0.18), (9, 24))
+
+
+def fair_flank(np, p, tris, ref):
+    """the adult woman's waist sides evened (weights taken on ref, the same on every option)"""
+    passes, (y0, y1, y2, y3), (x0, x1), (k0, k1) = FLANK_FAIR
+    if not passes:
+        return p
+    e = np.unique(np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), axis=1), axis=0)
+    k = 1 / np.maximum(((ref[e[:, 0]] - ref[e[:, 1]]) ** 2).sum(1), 1e-8)[:, None]
+    deg = (np.bincount(e[:, 0], k[:, 0], len(p)) + np.bincount(e[:, 1], k[:, 0], len(p)) + 1e-8)[:, None]
+
+    def mean(q):
+        acc = np.zeros_like(q)
+        np.add.at(acc, e[:, 0], k * q[e[:, 1]])
+        np.add.at(acc, e[:, 1], k * q[e[:, 0]])
+        return acc / deg
+
+    x, y, _ = ref.T
+    w = smoothstep(y0, y1, y) * (1 - smoothstep(y2, y3, y)) * smoothstep(x0, x1, np.abs(x))
+    w *= 1 - smoothstep(0.01, 0.05, np.load(RAW / "regions.npz")["arms"])
+    w = w[:, None]
+    q = p.copy()
+    for _ in range(passes):
+        n = vertex_normals(np, q, tris)
+        lap = ((mean(q) - q) * n).sum(1, keepdims=True)
+        # (|lap| * deg: the bend per length, ~7 typical, 20+ on the ridge)
+        q = q + 0.5 * w * smoothstep(k0, k1, np.abs(lap) * deg) * lap * n
     return q
 
 
