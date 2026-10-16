@@ -51,7 +51,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.pregnant.*.base.*.*` with XL/XXL chest | breast underside sinks up to 2 cm into the bump (hidden in the crease) | open (prototype: lift along the bump normal, /tmp/uw/tools/bumpfit.py) |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
-| `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
+| `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
 | `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | fixed: specular mask skin-seam.png (4a9d805) + Figure.swift (uncommitted), installed; check on device for glancing sheen. Thin lower-lip edge in profile still open |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
@@ -80,9 +80,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - `*.female.adult.*.S-XXL|XXL-XXL.*.sitting` hip-front edge, briefs clip, inner-thigh shade (agent)
-- `*.female.adult.*.base.low-up.rest` eyeball sliver under the lower lid (agent, /tmp/eyeb/)
+- `*.female.adult.*.base.low-up.rest` white sheen on nose sides / under-eye strip (agent)
 
 ## Log
+
+- 2026-10-16: low-up lid 'sliver' is skin rim lit by back light (no shadows), not eyeball; LIFT_LIDS closes the strip. Nose-side sheen from below spotted on the same sheets.
 
 - 2026-10-16: knee-135 pit wedge fixed (pressed side skin keeps own normal, sideKeep 0.4-0.9), pale px 650-1018 -> 0; knee band ends eased (kneeEase 0.3) band-end fold 29.5 -> 10.7 deg. Left: thin rim-light streak along crease at low back-3q; knee-90 stretch 32 edges >1.6x. Port /tmp/kp/tools/pose.py.
 
