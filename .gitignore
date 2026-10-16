@@ -23,3 +23,9 @@ __pycache__/
 
 # downloaded tools and raw assets (scripts/models/build.sh)
 tools/
+
+# built model binaries: GitHub release "models" (scripts/models/assets.sh), pinned by Resources/Models/assets.sha256
+Resources/Models/**/*.bin
+Resources/Models/**/*.usdz
+Resources/Models/**/*.jpg
+Resources/Models/**/*.png
