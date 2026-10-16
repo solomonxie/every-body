@@ -79,10 +79,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `*.female.adult.*.*.back|side.knee-90|knee-135` knee-pit grey wedge + knee band edge (agent)
 - `*.female.adult.*.base.low-up.rest` eyeball sliver under the lower lid (agent, /tmp/eyeb/)
 
 ## Log
+
+- 2026-10-16: knee-135 pit wedge fixed (pressed side skin keeps own normal, sideKeep 0.4-0.9), pale px 650-1018 -> 0; knee band ends eased (kneeEase 0.3) band-end fold 29.5 -> 10.7 deg. Left: thin rim-light streak along crease at low back-3q; knee-90 stretch 32 edges >1.6x. Port /tmp/kp/tools/pose.py.
 
 - 2026-10-16: bendSkin perf (packed neighbours, scratch buffers, pose cache) 40-65% faster, bit-identical; bench /tmp/perf/bench.sh. bindSkin holder votes now tie-break by key: hand vertices no longer jump per launch (was up to 1.1 at elbow-145).
 
