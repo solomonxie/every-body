@@ -43,8 +43,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.left\|right\|front-3q-*.back-*` | belly creases on back bend | fixed in Blender port (hip + spine curve), uncommitted, installed; check on device |
 | `*.female.pregnant.*.*.*.back-60\|back-90` | hand skin stretches into a sheet to the hips; soft fold low on bump | fixed in Blender port (bind on plain adult body; bump turns over a longer stretch), uncommitted, installed; check on device |
 | `east-asian.female.adult.*.base.face-*.*` | cheeks/jaw uneven colour, diagonal line | blush spread evenly (0a82573), installed; check on device |
-| `*.female.adult.*.XXL-XXL.top-down\|back-3q-*.*` | butt/thigh lumps | improved afcef5f, unconfirmed |
-| `east-asian.female.adult.*.*.face-side.rest` | chin, eyes, sallow skin | improved 8200035, unconfirmed |
+| `*.female.adult.*.XXL-XXL.top-down\|back-3q-*.*` | butt/thigh lumps | buttocks confirmed clean (sweep3); inner-thigh ridges reopened below |
+| `east-asian.female.adult.*.*.face-side.rest` | chin, eyes, sallow skin | skin/eyes confirmed (sweep3); chin recedes (style call) |
 | `*.*.adult\|pregnant\|child.*.*.*.shoulder-90\|shoulder-160\|back-*+shoulder-*` | side-chest balloon; armpit skin stretched into thin sheets/flaps (deltoid skin bound to the shoulder blade, turn ramped over a few triangles) | fixed in Blender port (shoulder share: arm/torso split + 0.14 band by distance over the skin, chord blend), uncommitted, installed; check on device. Left: shoulder top squashes (hidden), kid top armhole shows a speck of skin at 160 |
 | `*.female.adult.dressed.XL+.*.*` | soft crease where the bra panel meets the steep inner breast wall | fixed dfca54a (fill_gore), committed; install pending phone |
 | `*.female.pregnant.dressed.XXL.*.*` | bra-pregnant-xxlarge ~2100 clip pts in pose.py (port may miss the pregnant chest shape) | waits |
@@ -61,6 +61,12 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 | Cells | Issue | State |
 |---|---|---|
+| `*.female.adult.*.*-XXL.left\|right\|front-3q-*.rest\|back-*` | sharp diagonal crease at the waist side above the hip bone, XXL hips only, strongest at back-60 (sweep3 /tmp/sweep3/crops/xx-white-back-60-left-flank.png) | in progress |
+| `*.female.adult.*.*.top-down.*` | 3-4 ridges on the inner thigh (base mesh, all hips) | open |
+| `*.female.adult.*.*.back.back-60+shoulder-90` | bright vertical knob where the arm meets the back | in progress |
+| `*.female.adult.*.*.front-3q-left.back-60+shoulder-90` | lumpy chest/rib shading under the raised arm, sharp front-armpit line | in progress |
+| `*.female.adult.bare.*.left\|front-3q-*.rest` | faint horizontal step across mid-thigh (KNEE_REFINE band edge) | open |
+| `*.female.adult.dressed.XXL-XXL.back\|top-down.shoulder-160` | bra strap edge ripple near armpit | open (minor) |
 | `*.female.adult.*.*.*.elbow-145` | thin lit line at the inner crease end (no contact occlusion; 25% fewer bright px after refine) | fixed: contact-shade overlay (Swift, uncommitted); check on device incl. elbow-90 dimple, overlay flicker, glass-skin view |
 | `*.female.adult.*.*.*.knee-135` | bright sliver in the knee pit (~115 px in pit close-up) | 113 -> 22 px via contact shade; pale grey wedge left |
 | `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | fixed (Swift: convex cut fades behind the pivot, uncommitted), installed. Left: relax est. 3-8 ms/frame (flatten neighbour lists if slow) |
@@ -73,7 +79,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- verification sweep of today's fixes + unconfirmed rows + sample 6 (agent, /tmp/sweep3/)
+- `*.female.adult.*.*-XXL.left\|right\|front-3q-*.rest\|back-*` waist-side crease (agent, /tmp/flank/)
+- `*.female.adult.*.*.back\|front-3q-left.back-60+shoulder-90` back-armpit knob, chest lumps (agent, /tmp/bs90/)
 
 ## Log
 
