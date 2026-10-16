@@ -62,10 +62,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | Cells | Issue | State |
 |---|---|---|
 | `*.female.adult.*.*-XXL.left\|right\|front-3q-*.rest\|back-*` | sharp diagonal crease at the waist side above the hip bone, XXL hips only, strongest at back-60 (sweep3 /tmp/sweep3/crops/xx-white-back-60-left-flank.png) | fixed f282694 (fair_flank on hips-*), c31cf5c; install pending phone. Check S-XXL sitting hip-front edge |
-| `*.female.adult.*.*.top-down.*` | 3-4 ridges on the inner thigh (base mesh, all hips) | open |
+| `*.female.adult.*.*.top-down.*` | 3-4 ridges on the inner thigh (base mesh, all hips) | fixed a96ae01 (HIP_SCALE, THIGH_PULL), daa3c5d, installed. Soft diagonal shade on upper inner thigh left |
 | `*.female.adult.*.*.back.back-60+shoulder-90` | bright vertical knob where the arm meets the back | fixed (Swift: exact chord Jacobian normals + band normal smoothing, uncommitted); install pending phone |
 | `*.female.adult.*.*.front-3q-left.back-60+shoulder-90` | lumpy chest/rib shading under the raised arm, sharp front-armpit line | fixed (same change); shoulder-45 arm normal error up slightly (11.7 -> 17.4 p90) |
-| `*.female.adult.bare.*.left\|front-3q-*.rest` | faint horizontal step across mid-thigh (KNEE_REFINE band edge) | open |
+| `*.female.adult.bare.*.left\|front-3q-*.rest` | faint horizontal step across mid-thigh (KNEE_REFINE band edge) | fixed (cause: HIP_REFINE row-divided Laplacian at band edge); faint knee-band edge (-0.52) left. Also moves male/child legs (max ~10 mm) |
 | `*.female.adult.dressed.XXL-XXL.back\|top-down.shoulder-160` | bra strap edge ripple near armpit | fixed (Swift: smoothed garment slide + closest-triangle garment follow, uncommitted), installed. ml-ea back strap clip at 160 6 -> 16 vtx (-3 mm); garment follow change affects all garments: verify briefs in bends next sweep |
 | `*.female.adult.*.*.*.elbow-145` | thin lit line at the inner crease end (no contact occlusion; 25% fewer bright px after refine) | fixed: contact-shade overlay (Swift, uncommitted); check on device incl. elbow-90 dimple, overlay flicker, glass-skin view |
 | `*.female.adult.*.*.*.knee-135` | bright sliver in the knee pit (~115 px in pit close-up) | 113 -> 22 px via contact shade; pale grey wedge left |
@@ -80,9 +80,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - garment follow change: briefs/bra across bends + ml-ea back strap clip at 160 (agent, /tmp/gfol/)
-- inner-thigh ridges (top-down) + mid-thigh refine-band step (agent, /tmp/thigh/)
 
 ## Log
+
+- 2026-10-16: thigh band-zone bend p99 36 -> 25.5, inner-thigh ridges evened; knee-90 folds 12 -> 4; sitting briefs clip +2-8% (noise?).
 
 - 2026-10-16: shoulder normal smoothing now 45-90 deg (shoulder-45 arm error 17.4 -> 3.1); strap flipped faces at 160 33 -> 6; garments bind to closest skin triangle (3 weights) instead of 8 nearest vertices. No shading pop 0-90.
 
