@@ -79,6 +79,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- body deform per-frame cost (relax/normals/garment/contact shade) optimisation + benchmark (agent, /tmp/perf/)
+- `*.female.adult.*.base.low-up.rest` eyeball sliver under the lower lid (agent, /tmp/eyeb/)
 
 ## Log
 
