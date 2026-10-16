@@ -1020,11 +1020,19 @@ SLIVER = 0.015
 # against the bi-Laplacian (lower is smoother), fading out over heights (in, full, full, out); the navel and the
 # clefts (back, crotch) kept
 HIP_FAIR = (0.05, (-0.75, -0.55, 0.5, 0.68))
+# the inner thighs' old vertices sit unevenly a row apart (3-4 soft ridges lit from above): there each is pulled less,
+# by this much of the above, and the crotch's keep ends above them (heights in, full, full, out; |x| in, full, full,
+# out; depth in, full)
+THIGH_PULL = (0.1, (-0.5, -0.4, -0.08, -0.03), (0.02, 0.045, 0.11, 0.16), (-0.08, -0.03))
 # in front, where its coarse rows meet the waist's finer ones in long thin fans, weighted by length the new vertices
 # bunch on them and the skin creases across the hip bone: there the edges count alike (heights in, full, full, out;
 # depths in, full)
 HIP_EVEN = ((0.0, 0.08, 0.34, 0.42), (0.08, 0.13))
 NAVEL_VERT = 4120
+# a row-normalized Laplacian reads a bend smaller on finer rows: where a refined band meets a coarser one the solve
+# creased the skin (a step across the mid-thigh). On the legs it is left unnormalized (its 1/length² weights read a
+# bend alike on any row): (heights it fades in over, below the groin; arms weight it's gone by)
+HIP_SCALE = ((-0.1, 0.0), 0.05)
 
 
 class HipRefine:
@@ -1127,19 +1135,28 @@ class HipRefine:
             even = np.minimum(even[e[:, 0]], even[e[:, 1]])
             w = (1 - even) * w / np.median(w[even > 0.5]) + even
         adj = sps.coo_matrix((np.r_[w, w], (np.r_[e[:, 0], e[:, 1]], np.r_[e[:, 1], e[:, 0]])), (total, total)).tocsr()
-        lap = sps.diags(1 / np.asarray(adj.sum(1)).ravel()) @ adj - sps.eye(total)
+        deg = np.asarray(adj.sum(1)).ravel()
+        (y0, y1), a1 = HIP_SCALE
+        legs = smoothstep(y1, y0, p[:, 1]) * (1 - smoothstep(0.0, a1, self.arms))
+        ref = np.median(deg[legs > 0.5])
+        lap = sps.diags(deg ** (legs - 1) * ref ** -legs) @ (adj - sps.diags(deg))
         bi = (lap @ lap).tocsr()
         self.solve = splu(bi[self.count:, self.count:].tocsc()).solve
         self.fixed = bi[self.count:, :self.count]
         pull, (y0, y1, y2, y3) = HIP_FAIR
         x, y, z = p.T
+        ax = np.abs(x)
+        less, (t0, t1, t2, t3), (x0, x1, x2, x3), (z0, z1) = THIGH_PULL
+        band = smoothstep(t0, t1, y) * (1 - smoothstep(t2, t3, y))
+        thigh = band * smoothstep(x0, x1, ax) * (1 - smoothstep(x2, x3, ax)) * smoothstep(z0, z1, z)
         back = (z < 0) | (y < 0.1)
         crotch = (y < 0.05) & (z > -0.02)
         s = smoothstep(y0, y1, y) * (1 - smoothstep(y2, y3, y)) * (1 - smoothstep(0.02, 0.1, self.arms))
-        s *= np.where(back, smoothstep(0.025, 0.05, np.abs(x)), 1) * np.where(crotch, smoothstep(0.06, 0.12, np.abs(x)), 1)
+        s *= np.where(back, smoothstep(0.025, 0.05, ax), 1) * np.where(crotch, np.maximum(smoothstep(0.06, 0.12, ax), band), 1)
         s *= smoothstep(0.03, 0.07, np.linalg.norm(p - p[NAVEL_VERT], axis=1))
         s[self.count:] = 1
         self.free, self.kept = np.flatnonzero(s > 1e-3), np.flatnonzero(s <= 1e-3)
+        pull = pull * (1 - (1 - less) * thigh * (1 - smoothstep(0.02, 0.1, self.arms)))
         self.pull = np.where(np.arange(total) < self.count, pull / np.maximum(s, 1e-3), 0)[self.free]
         e2 = (lap.T @ lap).tocsr()[self.free]
         self.fair = splu((e2[:, self.free] + sps.diags(self.pull)).tocsc()).solve
