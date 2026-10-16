@@ -1802,6 +1802,43 @@ BAND_SHEET = (2, 60, 0.04, 10, 0.6)
 # faces' area-weighted centre, then back onto the cup. (Within this share of the cup's reach, faded out from this
 # share of that; passes; rings round the slivers)
 CUP_RELAX = (0.7, 0.8, 200, 8)
+# the gore bridges the corner where the steep inner breast wall meets the sternum (else it traced the skin's narrow
+# crease there): (passes, half width and its fade, most it's lifted, start over the hem (m), radius the cut's slivers
+# lift as one in (m))
+GORE_FILL = (150, 0.06, 0.03, 0.02, 0.03, 0.002)
+
+
+def fill_gore(np, target, p, n, gtri, ge, rim, keep):
+    """faired out along the sheet's (evened) normal only, never in, so only its hollows fill: (target, lifted)"""
+    from scipy.spatial import cKDTree
+    passes, half, edge, cap, low, sigma = GORE_FILL
+    hem = p[(p[:, 2] > 0) & (np.abs(p[:, 0]) < 0.05), 1].min()
+    k = (1 - smoothstep(half, half + edge, np.abs(target[:, 0]))) * smoothstep(hem + low, hem + low + 0.03, p[:, 1])
+    k *= (target[:, 2] > 0) * keep * ~rim
+    deg = np.maximum(np.bincount(ge.ravel(), minlength=len(p)), 1)[:, None]
+
+    def mean(x):
+        acc = np.zeros_like(x)
+        np.add.at(acc, ge[:, 0], x[ge[:, 1]])
+        np.add.at(acc, ge[:, 1], x[ge[:, 0]])
+        return acc / (deg if x.ndim == 2 else deg[:, 0])
+    dirn = vertex_normals(np, target, gtri)
+    dirn[(dirn * n).sum(1) < 0] *= -1
+    for _ in range(10):
+        dirn = mean(dirn)
+    dirn /= np.maximum(np.linalg.norm(dirn, axis=1, keepdims=True), 1e-12)
+    s = np.zeros(len(p))
+    for _ in range(passes):
+        q = target + s[:, None] * dirn
+        s = np.clip(s + 0.5 * k * ((mean(q) - q) * dirn).sum(1), 0, cap)
+        s[rim] = mean(s)[rim]
+    # (the cut's slivers, corners a hair apart, as one)
+    cut = np.flatnonzero(rim & (s > 0))
+    out = s.copy()
+    for i, nb in zip(cut, cKDTree(target).query_ball_point(target[cut], 2.5 * sigma)):
+        g = np.exp(-((target[nb] - target[i]) ** 2).sum(1) / sigma ** 2)
+        out[i] = (g * s[nb]).sum() / g.sum()
+    return target + out[:, None] * dirn, out > 0
 
 
 def wrap_band(np, target, n, ge):
@@ -2009,6 +2046,9 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
         h = ((target - p) * n).sum(1)
         target += (np.maximum(keep * lift - h, 0) * (kb > 0) / np.maximum((gn * n).sum(1), 0.3))[:, None] * gn
     moved = moved | (kb > 0)
+    if ref is None:
+        target, filled = fill_gore(np, target, p, n, gtri, ge, rim, open_)
+        moved = moved | filled
     # the cup clears the tip for sure: the most the skin there comes through, as one broad rise over the whole cup
     for i, outer, axis in zip(nipples, outers, axes):
         t = body[i]
