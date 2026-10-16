@@ -1410,6 +1410,10 @@ def pack():
 
 # a garment's cut: about this long between the points it's cut at (m)
 CELL = 0.009
+# a body triangle the cut runs through gets up to this many rings of points round its middle (about CELL apart)
+CUT_RINGS = 4
+# (where the field along a spoke strays this far from straight at its middle (m))
+CUT_BEND = 0.0005
 
 
 # the bra's side wing falls to the band over this depth (z, m: back, front)
@@ -1568,11 +1572,28 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
             else:
                 cells = [(0, 1, 2)]
             bary = np.array(bary)
-            pts = bary @ pos[tri]
-            f = field(pts) - bary @ (arm[tri] * (pos[tri][:, 1] < 0.6))
-            if arms_anywhere:
-                # (the shoulder tops under the straps are partly arm too: only out at the sides)
-                f -= (bary @ arm[tri]) * ramp(np.abs(pts[:, 0]), 0.21, 0.24)
+
+            def value(bary):
+                pts = bary @ pos[tri]
+                f = field(pts) - bary @ (arm[tri] * (pos[tri][:, 1] < 0.6))
+                if arms_anywhere:
+                    # (the shoulder tops under the straps are partly arm too: only out at the sides)
+                    f -= (bary @ arm[tri]) * ramp(np.abs(pts[:, 0]), 0.21, 0.24)
+                return f
+            f = value(bary)
+            spoke = np.linalg.norm((bary[:m] - bary[m]) @ pos[tri], axis=1).max() if m > 3 else 0
+            rings = int(min(np.ceil(spoke / CELL), CUT_RINGS))
+            if rings > 1 and f.max() > 0 and f.min() <= 0 and \
+                    np.abs(value((bary[:m] + bary[m]) / 2) - (f[:m] + f[m]) / 2).max() > CUT_BEND:
+                # rings round the middle: a lone fan's long cells bent the cut where the field folds (strap notches)
+                ring = [np.arange(m)] + [m + 1 + r * m + np.arange(m) for r in range(rings - 1)]
+                bary = np.concatenate([bary] + [bary[m] + (1 - r / rings) * (bary[:m] - bary[m]) for r in range(1, rings)])
+                cells = [(m, ring[-1][k], ring[-1][(k + 1) % m]) for k in range(m)]
+                for o, i in zip(ring[:-1], ring[1:]):
+                    for k in range(m):
+                        k1 = (k + 1) % m
+                        cells += [(i[k], o[k], o[k1]), (i[k], o[k1], i[k1])]
+                f = value(bary)
             if f.max() <= 0:
                 continue
             for cell in cells:
