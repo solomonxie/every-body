@@ -63,8 +63,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 |---|---|---|
 | `*.female.adult.*.*-XXL.left\|right\|front-3q-*.rest\|back-*` | sharp diagonal crease at the waist side above the hip bone, XXL hips only, strongest at back-60 (sweep3 /tmp/sweep3/crops/xx-white-back-60-left-flank.png) | in progress |
 | `*.female.adult.*.*.top-down.*` | 3-4 ridges on the inner thigh (base mesh, all hips) | open |
-| `*.female.adult.*.*.back.back-60+shoulder-90` | bright vertical knob where the arm meets the back | in progress |
-| `*.female.adult.*.*.front-3q-left.back-60+shoulder-90` | lumpy chest/rib shading under the raised arm, sharp front-armpit line | in progress |
+| `*.female.adult.*.*.back.back-60+shoulder-90` | bright vertical knob where the arm meets the back | fixed (Swift: exact chord Jacobian normals + band normal smoothing, uncommitted); install pending phone |
+| `*.female.adult.*.*.front-3q-left.back-60+shoulder-90` | lumpy chest/rib shading under the raised arm, sharp front-armpit line | fixed (same change); shoulder-45 arm normal error up slightly (11.7 -> 17.4 p90) |
 | `*.female.adult.bare.*.left\|front-3q-*.rest` | faint horizontal step across mid-thigh (KNEE_REFINE band edge) | open |
 | `*.female.adult.dressed.XXL-XXL.back\|top-down.shoulder-160` | bra strap edge ripple near armpit | open (minor) |
 | `*.female.adult.*.*.*.elbow-145` | thin lit line at the inner crease end (no contact occlusion; 25% fewer bright px after refine) | fixed: contact-shade overlay (Swift, uncommitted); check on device incl. elbow-90 dimple, overlay flicker, glass-skin view |
@@ -80,9 +80,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - `*.female.adult.*.*-XXL.left\|right\|front-3q-*.rest\|back-*` waist-side crease (agent, /tmp/flank/)
-- `*.female.adult.*.*.back\|front-3q-left.back-60+shoulder-90` back-armpit knob, chest lumps (agent, /tmp/bs90/)
 
 ## Log
+
+- 2026-10-15: shoulder band normals now from the chord's full Jacobian (share gradient) + 20 smoothing passes; shoulder-90 back-pit normal error p90 37.7 -> 12.6 deg; positions unchanged.
 
 - 2026-10-15: crease contact shadow at runtime (pressed() occlusion -> unlit black alpha overlay); elbow-145 line gone, knee-135 pit 113 -> 22 bright px; rest/shoulder/back pixel-identical.
 
