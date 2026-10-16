@@ -79,10 +79,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `*.female.adult.*.S-XXL|XXL-XXL.*.sitting` hip-front edge, briefs clip, inner-thigh shade (agent)
 - `black.female.adult.dressed.XL-XXL.front-3q-left.elbow-90`, `white.female.adult.dressed.L-XXL.low-up.neck-turn-70` (agent)
 
 ## Log
+
+- 2026-10-16: sitting: groin weights diffused (spread_groin), self-intersecting groin tris S-XXL 143 -> 47 upright, 42 -> 5 slouched; all bra cuts packed + per-chest pick (Swift PostureScene, uncommitted); briefs clip rise was noise. Left: gusset bunching at seat, XXL bra band wavy top-down, upright briefs leg-edge clip 262 -> 549 (hidden). App posture screen still shows only the male figure (PostureScreen female: false).
 
 - 2026-10-16: nose-side / under-eye back-light glint damped via skin-seam.png backlit mask (92cacb1); pale px low-up 0:-30 69877 -> 17853, front 6067 -> 885. Left: fainter wedge at 0:-40 on dark skin, forehead/crown sheen.
 
