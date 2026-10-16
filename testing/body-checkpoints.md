@@ -56,6 +56,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
 | `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
+| `black\|hispanic\|southeast-asian.female.adult.*.base.face-side.rest` | small lit patch at the very front of the lower lip (close profile) | open, minor |
 
 ## Open (sweep 2026-10-14)
 
@@ -80,10 +81,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - posture garment clipping: laptop L/M bra, phone-bed XXL bra, seated briefs/groin, pregnant bump line (agent)
-- `*.female.adult.*.base.top-down|front-3q-*|face-side.rest` lower-lid grey/pink rim, lip slit in profile (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
 ## Log
+
+- 2026-10-16: lower-lid rim seated on the ball (SEAT_RIM 1.01 radii, two passes; rim standoff ~2 -> 0.15 mm, visible ledge from top ~110 -> ~23 mm2) and CLOSE_LIPS reach 0.003 -> 0.006 closes the profile slit; 4b36672 + figure.bin, installed.
 
 - 2026-10-16: recovery done: female-adult raws regenerated + `align` (refit renumbered 5223 chest verts; UV remap), woman-only pack reproduces shipped bodies 0.000 mm; strap cut fix shipped (worst notch 3.3 -> 2.1 mm, slits gone); posture bins rebuilt (shipped ones came from misnumbered raws, hips off up to 30 mm). QA tools now in tools/qa (pose.py, render.py, sd.py, README). Other groups' raws absent: refit + align before packing them.
 
@@ -173,4 +175,5 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | 2026-10-15 | `*.female.adult.dressed.*.*.*` other-hips cups | hips delta eased over the breasts: cup creases near the nipple 34–137→0–22 edges | d59c4cf, repack |
 | 2026-10-15 | `*.female.adult.*.*.*.knee-*\|elbow-145` | pressed skin's normal faces the contact: lit crease sliver gone (>45° off 220→24) | uncommitted |
 | 2026-10-15 | `*.female.adult.*.*.side.elbow-*\|knee-*` | hinge extensor ramp over limb depth, not sign: side seam gone (stretch 2.53→1.76) | uncommitted |
+| 2026-10-16 | `*.female.adult.*.base.top-down\|front-3q-*\|face-side.rest` | lower-lid grey/pink rim (rim stood 1.4–2.3 mm off the ball) seated; lip slit in profile closed | 4b36672, repack |
 | 2026-10-15 | `*.female.adult.*.*.back\|left.back-*` | hip share fades out higher (hipBandUp 0.30), into the spine curve: shelf dip 122–158→20–40 °/m (XXL 148→100) | uncommitted |
