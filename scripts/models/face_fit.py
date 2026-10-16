@@ -994,6 +994,37 @@ def tuck_lids(pieces, reach, inner):
     return dict(pieces, body=out)
 
 
+# groups whose lower lids' first row below the margin's rim is drawn this far up to the rim (the strip between,
+# facing up and forward, caught the unshadowed back light from below: a white line under the eye, read as sclera)
+LIFT_LIDS = {"female-adult": 0.9}
+
+
+def lift_lids(pieces, amount):
+    body, eyes = pieces["body"], pieces["eyes"]
+    _, vmap, tris = topo("body")
+    t = vmap[tris]
+    nb = [set() for _ in range(len(body))]
+    for a, b in np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]]):
+        nb[a].add(b); nb[b].add(a)
+    out = body.copy()
+    for side in (1, -1):
+        c, r = ball_sphere(eyes[np.sign(eyes[:, 0]) == side])
+        q = (body - c) / r
+        d = np.linalg.norm(q, axis=1)
+        lid = (np.sign(body[:, 0]) == side) & (q[:, 1] < -0.1) & (q[:, 2] > 0.3) & (d < 1.4)
+        ledge = lid & (d < 0.97)
+        # the rim: just outside the ball, beside the ledge tucked into it; the row: below it, on the lid's front
+        rim = {i for i in np.flatnonzero(lid & ~ledge & (q[:, 2] > 0.7)) if any(ledge[j] for j in nb[i])}
+        row = {}
+        for i in rim:
+            for j in nb[i]:
+                if lid[j] and not ledge[j] and j not in rim and q[j, 1] < q[i, 1]:
+                    row.setdefault(j, []).append(i)
+        for j, rs in row.items():
+            out[j] += amount * (body[rs].mean(0) - body[j])
+    return dict(pieces, body=out)
+
+
 # groups whose skin beside each eye's inner corner, toward the nose, is hollowed (left flat, it caught the key
 # light's sheen in one broad patch: light grey on deep skins); (centre: medial, down, forward; radius; depth) in
 # ball radii
@@ -1440,6 +1471,8 @@ def save(name, pieces):
         pieces = close_lips(pieces, *CLOSE_LIPS[gid])
     if gid in TUCK_LIDS and "eyes" in pieces:
         pieces = tuck_lids(pieces, *TUCK_LIDS[gid])
+    if gid in LIFT_LIDS and "eyes" in pieces:
+        pieces = lift_lids(pieces, LIFT_LIDS[gid])
     if gid in HOLLOW_CANTHUS and "eyes" in pieces:
         pieces = hollow_canthus(pieces, *HOLLOW_CANTHUS[gid])
     if gid in SEAT_LASHES and "eyes" in pieces:
