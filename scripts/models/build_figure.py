@@ -1001,11 +1001,16 @@ class Packer:
 # the back) their outline shows straight runs and corners. Their triangles are split in pack, per pass: (heights over
 # the adult woman, longest edge round a vertex worth splitting)
 HIP_REFINE = (((-0.7, 0.55), 0.03), ((-0.3, 0.42), 0.015))
-# the front of the knees likewise (bent, its long edges show over the kneecap): (heights, longest, in front of this z)
-KNEE_REFINE = (((-0.88, -0.52), 0.02, -0.06),)
+# the front of the knees likewise, then over the kneecap again (bent 135, its edges stretch ~1.8x and the outline
+# showed facets): (heights, longest, in front of this z)
+KNEE_REFINE = (((-0.88, -0.52), 0.02, -0.06), ((-0.78, -0.62), 0.012, 0.02))
 # the elbows' back and sides too, then the point again (bent, the outer outline showed 2 cm facets; the inner crease
 # kept coarse, finer it folds): (heights, longest, behind this z)
 ELBOW_REFINE = (((0.33, 0.57), 0.015, 0.0), ((0.37, 0.53), 0.008, -0.045))
+# the forearms all round (5 cm edges: bent, seen from above, their outline ran in straight lengths)
+FOREARM_REFINE = (((0.17, 0.40), 0.03, None),)
+# the inner elbow once (bent, its 27 mm facets lit where the crease opens): (heights, longest, in front of this z)
+ELBOW_FRONT_REFINE = (((0.40, 0.50), 0.015, -0.01),)
 # where its coarse rows meet the fine ones a vertex sits all but on its triangle's far edge (area / longest edge² below
 # this): split, that edge's midpoint lands on the vertex and the skin folds round it (dark specks across the lower
 # belly), so those edges are flipped first
@@ -1042,7 +1047,7 @@ class HipRefine:
         self.raw_tris = vmap[tri]
         self.passes = []
         passes = ([(b, l, None, False) for b, l in HIP_REFINE] + [(*k, False) for k in KNEE_REFINE]
-                  + [(*k, True) for k in ELBOW_REFINE])
+                  + [(*k, True) for k in ELBOW_REFINE + FOREARM_REFINE] + [(*k, "front") for k in ELBOW_FRONT_REFINE])
         for (lo, hi), longest, side, elbow in passes:
             pt = vmap[tri]
             e = np.concatenate([pt[:, [0, 1]], pt[:, [1, 2]], pt[:, [2, 0]]])
@@ -1052,7 +1057,9 @@ class HipRefine:
             np.maximum.at(reach, e[:, 1], ln)
             mark = (p[:, 1] > lo) & (p[:, 1] < hi) & (reach > longest)
             if elbow:
-                mark &= (arms > 0.5) & (np.abs(p[:, 0]) > 0.25) & ((p[:, 2] < side) if side is not None else True)
+                mark &= (arms > 0.5) & (np.abs(p[:, 0]) > 0.25)
+                if side is not None:
+                    mark &= (p[:, 2] > side) if elbow == "front" else (p[:, 2] < side)
             else:
                 mark &= arms < 0.05
                 if side is not None:
