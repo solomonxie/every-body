@@ -934,8 +934,9 @@ def tuck_lower(pieces, top, gap, over, reach):
 
 
 # groups whose lips are closed: the lower lip's top under the upper lip lifted to meet it (an open slit at the sides
-# read as parted lips in profile); (reach below the upper lip, gap kept) in scene units
-CLOSE_LIPS = {"female-adult": (0.003, 0.0001)}
+# read as parted lips in profile; reaching half as far, a notch under the upper lip's front stayed open, a dark slit);
+# (reach below the upper lip, gap kept) in scene units
+CLOSE_LIPS = {"female-adult": (0.006, 0.0001)}
 
 
 def ray_up(body, tris, pts):
@@ -1002,27 +1003,63 @@ LIFT_LIDS = {"female-adult": 0.9}
 def lift_lids(pieces, amount):
     body, eyes = pieces["body"], pieces["eyes"]
     _, vmap, tris = topo("body")
-    t = vmap[tris]
+    out = body.copy()
+    for side in (1, -1):
+        for j, rs in lid_rim(body, eyes, vmap[tris], side)[3].items():
+            out[j] += amount * (body[rs].mean(0) - body[j])
+    return dict(pieces, body=out)
+
+
+# groups whose lower lids' rim is drawn in toward the ball to this distance from its centre (ball radii), the row
+# below and the lower lashes with it (the ledge from the ball out to the rim, facing up, read as a pale rim from
+# above and in 3/4 views)
+SEAT_RIM = {"female-adult": 1.01}
+
+
+def lid_rim(body, eyes, t, side):
+    """a lower lid's rim (just outside the ball beside the ledge tucked into it) and the row below: {row: [rims]}"""
     nb = [set() for _ in range(len(body))]
     for a, b in np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]]):
         nb[a].add(b); nb[b].add(a)
-    out = body.copy()
+    c, r = ball_sphere(eyes[np.sign(eyes[:, 0]) == side])
+    q = (body - c) / r
+    d = np.linalg.norm(q, axis=1)
+    lid = (np.sign(body[:, 0]) == side) & (q[:, 1] < -0.1) & (q[:, 2] > 0.3) & (d < 1.4)
+    ledge = lid & (d < 0.97)
+    rim = {i for i in np.flatnonzero(lid & ~ledge & (q[:, 2] > 0.7)) if any(ledge[j] for j in nb[i])}
+    row = {}
+    for i in rim:
+        for j in nb[i]:
+            if lid[j] and not ledge[j] and j not in rim and q[j, 1] < q[i, 1]:
+                row.setdefault(j, []).append(i)
+    return c, r, sorted(rim), row
+
+
+def seat_rim(pieces, reach):
+    body, eyes = pieces["body"], pieces["eyes"]
+    _, vmap, tris = topo("body")
+    out, moved = body.copy(), np.zeros(len(body), bool)
     for side in (1, -1):
-        c, r = ball_sphere(eyes[np.sign(eyes[:, 0]) == side])
-        q = (body - c) / r
-        d = np.linalg.norm(q, axis=1)
-        lid = (np.sign(body[:, 0]) == side) & (q[:, 1] < -0.1) & (q[:, 2] > 0.3) & (d < 1.4)
-        ledge = lid & (d < 0.97)
-        # the rim: just outside the ball, beside the ledge tucked into it; the row: below it, on the lid's front
-        rim = {i for i in np.flatnonzero(lid & ~ledge & (q[:, 2] > 0.7)) if any(ledge[j] for j in nb[i])}
-        row = {}
-        for i in rim:
-            for j in nb[i]:
-                if lid[j] and not ledge[j] and j not in rim and q[j, 1] < q[i, 1]:
-                    row.setdefault(j, []).append(i)
+        c, r, rim, row = lid_rim(body, eyes, vmap[tris], side)
+        d = np.linalg.norm(body[rim] - c, axis=1)
+        out[rim] = c + (body[rim] - c) * np.minimum(1, reach * r / d)[:, None]
         for j, rs in row.items():
-            out[j] += amount * (body[rs].mean(0) - body[j])
-    return dict(pieces, body=out)
+            out[j] = body[j] + (out[rs] - body[rs]).mean(0)
+        moved[rim] = True
+    new = dict(pieces, body=out)
+    # each lower strand with its nearest rim vertex
+    ri = np.flatnonzero(moved)
+    for key in [k for k in pieces if k.startswith("lashes-")]:
+        lash = pieces[key].copy()
+        for strands in lash_strands(key, pieces[key], eyes):
+            c = ball_sphere(eyes[np.sign(eyes[:, 0]) == np.sign(lash[strands, 0].mean())])[0]
+            if lash[strands, 1].mean() > c[1]:
+                continue
+            for ch in strands:
+                i = ri[np.argmin(np.linalg.norm(body[ri] - lash[ch[1]], axis=1))]
+                lash[ch] += out[i] - body[i]
+        new[key] = lash
+    return new
 
 
 # groups whose skin beside each eye's inner corner, toward the nose, is hollowed (left flat, it caught the key
@@ -1473,6 +1510,10 @@ def save(name, pieces):
         pieces = tuck_lids(pieces, *TUCK_LIDS[gid])
     if gid in LIFT_LIDS and "eyes" in pieces:
         pieces = lift_lids(pieces, LIFT_LIDS[gid])
+    if gid in SEAT_RIM and "eyes" in pieces:
+        # (a second pass: a rim vertex drawn in can leave its neighbour beside the ledge)
+        for _ in range(2):
+            pieces = seat_rim(pieces, SEAT_RIM[gid])
     if gid in HOLLOW_CANTHUS and "eyes" in pieces:
         pieces = hollow_canthus(pieces, *HOLLOW_CANTHUS[gid])
     if gid in SEAT_LASHES and "eyes" in pieces:
