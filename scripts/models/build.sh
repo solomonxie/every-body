@@ -21,6 +21,7 @@ fi
 # skin figures: MPFB humans fitted in Blender (build/models/figure), then packed
 if [ "$step" = all ] || [ "$step" = fit ]; then
   "$BLENDER" -b -P scripts/models/build_figure.py -- fit $2 2>&1 | grep -E "^FIGURE|Error|error:|Traceback|File \"" || true
+  "$PY" scripts/models/build_figure.py align
   # the heads and hair faces are drawn onto (downloads/blender-studio: Snow and Rain, CC BY)
   "$BLENDER" -b "$TOOLS/downloads/blender-studio/snow/snow_v02.blend" -P scripts/models/base_head.py -- snow 2>&1 | grep -E "^BASEHEAD|Error" || true
   "$BLENDER" -b "$TOOLS/downloads/blender-studio/rain/rain_rig.blend" -P scripts/models/base_head.py -- rain 2>&1 | grep -E "^BASEHEAD|Error" || true
