@@ -7,6 +7,7 @@ Children are fitted to the app's age reshaping (BodyScene.proportions) so bones 
 
   Blender -b -P build_figure.py -- fit [group]   # MPFB humans → build/models/figure/*.npz
   venv/bin/python build_figure.py pack           # npz → figure.bin, garments, textures
+  venv/bin/python build_figure.py seam           # skin-seam.png only
 """
 
 import json
@@ -1723,6 +1724,16 @@ def scalp_masks(np, topo, grooms):
     return out
 
 
+def seam_texture(np, mesh=None):
+    """skin-seam.png: women's lip-seam specular mask (skin_textures.SEAM_MASK), over the fitted female-adult faces"""
+    from PIL import Image
+    import skin_textures
+    mesh = mesh or skin_textures.Regions(np, RAW, mpfb_data().parents[3] / "user_default" / "mpfb", SKIN_TEX)
+    bodies = [np.load(RAW / f"female-adult.{her}.npz")["pos:body"].astype(np.float64) for her in HERITAGES]
+    m = skin_textures.seam_mask(np, mesh, bodies, *skin_textures.SEAM_MASK)
+    Image.fromarray(np.round(m * 255).astype(np.uint8), "L").save(OUT / "skin-seam.png", optimize=True)
+
+
 def textures(scalp=None):
     import numpy as np
     from PIL import Image
@@ -1750,6 +1761,7 @@ def textures(scalp=None):
                 px = px * (1 - 0.92 * m) + hair * grain * 0.92 * m
             px = skin_textures.level_seams(np, px, regions)
             skin_textures.save(np, px, OUT / f"skin-{her}-{name}.jpg")
+    seam_texture(np, regions["mesh"])
     for old in list(OUT.glob("brows-*")) + list(OUT.glob("lashes*")) + list(OUT.glob("hair-*")):
         old.unlink()
     for name in sorted({g[3] for g in GROUPS.values()}):
@@ -1955,6 +1967,9 @@ if __name__ == "__main__":
         for gid in GROUPS:
             if len(args) < 2 or args[1] == gid:
                 sculpt_hair(np, gid)
+    elif mode == "seam":
+        import numpy as np
+        seam_texture(np)
     elif mode == "textures":
         import numpy as np
         body_topo = dict(np.load(RAW / "topo.body.npz"))
