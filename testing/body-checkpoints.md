@@ -61,8 +61,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 | Cells | Issue | State |
 |---|---|---|
-| `*.female.adult.*.*.*.elbow-145` | thin lit line at the inner crease end (no contact occlusion; 25% fewer bright px after refine) | open: needs crease darkening in shader/lighting |
-| `*.female.adult.*.*.*.knee-135` | bright sliver in the knee pit (~115 px in pit close-up) | open |
+| `*.female.adult.*.*.*.elbow-145` | thin lit line at the inner crease end (no contact occlusion; 25% fewer bright px after refine) | fixed: contact-shade overlay (Swift, uncommitted); check on device incl. elbow-90 dimple, overlay flicker, glass-skin view |
+| `*.female.adult.*.*.*.knee-135` | bright sliver in the knee pit (~115 px in pit close-up) | 113 -> 22 px via contact shade; pale grey wedge left |
 | `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | fixed (Swift: convex cut fades behind the pivot, uncommitted), installed. Left: relax est. 3-8 ms/frame (flatten neighbour lists if slow) |
 | `*.female.adult.dressed.M-XL\|XXL.*.*` | bra-medium on wide hips still creases (162 edges); bra-xlarge small cluster below the nipple | fixed ef04b92/8ea3244, installed. Left: small dense patch above the nipple on bra-xlarge/xxlarge |
 | `*.female.adult.*.*.*.knee-135` | front-of-knee stretch (218 edges >2), small notch in the knee pit; thin bright sliver in inner elbow crease | fixed (Swift, uncommitted), installed. Left: elbow-145 sliver, faceted knee front outline at 135 |
@@ -73,10 +73,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- elbow-145 / knee-135 crease lit lines: runtime contact occlusion (agent, /tmp/occ/)
 - verification sweep of today's fixes + unconfirmed rows + sample 6 (agent, /tmp/sweep3/)
 
 ## Log
+
+- 2026-10-15: crease contact shadow at runtime (pressed() occlusion -> unlit black alpha overlay); elbow-145 line gone, knee-135 pit 113 -> 22 bright px; rest/shoulder/back pixel-identical.
 
 - 2026-10-15: forearm edges 52 -> 28 mm (outline step 23 -> 16 deg), knee-135 front outline step 47 -> 24 deg, inner elbow 27 -> 14 mm edges. Body 84106 -> 88402 tris.
 
