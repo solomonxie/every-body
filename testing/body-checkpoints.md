@@ -80,9 +80,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - `*.female.adult.*.S-XXL|XXL-XXL.*.sitting` hip-front edge, briefs clip, inner-thigh shade (agent)
-- `*.female.adult.*.base.low-up.rest` white sheen on nose sides / under-eye strip (agent)
+- `black.female.adult.dressed.XL-XXL.front-3q-left.elbow-90`, `white.female.adult.dressed.L-XXL.low-up.neck-turn-70` (agent)
 
 ## Log
+
+- 2026-10-16: nose-side / under-eye back-light glint damped via skin-seam.png backlit mask (92cacb1); pale px low-up 0:-30 69877 -> 17853, front 6067 -> 885. Left: fainter wedge at 0:-40 on dark skin, forehead/crown sheen.
 
 - 2026-10-16: low-up lid 'sliver' is skin rim lit by back light (no shadows), not eyeball; LIFT_LIDS closes the strip. Nose-side sheen from below spotted on the same sheets.
 
