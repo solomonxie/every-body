@@ -6,7 +6,8 @@ Heritage changes the head (face) and the skin texture only; the body shape is fi
 Children are fitted to the app's age reshaping (BodyScene.proportions) so bones and organs sit inside.
 
   Blender -b -P build_figure.py -- fit [group]   # MPFB humans → build/models/figure/*.npz
-  venv/bin/python build_figure.py pack           # npz → figure.bin, garments, textures
+  venv/bin/python build_figure.py align          # a refit's body renumbered to the shipped figure.bin's
+  venv/bin/python build_figure.py pack           # npz → figure.bin, garments, textures (groups not refitted: copied)
   venv/bin/python build_figure.py seam           # skin-seam.png only
 """
 
@@ -1302,9 +1303,103 @@ def body_options(np, load, body_tris):
     return f0, shape_delta
 
 
+def align():
+    """the raw fit's body renumbered to the shipped figure.bin's (render vertices matched by UV, triangles keep their
+    slots): Blender may number a refit's refined chest differently, and HipRefine's splits, the vertex constants
+    (ARMPIT_BACK_VERTS, ...) and the groups copied over by a partial pack all assume the shipped order"""
+    import numpy as np
+    if not FIGURE.exists():
+        print("FIGURE align: no", FIGURE.name)
+        return
+    shipped = Shipped(np, Packer(np))
+    b = shipped.header["pieces"]["body"]
+    t = dict(np.load(RAW / "topo.body.npz"))
+    n = len(t["vmap"])
+    key = lambda uv: uv[:, 0].astype(np.int64) * 65536 + uv[:, 1]
+    old = key(np.frombuffer(shipped.payload, np.uint16, b["render"] * 2, b["uv"]).reshape(-1, 2)[:n])
+    new = key(np.round(t["uv"].clip(0, 1) * 65535).astype(np.int64))
+    order = np.argsort(old)
+    at = order[np.clip(np.searchsorted(old[order], new), 0, n - 1)]
+    old_vmap = np.frombuffer(shipped.payload, np.uint32, b["render"], b["vmap"]).astype(np.int64)
+    count = int(t["vmap"].max()) + 1
+    vert = np.full(count, -1)
+    vert[t["vmap"]] = old_vmap[at]
+    if (old[at] != new).any() or len(np.unique(at)) != n or (vert[t["vmap"]] != old_vmap[at]).any() or len(np.unique(vert)) != count:
+        print("FIGURE align: the fit's body isn't the shipped one renumbered; left as is")
+        return
+    if (at == np.arange(n)).all() and (vert == np.arange(count)).all():
+        print("FIGURE align: already in the shipped order")
+        return
+
+    def renumber(a):
+        out = np.empty_like(a)
+        out[vert] = a
+        return out
+    uv, vmap = np.empty_like(t["uv"]), np.empty_like(t["vmap"])
+    uv[at], vmap[at] = t["uv"], vert[t["vmap"]]
+    np.savez_compressed(RAW / "topo.body.npz", uv=uv, vmap=vmap, index=at[t["index"]].astype(t["index"].dtype), poly=t["poly"])
+    g = dict(np.load(RAW / "body-groups.npz"))
+    np.savez_compressed(RAW / "body-groups.npz", mirror=renumber(vert[g["mirror"]].astype(g["mirror"].dtype)), ears=renumber(g["ears"]))
+    np.savez_compressed(RAW / "regions.npz", **{k: renumber(v) for k, v in np.load(RAW / "regions.npz").items()})
+    files = sorted(RAW.glob("*-*.*.npz")) + sorted((RAW / "prefit").glob("*.npz"))
+    for f in files:
+        got = dict(np.load(f))
+        if "pos:body" in got:
+            np.savez_compressed(f, **dict(got, **{"pos:body": renumber(got["pos:body"])}))
+    print(f"FIGURE align: {(vert != np.arange(count)).sum()} body vertices renumbered in {len(files)} files")
+
+
+def fitted():
+    """the groups whose raw fit is on hand (a partial refit packs only those)"""
+    return {gid for gid in GROUPS if (RAW / f"{gid}.neutral.npz").exists()}
+
+
+class Shipped:
+    """the current figure.bin, its unfitted groups' pieces, variants and garments copied over unchanged"""
+
+    def __init__(self, np, pk):
+        raw = FIGURE.read_bytes()
+        n = int.from_bytes(raw[4:8], "little")
+        self.np, self.pk, self.header = np, pk, json.loads(raw[12:12 + n])
+        self.payload, self.copied = zlib.decompress(raw[12 + n:], -15), {}
+
+    def array(self, off, dtype, count):
+        return self.pk.add(self.np.frombuffer(self.payload, dtype=dtype, count=count, offset=off))
+
+    def block(self, i):
+        if i not in self.copied:
+            b = self.header["blocks"][i]
+            ref = None if b["ref"] is None else self.block(b["ref"])
+            self.pk.blocks.append({**b, "ref": ref, "offset": self.array(b["offset"], self.np.int16, b["count"] * 3)})
+            self.copied[i] = len(self.pk.blocks) - 1
+        return self.copied[i]
+
+    def piece(self, name):
+        t = self.header["pieces"][name]
+        return {**t, "uv": self.array(t["uv"], self.np.uint16, t["render"] * 2), "vmap": self.array(t["vmap"], self.np.uint32, t["render"]),
+                "index": self.array(t["index"], self.np.uint32, t["triangles"] * 3)}
+
+    def same_piece(self, name, t):
+        old = self.header["pieces"][name]
+        return (old["vertices"], old["render"], old["triangles"]) == (int(t["vmap"].max()) + 1, len(t["vmap"]), len(t["index"]) // 3) and \
+            all((self.np.frombuffer(self.payload, self.np.uint32, n, old[k]) == t[k]).all() for k, n in (("vmap", old["render"]), ("index", old["triangles"] * 3)))
+
+    def variant(self, pieces):
+        return {k: self.block(i) for k, i in pieces.items()}
+
+    def garment(self, g):
+        np, n = self.np, g["vertices"]
+        out = {**g, "abc": self.array(g["abc"], np.uint32, n * 3), "w": self.array(g["w"], np.float32, n * 2),
+               "f": self.array(g["f"], np.float32, n), "index": self.array(g["index"], np.uint32, g["triangles"] * 3)}
+        if "offset" in g:
+            out["offset"] = self.array(g["offset"], np.float32, n * 3)
+        return out
+
+
 def pack():
     import numpy as np
     import hair
+    have = fitted()
     topo = {p.name.split(".")[1]: dict(np.load(p)) for p in RAW.glob("topo.*.npz") if not p.name.startswith("topo.hair-")}
     body_tris = topo["body"]["vmap"][topo["body"]["index"].reshape(-1, 3)]
     load = loader(np, body_tris)
@@ -1319,11 +1414,19 @@ def pack():
     refine = HipRefine(np, raw_topo)
     topo["body"] = refine.topo
     pk = Packer(np)
+    shipped = Shipped(np, pk) if have != set(GROUPS) else None
+    if shipped:
+        print("FIGURE fitted:", sorted(have), "- the rest copied from the shipped", FIGURE.name)
+        if not shipped.same_piece("body", topo["body"]):
+            raise SystemExit("the refined body's mesh differs from the shipped one: the copied variants won't fit it")
     header = {"pieces": {}, "blocks": pk.blocks, "variants": {}, "garments": {}, "shapes": {}}
     for k, t in topo.items():
         header["pieces"][k] = {"vertices": int(t["vmap"].max()) + 1, "render": len(t["vmap"]), "triangles": len(t["index"]) // 3,
                                "uv": pk.add(np.round(t["uv"].clip(0, 1) * 65535).astype(np.uint16)),
                                "vmap": pk.add(t["vmap"].astype(np.uint32)), "index": pk.add(t["index"].astype(np.uint32))}
+    for k in (shipped.header["pieces"] if shipped else ()):
+        if k not in header["pieces"]:
+            header["pieces"][k] = shipped.piece(k)
     base_block = {}
 
     def put(piece, pos, ref_key=None):
@@ -1338,6 +1441,12 @@ def pack():
 
     variants = header["variants"]
     for gid, (sex, age, hairs, _, _) in GROUPS.items():
+        if gid not in have:
+            prefixes = tuple(f"{s}.{age}." for s in (["male", "female"] if sex == "kid" else [sex]))
+            for key, pieces in shipped.header["variants"].items():
+                if key.startswith(prefixes):
+                    variants[key] = shipped.variant(pieces)
+            continue
         neutral = load(f"{gid}.neutral")
         neutral = {k: v for k, v in neutral.items() if not k.startswith("hair-")}
         for name, g in grooms[gid].items():
@@ -1383,21 +1492,30 @@ def pack():
     header["shapes"] = {name: pk.block(refine(f0 + shape_delta(name)) - f1) for name in SHAPES}
     # each size's garments fit the body the app shows: that chest with its matching hips
     chests = {n[6:]: refine(f0 + shape_delta(n) + shape_delta(f"hips-{n[6:]}")) for n in SHAPES if n.startswith("chest-")}
-    chests["senior"] = refine(load("female-senior.neutral")["body"])
+    if "female-senior" in have:
+        chests["senior"] = refine(load("female-senior.neutral")["body"])
+    neutral_of = lambda gid: refine(load(f"{gid}.neutral")["body"]) if gid in have else None
     # (smaller chests sit above the bump: the plain cut fits)
     pregnant = {n: (pregnant0 + refine(f0 + shape_delta(f"chest-{n}")) - f1, chests[n]) for n in PREGNANT_BRAS}
-    header["garments"] = garments(np, pk, topo["body"], refine(load("male-adult.neutral")["body"]), refine(f0 + shape_delta("hips-large")),
-                                  refine(load("kid-toddler.neutral")["body"]), chests, refine(load("kid-child.neutral")["body"]),
+    header["garments"] = garments(np, pk, topo["body"], neutral_of("male-adult"), refine(f0 + shape_delta("hips-large")),
+                                  neutral_of("kid-toddler"), chests, neutral_of("kid-child"),
                                   nipple_ids(np, load("female-adult.neutral")), arms=refine.arms, refined_from=refine.count,
                                   pregnant=pregnant, bridged={"briefs-female": [refine(f0 + shape_delta(f"hips-{n}")) for n in BRIDGE_HIPS],
-                                                              "briefs-pregnant": [pregnant0]})
+                                                              "briefs-pregnant": [pregnant0]},
+                                  skip=() if "kid-child" in have else ("top-kid",))
+    for k, g in (shipped.header["garments"].items() if shipped else ()):
+        if k not in header["garments"]:
+            header["garments"][k] = shipped.garment(g)
     payload = b"".join(pk.chunks)
     comp = zlib.compressobj(9, zlib.DEFLATED, -15)
     data = comp.compress(payload) + comp.flush()
     head = json.dumps(header, separators=(",", ":")).encode()
     FIGURE.write_bytes(b"EBF1" + len(head).to_bytes(4, "little") + len(payload).to_bytes(4, "little") + head + data)
     print(f"FIGURE {FIGURE.name}: {len(variants)} variants, {len(pk.blocks)} blocks, payload {len(payload) // 1024} KB → {FIGURE.stat().st_size // 1024} KB")
-    textures(scalp_masks(np, raw_topo, grooms))
+    if shipped:
+        print("FIGURE textures kept (a partial refit)")
+    else:
+        textures(scalp_masks(np, raw_topo, grooms))
     index = load_index()
     index.pop("skins", None)
     index["figure"] = {"file": FIGURE.name, "source": "MakeHuman (MPFB2)", "license": "CC0",
@@ -1425,7 +1543,7 @@ NECK_V = 0.01
 
 
 def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=None, only_bra=False, arms=None, refined_from=None,
-             pregnant=None, bridged=None):
+             pregnant=None, bridged=None, skip=()):
     """Underwear as the parts of the body where a smooth field is positive, cut exactly along its zero line.
     Each garment vertex is a point in a body triangle, so it follows every sex/age/heritage variant.
     Fields are written on the neutral adult male / female and the toddler (children share them: same topology); the
@@ -1627,7 +1745,7 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
             ("nappy", kid, nappy, 0.014, "#F4F2EE"),
             ("briefs-kid", kid, briefs_kid, 0.004, "#F4F2EE"),
             ("top-kid", kid if child is None else child, top_kid, 0.006, "#F4F2EE")):
-        if only_bra and name != "bra":
+        if (only_bra and name != "bra") or pos is None or name in skip:
             continue
         abc, w, f, tri = clip(field, pos, arms_anywhere=name == "top-kid" or name.startswith("bra"))
         # the field isn't a distance: measure each vertex's distance to the cut edge on the neutral body instead
@@ -2527,8 +2645,9 @@ def grow_hair(np, load, body_topo):
     import hair
     tris = body_topo["vmap"][body_topo["index"].reshape(-1, 3)]
     out = {}
+    have = fitted()
     for gid, (_, _, styles, _, _) in GROUPS.items():
-        if not styles:
+        if not styles or gid not in have:
             out[gid] = {}
             continue
         neutral = load(f"{gid}.neutral")
@@ -2815,6 +2934,8 @@ if __name__ == "__main__":
         for gid in GROUPS:
             if len(args) < 2 or args[1] == gid:
                 sculpt_hair(np, gid)
+    elif mode == "align":
+        align()
     elif mode == "seam":
         import numpy as np
         seam_texture(np)
