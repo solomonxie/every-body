@@ -424,6 +424,28 @@ def level_seams(np, px, reg, reach=0.05, size=2.0):
     return out
 
 
+# women's lip-seam specular mask (Figure.swift): the lower lip's top under the upper lip, which a cast shadow would
+# cover (the app has none: it caught the rim light, a white wedge at 3/4); (below, above the seam, past the corner,
+# in m; depth)
+SEAM_MASK = (0.005, 0.004, 0.008, 1.0)
+
+
+def seam_mask(np, reg, bodies, below, above, past, depth):
+    """specular scale per texel, 1 off the band; `bodies`: each fitted body (the band is their union)"""
+    up = np.maximum(reg.bone["oris03.L"], np.maximum(reg.bone["oris03.R"], reg.bone["oris05"]))
+    lo = np.maximum(reg.bone["oris01"], np.maximum(reg.bone["oris07.L"], reg.bone["oris07.R"]))
+    lower = (lo > up) & (lo > 0.1)
+    band = np.zeros(len(up))
+    for p in bodies:
+        y0 = lip_seam(np, p, up > 0.3, lo > 0.3)[0]
+        corner = np.abs(p[lo > 0.5, 0]).max()
+        d = y0 - p[:, 1]
+        k = smoothstep(-above - 0.001, -above, d) * (1 - smoothstep(below, below + 0.0015, d))
+        band = np.maximum(band, k * smoothstep(corner + past + 0.004, corner + past, np.abs(p[:, 0])) * lower)
+    m = np.clip(reg.paint(band, 1.5), 0, 1)
+    return np.where(reg.covered & (m > 0.01), 1 - depth * m, 1)
+
+
 def save(np, px, path, limit=250_000):
     """JPEG at the best quality that stays under `limit` bytes"""
     from PIL import Image
