@@ -68,7 +68,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.bare.*.left\|front-3q-*.rest` | faint horizontal step across mid-thigh (KNEE_REFINE band edge) | fixed (cause: HIP_REFINE row-divided Laplacian at band edge); faint knee-band edge (-0.52) left. Also moves male/child legs (max ~10 mm) |
 | `*.female.adult.dressed.XXL-XXL.back\|top-down.shoulder-160` | bra strap edge ripple near armpit | fixed (Swift: smoothed garment slide + closest-triangle garment follow, uncommitted), installed. verified (gfol): non-shoulder poses byte-identical, briefs unchanged, bra clip better at 90; ml-ea 160 'clip' is a depthNormal metric artefact (true signed distance: 0 inside, min gap 0.7 -> 1.7 mm) |
 | `*.female.adult.*.*.*.elbow-145` | thin lit line at the inner crease end (no contact occlusion; 25% fewer bright px after refine) | fixed: contact-shade overlay (Swift, uncommitted); check on device incl. elbow-90 dimple, overlay flicker, glass-skin view |
-| `*.female.adult.*.*.*.knee-135` | bright sliver in the knee pit (~115 px in pit close-up) | 113 -> 22 px via contact shade; pale grey wedge left |
+| `*.female.adult.*.*.*.knee-135` | bright sliver in the knee pit (~115 px in pit close-up) | fixed: contact shade + sideKeep normals (uncommitted), installed |
 | `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | fixed (Swift: convex cut fades behind the pivot, uncommitted), installed. Perf: bendSkin 11 -> 6.5 ms (M1, output identical), unmeasured on iPhone |
 | `*.female.adult.dressed.M-XL\|XXL.*.*` | bra-medium on wide hips still creases (162 edges); bra-xlarge small cluster below the nipple | fixed ef04b92/8ea3244, installed. Left: small dense patch above the nipple on bra-xlarge/xxlarge |
 | `*.female.adult.*.*.*.knee-135` | front-of-knee stretch (218 edges >2), small notch in the knee pit; thin bright sliver in inner elbow crease | fixed (Swift, uncommitted), installed. Left: elbow-145 sliver, faceted knee front outline at 135 |
@@ -79,6 +79,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `*.female.adult.*.S-XXL|XXL-XXL.*.sitting` hip-front edge, briefs clip, inner-thigh shade (agent)
 - `*.female.adult.*.base.low-up.rest` eyeball sliver under the lower lid (agent, /tmp/eyeb/)
 
 ## Log
