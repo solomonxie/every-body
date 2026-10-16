@@ -79,6 +79,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- inner-thigh ridges (top-down) + mid-thigh refine-band step (agent, /tmp/thigh/)
+- shoulder-45 arm normal regression, XXL shoulder-160 strap ripple, shoulder 0-60 sweep (agent, /tmp/sh45/)
 
 ## Log
 
