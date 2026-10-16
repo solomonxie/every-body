@@ -79,6 +79,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- garment follow change: briefs/bra across bends + ml-ea back strap clip at 160 (agent, /tmp/gfol/)
 - inner-thigh ridges (top-down) + mid-thigh refine-band step (agent, /tmp/thigh/)
 
 ## Log
