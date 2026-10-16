@@ -83,6 +83,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## Log
 
+- 2026-10-16: recovery done: female-adult raws regenerated + `align` (refit renumbered 5223 chest verts; UV remap), woman-only pack reproduces shipped bodies 0.000 mm; strap cut fix shipped (worst notch 3.3 -> 2.1 mm, slits gone); posture bins rebuilt (shipped ones came from misnumbered raws, hips off up to 30 mm). QA tools now in tools/qa (pose.py, render.py, sd.py, README). Other groups' raws absent: refit + align before packing them.
+
 - 2026-10-16: posture screens follow profile; woman + pregnant in all 8 bins, arms/props fitted (phone-standing XXL bra clip 956 -> 0). Left: laptop L/M bra 515 at last key, phone-bed XXL bra ~235, seated briefs 300-680, pregnant XXL bra ~870 at rest.
 - 2026-10-16: bra strap notch over shoulders fixed in cut (CUT_RINGS, d43ee7a), spikes XXL 17 -> 1; repack pending. M-L rest 3q clean.
 - 2026-10-16: /tmp and build/ wiped by an outside cleanup; raw fit data and QA tools lost. Model binaries moved out of git (release "models", assets.sha256); history stripped 843 -> 18 MB.
