@@ -66,7 +66,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.back.back-60+shoulder-90` | bright vertical knob where the arm meets the back | fixed (Swift: exact chord Jacobian normals + band normal smoothing, uncommitted); install pending phone |
 | `*.female.adult.*.*.front-3q-left.back-60+shoulder-90` | lumpy chest/rib shading under the raised arm, sharp front-armpit line | fixed (same change); shoulder-45 arm normal error up slightly (11.7 -> 17.4 p90) |
 | `*.female.adult.bare.*.left\|front-3q-*.rest` | faint horizontal step across mid-thigh (KNEE_REFINE band edge) | fixed (cause: HIP_REFINE row-divided Laplacian at band edge); faint knee-band edge (-0.52) left. Also moves male/child legs (max ~10 mm) |
-| `*.female.adult.dressed.XXL-XXL.back\|top-down.shoulder-160` | bra strap edge ripple near armpit | fixed (Swift: smoothed garment slide + closest-triangle garment follow, uncommitted), installed. ml-ea back strap clip at 160 6 -> 16 vtx (-3 mm); garment follow change affects all garments: verify briefs in bends next sweep |
+| `*.female.adult.dressed.XXL-XXL.back\|top-down.shoulder-160` | bra strap edge ripple near armpit | fixed (Swift: smoothed garment slide + closest-triangle garment follow, uncommitted), installed. verified (gfol): non-shoulder poses byte-identical, briefs unchanged, bra clip better at 90; ml-ea 160 'clip' is a depthNormal metric artefact (true signed distance: 0 inside, min gap 0.7 -> 1.7 mm) |
 | `*.female.adult.*.*.*.elbow-145` | thin lit line at the inner crease end (no contact occlusion; 25% fewer bright px after refine) | fixed: contact-shade overlay (Swift, uncommitted); check on device incl. elbow-90 dimple, overlay flicker, glass-skin view |
 | `*.female.adult.*.*.*.knee-135` | bright sliver in the knee pit (~115 px in pit close-up) | 113 -> 22 px via contact shade; pale grey wedge left |
 | `*.female.adult.*.*.side\|back-3q-*.shoulder-160` | back of shoulder still a rounded bump; faint diagonal crease on the back armpit fold; shoulder relax frame time unchecked on device | fixed (Swift: convex cut fades behind the pivot, uncommitted), installed. Left: relax est. 3-8 ms/frame (flatten neighbour lists if slow) |
@@ -79,9 +79,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- garment follow change: briefs/bra across bends + ml-ea back strap clip at 160 (agent, /tmp/gfol/)
 
 ## Log
+
+- 2026-10-16: garment follow verified; depthNormal clip metric over-reports on curved coarse back (use true signed distance, /tmp/gfol/tools/sd.py).
 
 - 2026-10-16: thigh band-zone bend p99 36 -> 25.5, inner-thigh ridges evened; knee-90 folds 12 -> 4; sitting briefs clip +2-8% (noise?).
 
