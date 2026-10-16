@@ -446,6 +446,78 @@ def seam_mask(np, reg, bodies, below, above, past, depth):
     return np.where(reg.covered & (m > 0.01), 1 - depth * m, 1)
 
 
+# the app's back lights (BodyScene: from, intensity) cast no shadow: seen from below they glint white off the nose's
+# sides and the cheek strip under the eyes, where the brow and head would shade them. Specular is damped where they
+# would be shaded but glint toward the camera over low-up views; (glint lo, hi, depth, views pitch, yaw)
+BACK_LIGHTS = (((-3, 2, -4), 1.2), ((1.5, 3, -5), 1.6))
+BACKLIT_MASK = (0.05, 0.25, 0.95, (-45, -35, -25, -15), range(-45, 46, 15))
+
+
+def _lit(np, p, tris, l, pts, res=1024, bias=0.004):
+    """which of `pts` face the light along `l` unshaded (orthographic shadow map, painted far to near)"""
+    from PIL import Image, ImageDraw
+    a = np.cross(l, [0, 1, 0] if abs(l[1]) < 0.9 else [1, 0, 0])
+    a /= np.linalg.norm(a)
+    q = np.stack([p @ a, p @ np.cross(l, a)], 1)
+    d = p @ l
+    lo = q[pts].min(0) - 0.3
+    uv = (q - lo) * res / (q[pts].max(0) + 0.3 - lo).max()
+    tri = tris[np.argsort(d[tris].mean(1))]
+    im = Image.new("I", (res, res), 0)
+    draw = ImageDraw.Draw(im)
+    for i, t in enumerate(tri):
+        draw.polygon([tuple(uv[k]) for k in t], fill=i + 1)
+    x = np.clip(uv[pts].astype(int), 0, res - 1)
+    hit = np.asarray(im).astype(np.int64)[x[:, 1], x[:, 0]] - 1
+    return d[pts] >= np.where(hit >= 0, d[tri[np.maximum(hit, 0)]].max(1), -1e9) - bias
+
+
+def backlit_glint(np, tris, p, eyes, pitches, yaws):
+    """per vertex: the strongest back-light specular (GGX, Figure.swift's roughness) the head would shade, over the views"""
+    unit = lambda a: a / np.maximum(np.linalg.norm(a, axis=-1, keepdims=True), 1e-12)
+    f = np.cross(p[tris[:, 1]] - p[tris[:, 0]], p[tris[:, 2]] - p[tris[:, 0]])
+    n = np.zeros_like(p)
+    for k in range(3):
+        np.add.at(n, tris[:, k], f)
+    for _ in range(3):  # the app's normals: blurred twice
+        n = unit(n)
+        if _ < 2:
+            m = n.copy()
+            for k in range(3):
+                np.add.at(m, tris[:, k], n[tris[:, (k + 1) % 3]] + n[tris[:, (k + 2) % 3]])
+            n = m
+    s = np.linalg.norm(eyes[eyes[:, 0] > 0].mean(0) - eyes[eyes[:, 0] < 0].mean(0)) / 0.063
+    ey, ez = eyes[:, 1].mean(), eyes[:, 2].mean()
+    occ = tris[(p[tris, 1] > ey - 0.2 * s).all(1)]
+    face = np.flatnonzero((p[:, 1] > ey - 0.16 * s) & (p[:, 1] < ey + 0.025 * s) & (p[:, 2] > ez - 0.07 * s))
+    out = np.zeros((len(BACK_LIGHTS), len(p)))
+    alpha = 0.55 ** 2
+    for pitch in pitches:
+        for yaw in yaws:
+            a, b = np.radians(pitch), np.radians(yaw)
+            R = np.array([[1, 0, 0], [0, np.cos(a), -np.sin(a)], [0, np.sin(a), np.cos(a)]]) @ \
+                np.array([[np.cos(b), 0, np.sin(b)], [0, 1, 0], [-np.sin(b), 0, np.cos(b)]])
+            v = R.T @ np.array([0, 0, 1.0])
+            for j, (src, power) in enumerate(BACK_LIGHTS):
+                l = R.T @ unit(np.array(src, float))
+                h = unit(l + v)
+                nf = n[face]
+                nh, nl, nv = np.clip(nf @ h, 0, 1), nf @ l, nf @ v
+                D = alpha ** 2 / (np.pi * (nh ** 2 * (alpha ** 2 - 1) + 1) ** 2)
+                F = 0.04 + 0.96 * (1 - np.clip(v @ h, 0, 1)) ** 5
+                g = np.where((nl > 0) & (nv > 0), power * D * F / (4 * np.maximum(nv, 0.25)), 0)
+                out[j, face] = np.maximum(out[j, face], g * ~_lit(np, p, occ, l, face))
+    return out.sum(0)
+
+
+def backlit_mask(np, reg, bodies, lo, hi, depth, pitches, yaws):
+    """specular scale per texel, 1 where the back lights reach; `bodies`: (body, eyes) per fitted face (their union)"""
+    tris = np.unique(reg.tri_v, axis=0)
+    g = np.max([backlit_glint(np, tris, p, e, pitches, yaws) for p, e in bodies], 0)
+    m = np.clip(reg.paint(smoothstep(lo, hi, g), 6), 0, 1)
+    return np.where(reg.covered & (m > 0.01), 1 - depth * m, 1)
+
+
 def save(np, px, path, limit=250_000):
     """JPEG at the best quality that stays under `limit` bytes"""
     from PIL import Image

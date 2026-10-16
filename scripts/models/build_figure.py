@@ -2548,12 +2548,16 @@ def scalp_masks(np, topo, grooms):
 
 
 def seam_texture(np, mesh=None):
-    """skin-seam.png: women's lip-seam specular mask (skin_textures.SEAM_MASK), over the fitted female-adult faces"""
+    """skin-seam.png: women's specular mask (skin_textures.SEAM_MASK lip seam, BACKLIT_MASK back-light glints), over
+    the fitted female-adult faces"""
     from PIL import Image
     import skin_textures
     mesh = mesh or skin_textures.Regions(np, RAW, mpfb_data().parents[3] / "user_default" / "mpfb", SKIN_TEX)
-    bodies = [np.load(RAW / f"female-adult.{her}.npz")["pos:body"].astype(np.float64) for her in HERITAGES]
+    raw = [np.load(RAW / f"female-adult.{her}.npz") for her in HERITAGES]
+    bodies = [r["pos:body"].astype(np.float64) for r in raw]
     m = skin_textures.seam_mask(np, mesh, bodies, *skin_textures.SEAM_MASK)
+    m = np.minimum(m, skin_textures.backlit_mask(np, mesh, [(b, r["pos:eyes"].astype(np.float64)) for b, r in zip(bodies, raw)],
+                                                 *skin_textures.BACKLIT_MASK))
     Image.fromarray(np.round(m * 255).astype(np.uint8), "L").save(OUT / "skin-seam.png", optimize=True)
 
 
