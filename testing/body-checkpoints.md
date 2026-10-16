@@ -52,7 +52,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | open |
-| `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | open: cause = rim light on lower-lip top band (no cast shadow under upper lip); geometry tries failed; next: specular mask along the lip seam (texture + Swift) |
+| `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | fixed: specular mask skin-seam.png (4a9d805) + Figure.swift (uncommitted), installed; check on device for glancing sheen. Thin lower-lip edge in profile still open |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
 | `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
@@ -71,9 +71,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `black.female.adult.bare.base.face-side\|front-3q-*.rest` lip corner wedge: specular mask along the lip seam (agent, /tmp/lips2/)
 
 ## Log
+
+- 2026-10-15: mouth-corner white wedge removed on all adult-woman heritages via lip-seam specular mask (near-white px 6957 -> 348 over 5 views).
 
 - 2026-10-15: bra band below cups smoothed (p99 noise 4-9 -> 0.6-2.2 deg), hem level (4.3-5.0 -> 1.3-1.9 mm), tip slivers 21-27 -> 3 (XXL 12-14 at back-60/shoulder-90 left). XL+ cleavage crease still open.
 
