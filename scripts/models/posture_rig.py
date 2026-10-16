@@ -281,18 +281,41 @@ def spine_weights(y, J):
 BASE_VERTS = 13380
 
 
-def skin_weights(n, J, pos, tris):
+def skin_weights(n, J, pos, tris, groin=False):
     """(n, len(BONES)) for the skin: MakeHuman's weights per base vertex; the chest's refined vertices (past the
     base mesh, see build_figure.refine_chest) take the average of their mesh neighbours' weights, spread inward
     (by distance alone, a chest vertex would pick up the arm's weights across the armpit); the hips' (refined in
-    pack, build_figure.HipRefine) their two parents' mean, as they were placed (no ripples where the hips fold)"""
+    pack, build_figure.HipRefine) their two parents' mean, as they were placed (no ripples where the hips fold).
+    groin: the pelvis-thigh change spread wider (see GROIN)"""
     hips = hip_refine(n)
     if hips is None:
         return base_weights(n, J, pos, tris)
     w = base_weights(hips.count, J, pos[:hips.count], hips.raw_tris)
+    if groin:
+        w = spread_groin(w, pos[:hips.count], hips.raw_tris)
     for sp in hips.passes:
         w = np.concatenate([w, w[sp].mean(1)])
     return w
+
+
+# seated, MakeHuman's narrow pelvis-thigh band folds the thigh through the groin and shades the inner thigh: its
+# weights diffused there (passes, rate, heights in/full/full/out, |x| in/full/full/out (midline kept), depth in/full)
+GROIN = (150, 0.5, (-0.5, -0.25, 0.04, 0.12), (0.02, 0.07, 0.2, 0.26), (-0.04, 0.0))
+
+
+def spread_groin(w, p, tris):
+    import scipy.sparse as sps
+    passes, rate, (y0, y1, y2, y3), (x0, x1, x2, x3), (z0, z1) = GROIN
+    x, y, z = p[:, 0], p[:, 1], p[:, 2]
+    ax = np.abs(x)
+    m = ramp(y, y0, y1) * (1 - ramp(y, y2, y3)) * ramp(ax, x0, x1) * (1 - ramp(ax, x2, x3)) * ramp(z, z0, z1)
+    e = np.unique(np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]).astype(np.int64), 1), axis=0)
+    a = sps.coo_matrix((np.ones(2 * len(e)), (np.r_[e[:, 0], e[:, 1]], np.r_[e[:, 1], e[:, 0]])), (len(p), len(p))).tocsr()
+    a = sps.diags(1 / np.maximum(np.asarray(a.sum(1)).ravel(), 1)) @ a
+    k = (rate * m)[:, None]
+    for _ in range(passes):
+        w = w + k * (a @ w - w)
+    return w / w.sum(1, keepdims=True)
 
 
 _hips = {}
@@ -1041,7 +1064,10 @@ SEXES = {"male": "male.adult", "female": "female.adult", "pregnant": "female.pre
 HERITAGES = ["east-asian", "southeast-asian", "south-asian", "hispanic", "white", "black"]
 SHAPES = {"female": ["chest-small", "chest-medium", "chest-xlarge", "chest-xxlarge", "hips-small", "hips-medium", "hips-large", "hips-xlarge", "hips-xxlarge"],
           "pregnant": ["chest-small", "chest-medium", "chest-xlarge", "chest-xxlarge"]}
-GARMENTS = {"male": ["briefs-male"], "female": ["briefs-female", "bra"], "pregnant": ["briefs-pregnant", "bra"]}
+# every bra cut: the app wears the one for the chest option, as Figure.garment picks it ("bra" is the large one)
+BRAS = ["bra", "bra-small", "bra-medium", "bra-xlarge", "bra-xxlarge"]
+GARMENTS = {"male": ["briefs-male"], "female": ["briefs-female"] + BRAS,
+            "pregnant": ["briefs-pregnant"] + BRAS + ["bra-pregnant-xlarge", "bra-pregnant-xxlarge"]}
 
 
 class Packer:
@@ -1049,7 +1075,12 @@ class Packer:
         self.chunks, self.size, self.blocks = [], 0, []
 
     def add(self, arr):
+        """an array's offset in the payload (an array already in it is shared: the bra cuts both figures wear)"""
         arr = np.ascontiguousarray(arr)
+        self.seen = getattr(self, "seen", {})
+        key = (arr.dtype.str, arr.tobytes())
+        if key in self.seen:
+            return self.seen[key]
         pad = (-self.size) % 4
         if pad:
             self.chunks.append(b"\0" * pad)
@@ -1057,6 +1088,7 @@ class Packer:
         off = self.size
         self.chunks.append(arr.tobytes())
         self.size += arr.nbytes
+        self.seen[key] = off
         return off
 
     def block(self, pos, ref=None):
@@ -1096,7 +1128,7 @@ def pack(topics=None):
         """rest body, skin weights, heritage bodies and body options (trunk and legs only: the rig poses the arms)"""
         if sex not in cache:
             r = fig.pieces(f"{SEXES[sex]}.white")
-            w = skin_weights(len(r["body"]), J, r["body"], tris)
+            w = skin_weights(len(r["body"]), J, r["body"], tris, groin=sex == "female")
             keep = 1 - sum(w[:, BI[f"{b}-{s}"]] for b in ("uparm", "fore1", "fore2", "hand") for s in SIDES)[:, None]
             cache[sex] = dict(rest=r, W=w, shapes={k: keep * d for k in SHAPES.get(sex, []) if (d := fig.shape(k)) is not None})
         return cache[sex]
