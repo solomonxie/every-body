@@ -1462,8 +1462,11 @@ def garments(np, pk, topo, male, female, kid, chests=None, child=None, nipples=N
         # past the strap, kept low (the arm meets the chest in a tight crease above)
         top = top - 0.9 * np.clip(0.03 - np.hypot(ax, NECK_V), 0, None) - ramp(ax, sx + 0.03, sx + 0.07) * np.maximum(top - ay - 0.05, 0)
         reach = ay - fold + 0.035
-        cups = smin(smin(y - lo, top - y, 0.012), reach - np.hypot(1.1 * (ax - apex[0]), y - ay), 0.02)
-        gore = smin(smin(y - lo, top - y, 0.012), apex[0] - ax, 0.02)
+        # (the front stops inside the band: sharing its hem, the smooth union dropped the hem 4 mm in front only, a
+        # kink at the side)
+        flo = lo + 0.02
+        cups = smin(smin(y - flo, top - y, 0.012), reach - np.hypot(1.1 * (ax - apex[0]), y - ay), 0.02)
+        gore = smin(smin(y - flo, top - y, 0.012), apex[0] - ax, 0.02)
         # the side wing: its top sweeps down from the cup's side to the band toward the back (no corner)
         wing = hi + (ay + 0.05 - hi) * ramp(z, WING[0], WING[1]) - y
         front = smin(smin(smax(cups, gore, 0.02), wing, 0.01), ay + 0.05 - y + 10 * np.clip(sx + 0.03 - ax, 0, None), 0.01)
@@ -1790,6 +1793,14 @@ STRAP_SPREAD = 10
 # the band's front pulled taut over the sternum's hollow: (chord reach, slab height, deepest hollow bridged, radius the
 # cut's slivers move as one in, zone height over the hem and its fade, half width and its fade (m); fairing passes)
 BAND_WRAP = (0.08, 0.0025, 0.015, 0.0015, 0.06, 0.06, 0.1, 0.06, 30)
+# the fabric below the chest centres faired as one sheet after the wrap (else it kept the skin's facets and the wrap's
+# chords as streaks): (rounds, Taubin passes, fade under the centre (m), passes of the hem along itself, share of the
+# lift it's kept off the skin)
+BAND_SHEET = (2, 60, 0.04, 10, 0.6)
+# knots of slivers in the cup (the tip's steep wall, laid flat, left one above it) relaxed sideways: each point to its
+# faces' area-weighted centre, then back onto the cup. (Within this share of the cup's reach, faded out from this
+# share of that; passes; rings round the slivers)
+CUP_RELAX = (0.7, 0.8, 200, 8)
 
 
 def wrap_band(np, target, n, ge):
@@ -1972,6 +1983,31 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
     if ref is None:
         target, wrapped = wrap_band(np, target, n, ge)
         moved = moved | wrapped
+    rounds, passes, fade, hem_passes, keep = BAND_SHEET
+    kb = (1 - smoothstep(min(body[i, 1] for i in nipples) - fade, min(body[i, 1] for i in nipples), p[:, 1])) * open_ * (ref is None)
+    kb *= 1 - 0.5 * hold[:, 0]  # (the cup's sheet, smoothed already, less: re-smoothed, its slivers kinked)
+    re = uniq[count == 1]
+    rdeg = np.maximum(np.bincount(re.ravel(), minlength=len(p)), 1)[:, None]
+
+    def sheet_normals(q):
+        gn = np.zeros_like(q)
+        fn = np.cross(q[gtri[:, 1]] - q[gtri[:, 0]], q[gtri[:, 2]] - q[gtri[:, 0]])
+        for k in range(3):
+            np.add.at(gn, gtri[:, k], fn)
+        gn /= np.maximum(np.linalg.norm(gn, axis=1, keepdims=True), 1e-12)
+        return gn, fn
+    for _ in range(rounds):
+        target = taubin(target, (kb * ~rim)[:, None], passes)
+        for _ in range(hem_passes):
+            acc = np.zeros_like(target)
+            np.add.at(acc, re[:, 0], target[re[:, 1]])
+            np.add.at(acc, re[:, 1], target[re[:, 0]])
+            target[rim] += (0.5 * kb[:, None] * (acc / rdeg - target))[rim]
+        gn = sheet_normals(target)[0]
+        gn[(gn * n).sum(1) < 0] *= -1
+        h = ((target - p) * n).sum(1)
+        target += (np.maximum(keep * lift - h, 0) * (kb > 0) / np.maximum((gn * n).sum(1), 0.3))[:, None] * gn
+    moved = moved | (kb > 0)
     # the cup clears the tip for sure: the most the skin there comes through, as one broad rise over the whole cup
     for i, outer, axis in zip(nipples, outers, axes):
         t = body[i]
@@ -1988,6 +2024,44 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
         got = cKDTree(fuv[front]).query(np.stack([sk @ e1, sk @ e2], 1))[1]
         rise = max(float((sk @ axis + 0.004 - fh[front][got]).max()), 0.0)
         target += (rise * (1 - smoothstep(0, 1.3 * outer, fr)) * moved * (fh > -outer))[:, None] * axis
+    from scipy.interpolate import LinearNDInterpolator
+    reach, start, passes, rings = CUP_RELAX
+    kt = np.zeros(len(p))
+    for i, outer in zip(nipples, outers):
+        r = np.linalg.norm(target - body[i], axis=1)
+        kt = np.maximum(kt, 1 - smoothstep(start * reach * outer, reach * outer, r))
+    fa = np.linalg.norm(sheet_normals(target)[1], axis=1)
+    near = kt[gtri].max(1) > 0
+    knot = np.zeros(len(p))
+    knot[gtri[near & (fa < 0.1 * np.median(fa[near]))].ravel()] = 1
+    for _ in range(rings):
+        acc = knot.copy()
+        np.add.at(acc, ge[:, 0], knot[ge[:, 1]])
+        np.add.at(acc, ge[:, 1], knot[ge[:, 0]])
+        knot = np.minimum(3 * acc / (gdeg[:, 0] + 1), 1)
+    kt = np.minimum(kt, knot) * (moved & ~rim)
+    before = target.copy()
+    for _ in range(passes):
+        gn, fn = sheet_normals(target)
+        fa = np.linalg.norm(fn, axis=1)[:, None]
+        acc, wsum = np.zeros_like(target), np.zeros((len(p), 1))
+        for k in range(3):
+            np.add.at(acc, gtri[:, k], target[gtri].mean(1) * fa)
+            np.add.at(wsum, gtri[:, k], fa)
+        dl = acc / np.maximum(wsum, 1e-18) - target
+        target += 0.5 * kt[:, None] * (dl - (dl * gn).sum(1, keepdims=True) * gn)
+    # (back onto the cup as it was: its height over the cup's plane where each point now lies)
+    for i, outer, axis in zip(nipples, outers, axes):
+        e1 = np.cross(axis, [0.0, 1.0, 0.0])
+        e1 /= np.linalg.norm(e1)
+        e2 = np.cross(axis, e1)
+        d0 = before - body[i]
+        src = np.linalg.norm(d0, axis=1) < 1.3 * reach * outer
+        mine = np.flatnonzero((kt > 0) & (np.linalg.norm(target - body[i], axis=1) < 1.2 * reach * outer))
+        d1 = target[mine] - body[i]
+        h = LinearNDInterpolator(np.stack([d0[src] @ e1, d0[src] @ e2], 1), d0[src] @ axis)(np.stack([d1 @ e1, d1 @ e2], 1))
+        ok = np.isfinite(h)
+        target[mine[ok]] += (h[ok] - d1[ok] @ axis)[:, None] * axis
     # folded-over facets (the tip's walls laid out, the cup's edge) are smoothed out locally until none is left
     nn = n[gtri].sum(1)
     for _ in range(150):
