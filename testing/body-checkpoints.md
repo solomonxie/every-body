@@ -79,9 +79,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `black.female.adult.dressed.XL-XXL.front-3q-left.elbow-90`, `white.female.adult.dressed.L-XXL.low-up.neck-turn-70` (agent)
+- woman figure in all posture screens, follows profile (user choice), all posture bins (agent)
 
 ## Log
+
+- 2026-10-16: elbow-90 medial dimple: contact shade scaled by (1-side), spikes 3 -> 1. Neck-70 (adult woman): neckShare band tilted along the jaw, face drift 0.110 -> 0, chin/mouth turn 37/61 -> 70/70 deg; neck edges >1.5x 0 -> 104 (smooth in renders). Left: lateral elbow crease-end shade spot; men/children keep old neck band. Swift uncommitted, installed.
 
 - 2026-10-16: sitting: groin weights diffused (spread_groin), self-intersecting groin tris S-XXL 143 -> 47 upright, 42 -> 5 slouched; all bra cuts packed + per-chest pick (Swift PostureScene, uncommitted); briefs clip rise was noise. Left: gusset bunching at seat, XXL bra band wavy top-down, upright briefs leg-edge clip 262 -> 549 (hidden). App posture screen still shows only the male figure (PostureScreen female: false).
 
