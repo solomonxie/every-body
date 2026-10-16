@@ -71,6 +71,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `black.female.adult.bare.base.face-side\|front-3q-*.rest` lip corner wedge: specular mask along the lip seam (agent, /tmp/lips2/)
 
 ## Log
 
