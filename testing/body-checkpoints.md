@@ -79,6 +79,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `*.female.adult.*.*.back|side.knee-90|knee-135` knee-pit grey wedge + knee band edge (agent)
 - `*.female.adult.*.base.low-up.rest` eyeball sliver under the lower lid (agent, /tmp/eyeb/)
 
 ## Log
