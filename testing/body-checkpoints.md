@@ -66,14 +66,15 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.*.knee-135` | front-of-knee stretch (218 edges >2), small notch in the knee pit; thin bright sliver in inner elbow crease | fixed (Swift, uncommitted), installed. Left: elbow-145 sliver, faceted knee front outline at 135 |
 | `*.female.adult.*.XXL-XXL.back\|left.back-*` | second dip at the fullest point of large buttocks (hip pivot far from the skin) | halved (Swift BackBend raise, uncommitted), installed |
 | `*.female.adult.*.*.top-down.elbow-*` | forearm outline beyond the refined band still coarse | open |
-| `*.female.adult.dressed.M-*.*.low-up.*` | faint shading lumps where the cup meets the band; small band-edge kink at the side | open |
+| `*.female.adult.dressed.M-*.*.low-up.*` | faint shading lumps where the cup meets the band; small band-edge kink at the side | fixed 148c59c (BAND_SHEET, CUP_RELAX, front panel stops inside band) |
 | `*.male\|child.*.*.*.shoulder-*` | back-armpit slit (fix applied to the woman only) | waits |
 
 ## In progress
 
-- `*.female.adult.dressed.M-*.*.low-up.*` cup/band lumps, band side kink, XL/XXL patch above nipple (agent, /tmp/band/)
 
 ## Log
+
+- 2026-10-15: bra band below cups smoothed (p99 noise 4-9 -> 0.6-2.2 deg), hem level (4.3-5.0 -> 1.3-1.9 mm), tip slivers 21-27 -> 3 (XXL 12-14 at back-60/shoulder-90 left). XL+ cleavage crease still open.
 
 - 2026-10-15: inner-corner white streak fixed (TUCK_LIDS female-adult, eac2361; SE-Asian front 642 -> 1 bright px). 'Lash sheen' was rk.py default material, not the app. tuck_lips fade past mouth corners pushes cheek into upper lip (noted, not fixed).
 
