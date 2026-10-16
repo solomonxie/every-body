@@ -46,7 +46,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.XXL-XXL.top-down\|back-3q-*.*` | butt/thigh lumps | improved afcef5f, unconfirmed |
 | `east-asian.female.adult.*.*.face-side.rest` | chin, eyes, sallow skin | improved 8200035, unconfirmed |
 | `*.*.adult\|pregnant\|child.*.*.*.shoulder-90\|shoulder-160\|back-*+shoulder-*` | side-chest balloon; armpit skin stretched into thin sheets/flaps (deltoid skin bound to the shoulder blade, turn ramped over a few triangles) | fixed in Blender port (shoulder share: arm/torso split + 0.14 band by distance over the skin, chord blend), uncommitted, installed; check on device. Left: shoulder top squashes (hidden), kid top armhole shows a speck of skin at 160 |
-| `*.female.adult.dressed.XL+.*.*` | soft crease where the bra panel meets the steep inner breast wall | open |
+| `*.female.adult.dressed.XL+.*.*` | soft crease where the bra panel meets the steep inner breast wall | fixed dfca54a (fill_gore), committed; install pending phone |
 | `*.female.pregnant.dressed.XXL.*.*` | bra-pregnant-xxlarge ~2100 clip pts in pose.py (port may miss the pregnant chest shape) | waits |
 | `*.female.pregnant.*.base.*.*` with XL/XXL chest | breast underside sinks up to 2 cm into the bump (hidden in the crease) | open (prototype: lift along the bump normal, /tmp/uw/tools/bumpfit.py) |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
@@ -71,10 +71,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `*.female.adult.dressed.XL+.*.*` cleavage crease at the bra centre panel (agent, /tmp/cleav/)
 - `*.female.adult.*.*.top-down.elbow-*` coarse forearm + elbow-145 crease line (+ knee-135 front facets) (agent, /tmp/arm2/)
 
 ## Log
+
+- 2026-10-15: XL+ cleavage crease filled (valley curvature p99 XL 88 -> 31 rest, 138 -> 55 back-60); S/M/L also cleaner. Band-centre normal noise up slightly (1.4-4.0 deg p99), XL-M centre-line slivers 15 -> 24 (not visible).
 
 - 2026-10-15: mouth-corner white wedge removed on all adult-woman heritages via lip-seam specular mask (near-white px 6957 -> 348 over 5 views).
 
