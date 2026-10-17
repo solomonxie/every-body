@@ -82,6 +82,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- sample: `south-asian.female.adult.bare.XXL-XL.top-down.back-60`, `black.female.adult.dressed.L-S.right.shoulder-90`, `hispanic.female.adult.bare.S-L.back-3q-right.neck-turn-70` (agent)
 - posture couch / laptop XL-XXL / computer XXL: arm sunk into bra (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
