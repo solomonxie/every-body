@@ -903,40 +903,15 @@ def tuck_lips(pieces, depth, reach):
     return dict(pieces, body=ease_folds(body, out))
 
 
-# faces whose lower lip's top tucks under the upper lip: its front above the fullest point at most `top` per unit
-# below `gap` behind the upper lip's edge, and the upper lip's edge reaching `over` past it (its top stood out past
-# the upper lip, facing up: the back light's glint, a white line between the lips); (top, gap, over, reach)
-TUCK_LOWER = {"female-adult.black": (0.35, 0.0005, 0.0003, 0.0065)}
-
-
-def tuck_lower(pieces, top, gap, over, reach):
-    from skin_textures import lip_seam
-    body = pieces["body"]
-    w = lip_weights(len(body))
-    inner = mouth_lining()[1]
-    y0, zu, zb, _ = lip_seam(np, body, w[:, 0] > 0.3, w[:, 1] > 0.3)
-    d = y0 - body[:, 1]
-    front = (w.max(1) > 0.3) & ~inner & (body[:, 2] > zb - 0.008)
-    up, lo = front & (w[:, 0] > w[:, 1]), front & (w[:, 1] > w[:, 0])
-    # (fading out toward the mouth's corners)
-    corner = np.abs(body[w[:, 1] > 0.5, 0]).max()
-    k = smoothstep(corner, 0.6 * corner, np.abs(body[:, 0]))
-    out = body.copy()
-    sel = lo & (d > 0) & (d < reach)
-    out[sel, 2] -= (k * np.clip(body[:, 2] - (zu - gap + top * d), 0, None))[sel]
-    tops = np.flatnonzero(lo & (d > -0.001) & (d < 0.002))
-    for i in np.flatnonzero(up & (d > -0.004) & (d < 0.0015)):
-        l = tops[np.abs(out[tops, 0] - out[i, 0]) < 0.003]
-        if len(l):
-            want = out[l, 2].max() + over - top * max(0, -d[i] - 0.001)
-            out[i, 2] += k[i] * max(0, want - out[i, 2])
-    return dict(pieces, body=ease_folds(body, out))
-
-
 # groups whose lips are closed: the lower lip's top under the upper lip lifted to meet it (an open slit at the sides
 # read as parted lips in profile; reaching half as far, a notch under the upper lip's front stayed open, a dark slit);
 # (reach below the upper lip, gap kept) in scene units
 CLOSE_LIPS = {"female-adult": (0.006, 0.0001)}
+# faces where a lower-lip vertex in front of the upper lip's lowest front point (by column, within `near` in x) is
+# lifted no higher than that point, keeping at least `floor` of its lift (lifted to the upper lip's curl, it stood over
+# the seam as a lit peak in profile; the black lips' seam opened held fully down); (near, floor)
+CLOSE_FRONT = {"female-adult.black": (0.004, 0.5), "female-adult.hispanic": (0.004, 0.0),
+               "female-adult.southeast-asian": (0.004, 0.0)}
 
 
 def ray_up(body, tris, pts):
@@ -956,7 +931,7 @@ def ray_up(body, tris, pts):
     return out
 
 
-def close_lips(pieces, reach, keep):
+def close_lips(pieces, reach, keep, front=None):
     from skin_textures import lip_seam
     body = pieces["body"]
     w = lip_weights(len(body))
@@ -970,8 +945,18 @@ def close_lips(pieces, reach, keep):
     cand = np.flatnonzero(lo & (d < reach + 0.002) & (d > -0.002))
     gap = ray_up(body, t[(up & (w.max(1) > 0.3))[t].all(1) & ~lin], body[cand]) - body[cand, 1]
     gap = np.where(np.isfinite(gap), gap, 0)
+    lift = np.clip(gap - keep, 0, None) * (1 - smoothstep(0.5 * reach, reach, gap))
+    if front:
+        near, floor = front
+        # (the upper lip's front: its skin facing forward)
+        fr = np.flatnonzero(up & (w.max(1) > 0.3) & ~inner & (vertex_normals(body)[:, 2] > 0.2))
+        for i, v in enumerate(cand):
+            f = fr[np.abs(body[fr, 0] - body[v, 0]) < near]
+            low = f[np.argmin(body[f, 1])] if len(f) else None
+            if low is not None and body[v, 2] > body[low, 2]:
+                lift[i] = max(min(lift[i], body[low, 1] - keep - body[v, 1]), floor * lift[i], 0)
     out = body.copy()
-    out[cand, 1] += np.clip(gap - keep, 0, None) * (1 - smoothstep(0.5 * reach, reach, gap))
+    out[cand, 1] += lift
     return dict(pieces, body=ease_folds(body, out))
 
 
@@ -1502,10 +1487,8 @@ def save(name, pieces):
         pieces = even_midface(pieces, gid, name.split(".")[1].replace("pregnant", "white"), EVEN_MIDFACE[gid])
     if gid in TUCK_LIPS and "eyes" in pieces:
         pieces = tuck_lips(pieces, *TUCK_LIPS[gid])
-    if name in TUCK_LOWER and "eyes" in pieces:
-        pieces = tuck_lower(pieces, *TUCK_LOWER[name])
     if gid in CLOSE_LIPS and "eyes" in pieces:
-        pieces = close_lips(pieces, *CLOSE_LIPS[gid])
+        pieces = close_lips(pieces, *CLOSE_LIPS[gid], CLOSE_FRONT.get(name))
     if gid in TUCK_LIDS and "eyes" in pieces:
         pieces = tuck_lids(pieces, *TUCK_LIDS[gid])
     if gid in LIFT_LIDS and "eyes" in pieces:
