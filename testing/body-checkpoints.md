@@ -91,6 +91,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- sample: `hispanic.female.adult.bare.XL-XL.face-front.knee-90`, `black.female.adult.dressed.L-XXL.top-down.elbow-90`, `south-asian.female.adult.dressed.M-L.back-3q-right.back-60+shoulder-90` (agent)
 - `*.female.adult.*.*.*.knee-135` lateral crease end + V kneecap (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
