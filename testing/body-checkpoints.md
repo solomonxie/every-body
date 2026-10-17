@@ -51,6 +51,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.pregnant.*.base.*.*` with XL/XXL chest | breast underside sinks up to 2 cm into the bump (hidden in the crease) | open (prototype: lift along the bump normal, /tmp/uw/tools/bumpfit.py) |
 | `*.female.adult.dressed.*.back-3q-*\|right\|top-down.shoulder-90\|160` | back bra strap ripple/facets (garment kept chord pinch; normals ignored relax) | fixed: wrapGarment (Swift, uncommitted), installed; check on device + frame time. Tip of strap at shoulder top still crumpled |
 | `*.female.adult.*.*.*.shoulder-90` | upper-arm underside sags, kink near elbow: inner-arm strip bound to back/ribs, share 0.55-0.98 | open (fix in shoulderShares arm labelling; risks armpit) |
+| `*.female.adult.*.*.{left,right,front-3q-*,low-up}.elbow-145\|knee-135` | dark contact-shade patch on open skin (pressed side shaded with no limb over it) | fixed: contactShade by other-side distance (Swift, uncommitted), installed; darkened px elbow front 10353 -> 2785 |
+| `*.female.adult.*.*.{left,back-3q-*,back}.knee-135` | notch + lit wedge at the lateral crease end (calf overhangs thigh by ~2.5 cm) | open |
+| `*.female.adult.*.*.{front,low-up}.knee-135` | pointed V kneecap front (rest-mesh ridge x~0.14) | open, low (model fairing) |
+| `*.female.adult.dressed.*.low-up.rest` | small pinched folds in briefs gusset | open, cosmetic |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
@@ -87,10 +91,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `{white,black,southeast-asian}.female.adult.*.XXL-XXL.*.knee-max|elbow-max` + low-up rest S-S/XXL-XXL (inner thighs, groin, under-breast) with the new port (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
 ## Log
+
+- 2026-10-17: XXL knee/elbow max + low-up QA: low-up rest S-S/XXL clean (no thigh ridges, no clipping). Contact shade now needs the other limb within 15-37 mm (grid-hash contactShade); open-skin shaded verts elbow 31 -> 2, crease shade kept. Installed.
 
 - 2026-10-17: shoulder QA with the new port: no clipping (bra gap 1.5-1.8 mm), no armpit sheets. Back strap ripple fixed by wrapGarment (garment rides its skin behind the shoulder; wave >0.5 mm verts 136 -> 25 at 160); shoulder top squash at 160 median area 0.26 (hidden). Installed.
 
