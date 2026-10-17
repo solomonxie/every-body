@@ -99,6 +99,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- sample: `hispanic.female.adult.dressed.M-XL.right.knee-90`, `east-asian.female.adult.dressed.M-S.back-3q-right.elbow-145`, `southeast-asian.female.adult.dressed.XXL-XXL.left.back-60` (agent)
 - skin specks: sternum streak, navel rim, collarbone specks, nape spot (agent)
 
 ## Log
