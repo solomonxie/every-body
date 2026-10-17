@@ -77,26 +77,22 @@ class FigureFile:
         i = self.header.get("shapes", {}).get(name)
         return None if i is None else self.block(i)
 
-    def garment(self, name, body, normals):
-        """a garment on a (posed) body, as Figure.garment builds it"""
-        g = self.header["garments"][name]
-        abc = self.array(g["abc"], g["vertices"] * 3, np.uint32).reshape(-1, 3)
-        w = self.array(g["w"], g["vertices"] * 2, np.float32).reshape(-1, 2).astype(np.float64)
-        f = self.array(g["f"], g["vertices"], np.float32).astype(np.float64)
-        wc = np.clip(1 - w[:, 0] - w[:, 1], 0, None)
-        n = w[:, :1] * normals[abc[:, 0]] + w[:, 1:] * normals[abc[:, 1]] + wc[:, None] * normals[abc[:, 2]]
-        n /= np.linalg.norm(n, axis=1, keepdims=True)
-        edge = np.minimum(f / 0.01, 1)[:, None]
-        p = w[:, :1] * body[abc[:, 0]] + w[:, 1:] * body[abc[:, 1]] + wc[:, None] * body[abc[:, 2]] + n * g["lift"] * (0.8 + 0.2 * edge)
-        if "offset" in g:
-            o = self.array(g["offset"], g["vertices"] * 3, np.float32).reshape(-1, 3)
-            from build_figure import tri_frame
-            t1, t2, nt = tri_frame(np, body[abc[:, 0]], body[abc[:, 1]], body[abc[:, 2]], n)
-            moved = np.abs(o).sum(1) > 0
-            base = w[:, :1] * body[abc[:, 0]] + w[:, 1:] * body[abc[:, 1]] + wc[:, None] * body[abc[:, 2]]
-            p[moved] = (base + o[:, :1] * t1 + o[:, 1:2] * t2 + o[:, 2:] * nt)[moved]
-        uv = np.stack([np.minimum(f / 0.025, 0.97), np.full(len(f), 0.5)], 1)
-        return p, uv, self.array(g["index"], g["triangles"] * 3, np.uint32).reshape(-1, 3), g["color"]
+def lay(abc, w, f, lift, offset, body, normals):
+    """a garment's points and normals on a (posed) body, as PostureScene's GarmentMesh builds them"""
+    abc = abc.astype(np.int64)
+    w = w.astype(np.float64)
+    wc = np.clip(1 - w[:, 0] - w[:, 1], 0, None)
+    n = w[:, :1] * normals[abc[:, 0]] + w[:, 1:] * normals[abc[:, 1]] + wc[:, None] * normals[abc[:, 2]]
+    n /= np.linalg.norm(n, axis=1, keepdims=True)
+    base = w[:, :1] * body[abc[:, 0]] + w[:, 1:] * body[abc[:, 1]] + wc[:, None] * body[abc[:, 2]]
+    p = base + n * lift * (0.8 + 0.2 * np.minimum(f / 0.01, 1))[:, None]
+    if offset is not None:
+        o = offset.reshape(-1, 3).astype(np.float64)
+        from build_figure import tri_frame
+        t1, t2, nt = tri_frame(np, body[abc[:, 0]], body[abc[:, 1]], body[abc[:, 2]], n)
+        moved = np.abs(o).sum(1) > 0
+        p[moved] = (base + o[:, :1] * t1 + o[:, 1:2] * t2 + o[:, 2:] * nt)[moved]
+    return p, n
 
 
 def off_arms(abc, w, body, tris, W):
@@ -137,6 +133,107 @@ def vertex_normals(p, topo):
     for k in range(3):
         np.add.at(n, t[:, k], f)
     return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+
+
+def closest_bary(q, a, b, c):
+    """barycentrics of the closest point on triangles abc to q (Ericson, Real-Time Collision Detection 5.1.5)"""
+    ab, ac, ap = b - a, c - a, q - a
+    d1, d2 = (ab * ap).sum(-1), (ac * ap).sum(-1)
+    bp, cp = q - b, q - c
+    d3, d4 = (ab * bp).sum(-1), (ac * bp).sum(-1)
+    d5, d6 = (ab * cp).sum(-1), (ac * cp).sum(-1)
+    va, vb, vc = d3 * d6 - d5 * d4, d5 * d2 - d1 * d6, d1 * d4 - d3 * d2
+    s = va + vb + vc
+    den = 1 / np.where(np.abs(s) < 1e-20, 1e-20, s)
+    v, w = vb * den, vc * den
+    W = np.stack([1 - v - w, v, w], -1)
+    with np.errstate(all="ignore"):
+        e1, e2 = d4 - d3, d5 - d6
+        t = e1 / (e1 + e2)
+        m = (va <= 0) & (e1 >= 0) & (e2 >= 0)
+        W[m] = np.stack([0 * t, 1 - t, t], -1)[m]
+        t = d2 / (d2 - d6)
+        m = (vb <= 0) & (d2 >= 0) & (d6 <= 0)
+        W[m] = np.stack([1 - t, 0 * t, t], -1)[m]
+        t = d1 / (d1 - d3)
+        m = (vc <= 0) & (d1 >= 0) & (d3 <= 0)
+        W[m] = np.stack([1 - t, t, 0 * t], -1)[m]
+    W[(d6 >= 0) & (d5 <= d6)] = (0, 0, 1)
+    W[(d3 >= 0) & (d4 <= d3)] = (0, 1, 0)
+    W[(d1 <= 0) & (d2 <= 0)] = (1, 0, 0)
+    return W
+
+
+class Contact:
+    """skin that a garment point sits under (skin not carrying that point) pressed out past it: an arm against the bra"""
+
+    def __init__(self, tris, n):
+        import scipy.sparse as sps
+        self.tris = tris
+        order = np.argsort(tris.ravel(), kind="stable")
+        vert = tris.ravel()[order]
+        start = np.searchsorted(vert, np.arange(n + 1))
+        self.VT = np.full((n, int(np.diff(start).max())), -1)
+        for i in range(self.VT.shape[1]):
+            has = start[:-1] + i < start[1:]
+            self.VT[has, i] = order[start[:-1][has] + i] // 3
+        e = np.unique(np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), 1), axis=0)
+        self.adj = sps.coo_matrix((np.ones(2 * len(e)), (np.r_[e[:, 0], e[:, 1]], np.r_[e[:, 1], e[:, 0]])), (n, n)).tocsr()
+        self.mean = sps.diags(1 / np.maximum(np.asarray(self.adj.sum(1)).ravel(), 1)) @ self.adj
+
+    def closest(self, p, n, q, k=12):
+        """signed distance of q to the skin (by the interpolated normal) and the closest triangle"""
+        from scipy.spatial import cKDTree
+        _, i = cKDTree(p).query(q, k=k)
+        cand = self.VT[i].reshape(len(q), -1)
+        T = self.tris[np.maximum(cand, 0)]
+        a, b, c = p[T[..., 0]], p[T[..., 1]], p[T[..., 2]]
+        W = closest_bary(np.broadcast_to(q[:, None], a.shape), a, b, c)
+        X = W[..., :1] * a + W[..., 1:2] * b + W[..., 2:] * c
+        d = np.linalg.norm(X - q[:, None], axis=-1)
+        d[cand < 0] = np.inf
+        j = d.argmin(1)
+        r = np.arange(len(q))
+        t = np.maximum(cand[r, j], 0)
+        m = (W[r, j][:, :, None] * n[self.tris[t]]).sum(1)
+        return np.sign(((q - X[r, j]) * m).sum(1)) * d[r, j], t
+
+    def press(self, p, normals, garments, movable, gap=0.002, rounds=12, spread=3, limit=0.03):
+        """garments: (abc, w, f, lift, offset); movable: per vertex 0/1; no vertex moves further than limit"""
+        p0, p = p, p.copy()
+        for _ in range(rounds):
+            n = normals(p)
+            size, push = np.zeros(len(p)), np.zeros_like(p)
+            for abc, w, f, lift, offset in garments:
+                q, qn = lay(abc, w, f, lift, offset, p, n)
+                d, t = self.closest(p, n, q)
+                bad = np.flatnonzero(d < gap / 2)
+                tv = self.tris[t[bad]]
+                # (a point under its own triangles is a fold, not a contact)
+                own = (tv[:, :, None] == abc[bad].astype(np.int64)[:, None, :]).any((1, 2))
+                # (and one it can't move off)
+                own |= movable[tv].sum(1) < 2
+                bad, tv = bad[~own], tv[~own]
+                amt = gap - d[bad]
+                for col in range(3):
+                    v = tv[:, col]
+                    o = np.argsort(movable[v] * amt)
+                    v, a_, dn = v[o], (movable[v] * amt)[o], qn[bad][o]
+                    keep = a_ > size[v]
+                    size[v[keep]] = a_[keep]
+                    push[v[keep]] = dn[keep]
+            if not size.any():
+                break
+            # spread over the neighbours (no single-vertex dents)
+            for _ in range(spread):
+                size = np.maximum(size, 0.6 * self.adj.multiply(size[None, :]).max(1).toarray().ravel()) * movable
+                empty = ~push.any(1)
+                push[empty] = (self.adj @ push)[empty]
+            ln = np.linalg.norm(push, axis=1, keepdims=True)
+            p += np.where(ln > 0, push / np.maximum(ln, 1e-12), 0) * size[:, None]
+            m = np.linalg.norm(p - p0, axis=1, keepdims=True)
+            p = p0 + (p - p0) * np.minimum(1, limit / np.maximum(m, 1e-12))
+        return p
 
 
 def inner():
@@ -1226,8 +1323,58 @@ def pack(topics=None):
             r = fig.pieces(f"{SEXES[sex]}.white")
             w = skin_weights(len(r["body"]), J, r["body"], tris, groin=sex == "female")
             keep = 1 - sum(w[:, BI[f"{b}-{s}"]] for b in ("uparm", "fore1", "fore2", "hand") for s in SIDES)[:, None]
-            cache[sex] = dict(rest=r, W=w, shapes={k: keep * d for k in SHAPES.get(sex, []) if (d := fig.shape(k)) is not None})
+            garments = {}
+            for g in GARMENTS[sex]:
+                abc, gw, fa, tri, lift, color, offset = fig.binding(g)
+                abc, gw = off_arms(abc, gw, r["body"], tris.reshape(-1, 3).astype(np.int64), w)
+                garments[g] = dict(fit=(abc, gw, fa, lift, offset), tri=tri, color=color)
+            cache[sex] = dict(rest=r, W=w, shapes={k: keep * d for k in SHAPES.get(sex, []) if (d := fig.shape(k)) is not None},
+                              garments=garments)
         return cache[sex]
+
+    def worn(sex, chest):
+        """the bra cut and briefs the app puts on this chest option (PostureScene's pick)"""
+        g = figure(sex)["garments"]
+        bra = next(c for c in ([f"bra-pregnant-{chest}"] if sex == "pregnant" else []) + ([f"bra-{chest}"] if chest != "large" else []) + ["bra"] if c in g)
+        return g[bra]["fit"], next(v["fit"] for k, v in g.items() if k.startswith("briefs"))
+
+    touch = Contact(tris.reshape(-1, 3).astype(np.int64), int(btopo["vmap"].max()) + 1)
+
+    def movable(arm, g):
+        m = arm.copy()
+        m[np.unique(g[0].astype(np.int64))] = False
+        return m.astype(float)
+
+    def arms_off_underwear(sex, posed, deltas):
+        """arm skin a garment pokes into pressed out past it, per key: against each chest option's bra (with medium hips)
+        and each hips option's briefs (with the small chest). Stored so the app's sums come out: the large chest's in
+        the base keys, the others' as the change from it in their chest deltas; the briefs' in the hips deltas"""
+        f = figure(sex)
+        arm = sum(f["W"][:, BI[f"{b}-{s}"]] for b in ("uparm", "fore1", "fore2", "hand") for s in SIDES) > 0.5
+        normals = lambda p: vertex_normals(p, btopo)
+        hips = [k for k in deltas if k.startswith("hips-")]
+        for i, p in enumerate(posed):
+            mid = deltas["hips-medium"][i] if "hips-medium" in deltas else 0
+            fix = {}
+            for chest in ("large", "small", "medium", "xlarge", "xxlarge"):
+                if chest != "large" and f"chest-{chest}" not in deltas:
+                    continue
+                body = p + mid + (deltas[f"chest-{chest}"][i] if chest != "large" else 0)
+                bra, _ = worn(sex, chest)
+                fix[chest] = touch.press(body, normals, [bra], movable(arm, bra)) - body
+            posed[i] = p + fix["large"]
+            for chest, d in fix.items():
+                if chest != "large":
+                    deltas[f"chest-{chest}"][i] = deltas[f"chest-{chest}"][i] + d - fix["large"]
+            small = deltas["chest-small"][i] if "chest-small" in deltas else 0
+            _, briefs = worn(sex, "small")
+            for h in hips or [None]:
+                body = posed[i] + small + (deltas[h][i] if h else 0)
+                d = touch.press(body, normals, [briefs], movable(arm, briefs)) - body
+                if h:
+                    deltas[h][i] = deltas[h][i] + d
+                else:
+                    posed[i] = posed[i] + d
     for name, topic in TOPICS.items():
         if topics and name not in topics:
             continue
@@ -1338,11 +1485,18 @@ def pack(topics=None):
                 entry["neck"] = neck(mine)
             elif sex != "male" and bone_keys(mine) != header["transforms"]:
                 entry["transforms"] = bone_keys(mine)
-            posed = []
-            for T in mine:
-                p = contact(skin_body(r["body"], Wsex, T))
-                posed.append(p)
+            posed = [contact(skin_body(r["body"], Wsex, T)) for T in mine]
+            # adult female body options, posed: the change each makes to the posed body
+            deltas = {shape: [contact(skin_body(r["body"] + d, Wsex, T)) - p for T, p in zip(mine, posed)] for shape, d in f["shapes"].items()}
+            if sex != "male":
+                arms_off_underwear(sex, posed, deltas)
+            for p in posed:
                 entry["body"].append(pk.block(p, entry["body"][0] if entry["body"] else None))
+            for shape, ds in deltas.items():
+                keys = []
+                for q in ds:
+                    keys.append(pk.block(q, keys[0] if keys else None))
+                entry.setdefault("shapes", {})[shape] = keys
             if topic.get("topology"):
                 # rest-pose heritage heads and garment bindings: the same arrays as the topology file's (which packs them all)
                 entry["shared"] = True
@@ -1350,16 +1504,8 @@ def pack(topics=None):
                 d = fig.pieces(f"{SEXES[sex]}.{h}")["body"] - r["body"]
                 if np.abs(d).max() > 1e-6:
                     entry["heritage"][h] = pk.block(d)
-            # adult female body options, posed: the change each makes to the posed body
-            for shape, d in f["shapes"].items():
-                keys = []
-                for T, p in zip(mine, posed):
-                    q = contact(skin_body(r["body"] + d, Wsex, T)) - p
-                    keys.append(pk.block(q, keys[0] if keys else None))
-                entry.setdefault("shapes", {})[shape] = keys
             for g in [] if topic.get("topology") else GARMENTS[sex]:
-                abc, w, fa, tri, lift, color, offset = fig.binding(g)
-                abc, w = off_arms(abc, w, r["body"], tris.reshape(-1, 3).astype(np.int64), Wsex)
+                (abc, w, fa, lift, offset), tri, color = (f["garments"][g][k] for k in ("fit", "tri", "color"))
                 entry["garments"].append({"name": g, "color": color, "vertices": len(fa), "triangles": len(tri), "lift": lift,
                                           "abc": pk.add(abc.astype(np.uint16)), "w": pk.add(w.astype(np.float32)),
                                           "f": pk.add(fa.astype(np.float32)), "index": pk.add(tri.astype(np.uint16))})
