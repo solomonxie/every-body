@@ -22,7 +22,7 @@ xcodegen generate --quiet
 xcodebuild -project EveryBody.xcodeproj -scheme EveryBody \
   -configuration "$CONFIG" -destination "id=$UDID" -allowProvisioningUpdates \
   DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID" STORE="$STORE" \
-  -derivedDataPath build/dd build | grep -E "error:|warning: .*Sources|BUILD" || true
+  -derivedDataPath /tmp/everybody-build/dd build | grep -E "error:|warning: .*Sources|BUILD" || true
 
 xcrun devicectl device install app --device "$UDID" \
-  "build/dd/Build/Products/$CONFIG-iphoneos/EveryBody.app"
+  "/tmp/everybody-build/dd/Build/Products/$CONFIG-iphoneos/EveryBody.app"

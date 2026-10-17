@@ -24,8 +24,8 @@ install)
   xcodegen generate --quiet
   xcodebuild -project EveryBody.xcodeproj -scheme EveryBody -configuration Release -destination "id=$SIM" \
     PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID" STORE=us CODE_SIGNING_ALLOWED=NO \
-    SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) SCREENSHOTS' -derivedDataPath build/sim build | grep -E "error:|BUILD"
-  xcrun simctl install "$SIM" build/sim/Build/Products/Release-iphonesimulator/EveryBody.app
+    SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) SCREENSHOTS' -derivedDataPath /tmp/everybody-build/sim build | grep -E "error:|BUILD"
+  xcrun simctl install "$SIM" /tmp/everybody-build/sim/Build/Products/Release-iphonesimulator/EveryBody.app
   xcrun simctl status_bar "$SIM" override --time 9:41 --dataNetwork wifi --wifiBars 3 --cellularBars 4 \
     --batteryState charged --batteryLevel 100
   xcrun simctl ui "$SIM" appearance light ;;
