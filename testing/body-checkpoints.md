@@ -55,6 +55,9 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.{left,back-3q-*,back}.knee-135` | notch + lit wedge at the lateral crease end (calf overhangs thigh by ~2.5 cm) | fixed: kneeRim remaps both sides' extent to the mean (Swift, uncommitted), installed; lateral step 9.1 -> 2.4 mm. Faint highlight on upper crease (left view) |
 | `*.female.adult.*.*.{front,low-up}.knee-135` | pointed V kneecap front (rest-mesh ridge x~0.14) | open, low: fairing doesn't help; needs kneecap resculpt in the fit (changes rest look) |
 | `*.female.adult.dressed.*.low-up.rest` | small pinched folds in briefs gusset | open, cosmetic |
+| `*.female.adult.*.*.*.shoulder-90\|160` | upper back/shoulder top slid down with the arm (smoothed arm share reached the spine): hair through neck side, strap crumple, back straps V | fixed: far-share fade in shoulderShares (Swift, uncommitted), installed; check s160 back 'shrug' + man/child shoulders |
+| `*.female.adult.dressed.XXL-*.top-down.back-30` | XXL bra band wave (agent stopped earlier; status unclear) | open, recheck |
+| `*.female.adult.dressed.*.*.rest` | front strap edge slightly wavy at rest (~31 spikes, worst 2.1 mm, all bras) | open (build_figure cut + repack) |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
@@ -91,10 +94,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- sample: `hispanic.female.adult.bare.XL-XL.face-front.knee-90`, `black.female.adult.dressed.L-XXL.top-down.elbow-90`, `south-asian.female.adult.dressed.M-L.back-3q-right.back-60+shoulder-90` (agent)
-- `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
 ## Log
+
+- 2026-10-17: sample round 2: face-front knee-90, top-down elbow-90 clean, no clipping. Shoulder far-share fade: upper-back drop at s90 35 -> 6 mm, strap crumple edges 487 -> 0, hair re-hidden at neck (61 -> 210 of 213), sharp folds s160 22 -> 0. Installed.
 
 - 2026-10-17: knee-135 crease end: pressed() flattens each side; calf section 10-11.6 cm vs thigh 8-9.3 cm overhung. kneeRim (after contactShade) remaps lateral/medial extents near the plane to the two sides' mean: overhang 13.9 -> 6.3 mm; knee-90 ~unchanged; rest/elbow byte-identical. Installed.
 
