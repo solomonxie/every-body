@@ -198,42 +198,52 @@ class Contact:
         m = (W[r, j][:, :, None] * n[self.tris[t]]).sum(1)
         return np.sign(((q - X[r, j]) * m).sum(1)) * d[r, j], t
 
-    def press(self, p, normals, garments, movable, gap=0.002, rounds=12, spread=3, limit=0.03):
-        """garments: (abc, w, f, lift, offset); movable: per vertex 0/1; no vertex moves further than limit"""
+    def contacts(self, p, normals, garments, movable, gap):
+        """per movable vertex: how far and which way the deepest garment point under it wants it out; the point count"""
+        n = normals(p)
+        size, push, hits = np.zeros(len(p)), np.zeros_like(p), 0
+        for abc, w, f, lift, offset in garments:
+            q, qn = lay(abc, w, f, lift, offset, p, n)
+            d, t = self.closest(p, n, q)
+            bad = np.flatnonzero(d < gap / 2)
+            tv = self.tris[t[bad]]
+            # (a point under its own triangles is a fold, not a contact; nor one under skin that can't move off it)
+            own = (tv[:, :, None] == abc[bad].astype(np.int64)[:, None, :]).any((1, 2)) | (movable[tv].sum(1) < 2)
+            bad, tv = bad[~own], tv[~own]
+            hits += len(bad)
+            amt = gap - d[bad]
+            for col in range(3):
+                v = tv[:, col]
+                o = np.argsort(movable[v] * amt)
+                v, a_, dn = v[o], (movable[v] * amt)[o], qn[bad][o]
+                keep = a_ > size[v]
+                size[v[keep]] = a_[keep]
+                push[v[keep]] = dn[keep]
+        return size, push, hits
+
+    def press(self, p, normals, garments, movable, gap=0.002, rounds=12, spread=4, limit=0.01):
+        """garments: (abc, w, f, lift, offset); movable: per vertex 0/1; no vertex moves further than limit. Kept only
+        when it clears most of the contacts (an arm sunk through the trunk isn't pushed about)"""
         p0, p = p, p.copy()
-        for _ in range(rounds):
-            n = normals(p)
-            size, push = np.zeros(len(p)), np.zeros_like(p)
-            for abc, w, f, lift, offset in garments:
-                q, qn = lay(abc, w, f, lift, offset, p, n)
-                d, t = self.closest(p, n, q)
-                bad = np.flatnonzero(d < gap / 2)
-                tv = self.tris[t[bad]]
-                # (a point under its own triangles is a fold, not a contact)
-                own = (tv[:, :, None] == abc[bad].astype(np.int64)[:, None, :]).any((1, 2))
-                # (and one it can't move off)
-                own |= movable[tv].sum(1) < 2
-                bad, tv = bad[~own], tv[~own]
-                amt = gap - d[bad]
-                for col in range(3):
-                    v = tv[:, col]
-                    o = np.argsort(movable[v] * amt)
-                    v, a_, dn = v[o], (movable[v] * amt)[o], qn[bad][o]
-                    keep = a_ > size[v]
-                    size[v[keep]] = a_[keep]
-                    push[v[keep]] = dn[keep]
-            if not size.any():
+        first = None
+        for r in range(rounds + 1):
+            size, push, hits = self.contacts(p, normals, garments, movable, gap)
+            first = hits if first is None else first
+            if not hits or r == rounds:
                 break
             # spread over the neighbours (no single-vertex dents)
             for _ in range(spread):
-                size = np.maximum(size, 0.6 * self.adj.multiply(size[None, :]).max(1).toarray().ravel()) * movable
+                size = np.maximum(size, 0.7 * self.adj.multiply(size[None, :]).max(1).toarray().ravel()) * movable
                 empty = ~push.any(1)
                 push[empty] = (self.adj @ push)[empty]
             ln = np.linalg.norm(push, axis=1, keepdims=True)
-            p += np.where(ln > 0, push / np.maximum(ln, 1e-12), 0) * size[:, None]
-            m = np.linalg.norm(p - p0, axis=1, keepdims=True)
-            p = p0 + (p - p0) * np.minimum(1, limit / np.maximum(m, 1e-12))
-        return p
+            d = p - p0 + np.where(ln > 0, push / np.maximum(ln, 1e-12), 0) * size[:, None]
+            # the move faired over the arm (no creases at its rim)
+            for _ in range(3):
+                d += 0.5 * movable[:, None] * (self.mean @ d - d)
+            m = np.linalg.norm(d, axis=1, keepdims=True)
+            p = p0 + d * np.minimum(1, limit / np.maximum(m, 1e-12))
+        return p if hits <= first * 0.2 else p0
 
 
 def inner():
@@ -827,12 +837,15 @@ class Clear:
         g = np.array([(i, j) for i in range(4) for j in range(4 - i)], float) / 3
         self.bary = np.c_[g, 1 - g.sum(1)] * 0.96 + 0.04 / 3
 
-    def clearance(self, p, props=()):
-        """the smallest signed distance from the arms and held things to the trunk's surface"""
+    def clearance(self, p, props=(), shells=()):
+        """the smallest signed distance from the arms and held things to the trunk's surface (or to the garments on it)"""
         from scipy.spatial import cKDTree
         n = vertex_normals(p, self.topo)
         q = np.einsum("sk,tkd->tsd", self.bary, p[self.tris]).reshape(-1, 3)
         m = np.einsum("sk,tkd->tsd", self.bary, n[self.tris]).reshape(-1, 3)
+        for g in shells:
+            gq, gn = lay(*g, p, n)
+            q, m = np.concatenate([q, gq]), np.concatenate([m, gn])
         u = np.linspace(-0.5, 0.5, 5)
         grid = np.array([(a, b, c) for a in u for b in u for c in u if max(abs(a), abs(b), abs(c)) == 0.5])
         a = np.concatenate([p[self.arm]] + [(grid * size) @ mat[:3, :3].T + mat[:3, 3] for size, mat in props])
@@ -851,7 +864,10 @@ def cheapest(steps):
 CLEAR_COST = {"pole": 0.05, "abduct": 0.01, "lap_at": 0.3}
 CLEAR = {"phone": cheapest([dict(out=o, pole=dx) for o in np.arange(0, 0.205, 0.025) for dx in (0.0, 0.4, 0.8)]),
          "laptop": cheapest([dict(lap_at=a, lap_lift=l) for a in (0.55, 0.62, 0.69, 0.76, 0.83, 0.9) for l in (0.0, 0.02)]),
-         "hang": cheapest([dict(abduct=float(a)) for a in range(0, 16, 2)])}
+         "hang": cheapest([dict(abduct=float(a)) for a in range(0, 16, 2)]),
+         # elbows out before the phone moves (it would bob up between keys)
+         "phone-bed": sorted([dict(out=o, pole=dx) for o in np.arange(0, 0.205, 0.025) for dx in (0.0, 0.4, 0.8, 1.2, 1.6)],
+                             key=lambda c: c["out"] + 0.01 * c["pole"])}
 HELD = ("phone", "laptop")
 
 
@@ -865,7 +881,7 @@ def clear_arms(spec, J, finish, bodies, clear, steps, gap=0.008):
         T = pose(sp, J)
         held = [(np.array(size), np.asarray(m)) for pid, (size, m, *alpha) in sp.get("props", {}).items()
                 if pid in HELD and (not alpha or alpha[0] > 0.5)]
-        d = min(clear.clearance(skin(b, clear.W, T), held) for b in bodies)
+        d = min(clear.clearance(skin(b, clear.W, T), held, shells) for b, shells in bodies)
         if best is None or d > best[0]:
             best = (d, sp)
         if d >= gap:
@@ -1237,7 +1253,7 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
                          sexes=["male", "female"]),
           # keys at 0, 15, 30 and 45° of neck bend (the head against the upper back)
           "phone-bed": dict(keys=PHONE_BED, order=["flat", "propped"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=bed_common, finish=phone_in_bed,
-                            chair=False, neck="cervical", focus="C4", topology="sitting", clear="phone"),
+                            chair=False, neck="cervical", focus="C4", topology="sitting", clear="phone-bed", shells=True),
           # keys at 0, 12, 23 and 35° of wrist extension; the camera's close view on the right wrist
           "computer": dict(keys=COMPUTER, order=["neutral", "high"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=seated_common, finish=at_computer,
                            focus=("hand-r", "wrist-r"), topology="sitting"),
@@ -1391,7 +1407,10 @@ def pack(topics=None):
             if finish and topic.get("clear") and sex != "male":
                 f = figure(sex)
                 r = f["rest"]["body"]
-                bodies = [r] + [r + f["shapes"][k] for k in ("chest-xxlarge", "hips-xxlarge") if k in f["shapes"]]
+                # (phone-bed: held over the XXL cups, the forearms clear the bra too)
+                wear = (lambda c: worn(sex, c)) if topic.get("shells") else (lambda c: ())
+                bodies = [(r, wear("large"))] + [(r + f["shapes"][k], wear("xxlarge" if k.startswith("chest") else "large"))
+                                                 for k in ("chest-xxlarge", "hips-xxlarge") if k in f["shapes"]]
                 fit = Clear(f["W"], btopo, r, J, legs=topic["clear"] == "hang")
                 return [clear_arms(sp, J, finish, bodies, fit, CLEAR[topic["clear"]]) for sp in specs]
             if finish:
