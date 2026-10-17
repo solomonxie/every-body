@@ -53,7 +53,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
 | `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | fixed: specular mask skin-seam.png (4a9d805) + Figure.swift (uncommitted), installed; check on device for glancing sheen. Thin lower-lip edge: TUCK_LOWER removed (c247e31), lip fuller; installed |
-| `*.*.adult.*.*.*.shoulder-*` | QA port tools/qa/pose.py lacks the shoulder bands + hinge press: shoulder-pose renders untrustworthy | open (tooling) |
+| `*.*.adult.*.*.*.shoulder-*` | QA port tools/qa/pose.py lacks the shoulder bands + hinge press: shoulder-pose renders untrustworthy | in progress (tooling) |
 | `hispanic.female.adult.*.*.back-3q-left.*` | curly hair hem tips spiky (style cut jitter) | open, low |
 | `black.female.adult.*.*.face-side.*` | faint lit sliver on coily hair inner edge at the neck | open, low |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
@@ -85,6 +85,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- QA port: shoulder bands + hinge press into tools/qa/pose.py (agent)
 - posture couch / laptop XL-XXL / computer XXL: arm sunk into bra (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
