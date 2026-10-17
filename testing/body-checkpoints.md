@@ -50,7 +50,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.pregnant.dressed.XXL.*.*` | bra-pregnant-xxlarge ~2100 clip pts in pose.py (port may miss the pregnant chest shape) | waits |
 | `*.female.pregnant.*.base.*.*` with XL/XXL chest | breast underside sinks up to 2 cm into the bump (hidden in the crease) | open (prototype: lift along the bump normal, /tmp/uw/tools/bumpfit.py) |
 | `*.female.adult.dressed.*.back-3q-*\|right\|top-down.shoulder-90\|160` | back bra strap ripple/facets (garment kept chord pinch; normals ignored relax) | fixed: wrapGarment (Swift, uncommitted), installed; check on device + frame time. Tip of strap at shoulder top still crumpled |
-| `*.female.adult.*.*.*.shoulder-90` | upper-arm underside sags, kink near elbow: inner-arm strip bound to back/ribs, share 0.55-0.98 | in progress |
+| `*.female.adult.*.*.*.shoulder-90` | upper-arm underside sags, kink near elbow: inner-arm strip bound to back/ribs, share 0.55-0.98 | fixed: inner-arm relabel in shoulderShares (Swift, uncommitted), installed; armpit max stretch +1-4% |
 | `*.female.adult.*.*.{left,right,front-3q-*,low-up}.elbow-145\|knee-135` | dark contact-shade patch on open skin (pressed side shaded with no limb over it) | fixed: contactShade by other-side distance (Swift, uncommitted), installed; darkened px elbow front 10353 -> 2785 |
 | `*.female.adult.*.*.{left,back-3q-*,back}.knee-135` | notch + lit wedge at the lateral crease end (calf overhangs thigh by ~2.5 cm) | in progress |
 | `*.female.adult.*.*.{front,low-up}.knee-135` | pointed V kneecap front (rest-mesh ridge x~0.14) | open, low (model fairing) |
@@ -91,11 +91,12 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- `*.female.adult.*.*.*.shoulder-90` inner-arm sag (arm labelling in shoulderShares) (agent)
 - `*.female.adult.*.*.*.knee-135` lateral crease end + V kneecap (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
 ## Log
+
+- 2026-10-17: inner-arm relabel: torso-held skin >0.14 below the shoulder pivot, within 0.11 of the humerus, normal facing away -> arm. s90 inner-arm lag mean 36 -> 3 mm, arm edges >1.5x 779 -> 16; armpit back-fold edges >1.5x 81 -> 126 (short, no tearing). Non-shoulder poses byte-identical. Installed.
 
 - 2026-10-17: XXL knee/elbow max + low-up QA: low-up rest S-S/XXL clean (no thigh ridges, no clipping). Contact shade now needs the other limb within 15-37 mm (grid-hash contactShade); open-skin shaded verts elbow 31 -> 2, crease shade kept. Installed.
 
