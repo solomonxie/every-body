@@ -1470,7 +1470,7 @@ def pack():
             # (the head's vertices come first)
             head = body[:refine.count]
             for name in hair.styles_for(hairs, her):
-                got[f"hair-{name}"] = grooms[gid][name].follow(np, head)
+                got[f"hair-{name}"] = follow_eased(np, grooms[gid][name], head)
                 if len(grooms[gid][name].shell_pos):
                     got[f"hair-{name}.shell"] = grooms[gid][name].follow_shell(np, head)
             entry = {"body": put("body", body, (gid, "body"))}
@@ -2638,6 +2638,28 @@ def soften_armpits(np, p, tris, verts=ARMPIT_VERTS):
         k = 1 - smoothstep(0.5, 1.0, d[mine] / reach)[:, None]
         out[mine] += k * (w @ p[near] / w.sum(1, keepdims=True) - p[mine])
     return out
+
+
+# passes averaging a heritage's sculpted-hair move over the hair mesh: the nearest-skin binding jumps where the jaw's
+# move meets the still neck (a groove round the hair at chin height)
+HAIR_EASE = 40
+
+
+def follow_eased(np, groom, head):
+    import hair
+    moved = groom.follow(np, head)
+    if not isinstance(groom, hair.Sculpt) or not HAIR_EASE:
+        return moved
+    tri = groom.topo["index"].reshape(-1, 3).astype(np.int64)
+    e = np.unique(np.sort(np.concatenate([tri[:, [0, 1]], tri[:, [1, 2]], tri[:, [2, 0]]]), 1), axis=0)
+    n = np.bincount(e.ravel(), minlength=len(moved)).astype(np.float64)[:, None]
+    d = moved - groom.pos
+    for _ in range(HAIR_EASE):
+        acc = np.zeros_like(d)
+        np.add.at(acc, e[:, 0], d[e[:, 1]])
+        np.add.at(acc, e[:, 1], d[e[:, 0]])
+        d = 0.5 * d + 0.5 * acc / np.maximum(n, 1)
+    return groom.pos + d
 
 
 def grow_hair(np, load, body_topo):
