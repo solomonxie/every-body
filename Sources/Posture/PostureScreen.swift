@@ -45,15 +45,25 @@ private struct PostureTopicView: View {
         .task {
             await BodyScene.prepare()
             scene.heat = { [topic] in topic.heat(of: topic.load($0)) }
-            // one adult figure, always seen inside (no skin)
-            scene.build(topic: topic.id, region: topic.region, female: false, pregnant: false, heritage: .white, underwear: true, chest: .large, hips: .medium)
-            neckLean = scene.neck.last ?? neckLean
+            build()
             scene.seeThrough = true
             if !ready { scene.show(view); scene.settle() }
             ready = true
         }
         .onChange(of: blend) { scene.goalBlend = Float(blend) }
+        .onChange(of: figure) { if ready { build() } }
         .sensoryFeedback(.selection, trigger: blend == 0 || blend == 1)
+    }
+
+    /// the profile's figure (always an adult), seen inside
+    private var figure: [String] {
+        [String(settings.female), String(settings.pregnant && settings.age == .adult), settings.heritage.rawValue, settings.chest.rawValue, settings.hips.rawValue]
+    }
+
+    private func build() {
+        scene.build(topic: topic.id, region: topic.region, female: settings.female, pregnant: settings.pregnant && settings.age == .adult,
+                    heritage: settings.heritage, underwear: true, chest: settings.chest, hips: settings.hips)
+        neckLean = scene.neck.last ?? neckLean
     }
 
     // MARK: 3D controls

@@ -257,35 +257,10 @@ struct ViewerScreen: View {
 
     private var panel: some View {
         VStack(alignment: .leading, spacing: Space.m) {
-            PillRow {
-                if parts.changedCount > 0 || !history.isEmpty {
-                    Button { if !history.isEmpty { parts = history.removeLast() } } label: {
-                        Image(systemName: "arrow.uturn.backward").font(.subheadline.weight(.semibold))
-                            .frame(width: 36, height: 36)
-                            .background(Color.fill, in: .circle)
-                            .frame(width: minTap, height: minTap)
-                            .contentShape(.rect)
-                    }
-                    .buttonStyle(PressableStyle())
-                    .disabled(history.isEmpty)
-                    .opacity(history.isEmpty ? 0.4 : 1)
-                    .accessibilityLabel(settings.t("Undo", "撤销"))
-                    .sensoryFeedback(.impact(weight: .light), trigger: history.count)
-                }
-                ForEach(Catalog.body.layers.filter { !(anatomyOnly && $0.id == .skin) }) { layer in
-                    Pill(label: settings.name(layer.label, layer.labelZh), selected: layers.contains(layer.id),
-                         dot: layerColor(layer.id)) {
-                        if layers.contains(layer.id) { layers.remove(layer.id) } else { layers.insert(layer.id) }
-                    }
-                }
-                // children always keep their clothes on
-                LocalFigureMenus(figure: $local, canUndress: canUndress, anatomyOnly: anatomyOnly, showSex: !anatomyOnly || layers.contains(.organs),
-                                 showClothing: Figure.clothingOptional && layers.contains(.skin) && !isKid && canUndress)
-                if parts.changedCount > 0 {
-                    Pill(label: settings.t("Show all (\(parts.changedCount))", "全部显示（\(parts.changedCount)）"), symbol: "eye") { change(PartState()) }
-                }
+            if !isAcupuncture {
+                PillRow { figureControls(layerMenu: false) }
+                    .padding(.top, Space.xs)
             }
-            .padding(.top, Space.xs)
             Group {
                 if let joint = tryJoint {
                     JointControl(joint: joint, angle: angles[joint.id] ?? 0) { deg in
@@ -295,11 +270,14 @@ struct ViewerScreen: View {
                 }
                 if isAcupuncture, let sp = systemPoints {
                     AcupuncturePanel(points: sp.points, meridians: meridians, filter: $acuFilter, activeID: activePoint,
-                                     onPress: press, onFocus: { f in
+                                     onPress: press, onClose: release, onFocus: { f in
                         scene.touched = true
                         if f != .back { scene.faceFront() }
                         scene.focus(f)
-                    }, onLink: showLink)
+                    }, onLink: showLink) {
+                        Divider().frame(height: 24)
+                        figureControls(layerMenu: true)
+                    }
                 } else if isReflex, let sp = systemPoints {
                     ReflexPanel(points: sp.points, filter: $filter, activeID: activePoint, effectVisible: effectVisible, onPress: press) { f in
                         scene.touched = true
@@ -326,6 +304,47 @@ struct ViewerScreen: View {
         .animation(.snappy(duration: 0.25), value: selectedPart)
         .animation(.snappy(duration: 0.25), value: activePoint)
         .sensoryFeedback(.selection, trigger: selectedPart)
+    }
+
+    /// undo, layers, who the figure is, show all
+    @ViewBuilder private func figureControls(layerMenu: Bool) -> some View {
+        if parts.changedCount > 0 || !history.isEmpty {
+            Button { if !history.isEmpty { parts = history.removeLast() } } label: {
+                Image(systemName: "arrow.uturn.backward").font(.subheadline.weight(.semibold))
+                    .frame(width: 36, height: 36)
+                    .background(Color.fill, in: .circle)
+                    .frame(width: minTap, height: minTap)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(PressableStyle())
+            .disabled(history.isEmpty)
+            .opacity(history.isEmpty ? 0.4 : 1)
+            .accessibilityLabel(settings.t("Undo", "撤销"))
+            .sensoryFeedback(.impact(weight: .light), trigger: history.count)
+        }
+        if layerMenu {
+            // one pill for every layer: the acupuncture page keeps its row short
+            MenuPill(label: settings.t("Layers", "图层")) {
+                ForEach(Catalog.body.layers) { layer in
+                    Toggle(settings.name(layer.label, layer.labelZh), isOn: Binding(get: { layers.contains(layer.id) }, set: { on in
+                        if on { layers.insert(layer.id) } else { layers.remove(layer.id) }
+                    }))
+                }
+            }
+        } else {
+            ForEach(Catalog.body.layers.filter { !(anatomyOnly && $0.id == .skin) }) { layer in
+                Pill(label: settings.name(layer.label, layer.labelZh), selected: layers.contains(layer.id),
+                     dot: layerColor(layer.id)) {
+                    if layers.contains(layer.id) { layers.remove(layer.id) } else { layers.insert(layer.id) }
+                }
+            }
+        }
+        // children always keep their clothes on
+        LocalFigureMenus(figure: $local, canUndress: canUndress, anatomyOnly: anatomyOnly, showSex: !anatomyOnly || layers.contains(.organs),
+                         showClothing: Figure.clothingOptional && layers.contains(.skin) && !isKid && canUndress)
+        if parts.changedCount > 0 {
+            Pill(label: settings.t("Show all (\(parts.changedCount))", "全部显示（\(parts.changedCount)）"), symbol: "eye") { change(PartState()) }
+        }
     }
 
     private func layerColor(_ id: LayerID) -> Color {

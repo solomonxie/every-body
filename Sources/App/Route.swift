@@ -7,12 +7,14 @@ enum Route: Hashable {
     case illustration(id: String)
     case info(system: String)
     case posture(id: String)
+    case hipSqueeze
     case search
 
     /// "/reflex/foot", "/illustration/stroke" — links stored in systems.json
     init?(path: String) {
         let parts = path.split(separator: "/").map(String.init)
         if parts == ["search"] { self = .search; return }
+        if parts == ["labor", "hip-squeeze"] { self = .hipSqueeze; return }
         guard parts.count == 2 else { return nil }
         switch parts[0] {
         case "reflex": self = .chart(id: parts[1])
@@ -32,6 +34,7 @@ enum Route: Hashable {
         case let .illustration(id): Illustrations.find(id)?.title ?? Bilingual(id, id)
         case let .info(system): Catalog.system(system).map { Bilingual($0.name, $0.nameZh) } ?? Bilingual(system, system)
         case let .posture(id): PostureTopic.find(id)?.title ?? Bilingual(id, id)
+        case .hipSqueeze: HipSqueezeScreen.title
         case .search: Bilingual("Search", "搜索")
         }
     }

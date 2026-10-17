@@ -64,6 +64,8 @@ struct PostureModel: Sendable {
         var transforms: [String: [simd_float4x4]]?
         var soft: [Mesh]?
         var neck: [Float]?
+        /// what this figure holds, where it differs (further out from a woman's chest)
+        var props: [String: Prop]?
     }
 
     let steps: [Float]
@@ -92,6 +94,9 @@ struct PostureModel: Sendable {
         struct Sex: Decodable {
             let variant: String; let body: [Int]; let heritage: [String: Int]; let garments: [Garment]
             let transforms: [[String: [Float]]]?; let inner: [Int]?; let neck: [Float]?; let shapes: [String: [Int]]?
+            /// heritage heads and garments are the topology file's
+            let shared: Bool?
+            let props: [String: Prop]?
         }
         struct Piece: Decodable { let id: String; let start: Int; let count: Int; let triangles: Int; let index: Int }
         struct Inner: Decodable { let count: Int; let blocks: [Int]; let pieces: [Piece] }
@@ -136,11 +141,12 @@ struct PostureModel: Sendable {
         func array<T>(_ offset: Int, _ count: Int, in data: Data? = nil) -> [T] {
             (data ?? payload).withUnsafeBytes { raw in (0..<count).map { raw.loadUnaligned(fromByteOffset: offset + $0 * MemoryLayout<T>.stride, as: T.self) } }
         }
-        var cache: [Int: [SIMD3<Float>]] = [:]
-        func block(_ i: Int) -> [SIMD3<Float>] {
+        var cache: [Int: [SIMD3<Float>]] = [:], sharedCache: [Int: [SIMD3<Float>]] = [:]
+        func block(_ i: Int) -> [SIMD3<Float>] { decode(i, h, payload, &cache) }
+        func decode(_ i: Int, _ h: Header, _ payload: Data, _ cache: inout [Int: [SIMD3<Float>]]) -> [SIMD3<Float>] {
             if let hit = cache[i] { return hit }
             let b = h.blocks[i]
-            let d: [Int16] = array(b.offset, b.count * 3)
+            let d: [Int16] = array(b.offset, b.count * 3, in: payload)
             let lo = SIMD3(b.lo[0], b.lo[1], b.lo[2]), step = SIMD3(b.step[0], b.step[1], b.step[2])
             var q = SIMD3<Int16>.zero
             var out = [SIMD3<Float>](repeating: .zero, count: b.count)
@@ -150,7 +156,7 @@ struct PostureModel: Sendable {
                 out[v] = (SIMD3<Float>(q) + 32767) * step + lo
             }
             if let ref = b.ref {
-                let base = block(ref)
+                let base = decode(ref, h, payload, &cache)
                 for v in out.indices { out[v] += base[v] }
             }
             cache[i] = out
@@ -166,11 +172,14 @@ struct PostureModel: Sendable {
 
         steps = h.steps
         chair = h.chair
-        props = (h.props ?? [:]).mapValues { p in
-            Prop(size: SIMD3(p.size[0], p.size[1], p.size[2]), keys: p.keys.map { m in
-                simd_float4x4(SIMD4(m[0], m[1], m[2], m[3]), SIMD4(m[4], m[5], m[6], m[7]), SIMD4(m[8], m[9], m[10], m[11]), SIMD4(m[12], m[13], m[14], m[15]))
-            }, alpha: p.alpha ?? [])
+        func props(_ ps: [String: Header.Prop]) -> [String: Prop] {
+            ps.mapValues { p in
+                Prop(size: SIMD3(p.size[0], p.size[1], p.size[2]), keys: p.keys.map { m in
+                    simd_float4x4(SIMD4(m[0], m[1], m[2], m[3]), SIMD4(m[4], m[5], m[6], m[7]), SIMD4(m[8], m[9], m[10], m[11]), SIMD4(m[12], m[13], m[14], m[15]))
+                }, alpha: p.alpha ?? [])
+            }
         }
+        self.props = props(h.props ?? [:])
         let (th, tp) = topology
         vmap = (array(th.body.vmap ?? 0, th.body.render, in: tp) as [UInt16]).map(UInt32.init)
         uv = uv16(th.body.uv ?? 0, th.body.render, in: tp)
@@ -193,15 +202,18 @@ struct PostureModel: Sendable {
         }
         var figures: [String: Figure] = [:]
         for (sex, s) in h.sexes {
-            let garments = s.garments.map { g in
-                let w: [Float] = array(g.w, g.vertices * 2)
-                return Garment(id: g.name, color: g.color, abc: (array(g.abc, g.vertices * 3) as [UInt16]).map(UInt32.init),
-                               w: (0..<g.vertices).map { SIMD2(w[2 * $0], w[2 * $0 + 1]) }, f: array(g.f, g.vertices), lift: g.lift,
-                               offset: g.offset.map { array($0, g.vertices * 3) } ?? [], index: index16(g.index, g.triangles))
+            let own = s.shared == true ? th.sexes[sex] ?? s : s
+            let data = s.shared == true ? tp : payload
+            let garments = own.garments.map { g in
+                let w: [Float] = array(g.w, g.vertices * 2, in: data)
+                return Garment(id: g.name, color: g.color, abc: (array(g.abc, g.vertices * 3, in: data) as [UInt16]).map(UInt32.init),
+                               w: (0..<g.vertices).map { SIMD2(w[2 * $0], w[2 * $0 + 1]) }, f: array(g.f, g.vertices, in: data), lift: g.lift,
+                               offset: g.offset.map { array($0, g.vertices * 3, in: data) } ?? [], index: index16(g.index, g.triangles, in: data))
             }
-            figures[sex] = Figure(keys: s.body.map(block), heritage: s.heritage.mapValues(block), garments: garments,
+            let heritage = s.shared == true ? own.heritage.mapValues { decode($0, th, tp, &sharedCache) } : s.heritage.mapValues(block)
+            figures[sex] = Figure(keys: s.body.map(block), heritage: heritage, garments: garments,
                                   shapes: (s.shapes ?? [:]).mapValues { $0.map(block) },
-                                  transforms: s.transforms.map(matrices), soft: s.inner.map(softPieces), neck: s.neck)
+                                  transforms: s.transforms.map(matrices), soft: s.inner.map(softPieces), neck: s.neck, props: s.props.map(props))
         }
         self.figures = figures
         transforms = matrices(h.transforms)

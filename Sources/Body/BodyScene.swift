@@ -141,7 +141,7 @@ final class BodyScene {
         let pregnant = pregnant && female && age == .adult
         rig.children.removeAll()
         partEntities = [:]; skinEntities = []; organEntities = [:]; organOpacity = [:]; jointOuter = [:]; pointEntities = [:]; pointColors = [:]; smallPoints = []; meridianEntities = [:]
-        benders = [:]; crossing = [:]; skinBends = []; holders = []; jointAngles = [:]
+        benders = [:]; crossing = [:]; skinBends = []; skinPose = nil; holders = []; jointAngles = [:]; backRest = [:]
 
         // joint pivots: outer at the pivot (rotates), inner offset back so children use body coords
         var inner: [String: Entity] = [:]
@@ -168,8 +168,7 @@ final class BodyScene {
         let sex = female && !(age == .infant || age.isChild) ? "female" : "male"
         let look = Figure.Look(female: female, age: age, pregnant: pregnant, heritage: heritage, underwear: underwear, chest: chest, hips: hips)
         let realSkin = ModelLibrary.skin(look)
-        var plain = look
-        plain.chest = .small; plain.hips = .medium
+        let plain = Figure.Look(female: female, age: .adult, pregnant: false, heritage: heritage, underwear: underwear)
         unshaped = look != plain ? plain : nil
         surface = realSkin == nil ? nil : Figure.surface(look)
         self.realSkin = realSkin != nil
@@ -560,6 +559,8 @@ final class BodyScene {
             inner.position = -pivot
         }
         tuckInside()
+        backRest = [:]
+        placeBack()
         organScale = organEntities.mapValues(\.scale)
         // a new size of body is framed again; the same body (another look, sex, clothes) keeps the view
         if framedAge != age {
@@ -660,11 +661,12 @@ final class BodyScene {
                 break
             }
         }
-        bendCrossing(joint, outer: outer, degrees: degrees)
+        bendCrossing(joint)
+        if id == "back" { placeBack() }
         bendSkin()
     }
 
-    private static func smooth(_ a: Float, _ b: Float, _ x: Float) -> Float {
+    nonisolated static func smooth(_ a: Float, _ b: Float, _ x: Float) -> Float {
         let t = max(0, min(1, (x - a) / (b - a)))
         return t * t * (3 - 2 * t)
     }
@@ -684,9 +686,143 @@ final class BodyScene {
         let rest: [SIMD3<Float>]
         let normals: [SIMD3<Float>]
         let holder: [Int]
+        /// per vertex its side's shoulder share (shoulderShares) and that side (the sign of x)
+        let shoulder: [Float]
+        let side: [Float]
+        /// body: welded index per vertex, the welded band skin relaxShoulders moves, its welded neighbours, its cut on
+        /// convex moves and the triangles touching it; garment: per vertex its nearest body skin and weights (it carries the body's relax)
+        var canon: [Int] = []
+        var band: [Int] = []
+        var bandNear: [[Int]] = []
+        var bandConvex: [Float] = []
+        var bandTris: [Int] = []
+        /// the share's gradient over the rest skin per band vertex, and each vertex's band slot (-1 off the band)
+        var bandGrad: [SIMD3<Float>] = []
+        var bandOf: [Int] = []
+        var follow: [[(Int, Float)]] = []
+        /// packed for bendSkin: band neighbours as offsets + slots (a band vertex's slot, or past the band one per neighbour
+        /// off it: `ghosts`, held fixed during a smoothing), the vertices whose welded one is on the band, the garment's follow
+        var nearStart: [Int32] = [], nearSlot: [Int32] = [], ghosts: [Int32] = []
+        var bandVerts: [Int32] = []
+        var followStart: [Int32] = [], followIdx: [Int32] = [], followW: [Float] = []
+        var scratch = SkinScratch(count: 0, banded: false, slots: 0, start: [0], slot: [])
+
+        mutating func pack() {
+            nearStart = [0]
+            var ghost: [Int: Int32] = [:]
+            for near in bandNear {
+                for j in near {
+                    if bandOf[j] >= 0 { nearSlot.append(Int32(bandOf[j])); continue }
+                    if ghost[j] == nil { ghost[j] = Int32(band.count + ghosts.count); ghosts.append(Int32(j)) }
+                    nearSlot.append(ghost[j]!)
+                }
+                nearStart.append(Int32(nearSlot.count))
+            }
+            scratch = SkinScratch(count: rest.count, banded: !bandOf.isEmpty, slots: band.count + ghosts.count, start: nearStart, slot: nearSlot)
+            bandVerts = bandOf.indices.filter { bandOf[$0] >= 0 }.map(Int32.init)
+            if !follow.isEmpty {
+                followStart = [0]
+                for f in follow {
+                    for (j, w) in f { followIdx.append(Int32(j)); followW.append(w) }
+                    followStart.append(Int32(followIdx.count))
+                }
+            }
+        }
+
+        /// The band slots garmentMove must smooth for these vertices (garments follow only them): a slot k rings from
+        /// them matters for the last garmentPasses - k passes.
+        func carry(_ followed: Set<Int>) {
+            let n = band.count
+            var ring = [Int](repeating: .max, count: n), queue: [Int] = []
+            for i in followed where bandOf[i] >= 0 && ring[bandOf[i]] == .max { ring[bandOf[i]] = 0; queue.append(bandOf[i]) }
+            var head = 0
+            while head < queue.count {
+                let b = queue[head]; head += 1
+                guard ring[b] < garmentPasses else { continue }
+                for e in Int(nearStart[b])..<Int(nearStart[b + 1]) {
+                    let j = Int(nearSlot[e])
+                    if j < n && ring[j] == .max { ring[j] = ring[b] + 1; queue.append(j) }
+                }
+            }
+            // queue is in ring order
+            scratch.carry(order: queue.map(Int32.init), reach: (0..<garmentPasses).map { k in queue.lazy.filter { ring[$0] <= k }.count })
+        }
+    }
+
+    /// per-call buffers for bendSkin, allocated once per skin, and the band's neighbour lists (SkinBend.nearStart, nearSlot)
+    private final class SkinScratch {
+        /// per vertex; pre, jac and move only on the body (`banded`)
+        let pos, nrm, pre, jac, move: UnsafeMutablePointer<SIMD3<Float>>
+        let occ: UnsafeMutablePointer<Float>
+        /// per band slot (with ghosts)
+        let k, kn, wn, size: UnsafeMutablePointer<Float>
+        let delta, ref, p, step, g, m, next, t: UnsafeMutablePointer<SIMD3<Float>>
+        let active, start, slot: UnsafeMutablePointer<Int32>
+        /// the slots garmentMove smooths, nearest the garments first, and per ring how many
+        private(set) var order: UnsafeMutablePointer<Int32>?
+        private(set) var reach: [Int] = []
+        private var all: [UnsafeMutableRawPointer] = []
+
+        /// n vertices, b band slots (with ghosts)
+        init(count n: Int, banded: Bool, slots b: Int, start: [Int32], slot: [Int32]) {
+            func make<T>(_ c: Int, _ v: T) -> UnsafeMutablePointer<T> {
+                let q = UnsafeMutablePointer<T>.allocate(capacity: max(1, c))
+                q.initialize(repeating: v, count: max(1, c))
+                return q
+            }
+            func copy(_ a: [Int32]) -> UnsafeMutablePointer<Int32> {
+                let q = make(a.count, Int32(0))
+                for (i, v) in a.enumerated() { q[i] = v }
+                return q
+            }
+            let nb = banded ? n : 0
+            pos = make(n, .zero); nrm = make(n, .zero); pre = make(nb, .zero); jac = make(nb, .zero); move = make(nb, .zero)
+            occ = make(n, 0)
+            k = make(b, 0); kn = make(b, 0); wn = make(b, 0); active = make(b, 0)
+            delta = make(b, .zero); ref = make(b, .zero); p = make(b, .zero); step = make(b, .zero)
+            g = make(b, .zero); m = make(b, .zero); next = make(b, .zero); t = make(b, .zero)
+            self.start = copy(start); self.slot = copy(slot)
+            size = make(start.count, 0)
+            for i in 0..<start.count - 1 { size[i] = Float(start[i + 1] - start[i]) }
+            all = [pos, nrm, pre, jac, move, delta, ref, p, step, g, m, next, t].map { UnsafeMutableRawPointer($0) }
+                + [occ, k, kn, wn, size].map { UnsafeMutableRawPointer($0) } + [active, self.start, self.slot].map { UnsafeMutableRawPointer($0) }
+        }
+
+        func carry(order o: [Int32], reach r: [Int]) {
+            order?.deallocate()
+            let q = UnsafeMutablePointer<Int32>.allocate(capacity: max(1, o.count))
+            for (i, v) in o.enumerated() { q[i] = v }
+            order = q
+            reach = r
+        }
+
+        deinit {
+            for q in all { q.deallocate() }
+            order?.deallocate()
+        }
     }
     private var skinBends: [SkinBend] = []
-    /// the look without chest or hips options: the body options move skin (a hand beside the hips) off its bones, so the skin binds on this
+    /// the pose (bendSkin's key) and deformer versions the skin was last bent for: unchanged, nothing to redo
+    private var skinPose: (key: [Float], versions: [Int])?
+    /// the skin and underwear as last bent, for moves laid over a pose (a hand pressing in)
+    var skinDeformers: [SkinDeformer] { skinBends.map(\.bender) }
+    /// half-width of the shoulder's blend band round the arm/torso split (body units)
+    private static let shoulderBand: Float = 0.2
+    /// passes smoothing the shoulder share over the skin
+    private static let shoulderSmoothing = 40
+    /// relaxShoulders: passes, rate, the cut on moves sinking convex skin, and the arm turn it eases in over
+    private static let relaxPasses = 80, relaxRate: Float = 0.8, relaxConvex: Float = 0.1
+    private static let relaxFrom: Float = 60 * .pi / 180, relaxFull: Float = 160 * .pi / 180
+    /// behind the pivot (body units) the convex cut fades out: the chord leaves a rounded bump on the back of the shoulder
+    private static let relaxBehind: Float = 0.06
+    /// band normals: the share's gradient fades out over this much share before the arm (its kink there would shade a
+    /// ring), then passes averaging them with their neighbours, easing in over these arm turns (below, the chord's normals
+    /// are exact and the averaging would blur the shoulder) and giving way to the relax's surface
+    private static let gradFade: Float = 0.3, normalPasses = 20, normalFrom: Float = 45 * .pi / 180, normalFull: Float = 90 * .pi / 180
+    /// passes smoothing the relax's slide along the skin before garments carry it
+    nonisolated private static let garmentPasses = 40
+    /// the plain adult look (no bump, chest or hips options): those move skin (a hand beside the bump) off its bones, and a child's
+    /// skin isn't on the adult bones, so the skin binds on this (same vertices) with the bones at rest
     private var unshaped: Figure.Look?
     private var holders: [Entity] = []
     private var jointAngles: [String: Float] = [:]
@@ -699,9 +835,220 @@ final class BodyScene {
     private static let upward: Set<String> = ["back", "neck"]
 
     /// a point's share of a joint's turn by its height: all on the moving side past the band, none past it the other way
-    private func share(_ id: String, pivotY: Float, _ y: Float) -> Float {
-        let band = Self.bendBand
-        return Self.upward.contains(id) ? Self.smooth(pivotY - band, pivotY + band, y) : Self.smooth(pivotY + band, pivotY - band, y)
+    private static func share(up: Bool, pivotY: Float, _ y: Float) -> Float {
+        let band = bendBand
+        return up ? smooth(pivotY - band, pivotY + band, y) : smooth(pivotY + band, pivotY - band, y)
+    }
+
+    /// the neck's turn over the neck alone: from the old band's foot up to a top tilted along the jaw line (under the chin
+    /// in front, the skull's base behind) so the face turns whole; off the neck's column only the head turns (collarbones,
+    /// straps stay). Fitted on the adult woman
+    private static let neckTop: Float = 0.02, neckBottom: Float = -0.12, neckTilt: Float = 0.469, neckColumn: (Float, Float) = (0.09, 0.14)
+    private static func neckShare(_ q: SIMD3<Float>, pivot: SIMD3<Float>) -> Float {
+        let y = q.y - pivot.y, tilt = neckTilt * (q.z - pivot.z)
+        let r = simd_length(SIMD2(q.x - pivot.x, q.z - pivot.z))
+        return smooth(neckBottom, max(neckTop - tilt, neckBottom + 0.02), y)
+            * max(1 - smooth(neckColumn.0, neckColumn.1, r), smooth(neckTop - 0.04, neckTop, y + tilt))
+    }
+    /// whether the neck turns by neckShare (fitted on the adult woman), else by height
+    private var neckFitted: Bool { female && age == .adult }
+
+    /// joints folding like a hinge (knees, elbows): inside the bend the far limb presses on the near one
+    private static func hinge(_ id: String) -> Bool { id.hasPrefix("knee") || id.hasPrefix("elbow") }
+    /// on the extensor side the band drops below the knee's pivot (the kneecap rides the thigh) and widens, spreading the stretch
+    private static let kneecapDrop: Float = 0.02, kneeWiden: Float = 0.08, elbowWiden: Float = 0.04
+    /// depth (about the limb's radius) over which the band turns from the flexor to the extensor side: no step at the sides
+    private static let kneeDepth: Float = 0.2, elbowDepth: Float = 0.07
+    /// pressed flesh pushed out along the contact, per unit pressed; the contact fades in over this depth into the bend
+    private static let pressBulge: Float = 0.5, pressRamp: Float = 0.03
+    /// the press eases in over this either side of the contact plane: no edge where the skin meets it (a notch, a lit sliver)
+    private static let pressSoft: Float = 0.004
+    /// a crease's shadow (the renderer has no ambient occlusion): darkest in the contact, fading over `shadeFalloff` off the
+    /// plane on skin facing it; in the contact (within `shadeContact`) whatever way the normal turned
+    private static let shadeStrength: Float = 0.85, shadeFalloff: Float = 0.024, shadeContact: Float = 0.003
+    /// the knee front's even turn eases in and out over this share of the band at each end: no edge where the band ends
+    private static let kneeEase: Float = 0.3
+    /// pressed knee skin facing along the axis (the limb's sides) keeps its own normal over this |n·axis|: the contact's rim
+    /// isn't turned to face the other limb (a lit wedge in the pit's side)
+    private static let sideKeep: (Float, Float) = (0.4, 0.9)
+
+    /// a hinge's share: the height band, moved and widened toward the extensor side; over the kneecap it turns evenly
+    /// (a smoothstep's steep middle stretched the front past 2x at full bend), widened to keep that slope with eased ends
+    private static func hingeShare(knee: Bool, _ q: SIMD3<Float>, pivot: SIMD3<Float>, axis: SIMD3<Float>) -> Float {
+        let f = simd_cross(axis, SIMD3(0, -1, 0))
+        let e = smooth(0.2, -0.6, simd_dot(q - pivot, f) / (knee ? kneeDepth : elbowDepth))
+        let o = (knee ? -kneecapDrop : 0) * e, band = bendBand + (knee ? kneeWiden : elbowWiden) * e
+        let t = max(0, min(1, (pivot.y + o + band - q.y) / (2 * band))), s = t * t * (3 - 2 * t)
+        guard knee else { return s }
+        let a = kneeEase, wide = band / (1 - a * e), v = 1 / (1 - a)
+        let u = max(0, min(1, (pivot.y + o + wide - q.y) / (2 * wide)))
+        let g = u < a ? v * u * u / (2 * a) : u > 1 - a ? 1 - v * (1 - u) * (1 - u) / (2 * a) : v * (u - a / 2)
+        return s + e * (g - s)
+    }
+
+    /// max(0, x) rounded over |x| < pressSoft, and its slope
+    private static func eased(_ x: Float) -> (Float, Float) {
+        let h = pressSoft
+        if x >= h { return (x, 1) }
+        if x <= -h { return (0, 0) }
+        return ((x + h) * (x + h) / (4 * h), (x + h) / (2 * h))
+    }
+
+    /// inside a hinge's bend each side kept off the bisector plane (the calf pressed flat on the thigh, not through it),
+    /// the pressed flesh pushed out along it; the normal follows the press (its Jacobian's inverse transpose, bulge left out).
+    /// Also the crease's occlusion there (0...1). `n`: the bisector plane's normal (`up` turned by half the bend), `m`: n × axis.
+    private static func pressed(_ p: SIMD3<Float>, _ nrm: SIMD3<Float>, near: Bool, weight k: Float, pivot: SIMD3<Float>,
+                                n: SIMD3<Float>, m: SIMD3<Float>, knee: Bool) -> (SIMD3<Float>, SIMD3<Float>, Float) {
+        let d = p - pivot
+        let s: Float = near ? 1 : -1
+        let (e, de) = eased(-s * simd_dot(d, n))
+        let sm = simd_dot(d, m), g = smooth(0, pressRamp, sm)
+        let r = max(0, min(1, sm / pressRamp)), dg = 6 * r * (1 - r) / pressRamp
+        let push = e * g * k
+        let v = k * (-s * g * de * n + e * dg * m), u = s * n
+        let q = (1 + simd_dot(u, v)) * nrm - simd_dot(u, nrm) * v
+        let to = p + s * push * n + pressBulge * push * m
+        var tn = simd_length(q) > 1e-6 ? simd_normalize(q) : nrm
+        // skin facing along the axis: the limb's sides
+        let side = smooth(sideKeep.0, sideKeep.1, abs(simd_dot(nrm, simd_cross(m, n))))
+        if knee {
+            let kept = tn + side * (nrm - tn)
+            if side > 0, simd_length(kept) > 1e-6 { tn = simd_normalize(kept) }
+        }
+        let gap = max(0, s * simd_dot(to - pivot, n)), off = 1 - smooth(0, shadeFalloff, gap)
+        // a side only meets the plane, it isn't pressed: no contact shade there (a lone dark vertex, a dimple)
+        let facing = max(smooth(-0.3, 0.5, -s * simd_dot(tn, n)), (1 - smooth(0, shadeContact, gap)) * (1 - side))
+        return (to, tn, shadeStrength * k * smooth(0, pressRamp, simd_dot(to - pivot, m)) * off * facing)
+    }
+
+    /// The back bends partly at the hips (the pelvis turning on the femurs) and the rest along the spine above, a curve
+    /// growing over the lumbar and lower chest: the belly folds softly instead of creasing over one hinge.
+    /// Each point rides the bent spine line at its height, turned as the line turns there.
+    struct BackBend {
+        static let atHips: Float = 0.35
+        static let hipBand: Float = 0.16
+        /// the hip share fades out higher above the pivot, into the spine curve: no straight stretch (a shelf) between the two turns
+        static let hipBandUp: Float = 0.30
+        /// skin far behind the pivot (big buttocks) turns higher up, over the flatter lower back: the fullest point isn't stretched flat
+        static let raiseFrom: Float = 0.1, raise: Float = 1
+        static let samples = 32
+        let pivot: SIMD3<Float>
+        let hips, spine, y0, y1: Float
+        /// the bent spine line (y, z) from y0 to y1
+        private let line: [SIMD2<Float>]
+
+        init(pivot: SIMD3<Float>, neckY: Float, theta: Float) {
+            self.pivot = pivot
+            hips = Self.atHips * theta
+            spine = theta - hips
+            let span = neckY - pivot.y
+            y0 = pivot.y + 0.11 * span
+            y1 = pivot.y + 0.55 * span
+            let h = (y1 - y0) / Float(Self.samples)
+            var c = SIMD2(y0, pivot.z), line = [c]
+            for i in 0..<Self.samples {
+                let a = (BodyScene.smooth(y0, y1, y0 + Float(i) * h) + BodyScene.smooth(y0, y1, y0 + Float(i + 1) * h)) / 2 * spine
+                c += h * SIMD2(cos(a), sin(a))
+                line.append(c)
+            }
+            self.line = line
+        }
+
+        private func centre(_ y: Float) -> SIMD2<Float> {
+            if y <= y0 { return SIMD2(y, pivot.z) }
+            if y >= y1 { return line[Self.samples] + (y - y1) * SIMD2(cos(spine), sin(spine)) }
+            let u = (y - y0) / (y1 - y0) * Float(Self.samples)
+            let i = min(Int(u), Self.samples - 1), f = u - Float(i)
+            return line[i] * (1 - f) + line[i + 1] * f
+        }
+
+        /// a point well in front of the spine (a bump, a big belly) turns over a longer stretch: its front isn't squeezed into a fold
+        static let spread: Float = 5
+        private static func widen(_ turn: Float, _ d: Float, _ span: Float) -> Float { max(0, spread * abs(turn) * max(0, d) - span) / 2 }
+
+        /// inverse of smooth on 0...1
+        private static func unsmooth(_ t: Float) -> Float { 0.5 - sin(asin(1 - 2 * max(0, min(1, t))) / 3) }
+
+        /// a point on the bent spine, turned with the line where it has turned as much; and that turn
+        private func onSpine(_ q: SIMD3<Float>) -> (SIMD3<Float>, Float) {
+            let d = q.z - pivot.z, w = Self.widen(spine, d, y1 - y0)
+            let a = spine * BodyScene.smooth(y0 - w, y1 + w, q.y)
+            let ye = abs(spine) > 1e-6 ? y0 + (y1 - y0) * Self.unsmooth(a / spine) : q.y
+            let c = centre(ye), h = q.y - ye
+            return (SIMD3(q.x, c.x + cos(a) * h - sin(a) * d, c.y + sin(a) * h + cos(a) * d), a)
+        }
+
+        private func hinge(_ p: SIMD3<Float>, _ a: Float) -> SIMD3<Float> {
+            let y = p.y - pivot.y, z = p.z - pivot.z
+            return SIMD3(p.x, pivot.y + cos(a) * y - sin(a) * z, pivot.z + sin(a) * y + cos(a) * z)
+        }
+
+        private static func turned(_ a: Float) -> simd_quatf { simd_quatf(angle: a, axis: SIMD3(1, 0, 0)) }
+
+        /// a skin point: the hip share blends across a band round the pivot
+        func move(_ q: SIMD3<Float>) -> (SIMD3<Float>, simd_quatf) {
+            let w = Self.widen(hips, q.z - pivot.z, 2 * Self.hipBand)
+            let up = Self.raise * max(0, pivot.z - q.z - Self.raiseFrom)
+            let a = hips * BodyScene.smooth(pivot.y - Self.hipBand - w + up, pivot.y + Self.hipBandUp + w + up, q.y)
+            let (p, t) = onSpine(q)
+            return (hinge(p, a), Self.turned(a + t))
+        }
+
+        /// a rigid piece (a bone, an organ) at its centre's height, the pelvis turned fully on the femurs
+        func rigid(at c: SIMD3<Float>) -> float4x4 {
+            let (p, t) = onSpine(c), r = Self.turned(hips + t)
+            var m = float4x4(r)
+            m.columns.3 = SIMD4(hinge(p, hips) - r.act(c), 1)
+            return m
+        }
+
+        /// everything above the curve: the joint's turn about the pivot, then this shift
+        var shift: SIMD3<Float> {
+            let top = SIMD3(pivot.x, pivot.y - y1, 0)
+            let s = SIMD3(top.x, line[Self.samples].x + cos(spine) * top.y, line[Self.samples].y + sin(spine) * top.y)
+            return hinge(s, hips) - pivot
+        }
+
+        var top: float4x4 {
+            let r = Self.turned(hips + spine)
+            var m = float4x4(r)
+            m.columns.3 = SIMD4(pivot + shift - r.act(pivot), 1)
+            return m
+        }
+    }
+
+    private func backBend(degrees: Float? = nil) -> BackBend? {
+        guard let outer = jointOuter["back"], let neck = jointOuter["neck"] else { return nil }
+        return BackBend(pivot: outer.position, neckY: neck.position.y, theta: (degrees ?? jointAngles["back"] ?? 0) * .pi / 180)
+    }
+
+    /// rest matrix and centre of each piece the back holds directly, placed on the bent spine
+    private var backRest: [ObjectIdentifier: (matrix: float4x4, centre: SIMD3<Float>)] = [:]
+
+    /// The back's container carries the trunk above the curve; the pelvis, lumbar bones and organs below it sit on the
+    /// curve at their height. Parts bent vertex by vertex (crossing) are left to bendCrossing.
+    private func placeBack() {
+        guard let outer = jointOuter["back"], let inner = jointInner["back"], let bend = backBend(), !crossing.isEmpty else { return }
+        inner.position = -outer.position + outer.orientation.inverse.act(bend.shift)
+        let top = bend.top.inverse
+        let skip = Set(jointOuter.values.map(ObjectIdentifier.init)).union((crossing["back"] ?? []).compactMap { partEntities[$0] }.map(ObjectIdentifier.init))
+        for e in inner.children where !skip.contains(ObjectIdentifier(e)) {
+            let key = ObjectIdentifier(e)
+            if backRest[key] == nil { backRest[key] = (e.transform.matrix, e.visualBounds(relativeTo: inner).center) }
+            guard let (base, c) = backRest[key], c.y < bend.y1 else { continue }
+            e.transform.matrix = top * bend.rigid(at: c) * base
+        }
+    }
+
+    /// under another joint's container that itself sits under `container`
+    private func inLimb(_ e: Entity, _ container: Entity?) -> Bool {
+        let inners = Set(jointInner.values.map(ObjectIdentifier.init))
+        var p = e.parent
+        while let q = p, q !== container {
+            if inners.contains(ObjectIdentifier(q)) { return under(q, container) }
+            p = q.parent
+        }
+        return false
     }
 
     private func under(_ e: Entity, _ container: Entity?) -> Bool {
@@ -710,7 +1057,7 @@ final class BodyScene {
         return false
     }
 
-    /// The back (a hinge at the hips, bending forward) and the neck (turning), as joint containers: everything the
+    /// The back (bending forward at the hips and along the spine: BackBend) and the neck (turning), as joint containers: everything the
     /// rig holds above the hips moves with the back, above the neck with the head. The whole-body skin and the
     /// underwear stay put and bend vertex by vertex.
     private func addFieldJoints() {
@@ -775,9 +1122,10 @@ final class BodyScene {
             if ["humerus", "femur"].contains(where: id.hasPrefix) { return 0.12 }
             return 0.3
         }
-        for (id, e) in partEntities where partLayer[id] == .skeletal {
+        let restMatrix = Dictionary(rest.map { (ObjectIdentifier($0.entity), $0.matrix) }) { a, _ in a }
+        for (id, e) in partEntities.sorted(by: { $0.key < $1.key }) where partLayer[id] == .skeletal {
             guard let part = e.model?.mesh.contents.models.first?.parts.first else { continue }
-            let p = Array(part.positions), m = e.transform.matrix, h = holder(e.parent ?? rig), far = reach(id)
+            let p = Array(part.positions), m = restMatrix[ObjectIdentifier(e)] ?? e.transform.matrix, h = holder(e.parent ?? rig), far = reach(id)
             let step = max(1, p.count / 400)
             for i in stride(from: 0, to: p.count, by: step) {
                 let q = m * SIMD4(p[i], 1)
@@ -808,7 +1156,7 @@ final class BodyScene {
         }
         // garments follow the body skin under them, the body (bound first) its nearest bone
         var skinGrid: [SIMD3<Int32>: [Int]] = [:]
-        var skinPoints: [SIMD3<Float>] = [], skinHolder: [Int] = []
+        var skinPoints: [SIMD3<Float>] = [], skinHolder: [Int] = [], skinTris: [UInt32] = [], skinVertTris: [[Int]] = []
         let skinCell: Float = 0.03
         func skinKey(_ p: SIMD3<Float>) -> SIMD3<Int32> { SIMD3<Int32>(Int32(floor(p.x / skinCell)), Int32(floor(p.y / skinCell)), Int32(floor(p.z / skinCell))) }
         func underSkin(_ q: SIMD3<Float>) -> Int {
@@ -821,9 +1169,59 @@ final class BodyScene {
                         if d < best { best = d; pick = i }
                     }
                 } } }
-                if pick >= 0 { return skinHolder[pick] }
+                if pick >= 0 { return pick }
             }
             return 0
+        }
+        // a garment point's shoulder share: the skin's round it on its holder, nearer counting more (one vertex's would step)
+        var skinShare: [Float] = [], skinSide: [Float] = []
+        // a garment point's closest point on the body skin (the triangles round its 8 nearest vertices), as barycentric
+        // weights: a blend of the near vertices instead would sit flat at each and step between them
+        func skinFollow(_ q: SIMD3<Float>, near: Int) -> [(Int, Float)] {
+            let c = skinKey(q)
+            var found: [(Float, Int)] = []
+            for dx in -1...1 { for dy in -1...1 { for dz in -1...1 {
+                for i in skinGrid[c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))] ?? [] { found.append((simd_distance_squared(skinPoints[i], q), i)) }
+            } } }
+            var best = Float.infinity, pick: [(Int, Float)] = [(near, 1)]
+            for k in Set(found.sorted { $0.0 < $1.0 }.prefix(8).flatMap { skinVertTris[$0.1] }).sorted() {
+                let v = (Int(skinTris[3 * k]), Int(skinTris[3 * k + 1]), Int(skinTris[3 * k + 2]))
+                let w = Self.closestOnTriangle(q, skinPoints[v.0], skinPoints[v.1], skinPoints[v.2])
+                let d = simd_distance_squared(w.x * skinPoints[v.0] + w.y * skinPoints[v.1] + w.z * skinPoints[v.2], q)
+                if d < best { best = d; pick = [(v.0, w.x), (v.1, w.y), (v.2, w.z)] }
+            }
+            return pick
+        }
+        func garmentShare(_ q: SIMD3<Float>, _ h: Int, near: Int) -> (Float, Float) {
+            let reach: Float = 0.04, c = skinKey(q)
+            var sum: Float = 0, total: Float = 0
+            for dx in -2...2 { for dy in -2...2 { for dz in -2...2 {
+                for i in skinGrid[c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))] ?? [] where skinHolder[i] == h {
+                    let d = simd_distance(skinPoints[i], q)
+                    guard d < reach else { continue }
+                    let k = (1 - d / reach) * (1 - d / reach)
+                    sum += k * skinShare[i]; total += k
+                }
+            } } }
+            if total > 0 { return (sum / total, skinSide[near]) }
+            // no skin of its holder close by (briefs beside the hanging hand): the nearest skin that is, not the hand's
+            var best = Float.infinity, pick = -1
+            for r in 3...8 {
+                for dx in -r...r { for dy in -r...r { for dz in -r...r where max(abs(dx), abs(dy), abs(dz)) == r {
+                    for i in skinGrid[c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))] ?? [] where skinHolder[i] == h {
+                        let d = simd_distance_squared(skinPoints[i], q)
+                        if d < best { best = d; pick = i }
+                    }
+                } } }
+                if pick >= 0 { break }
+            }
+            return (pick >= 0 ? skinShare[pick] : skinShare[near], skinSide[near])
+        }
+        // the shoulders' containers: each one's own and below it (the arm), and the one it hangs from (the torso)
+        let shoulders = joints.filter { $0.id.hasPrefix("shoulder") }.compactMap { j -> ShoulderBind? in
+            guard let outer = jointOuter[j.id], let inner = jointInner[j.id] else { return nil }
+            let lower = joints.filter { $0.parent == j.id }.compactMap { jointInner[$0.id] }.map(holder)
+            return ShoulderBind(pivot: j.pivot.simd, own: holder(inner), arm: Set([holder(inner)] + lower), torso: holder(outer.parent ?? rig))
         }
         for (entity, _) in skinEntities.sorted(by: { $0.entity.name == "skin:body" && $1.entity.name != "skin:body" })
         where entity.name == "skin:body" || entity.name.hasPrefix("skin:underwear") {
@@ -838,58 +1236,366 @@ final class BodyScene {
                 bindRest = part.positions.map { (p: SIMD3<Float>) -> SIMD3<Float> in let q = pm * SIMD4(p, 1); return SIMD3(q.x, q.y, q.z) }
                 if let pn = part.normals { bindNormals = pn.map { (p: SIMD3<Float>) -> SIMD3<Float> in let n = pm * SIMD4(p, 0); return simd_normalize(SIMD3(n.x, n.y, n.z)) } }
             }
-            var hold = entity.name == "skin:body" || skinPoints.isEmpty ? zip(bindRest, bindNormals).map { nearest($0, $1) } : rest.map { underSkin($0) }
-            // strays (a few vertices bound across a gap, where a hand rests on the thigh) take their neighbours' side
+            let body = entity.name == "skin:body" || skinPoints.isEmpty
+            let under = body ? [] : rest.map { underSkin($0) }
+            var hold = body ? zip(bindRest, bindNormals).map { nearest($0, $1) } : under.map { skinHolder[$0] }
             var adjacent = [[Int]](repeating: [], count: rest.count)
             let t = b.triangles
             for k in stride(from: 0, to: t.count - 2, by: 3) {
                 let a = Int(t[k]), bb = Int(t[k + 1]), c = Int(t[k + 2])
                 adjacent[a].append(bb); adjacent[a].append(c); adjacent[bb].append(a); adjacent[bb].append(c); adjacent[c].append(a); adjacent[c].append(bb)
             }
-            for _ in 0..<8 {
-                var next = hold
-                for i in hold.indices where !adjacent[i].isEmpty {
-                    var votes: [Int: Int] = [:]
-                    for j in adjacent[i] { votes[hold[j], default: 0] += 1 }
-                    if let (top, n) = votes.max(by: { $0.value < $1.value }), top != hold[i], n * 3 >= adjacent[i].count * 2 { next[i] = top }
-                }
-                hold = next
-            }
-            // a small island of one holder inside another's skin (a few hand vertices bound to a far bone) joins its surround
-            var label = [Int](repeating: -1, count: hold.count), sizes: [Int] = []
-            for start in hold.indices where label[start] < 0 {
-                var stack = [start], n = 0
-                label[start] = sizes.count
-                while let v = stack.popLast() {
-                    n += 1
-                    for w in adjacent[v] where label[w] < 0 && hold[w] == hold[v] { label[w] = sizes.count; stack.append(w) }
-                }
-                sizes.append(n)
-            }
-            var votes = [[Int: Int]](repeating: [:], count: sizes.count)
-            for i in hold.indices where sizes[label[i]] < 150 {
-                for j in adjacent[i] where label[j] != label[i] { votes[label[i]][hold[j], default: 0] += 1 }
-            }
-            for i in hold.indices where sizes[label[i]] < 150 {
-                if let top = votes[label[i]].max(by: { $0.value < $1.value })?.key { hold[i] = top }
+            hold = Self.tidy(hold, adjacent)
+            var share = [Float](repeating: 0, count: rest.count), side = rest.map { $0.x < 0 ? Float(-1) : 1 }
+            var canon: [Int] = [], band: [Int] = [], bandNear: [[Int]] = [], bandTris: [Int] = [], follow: [[(Int, Float)]] = []
+            var bandConvex: [Float] = [], bandGrad: [SIMD3<Float>] = [], bandOf: [Int] = []
+            if body {
+                (share, side, canon) = Self.shoulderShares(bindRest, adjacent: adjacent, hold: hold, shoulders: shoulders)
+                (band, bandNear, bandTris) = Self.relaxBand(share, canon: canon, adjacent: adjacent, triangles: t)
+                let pivotZ = shoulders.first?.pivot.z ?? 0
+                bandConvex = band.map { Self.relaxConvex + (1 - Self.relaxConvex) * Self.smooth(0, Self.relaxBehind, pivotZ - bindRest[$0].z) }
+                bandGrad = zip(band, bandNear).map { Self.shareGradient($0, $1, rest: rest, normals: normals, share: share) }
+                var slot = [Int](repeating: -1, count: rest.count)
+                for (b, i) in band.enumerated() { slot[i] = b }
+                bandOf = canon.map { slot[$0] }
+            } else if !skinShare.isEmpty {
+                for i in rest.indices { (share[i], side[i]) = garmentShare(rest[i], hold[i], near: under[i]) }
+                follow = rest.indices.map { skinFollow(rest[$0], near: under[$0]) }
             }
             if entity.name == "skin:body" {
-                skinPoints = rest; skinHolder = hold
+                skinPoints = rest; skinHolder = hold; skinShare = share; skinSide = side; skinTris = t
+                skinVertTris = [[Int]](repeating: [], count: rest.count)
+                for k in 0..<t.count / 3 { for j in 0..<3 { skinVertTris[Int(t[3 * k + j])].append(k) } }
                 for (i, p) in rest.enumerated() { skinGrid[skinKey(p), default: []].append(i) }
             }
-            skinBends.append(SkinBend(bender: b, toLocal: m.inverse, rest: rest, normals: normals, holder: hold))
+            var bend = SkinBend(bender: b, toLocal: m.inverse, rest: rest, normals: normals, holder: hold, shoulder: share, side: side,
+                                canon: canon, band: band, bandNear: bandNear, bandConvex: bandConvex, bandTris: bandTris,
+                                bandGrad: bandGrad, bandOf: bandOf, follow: follow)
+            bend.pack()
+            skinBends.append(bend)
+        }
+        let followed = Set(skinBends.flatMap { $0.followIdx.map(Int.init) })
+        for s in skinBends where !s.band.isEmpty { s.carry(followed) }
+    }
+
+    /// strays (a few vertices bound across a gap, where a hand rests on the thigh) take their neighbours' side
+    private static func tidy(_ labels: [Int], _ adjacent: [[Int]]) -> [Int] {
+        var hold = labels
+        for _ in 0..<8 {
+            var next = hold
+            for i in hold.indices where !adjacent[i].isEmpty {
+                var votes: [Int: Int] = [:]
+                for j in adjacent[i] { votes[hold[j], default: 0] += 1 }
+                if let (top, n) = votes.max(by: { ($0.value, $1.key) < ($1.value, $0.key) }), top != hold[i], n * 3 >= adjacent[i].count * 2 { next[i] = top }
+            }
+            hold = next
+        }
+        // a small island of one holder inside another's skin (a few hand vertices bound to a far bone) joins its surround
+        var label = [Int](repeating: -1, count: hold.count), sizes: [Int] = []
+        for start in hold.indices where label[start] < 0 {
+            var stack = [start], n = 0
+            label[start] = sizes.count
+            while let v = stack.popLast() {
+                n += 1
+                for w in adjacent[v] where label[w] < 0 && hold[w] == hold[v] { label[w] = sizes.count; stack.append(w) }
+            }
+            sizes.append(n)
+        }
+        var votes = [[Int: Int]](repeating: [:], count: sizes.count)
+        for i in hold.indices where sizes[label[i]] < 150 {
+            for j in adjacent[i] where label[j] != label[i] { votes[label[i]][hold[j], default: 0] += 1 }
+        }
+        for i in hold.indices where sizes[label[i]] < 150 {
+            if let top = votes[label[i]].max(by: { ($0.value, $1.key) < ($1.value, $0.key) })?.key { hold[i] = top }
+        }
+        return hold
+    }
+
+    private struct ShoulderBind { let pivot: SIMD3<Float>; let own: Int; let arm: Set<Int>; let torso: Int }
+
+    /// Each skin vertex's share of its side's shoulder turn. The arm is its bones' skin and, near the joint, all skin
+    /// lateral of it (the deltoid lies over the shoulder blade, nearer it than the humerus); the share ramps from the
+    /// torso to the arm across a band round that split, by distance over the skin (the arm's inner side touches the
+    /// chest), so the armpit opens over a hand's width instead of a sheet a few triangles wide. Then smoothed over the skin
+    /// (the arm's rigid part held): the split's corner behind the armpit would fold into a sharp flap.
+    private static func shoulderShares(_ p: [SIMD3<Float>], adjacent: [[Int]], hold: [Int], shoulders: [ShoulderBind]) -> ([Float], [Float], [Int]) {
+        let band = shoulderBand
+        let side = p.map { $0.x < 0 ? Float(-1) : 1 }
+        var share = [Float](repeating: 0, count: p.count)
+        // welded: the texture seam down the back of the armpit splits vertices
+        var first: [SIMD3<Float>: Int] = [:], canon = [Int](repeating: 0, count: p.count)
+        for i in p.indices {
+            if let j = first[p[i]] { canon[i] = j } else { first[p[i]] = i; canon[i] = i }
+        }
+        var welded = [[Int]](repeating: [], count: p.count)
+        for i in p.indices { welded[canon[i]] += adjacent[i].map { canon[$0] } }
+        let adjacent = welded, hold = hold.indices.map { hold[canon[$0]] }
+        for s in shoulders {
+            let sd: Float = s.pivot.x < 0 ? -1 : 1
+            let arm = tidy(p.indices.map { i in
+                guard side[i] == sd else { return 0 }
+                let d = p[i] - s.pivot
+                let near = simd_length(d) < 0.22 && d.y > -0.12 && (hold[i] == s.torso || hold[i] == s.own)
+                return (near ? sd * d.x > -0.03 : s.arm.contains(hold[i])) ? 1 : 0
+            }, adjacent)
+            // distance over the skin from the split (edge midpoints), as far as the band
+            var dist = [Float](repeating: .infinity, count: p.count)
+            var heap = MinHeap()
+            for i in p.indices {
+                for j in adjacent[i] where arm[j] != arm[i] { dist[i] = min(dist[i], simd_distance(p[i], p[j]) / 2) }
+                if dist[i] < band { heap.push(dist[i], i) }
+            }
+            while let (d, i) = heap.pop() {
+                guard d <= dist[i] else { continue }
+                for j in adjacent[i] {
+                    let e = d + simd_distance(p[i], p[j])
+                    if e < dist[j] && e < band { dist[j] = e; heap.push(e, j) }
+                }
+            }
+            for i in p.indices where canon[i] == i && side[i] == sd && (hold[i] == s.torso || s.arm.contains(hold[i])) {
+                share[i] = max(0, min(1, ((arm[i] == 1 ? dist[i] : -dist[i]) + band) / (2 * band)))
+            }
+            let free = p.indices.filter { canon[$0] == $0 && side[$0] == sd && (hold[$0] == s.torso || s.arm.contains(hold[$0])) && share[$0] < 1 }
+            let near = free.map { i in Set(adjacent[i].filter { $0 != i && side[$0] == sd }).sorted() }
+            for _ in 0..<shoulderSmoothing {
+                let next = zip(free, near).map { i, n in n.isEmpty ? share[i] : n.reduce(0) { $0 + share[$1] } / Float(n.count) }
+                for (k, i) in free.enumerated() { share[i] = next[k] }
+            }
+        }
+        return (p.indices.map { share[canon[$0]] }, side, canon)
+    }
+
+    /// the skin relaxShoulders moves: welded vertices inside a shoulder band, their welded neighbours, the triangles touching them
+    private static func relaxBand(_ share: [Float], canon: [Int], adjacent: [[Int]], triangles t: [UInt32]) -> ([Int], [[Int]], [Int]) {
+        var near = [Set<Int>](repeating: [], count: share.count)
+        for i in share.indices { for j in adjacent[i] where canon[j] != canon[i] { near[canon[i]].insert(canon[j]) } }
+        let band = share.indices.filter { canon[$0] == $0 && share[$0] >= 1e-3 && share[$0] <= 1 - 1e-3 && !near[$0].isEmpty }
+        var inBand = [Bool](repeating: false, count: share.count)
+        for i in band { inBand[i] = true }
+        let tris = stride(from: 0, to: t.count - 2, by: 3).filter { k in (0..<3).contains { inBand[canon[Int(t[k + $0])]] } }
+        return (band, band.map { Array(near[$0]) }, tris)
+    }
+
+    /// barycentric weights of the point on triangle abc closest to q (Ericson, Real-Time Collision Detection 5.1.5)
+    private static func closestOnTriangle(_ q: SIMD3<Float>, _ a: SIMD3<Float>, _ b: SIMD3<Float>, _ c: SIMD3<Float>) -> SIMD3<Float> {
+        let ab = b - a, ac = c - a, ap = q - a
+        let d1 = simd_dot(ab, ap), d2 = simd_dot(ac, ap)
+        if d1 <= 0 && d2 <= 0 { return [1, 0, 0] }
+        let bp = q - b, d3 = simd_dot(ab, bp), d4 = simd_dot(ac, bp)
+        if d3 >= 0 && d4 <= d3 { return [0, 1, 0] }
+        let vc = d1 * d4 - d3 * d2
+        if vc <= 0 && d1 >= 0 && d3 <= 0 { let v = d1 / (d1 - d3); return [1 - v, v, 0] }
+        let cp = q - c, d5 = simd_dot(ab, cp), d6 = simd_dot(ac, cp)
+        if d6 >= 0 && d5 <= d6 { return [0, 0, 1] }
+        let vb = d5 * d2 - d1 * d6
+        if vb <= 0 && d2 >= 0 && d6 <= 0 { let w = d2 / (d2 - d6); return [1 - w, 0, w] }
+        let va = d3 * d6 - d5 * d4
+        if va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0 { let w = (d4 - d3) / ((d4 - d3) + (d5 - d6)); return [0, 1 - w, w] }
+        let den = 1 / max(va + vb + vc, 1e-20), v = vb * den, w = vc * den
+        return [1 - v - w, v, w]
+    }
+
+    /// a band vertex's share gradient: least squares over its welded neighbours, in its tangent plane
+    private static func shareGradient(_ i: Int, _ near: [Int], rest: [SIMD3<Float>], normals: [SIMD3<Float>], share: [Float]) -> SIMD3<Float> {
+        var m = simd_float3x3(0), r = SIMD3<Float>.zero
+        for j in near {
+            let e = rest[j] - rest[i]
+            m += simd_float3x3(e * e.x, e * e.y, e * e.z)
+            r += e * (share[j] - share[i])
+        }
+        let n = normals[i], tr = m[0][0] + m[1][1] + m[2][2]
+        m += simd_float3x3(n * n.x, n * n.y, n * n.z) * tr
+        guard abs(m.determinant) > 1e-20 else { return .zero }
+        let g = m.inverse * r
+        return g - simd_dot(g, n) * n
+    }
+
+    /// The chord's normal: through the inverse transpose of its Jacobian J = (1-w)I + wR + (Rd - d)gᵀ (d off the pivot, g the
+    /// share's gradient). Turning by the chord direction alone leaves out the gradient term: behind the armpit that shades a
+    /// knob the surface doesn't have.
+    /// (c, s: 1 - w + w cos θ and w sin θ; q: the turn by atan2(s, c); turn: the full turn by θ)
+    private static func chordNormal(_ n: SIMD3<Float>, grad g: SIMD3<Float>, d: SIMD3<Float>, w: Float, c: Float, s: Float,
+                                    q: simd_quatf, turn: simd_quatf, axis: SIMD3<Float>) -> SIMD3<Float> {
+        let rho = max(1e-6, (c * c + s * s).squareRoot())
+        func ainvt(_ v: SIMD3<Float>) -> SIMD3<Float> {
+            let va = simd_dot(v, axis) * axis
+            return va + q.act(v - va) / rho
+        }
+        let u = turn.act(d) - d
+        let an = ainvt(n), ag = ainvt(g * smooth(0, gradFade, 1 - w))
+        let r = an - ag * (simd_dot(u, an) / (1 + simd_dot(ag, u)))
+        let l = simd_length(r)
+        return l > 1e-12 ? r / l : q.act(n)
+    }
+
+    /// At a high arm the chord pulls the band skin toward the pivot: a pinched ring and a shelf where the arm meets the
+    /// torso. Band skin moves toward its neighbours' mean plus its offset from theirs before the turn (that detail fading
+    /// out mid band); a move sinking convex skin is cut to relaxConvex (less behind the joint), so hollows fill and the arm stays round. Band
+    /// normals (the chord's, chordNormal) then blend to the surface's and are averaged with their neighbours. Returns whether
+    /// it moved; each vertex's move is left in scratch.move, for the garments to carry if `carry` (garmentMove).
+    /// Each smoothing stops early once nothing moves more than `settled` a pass.
+    private static func relaxShoulders(_ s: SkinBend, turns: [(side: Float, theta: Float, axis: SIMD3<Float>)],
+                                       pos: UnsafeMutablePointer<SIMD3<Float>>, nrm: UnsafeMutablePointer<SIMD3<Float>>,
+                                       pre: UnsafePointer<SIMD3<Float>>, jac: UnsafePointer<SIMD3<Float>>, carry: Bool) -> Bool {
+        let n = s.band.count, x = s.scratch
+        let k = x.k, kn = x.kn, wn = x.wn, delta = x.delta, ref = x.ref, p = x.p, active = x.active
+        let band = s.band, shoulder = s.shoulder, side = s.side, convex = s.bandConvex, canon = s.canon, bandOf = s.bandOf
+        let start = x.start, slot = x.slot, size = x.size, verts = s.bandVerts, ghosts = s.ghosts
+        let still = settled * settled
+        var relaxing = false, smoothing = false, nActive = 0
+        for b in 0..<n {
+            let i = band[b]
+            k[b] = 0; kn[b] = 0; wn[b] = 0; delta[b] = .zero; ref[b] = .zero; p[b] = pos[i]
+            guard let t = turns.first(where: { $0.side == side[i] }) else { continue }
+            let amt = smooth(relaxFrom, relaxFull, abs(t.theta)), w = shoulder[i], c = min(1, 4 * w * (1 - w))
+            let lo = Int(start[b]), hi = Int(start[b + 1])
+            var mean = SIMD3<Float>.zero
+            for e in lo..<hi { let j = Int(slot[e]); mean += pre[j < n ? band[j] : Int(ghosts[j - n])] }
+            mean /= size[b]
+            k[b] = c * relaxRate * amt
+            kn[b] = min(1, 8 * w * (1 - w)) * amt
+            wn[b] = min(1, 8 * w * (1 - w)) * smooth(normalFrom, normalFull, abs(t.theta)) * (1 - amt)
+            delta[b] = simd_quatf(angle: atan2(w * sin(t.theta), 1 - w + w * cos(t.theta)), axis: t.axis).act(pre[i] - mean) * (1 - c)
+            ref[b] = nrm[i]
+            if k[b] > 1e-3 { relaxing = true; active[nActive] = Int32(b); nActive += 1 }
+            if wn[b] > 1e-3 { smoothing = true }
+        }
+        if relaxing {
+            let step = x.step
+            for (e, j) in ghosts.enumerated() { p[n + e] = pos[Int(j)] }
+            for _ in 0..<relaxPasses {
+                var most: Float = 0
+                for a in 0..<nActive {
+                    let b = Int(active[a]), lo = Int(start[b]), hi = Int(start[b + 1])
+                    var sum = SIMD3<Float>.zero
+                    for e in lo..<hi { sum += p[Int(slot[e])] }
+                    var u = sum / size[b] + delta[b] - p[b]
+                    if simd_dot(u, ref[b]) <= 0 { u *= convex[b] }
+                    step[b] = k[b] * u
+                    most = max(most, simd_length_squared(step[b]))
+                }
+                for a in 0..<nActive { let b = Int(active[a]); p[b] += step[b] }
+                if most < still { break }
+            }
+            let move = x.move
+            move.update(repeating: .zero, count: s.rest.count)
+            for v in verts { let i = Int(v); move[i] = p[bandOf[i]] - pos[canon[i]] }
+            for v in verts { let i = Int(v); pos[i] += move[i] }
+        }
+        for v in verts { let i = Int(v); if jac[i] != .zero { nrm[i] = jac[i] } }
+        if relaxing {
+            // band normals of the relaxed surface, per band slot
+            let g = x.g, tri = s.bender.triangles
+            g.update(repeating: .zero, count: n)
+            for k0 in s.bandTris {
+                let a = Int(tri[k0]), b = Int(tri[k0 + 1]), c = Int(tri[k0 + 2])
+                let f = simd_cross(pos[b] - pos[a], pos[c] - pos[a])
+                let sa = bandOf[a], sb = bandOf[b], sc = bandOf[c]
+                if sa >= 0 { g[sa] += f }
+                if sb >= 0 { g[sb] += f }
+                if sc >= 0 { g[sc] += f }
+            }
+            for v in verts {
+                let i = Int(v), b = bandOf[i], w = kn[b]
+                guard w > 1e-3, simd_length(g[b]) > 1e-12 else { continue }
+                nrm[i] = simd_normalize(nrm[i] * (1 - w) + simd_normalize(g[b]) * w)
+            }
+            if carry { garmentMove(s) }
+        }
+        // the chord's kinks (the share's ends, the relax's edge) shade soft
+        guard smoothing else { return relaxing }
+        var m = x.m, next = x.next
+        for b in 0..<n { m[b] = nrm[band[b]]; next[b] = m[b] }
+        for (e, j) in ghosts.enumerated() { m[n + e] = nrm[Int(j)]; next[n + e] = m[n + e] }
+        for _ in 0..<normalPasses {
+            var most: Float = 0
+            for b in 0..<n where wn[b] > 1e-3 {
+                let lo = Int(start[b]), hi = Int(start[b + 1])
+                var sum = SIMD3<Float>.zero
+                for e in lo..<hi { sum += m[Int(slot[e])] }
+                next[b] = simd_normalize(m[b] + wn[b] * (sum / size[b] - m[b]))
+                most = max(most, simd_length_squared(next[b] - m[b]))
+            }
+            swap(&m, &next)
+            if most < still { break }
+        }
+        for v in verts { let i = Int(v), b = bandOf[i]; if wn[b] > 1e-3 { nrm[i] = m[b] } }
+        return relaxing
+    }
+
+    /// a smoothing pass moving nothing more than this (body units, or radians for normals) has settled
+    private static let settled: Float = 1e-7
+
+    /// The relax's move for the garments: its slide along the skin smoothed over the band (a strap samples it at a few
+    /// vertices, and where it varies fast the strap's edges zigzag), the part along the normal kept so they stay on the skin.
+    /// In place on scratch.move, from scratch.g (the band's surface normals).
+    private static func garmentMove(_ s: SkinBend) {
+        let x = s.scratch, n = s.band.count, g = x.g, move = x.move, nb = x.m
+        let band = s.band, start = x.start, slot = x.slot, size = x.size, bandOf = s.bandOf
+        guard let order = x.order else { return }
+        var t = x.t, next = x.next
+        for b in 0..<n {
+            nb[b] = simd_length(g[b]) > 1e-12 ? simd_normalize(g[b]) : .zero
+            let mv = move[band[b]]
+            t[b] = mv - simd_dot(mv, nb[b]) * nb[b]
+            next[b] = t[b]
+        }
+        // off the band nothing slides
+        for e in 0..<s.ghosts.count { t[n + e] = .zero; next[n + e] = .zero }
+        // only as far from the followed vertices as can still reach them
+        for pass in 0..<garmentPasses {
+            var most: Float = 0
+            for o in 0..<x.reach[garmentPasses - 1 - pass] {
+                let b = Int(order[o]), lo = Int(start[b]), hi = Int(start[b + 1])
+                var sum = SIMD3<Float>.zero
+                for e in lo..<hi { sum += t[Int(slot[e])] }
+                let u = t[b] + 0.5 * (sum / size[b] - t[b])
+                next[b] = u - simd_dot(u, nb[b]) * nb[b]
+                most = max(most, simd_length_squared(next[b] - t[b]))
+            }
+            swap(&t, &next)
+            if most < settled * settled { break }
+        }
+        for v in s.bandVerts {
+            let i = Int(v), b = bandOf[i]
+            move[i] = simd_dot(move[i], nb[b]) * nb[b] + t[b]
+        }
+    }
+
+    private struct MinHeap {
+        private var items: [(Float, Int)] = []
+        mutating func push(_ key: Float, _ value: Int) {
+            items.append((key, value))
+            var c = items.count - 1
+            while c > 0, items[(c - 1) / 2].0 > items[c].0 { items.swapAt(c, (c - 1) / 2); c = (c - 1) / 2 }
+        }
+        mutating func pop() -> (Float, Int)? {
+            guard let top = items.first else { return nil }
+            items[0] = items[items.count - 1]
+            items.removeLast()
+            var p = 0
+            while true {
+                let l = 2 * p + 1, r = l + 1
+                var m = p
+                if l < items.count && items[l].0 < items[m].0 { m = l }
+                if r < items.count && items[r].0 < items[m].0 { m = r }
+                if m == p { break }
+                items.swapAt(p, m); p = m
+            }
+            return top
         }
     }
 
     /// The skin follows every bent joint: a vertex under a joint turns with it (blended across the band round the
-    /// pivot), one beside it turns by its share; joints compose parent first, each pivot moved by its ancestors.
+    /// pivot), one beside it turns by its share, a shoulder by bindSkin's share; joints compose parent first, each pivot moved by its ancestors.
     private func bendSkin() {
         guard realSkin else { return }
         let band = Self.bendBand
-        struct Bend { let id: String; let parent: ObjectIdentifier; let restPivot, pivot, axis: SIMD3<Float>; let theta: Float; let under: Set<ObjectIdentifier> }
+        struct Bend { let id: String; let own, parent: ObjectIdentifier; let restPivot, restAxis, pivot, axis, up, shift: SIMD3<Float>; let theta: Float; let under: Set<ObjectIdentifier>; let back: BackBend? }
         func joint(_ id: String) -> Joint? { joints.first { $0.id == id } }
         func depth(_ j: Joint) -> Int { j.parent.flatMap(joint).map { depth($0) + 1 } ?? 0 }
         var bends: [Bend] = []
+        var key: [Float] = []
         for j in joints.filter({ abs(jointAngles[$0.id] ?? 0) > 0.5 }).sorted(by: { depth($0) < depth($1) }) {
             guard let outer = jointOuter[j.id], let offset = jointInner[j.id] else { continue }
             var under: Set<ObjectIdentifier> = [ObjectIdentifier(offset)]
@@ -900,42 +1606,148 @@ final class BodyScene {
                     p = joint(id)?.parent
                 }
             }
-            var pivot = outer.position, axis = simd_normalize(j.axis.simd)
+            var pivot = outer.position, axis = simd_normalize(j.axis.simd), up = SIMD3<Float>(0, 1, 0)
             for b in bends where b.under.contains(ObjectIdentifier(offset)) {
                 let r = simd_quatf(angle: b.theta, axis: b.axis)
-                pivot = b.pivot + r.act(pivot - b.pivot)
+                pivot = b.pivot + r.act(pivot - b.pivot) + b.shift
                 axis = r.act(axis)
+                up = r.act(up)
             }
-            bends.append(Bend(id: j.id, parent: ObjectIdentifier(outer.parent ?? rig), restPivot: outer.position, pivot: pivot, axis: axis,
-                              theta: (jointAngles[j.id] ?? 0) * .pi / 180, under: under))
+            let back = j.id == "back" ? backBend() : nil
+            let bend = Bend(id: j.id, own: ObjectIdentifier(offset), parent: ObjectIdentifier(outer.parent ?? rig), restPivot: outer.position, restAxis: simd_normalize(j.axis.simd),
+                            pivot: pivot, axis: axis, up: up, shift: back?.shift ?? .zero, theta: (jointAngles[j.id] ?? 0) * .pi / 180, under: under, back: back)
+            bends.append(bend)
+            key += [Float(joints.firstIndex { $0.id == j.id } ?? -1), bend.theta, back?.y1 ?? 0]
+            for v in [bend.restPivot, bend.pivot, bend.axis, bend.up, bend.shift] { key += [v.x, v.y, v.z] }
         }
         if bends.isEmpty && skinBends.isEmpty { return }
         if skinBends.isEmpty { bindSkin() }
-        let holdID = holders.map { ObjectIdentifier($0) }
+        // the same pose as last time and nobody else wrote the skin since: it already shows
+        if let last = skinPose, last.key == key, last.versions == skinBends.map(\.bender.version) {
+            for s in skinBends { s.bender.shade?.isEnabled = solidSkin }
+            return
+        }
+        defer { skinPose = (key, skinBends.map(\.bender.version)) }
+        let turns = bends.filter { $0.id.hasPrefix("shoulder") }.map { (side: Float($0.restPivot.x < 0 ? -1 : 1), theta: $0.theta, axis: $0.axis) }
+
+        // per bend, what every vertex reuses: its kind, holders by index, its turn and press plane
+        enum Kind { case back, shoulder, hinge, plain }
+        struct Prep {
+            let kind: Kind; let knee, upward, left, neck: Bool; let own, parent: Int
+            let restPivot, restAxis, pivot, axis, shift, pressN, pressM: SIMD3<Float>
+            let theta, cosT, sinT: Float; let turn: simd_quatf
+        }
+        let nh = holders.count, holdID = holders.map { ObjectIdentifier($0) }
+        var underHolder = [Bool](repeating: false, count: max(1, bends.count * nh))
+        let preps = bends.enumerated().map { bi, b -> Prep in
+            for h in 0..<nh { underHolder[bi * nh + h] = b.under.contains(holdID[h]) }
+            let kind: Kind = b.back != nil ? .back : b.id.hasPrefix("shoulder") ? .shoulder : Self.hinge(b.id) ? .hinge : .plain
+            let n = simd_quatf(angle: b.theta / 2, axis: b.axis).act(b.up)
+            return Prep(kind: kind, knee: b.id.hasPrefix("knee"), upward: Self.upward.contains(b.id), left: b.restPivot.x < 0,
+                        neck: b.id == "neck" && neckFitted,
+                        own: holdID.firstIndex(of: b.own) ?? -1, parent: holdID.firstIndex(of: b.parent) ?? -1,
+                        restPivot: b.restPivot, restAxis: b.restAxis, pivot: b.pivot, axis: b.axis, shift: b.shift,
+                        pressN: n, pressM: simd_cross(n, b.axis), theta: b.theta, cosT: cos(b.theta), sinT: sin(b.theta),
+                        turn: simd_quatf(angle: b.theta, axis: b.axis))
+        }
+        let backBend = bends.lazy.compactMap(\.back).first
+        // garments carrying the relax (else its move isn't smoothed for them)
+        let carry = skinBends.contains { !$0.followStart.isEmpty }
+        var relaxMove: UnsafeMutablePointer<SIMD3<Float>>?
         for s in skinBends {
             if bends.isEmpty { s.bender.write(indices: [], positions: [], normals: []); continue }
-            var pos = s.rest, nrm = s.normals
-            for i in pos.indices {
-                let h = holdID[s.holder[i]], q = s.rest[i]
-                for b in bends {
-                    var w = share(b.id, pivotY: b.restPivot.y, q.y)
-                    if b.under.contains(h) {
-                    } else if h == b.parent {
-                        // beside the joint: only round it (the torso hangs below a shoulder but stays)
-                        let up = Self.upward.contains(b.id)
-                        w *= (up ? 1 : Self.beside(q, b.restPivot))
-                            * (1 - (up ? Self.smooth(b.restPivot.y + band, b.restPivot.y + 2.5 * band, q.y)
-                                       : Self.smooth(b.restPivot.y - band, b.restPivot.y - 2.5 * band, q.y)))
-                    } else { continue }
-                    if w < 1e-3 { continue }
-                    let r = simd_quatf(angle: w * b.theta, axis: b.axis)
-                    pos[i] = b.pivot + r.act(pos[i] - b.pivot)
-                    nrm[i] = r.act(nrm[i])
+            let x = s.scratch, count = s.rest.count
+            let pos = x.pos, nrm = x.nrm, pre = x.pre, jac = x.jac, occ = x.occ
+            let shaded = s.bender.entity.name == "skin:body", hasJac = !s.bandOf.isEmpty
+            let rest = s.rest, normals = s.normals, holder = s.holder, side = s.side, shoulder = s.shoulder
+            let bandOf = s.bandOf, bandGrad = s.bandGrad
+            underHolder.withUnsafeBufferPointer { under in
+                preps.withUnsafeBufferPointer { bp in
+                    for i in 0..<count {
+                        let h = holder[i], q = rest[i]
+                        var p = q, nm = normals[i], pr = q, jv = SIMD3<Float>.zero, oc: Float = 0
+                        var preSet = false
+                        // the turn so far, carrying the share's gradient to the chord
+                        var turn = simd_quatf(ix: 0, iy: 0, iz: 0, r: 1)
+                        for bi in 0..<bp.count {
+                            let b = bp[bi], held = under[bi * nh + h]
+                            switch b.kind {
+                            case .back:
+                                if held && h != b.own {
+                                    // a limb hung from the back follows the trunk above the curve
+                                    p = b.pivot + b.turn.act(p - b.pivot) + b.shift
+                                    nm = b.turn.act(nm)
+                                    turn = b.turn * turn
+                                } else if h == b.own || h == b.parent, let back = backBend {
+                                    let (moved, r) = back.move(p)
+                                    p = moved
+                                    nm = r.act(nm)
+                                    turn = r * turn
+                                }
+                            case .shoulder:
+                                // the arm's turn blended in by the vertex's share (bindSkin), along the chord rather than round the
+                                // pivot: the armpit folds into a hollow instead of swinging out past the arm
+                                if !preSet { pr = p; preSet = true }
+                                guard held || h == b.parent, (side[i] < 0) == b.left, shoulder[i] >= 1e-3 else { continue }
+                                let w = shoulder[i], c = 1 - w + w * b.cosT, sn = w * b.sinT
+                                // turned as far as the chord point's direction did
+                                let chord = simd_quatf(angle: atan2(sn, c), axis: b.axis)
+                                if hasJac, bandOf[i] >= 0 {
+                                    jv = Self.chordNormal(nm, grad: turn.act(bandGrad[bandOf[i]]), d: p - b.pivot, w: w, c: c, s: sn,
+                                                          q: chord, turn: b.turn, axis: b.axis)
+                                }
+                                p += w * (b.pivot + b.turn.act(p - b.pivot) - p)
+                                nm = chord.act(nm)
+                            case .hinge, .plain:
+                                let hinge = b.kind == .hinge
+                                var w = hinge ? Self.hingeShare(knee: b.knee, q, pivot: b.restPivot, axis: b.restAxis)
+                                    : b.neck ? Self.neckShare(q, pivot: b.restPivot) : Self.share(up: b.upward, pivotY: b.restPivot.y, q.y)
+                                var pressing: Float = 1
+                                if held {
+                                    // a limb hung from the joint (an arm from the back) turns whole, wherever its hand hangs
+                                    if h != b.own { w = 1 }
+                                } else if h == b.parent {
+                                    // beside the joint: only round it (the torso hangs below a shoulder but stays)
+                                    let up = b.upward
+                                    w *= (up ? 1 : Self.beside(q, b.restPivot))
+                                        * (1 - (up ? Self.smooth(b.restPivot.y + band, b.restPivot.y + 2.5 * band, q.y)
+                                                   : Self.smooth(b.restPivot.y - band, b.restPivot.y - 2.5 * band, q.y)))
+                                    // the other leg isn't pressed
+                                    pressing = 1 - Self.smooth(0.12, 0.2, abs(simd_dot(q - b.restPivot, b.restAxis)))
+                                } else { continue }
+                                if w >= 1e-3 {
+                                    let r = simd_quatf(angle: w * b.theta, axis: b.axis)
+                                    p = b.pivot + r.act(p - b.pivot)
+                                    nm = r.act(nm)
+                                    if hasJac && jv != .zero { jv = r.act(jv) } else { turn = r * turn }
+                                }
+                                if hinge && pressing > 1e-3 {
+                                    let r = Self.pressed(p, nm, near: w < 0.5, weight: pressing, pivot: b.pivot, n: b.pressN, m: b.pressM, knee: b.knee)
+                                    p = r.0; nm = r.1
+                                    if shaded { oc = max(oc, r.2) }
+                                }
+                            }
+                        }
+                        pos[i] = p; nrm[i] = nm; occ[i] = oc
+                        if hasJac { pre[i] = pr; jac[i] = jv }
+                    }
                 }
             }
-            let local = pos.map { (p: SIMD3<Float>) -> SIMD3<Float> in let q = s.toLocal * SIMD4(p, 1); return SIMD3(q.x, q.y, q.z) }
-            let ln = nrm.map { (n: SIMD3<Float>) -> SIMD3<Float> in let q = s.toLocal * SIMD4(n, 0); return simd_normalize(SIMD3(q.x, q.y, q.z)) }
-            s.bender.write(indices: Array(local.indices), positions: local, normals: ln)
+            if !s.band.isEmpty && !turns.isEmpty {
+                relaxMove = Self.relaxShoulders(s, turns: turns, pos: pos, nrm: nrm, pre: pre, jac: jac, carry: carry) ? x.move : nil
+            } else if !s.followStart.isEmpty, let move = relaxMove {
+                let fs = s.followStart, fi = s.followIdx, fw = s.followW
+                for i in 0..<count { for e in Int(fs[i])..<Int(fs[i + 1]) { pos[i] += fw[e] * move[Int(fi[e])] } }
+            }
+            // into the mesh's space, in place
+            let m = s.toLocal
+            for i in 0..<count {
+                let q = m * SIMD4(pos[i], 1), n = m * SIMD4(nrm[i], 0)
+                pos[i] = SIMD3(q.x, q.y, q.z)
+                nrm[i] = simd_normalize(SIMD3(n.x, n.y, n.z))
+            }
+            s.bender.write(count: count, positions: pos, normals: nrm, occlusion: shaded ? occ : nil)
+            s.bender.shade?.isEnabled = solidSkin
         }
     }
 
@@ -947,13 +1759,8 @@ final class BodyScene {
 
     /// Parts crossing the joint (muscles, vessels, nerves; bones stay rigid) bend with it: each vertex turns by its
     /// share of the angle, none on the near side to all on the far side, so a hamstring stays joined to the shin.
-    private func bendCrossing(_ joint: Joint, outer: Entity, degrees: Float) {
-        let pivot = outer.position
-        let axis = simd_normalize(joint.axis.simd)
-        let theta = degrees * .pi / 180
+    private func bendCrossing(_ joint: Joint) {
         let band = Self.bendBand
-        // a part under the joint's own container already turns with it
-        let within = jointInner[joint.id]
         if crossing.isEmpty {
             // every joint's set, measured at rest before any part is made movable (a movable part's box is padded
             // for culling, wide enough to reach the other leg's joint); in the parent's space (the joint's own
@@ -962,14 +1769,18 @@ final class BodyScene {
                 guard let p = jointOuter[j.id]?.position else { continue }
                 // the back and neck cut right across the body; a limb's joint only reaches its own limb
                 let (rx, rz): (Float, Float) = Self.upward.contains(j.id) ? (0.6, 0.6) : (0.06, 0.1)
+                // the back's curve reaches up the spine
+                let (lo, hi) = j.id == "back" ? (p.y - BackBend.hipBand, backBend(degrees: 0)?.y1 ?? p.y + band) : (p.y - band, p.y + band)
                 crossing[j.id] = partEntities.filter { id, entity in
                     guard let layer = partLayer[id], layer != .skeletal, layer != .skin else { return false }
                     let box = entity.visualBounds(relativeTo: entity.parent)
-                    return !box.isEmpty && box.min.y < p.y + band && box.max.y > p.y - band
+                    return !box.isEmpty && box.min.y < hi && box.max.y > lo
                         && box.min.x - rx < p.x && box.max.x + rx > p.x && box.min.z - rz < p.z && box.max.z + rz > p.z
                 }.map(\.key)
             }
         }
+        // a part crossing several joints (a chest muscle under the back and a shoulder) bends by all of them, the inner first
+        func depth(_ j: Joint) -> Int { j.parent.flatMap { p in joints.first { $0.id == p } }.map { depth($0) + 1 } ?? 0 }
         for id in crossing[joint.id] ?? [] {
             guard let entity = partEntities[id] else { continue }
             let bender: SkinDeformer
@@ -979,23 +1790,43 @@ final class BodyScene {
                 bender = b
             }
             let m = entity.transform.matrix, inv = m.inverse
-            var pos = bender.rest, nrm = bender.normals
-            for i in pos.indices {
-                let q4 = m * SIMD4(pos[i], 1)
-                let q = SIMD3(q4.x, q4.y, q4.z)
-                // the far side (below the joint) turns fully; a part under the joint already turns with it
-                let w = share(joint.id, pivotY: pivot.y, q.y)
-                let a = under(entity, within) ? (w - 1) * theta : w * (Self.upward.contains(joint.id) ? 1 : Self.beside(q, pivot)) * theta
-                if abs(a) < 1e-4 { continue }
-                let r = simd_quatf(angle: a, axis: axis)
-                let moved = pivot + r.act(q - pivot)
-                let back = inv * SIMD4(moved, 1)
-                pos[i] = SIMD3(back.x, back.y, back.z)
-                let n4 = m * SIMD4(nrm[i], 0)
-                let n = inv * SIMD4(r.act(SIMD3(n4.x, n4.y, n4.z)), 0)
-                nrm[i] = simd_normalize(SIMD3(n.x, n.y, n.z))
+            let rest = bender.rest.map { (p: SIMD3<Float>) -> SIMD3<Float> in let q = m * SIMD4(p, 1); return SIMD3(q.x, q.y, q.z) }
+            var pos = rest
+            var nrm = bender.normals.map { (n: SIMD3<Float>) -> SIMD3<Float> in let q = m * SIMD4(n, 0); return SIMD3(q.x, q.y, q.z) }
+            let bent = joints.filter { $0.id == joint.id || (abs(jointAngles[$0.id] ?? 0) > 0.5 && crossing[$0.id]?.contains(id) == true) }
+            for j in bent.sorted(by: { depth($0) > depth($1) }) {
+                guard let pivot = jointOuter[j.id]?.position else { continue }
+                let within = jointInner[j.id], axis = simd_normalize(j.axis.simd), theta = (jointAngles[j.id] ?? 0) * .pi / 180
+                // already turned whole by a child joint's container (an arm muscle under the back's shoulder)
+                if inLimb(entity, within) { continue }
+                let held = under(entity, within)
+                if let back = j.id == "back" ? backBend() : nil {
+                    // onto the curve; a part under the back's container is carried by its top already
+                    let undo = held ? back.top.inverse : matrix_identity_float4x4
+                    let unturn = simd_quatf(angle: held ? -theta : 0, axis: axis)
+                    for i in pos.indices {
+                        let (p, r) = back.move(pos[i])
+                        let q = undo * SIMD4(p, 1)
+                        pos[i] = SIMD3(q.x, q.y, q.z)
+                        nrm[i] = unturn.act(r.act(nrm[i]))
+                    }
+                    continue
+                }
+                let up = Self.upward.contains(j.id), neck = j.id == "neck" && neckFitted
+                for i in pos.indices {
+                    let q = rest[i]
+                    // the far side (below the joint) turns fully; a part under the joint already turns with it
+                    let w = neck ? Self.neckShare(q, pivot: pivot) : Self.share(up: up, pivotY: pivot.y, q.y)
+                    let a = held ? (w - 1) * theta : w * (up ? 1 : Self.beside(q, pivot)) * theta
+                    if abs(a) < 1e-4 { continue }
+                    let r = simd_quatf(angle: a, axis: axis)
+                    pos[i] = pivot + r.act(pos[i] - pivot)
+                    nrm[i] = r.act(nrm[i])
+                }
             }
-            bender.write(indices: Array(pos.indices), positions: pos, normals: nrm)
+            let local = pos.map { (p: SIMD3<Float>) -> SIMD3<Float> in let q = inv * SIMD4(p, 1); return SIMD3(q.x, q.y, q.z) }
+            let ln = nrm.map { (n: SIMD3<Float>) -> SIMD3<Float> in let q = inv * SIMD4(n, 0); return simd_normalize(SIMD3(q.x, q.y, q.z)) }
+            bender.write(indices: Array(local.indices), positions: local, normals: ln)
         }
     }
 
@@ -1014,6 +1845,9 @@ final class BodyScene {
             let hits = scene.raycast(origin: origin, direction: simd_normalize(SIMD3(w.x, w.y, w.z)), length: 50, query: .all, mask: .all, relativeTo: nil)
             return hits.sorted { $0.distance < $1.distance }.first { !(through && $0.entity.name.hasPrefix("skin:")) }
         }
+        if let id = nearestPoint(to: p, in: size, origin: origin, cast: { scene.raycast(origin: origin, direction: $0, length: 50, query: .all, mask: .all, relativeTo: nil) }) {
+            return "point:\(id)"
+        }
         var hit = cast(p)
         for r in [10.0, 20.0] where hit == nil {
             for k in 0..<8 where hit == nil {
@@ -1025,6 +1859,37 @@ final class BodyScene {
         anchor = (hit.entity.name, hit.entity.convert(position: hit.position, from: nil))
         lastHit = hit.position
         return hit.entity.name
+    }
+
+    /// Points are smaller than a fingertip: the visible dot nearest the tap on screen, within reach.
+    private func nearestPoint(to p: CGPoint, in size: CGSize, origin: SIMD3<Float>, reach: CGFloat = 28,
+                              cast: (SIMD3<Float>) -> [CollisionCastHit]) -> String? {
+        var best = reach, found: (id: String, world: SIMD3<Float>)?
+        for (id, dots) in pointEntities {
+            for dot in dots where dot.isEnabledInHierarchy {
+                let world = dot.position(relativeTo: nil)
+                guard let q = screenPoint(world, in: size) else { continue }
+                let d = hypot(q.x - p.x, q.y - p.y)
+                guard d < best, !occluded(world, origin: origin, cast: cast) else { continue }
+                best = d
+                found = (id, world)
+            }
+        }
+        guard let found else { return nil }
+        anchor = nil
+        lastHit = found.world
+        return found.id
+    }
+
+    /// something solid (not a point, hair or underwear) sits between the camera and the spot
+    private func occluded(_ world: SIMD3<Float>, origin: SIMD3<Float>, cast: (SIMD3<Float>) -> [CollisionCastHit]) -> Bool {
+        let distance = simd_length(world - origin)
+        let through = layers.contains { $0 != .skin }
+        let solid = cast(simd_normalize(world - origin)).filter {
+            let n = $0.entity.name
+            return !n.hasPrefix("point:") && n != "skin:hair" && !n.hasPrefix("skin:underwear") && !(through && n.hasPrefix("skin:"))
+        }
+        return solid.contains { $0.distance < distance - 0.03 }
     }
 
     /// where the last pick landed (world)
@@ -1055,6 +1920,10 @@ final class BodyScene {
             guard !box.isEmpty else { return nil }
             world = box.center
         }
+        return screenPoint(world, in: size)
+    }
+
+    private func screenPoint(_ world: SIMD3<Float>, in size: CGSize) -> CGPoint? {
         let p = camera.transformMatrix(relativeTo: nil).inverse * SIMD4(world, 1)
         guard p.z < 0 else { return nil }
         let t = tan(camera.camera.fieldOfViewInDegrees * .pi / 360), aspect = Float(size.width / size.height)
@@ -1111,6 +1980,8 @@ final class BodyScene {
         }
     }
 
+    private var solidSkin = true
+
     private func applyVisibility() {
         let inner = layers.contains { $0 != .skin }
         // skin alone is solid; over inner layers it's a faint glass
@@ -1122,6 +1993,9 @@ final class BodyScene {
             let hair = seeThrough && (skin.name == "skin:hair" || (Figure.clothingOptional && skin.name.hasPrefix("skin:underwear")))
             skin.model?.materials = [Self.faded(base, hair ? min(skinOpacity, 0.35) : skinOpacity)]
         }
+        // the crease shadow only on solid skin
+        solidSkin = skinOpacity >= 1
+        for s in skinBends { s.bender.shade?.isEnabled = solidSkin }
         let muscleOpacity: Float = layers.contains(.skeletal) ? 0.55 : 1
         for (id, entity) in partEntities {
             guard let layer = partLayer[id] else { continue }

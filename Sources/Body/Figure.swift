@@ -112,7 +112,9 @@ enum Figure {
             for name in names {
                 // the bra cut for the chest option (the large one is the base)
                 let cut = name != "bra" ? name : look.age == .senior ? "bra-senior" : look.age == .adult && look.chest != .large ? "bra-\(look.chest.rawValue)" : name
-                guard let g = header.garments[cut] ?? header.garments[name] else { continue }
+                // (a full chest over the bump has its own cut)
+                let bump = name == "bra" && look.pregnant ? header.garments["bra-pregnant-\(look.chest.rawValue)"] : nil
+                guard let g = bump ?? header.garments[cut] ?? header.garments[name] else { continue }
                 if let mesh = garment(g, reader: reader, body: body) {
                     var m = PhysicallyBasedMaterial()
                     m.baseColor = .init(tint: UIColor(hex: ProcessInfo.processInfo.environment["GARMENT_COLOR"] ?? g.color), texture: texture("fabric.png", semantic: .color).map { .init($0) })
@@ -278,7 +280,12 @@ enum Figure {
         m.metallic = .init(floatLiteral: 0)
         m.roughness = .init(floatLiteral: piece == "eyes" ? 0.3 : piece == "body" ? 0.55 : 0.75)
         // skin reflects ~3% head-on (RealityKit's default 0.5 is 4%, reads as plastic)
-        if piece == "body" { m.specular = .init(floatLiteral: 0.35) }
+        if piece == "body" {
+            // no cast shadows: the back lights would glint off a woman's lip seam, and off her nose sides and under-eyes
+            // from below (skin-seam.png masks them)
+            let seam = look.female && look.age == .adult ? texture("skin-seam.png", semantic: .raw) : nil
+            m.specular = .init(scale: 0.35, texture: seam.map { .init($0) })
+        }
         if piece == "eyes" {
             // a moist eye: one soft catch-light, not a glassy sheen
             m.specular = .init(floatLiteral: 0.5)

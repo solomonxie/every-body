@@ -12,6 +12,8 @@ struct ChartCanvas: View {
     var flagged: Set<String> = []
     let zoom: CGFloat
     let pan: CGSize
+    /// screen width at 1× the margin labels may use (nil: the view box)
+    var labelSpan: CGFloat? = nil
 
     private static let skinLight = Color(hex: "#FAE3D0")
     private static let skinDark = Color(hex: "#EDC4A6")
@@ -107,20 +109,10 @@ struct ChartCanvas: View {
         func measure(_ s: String, _ size: CGFloat) -> CGSize { labels.resolve(text(s, size)).measure(in: CGSize(width: 400, height: 100)) }
 
         var callouts: [(zone: ReflexZone, box: CGRect)] = []
-        for zone in zones where showLabels || zone.id == selectedID {
+        // the picked zone's name is in the card below; its outline is enough here
+        for zone in zones where showLabels {
             let box = Self.zonePath(zone).boundingRect.applying(mirror)
-            if zone.id == selectedID {
-                // selected name sits on a white tag above the zone
-                let resolved = labels.resolve(Text(zh ? zone.nameZh : zone.name)
-                    .font(.system(size: chart.labelSize * 1.15, weight: .bold)).foregroundStyle(Self.ink))
-                let size = resolved.measure(in: CGSize(width: 400, height: 100))
-                let half = size.width / 2 + 4
-                let lo = chart.viewBox[0] + half, hi = chart.viewBox[0] + chart.viewBox[2] - half
-                let at = CGPoint(x: min(max(box.midX, lo), max(lo, hi)), y: max(box.minY - size.height * 0.75, chart.viewBox[1] + size.height))
-                labels.fill(Path(roundedRect: CGRect(x: at.x - half, y: at.y - size.height / 2 - 2, width: half * 2, height: size.height + 4),
-                                 cornerRadius: 4), with: .color(.white.opacity(0.92)))
-                labels.draw(resolved, at: at, anchor: .center)
-            } else if zone.path == nil {
+            if zone.path == nil {
                 labels.draw(labels.resolve(text(name(zone), base)), at: CGPoint(x: box.midX, y: box.maxY + chart.labelSize * 0.6), anchor: .center)
             } else {
                 let fit = measure(name(zone), base)
@@ -129,15 +121,19 @@ struct ChartCanvas: View {
                 else { labels.draw(labels.resolve(text(name(zone), base * k)), at: CGPoint(x: box.midX, y: box.midY), anchor: .center) }
             }
         }
-        drawCallouts(labels, callouts, size: base, name: name, text: text, measure: measure)
+        drawCallouts(labels, callouts, size: base, scale: view.a / max(zoom, 0.01), name: name, text: text, measure: measure)
     }
 
     /// Zones too small to hold their name get it in a side margin, on a line to the zone.
-    private func drawCallouts(_ context: GraphicsContext, _ items: [(zone: ReflexZone, box: CGRect)], size: CGFloat,
+    private func drawCallouts(_ context: GraphicsContext, _ items: [(zone: ReflexZone, box: CGRect)], size: CGFloat, scale: CGFloat,
                               name: (ReflexZone) -> String, text: (String, CGFloat) -> Text, measure: (String, CGFloat) -> CGSize) {
         guard !items.isEmpty else { return }
         var g = context
-        let (vx, vy, vw, vh) = (chart.viewBox[0], chart.viewBox[1], chart.viewBox[2], chart.viewBox[3])
+        var (vx, vy, vw, vh) = (chart.viewBox[0], chart.viewBox[1], chart.viewBox[2], chart.viewBox[3])
+        if let labelSpan, labelSpan / scale > vw {
+            vx -= (labelSpan / scale - vw) / 2
+            vw = labelSpan / scale
+        }
         let mirror = Self.mirror(chart: chart, face: face, side: side)
         let drawn = zones.map { Self.zonePath($0).boundingRect.applying(mirror) }.reduce(CGRect.null) { $0.union($1) }
         let pad: CGFloat = 6

@@ -29,6 +29,8 @@ struct PregnancySection: View {
                      note: Bilingual("Sleep on your side from 28 weeks", "孕 28 周起侧卧睡"), route: .illustration(id: "pregnancy-sleep-position")),
         AudienceItem(id: "labor", symbol: "clock.badge.checkmark", title: Bilingual("Labor & birth", "分娩过程"),
                      note: Bilingual("The stages, and when to go to hospital (5-1-1)", "产程分期，何时去医院（5-1-1）"), route: .illustration(id: "labor")),
+        AudienceItem(id: "hip-squeeze", symbol: "hands.and.sparkles", title: HipSqueezeScreen.title,
+                     note: Bilingual("How a partner's hands ease back pain in contractions", "陪产者如何用双手缓解宫缩时的腰背痛"), route: .hipSqueeze),
         AudienceItem(id: "acupressure", symbol: "hand.raised.slash", title: Bilingual("Points to avoid in pregnancy", "孕期禁按穴位"),
                      note: Bilingual("Hegu, Sanyinjiao and reproductive zones are flagged ⚠", "合谷、三阴交与生殖区会标出 ⚠"), route: .viewer(system: "acupoint-reflex-map")),
         AudienceItem(id: "blood-pressure", symbol: "heart.text.square", title: Bilingual("Blood pressure & pre-eclampsia", "血压与子痫前期"),

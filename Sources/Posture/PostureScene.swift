@@ -98,8 +98,10 @@ final class PostureScene {
         guard let model = (modelCache?.topic == topic ? modelCache?.data : nil) ?? PostureModel.load(topic) else { return }
         modelCache = (topic, model)
         self.model = model
-        let sex = female ? (pregnant ? "pregnant" : "female") : "male"
-        guard let figure = model.figures[sex] ?? model.figures["male"] else { return }
+        // the closest figure the topic has: pregnant, then the woman, then the man
+        let sex = [female && pregnant ? "pregnant" : nil, female ? "female" : nil, "male"].compactMap { $0 }.first { model.figures[$0] != nil } ?? "male"
+        guard let figure = model.figures[sex] else { return }
+        let female = sex != "male", pregnant = sex == "pregnant"
         transforms = figure.transforms ?? model.transforms
         neck = figure.neck ?? model.neck
         let look = Figure.Look(female: female, age: .adult, pregnant: pregnant && female, heritage: heritage, underwear: false, chest: chest, hips: hips)
@@ -147,7 +149,11 @@ final class PostureScene {
             stage.addChild(entity)
         }
         if underwear {
-            for g in figure.garments {
+            // the bra cut for the chest option, as Figure.garment picks it ("bra" is the large one)
+            let cuts = Set(figure.garments.map(\.id).filter { $0.hasPrefix("bra") })
+            let bra = [pregnant ? "bra-pregnant-\(chest.rawValue)" : nil, chest != .large ? "bra-\(chest.rawValue)" : nil, "bra"]
+                .compactMap { $0 }.first { cuts.contains($0) }
+            for g in figure.garments where !g.id.hasPrefix("bra") || g.id == bra {
                 guard let mesh = GarmentMesh(g) else { continue }
                 let entity = ModelEntity(mesh: mesh.resource)
                 var m = PhysicallyBasedMaterial()
@@ -199,7 +205,7 @@ final class PostureScene {
             }
         }
         if let chair = model.chair { addChair(chair) } else { addFloor(keys.first ?? []) }
-        for (id, prop) in model.props { addProp(id, prop) }
+        for (id, prop) in figure.props ?? model.props { addProp(id, prop) }
         applyLook()
         apply(blend)
     }

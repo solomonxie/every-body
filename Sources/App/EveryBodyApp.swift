@@ -72,6 +72,8 @@ struct RouteView: View {
             InfoScreen(systemID: system)
         case let .posture(id):
             PostureScreen(id: id)
+        case .hipSqueeze:
+            HipSqueezeScreen()
         case .search:
             SearchScreen()
         }

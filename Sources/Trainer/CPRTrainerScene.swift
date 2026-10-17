@@ -1010,7 +1010,7 @@ final class CPRTrainerScene {
 
     // MARK: parts
 
-    private static func flat(_ hex: String, roughness: Float) -> PhysicallyBasedMaterial {
+    static func flat(_ hex: String, roughness: Float) -> PhysicallyBasedMaterial {
         var m = PhysicallyBasedMaterial()
         m.baseColor = .init(tint: UIColor(hex: hex))
         m.roughness = .init(floatLiteral: roughness)
@@ -1031,7 +1031,7 @@ final class CPRTrainerScene {
     }()
 
     /// matte blue nitrile
-    private static let gloveMaterial: PhysicallyBasedMaterial = {
+    static let gloveMaterial: PhysicallyBasedMaterial = {
         var m = flat("#4F73C4", roughness: 0.72)
         m.specular = .init(floatLiteral: 0.25)
         m.sheen = .init(tint: UIColor(white: 0.25, alpha: 1))
@@ -1052,7 +1052,7 @@ final class CPRTrainerScene {
     private static var capsules: [SIMD2<Float>: MeshResource] = [:]
 
     /// capsule of this radius and overall length along `dir`, centred at `centre`
-    private static func capsule(_ centre: SIMD3<Float>, radius: Float, length: Float, along dir: SIMD3<Float>, material: RealityKit.Material? = nil) -> ModelEntity {
+    static func capsule(_ centre: SIMD3<Float>, radius: Float, length: Float, along dir: SIMD3<Float>, material: RealityKit.Material? = nil) -> ModelEntity {
         let key = SIMD2(radius, length)
         let mesh = capsules[key] ?? Meshes.capsule(radius: radius, length: length).resource()
         capsules[key] = mesh
@@ -1081,8 +1081,9 @@ final class CPRTrainerScene {
     /// fingers along +y, back of the hand +z.
     /// `top`: upper hand of the two-hand grip, fingers curling down between the lower hand's (`interlaced`), which lift.
     /// `flat`: palm and fingers lying on the skin (the bump push). `shadow`: soft contact shadow under the palm.
-    static func glove(top: Bool = false, interlaced: Bool = false, flat: Bool = false, shadow: Bool = true) -> Entity {
-        let c = cm
+    /// `right`: a right hand (mirrored: thumb toward -x). `cuff: false`: no wrist cuff (the caller adds its own forearm).
+    static func glove(top: Bool = false, interlaced: Bool = false, flat: Bool = false, shadow: Bool = true, right: Bool = false, cuff: Bool = true) -> Entity {
+        let c = cm, m: Float = right ? -1 : 1
         let hand = Entity()
         let palm = ModelEntity(mesh: .generateBox(size: SIMD3(8.2 * c, 9.8 * c, 2.7 * c), cornerRadius: 1.25 * c), materials: [gloveMaterial])
         palm.name = "glove"
@@ -1093,7 +1094,7 @@ final class CPRTrainerScene {
         let lengths: [[Float]] = [[4.2, 2.5, 2.1], [4.6, 2.8, 2.3], [4.3, 2.7, 2.2], [3.4, 2.1, 1.9]]
         for k in 0..<4 {
             // the two hands' fingers alternate: the top hand's sit in the lower hand's gaps
-            let x = (2.85 - 1.9 * Float(k) + (top ? 0.95 : 0)) * c
+            let x = m * (2.85 - 1.9 * Float(k) + (top ? 0.95 : 0)) * c
             let base = SIMD3<Float>(x, 8.4 * c, (top ? 1.6 : flat ? 1.1 : 2.1) * c)
             let dir: SIMD3<Float>, bend: Float
             if top { dir = SIMD3(0, 1, -0.3); bend = 0.72 }                 // down between the lower fingers
@@ -1103,9 +1104,9 @@ final class CPRTrainerScene {
             digit(base, dir: dir, lengths: lengths[k].map { $0 * c }, radius: widths[k] * c, bend: bend, into: hand)
         }
         // thumb: out along the side of the palm; flat on the skin it lies close beside the index finger
-        digit(SIMD3(3.6 * c, 1.6 * c, (flat ? 0.9 : 1.2) * c), dir: flat ? SIMD3(0.3, 0.95, -0.08) : SIMD3(0.55, 0.8, 0.1),
+        digit(SIMD3(m * 3.6 * c, 1.6 * c, (flat ? 0.9 : 1.2) * c), dir: flat ? SIMD3(m * 0.3, 0.95, -0.08) : SIMD3(m * 0.55, 0.8, 0.1),
               lengths: [3.4 * c, 2.9 * c], radius: 1.15 * c, bend: flat ? 0.05 : 0.25, into: hand)
-        addCuff(to: hand, wrist: SIMD3(0, -0.4 * c, 1.4 * c), back: SIMD3(0, -1, 0.12))
+        if cuff { addCuff(to: hand, wrist: SIMD3(0, -0.4 * c, 1.4 * c), back: SIMD3(0, -1, 0.12)) }
         if shadow { addShadow(to: hand, centre: SIMD3(0, 4.4 * c, 0.12 * c), radii: SIMD2(4.8 * c, 7.2 * c)) }
         return hand
     }
