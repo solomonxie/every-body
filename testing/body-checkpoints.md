@@ -58,7 +58,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.*.shoulder-90\|160` | upper back/shoulder top slid down with the arm (smoothed arm share reached the spine): hair through neck side, strap crumple, back straps V | fixed: far-share fade in shoulderShares (Swift, uncommitted), installed; check s160 back 'shrug' + man/child shoulders |
 | `*.female.adult.dressed.XXL-*.top-down.back-30` | XXL bra band wave (agent stopped earlier; status unclear) | in progress |
 | `*.female.adult.dressed.*.*.rest` | front strap edge slightly wavy at rest (~31 spikes, worst 2.1 mm, all bras) | in progress |
-| `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
+| `*.*.adult.*.*.*.shoulder-160` | top of shoulder squashed: partly fixed (shoulderTop keep 1.5, Swift uncommitted, installed): <half-area tris 116 -> 85 of 139, median 0.33 -> 0.40; stronger options creased. Was: top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
 | `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | fixed: specular mask skin-seam.png (4a9d805) + Figure.swift (uncommitted), installed; check on device for glancing sheen. Thin lower-lip edge: TUCK_LOWER removed (c247e31), lip fuller; installed |
@@ -95,9 +95,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - bra front strap edge wave at rest + XXL band wave top-down back-30 (agent)
-- `*.female.adult.*.*.*.shoulder-160` shoulder-top squash + strap tip (agent)
 
 ## Log
+
+- 2026-10-17: shoulder top at 160: chord blend pulls skin toward the pivot + relax drags it to the armpit. shoulderTop gives back 1.5x the lost axis distance over the top (eased 60-160 deg; garments take their skin's weight). Median area 0.33 -> 0.40, strap tip crease p99 58 -> 53 deg; no clipping; non-shoulder byte-identical. Installed.
 
 - 2026-10-17: sample round 2: face-front knee-90, top-down elbow-90 clean, no clipping. Shoulder far-share fade: upper-back drop at s90 35 -> 6 mm, strap crumple edges 487 -> 0, hair re-hidden at neck (61 -> 210 of 213), sharp folds s160 22 -> 0. Installed.
 
