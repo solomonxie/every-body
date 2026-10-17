@@ -56,8 +56,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.{front,low-up}.knee-135` | pointed V kneecap front (rest-mesh ridge x~0.14) | open, low: fairing doesn't help; needs kneecap resculpt in the fit (changes rest look) |
 | `*.female.adult.dressed.*.low-up.rest` | small pinched folds in briefs gusset | open, cosmetic |
 | `*.female.adult.*.*.*.shoulder-90\|160` | upper back/shoulder top slid down with the arm (smoothed arm share reached the spine): hair through neck side, strap crumple, back straps V | fixed: far-share fade in shoulderShares (Swift, uncommitted), installed; check s160 back 'shrug' + man/child shoulders |
-| `*.female.adult.dressed.XXL-*.top-down.back-30` | XXL bra band wave (agent stopped earlier; status unclear) | in progress |
-| `*.female.adult.dressed.*.*.rest` | front strap edge slightly wavy at rest (~31 spikes, worst 2.1 mm, all bras) | in progress |
+| `*.female.adult.dressed.XXL-*.top-down.back-30` | XXL bra band wave (XXL band low in the hips-option zone; hips deltas dropped mid-back skin up to 6 mm) | fixed 46233dc (level() in hips deltas, re-snapped to surface): hem spread XXL-S 7.3 -> 1.4 mm; pushed, install pending |
+| `*.female.adult.dressed.*.*.rest` | front strap edge slightly wavy at rest (~31 spikes, worst 2.1 mm, all bras) | fixed 46233dc (strap clearance push spread over 2 cm in space, not 10 rings): adult bras 31 -> 0 spikes; senior bra unchanged (no raw); pushed, install pending |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder squashed: partly fixed (shoulderTop keep 1.5, Swift uncommitted, installed): <half-area tris 116 -> 85 of 139, median 0.33 -> 0.40; stronger options creased. Was: top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
@@ -95,9 +95,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - sample: `white.female.adult.dressed.XXL-S.back.back-30`, `south-asian.female.adult.dressed.XXL-L.face-side.shoulder-160`, `white.female.adult.bare.M-XL.front-3q-left.back-30` (agent)
-- bra front strap edge wave at rest + XXL band wave top-down back-30 (agent)
 
 ## Log
+
+- 2026-10-17: bra strap spikes came from the clearance push spread over 10 rings of <1 mm slivers; spread_push over 2 cm. XXL band sag on S/M hips levelled in the hips deltas. Clipping 0 in 42 checks; all 8 postures repacked. Models pushed (5270132); phone unavailable, install pending.
 
 - 2026-10-17: shoulder top at 160: chord blend pulls skin toward the pivot + relax drags it to the armpit. shoulderTop gives back 1.5x the lost axis distance over the top (eased 60-160 deg; garments take their skin's weight). Median area 0.33 -> 0.40, strap tip crease p99 58 -> 53 deg; no clipping; non-shoulder byte-identical. Installed.
 
