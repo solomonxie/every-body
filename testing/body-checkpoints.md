@@ -52,8 +52,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.dressed.*.back-3q-*\|right\|top-down.shoulder-90\|160` | back bra strap ripple/facets (garment kept chord pinch; normals ignored relax) | fixed: wrapGarment (Swift, uncommitted), installed; check on device + frame time. Tip of strap at shoulder top still crumpled |
 | `*.female.adult.*.*.*.shoulder-90` | upper-arm underside sags, kink near elbow: inner-arm strip bound to back/ribs, share 0.55-0.98 | fixed: inner-arm relabel in shoulderShares (Swift, uncommitted), installed; armpit max stretch +1-4% |
 | `*.female.adult.*.*.{left,right,front-3q-*,low-up}.elbow-145\|knee-135` | dark contact-shade patch on open skin (pressed side shaded with no limb over it) | fixed: contactShade by other-side distance (Swift, uncommitted), installed; darkened px elbow front 10353 -> 2785 |
-| `*.female.adult.*.*.{left,back-3q-*,back}.knee-135` | notch + lit wedge at the lateral crease end (calf overhangs thigh by ~2.5 cm) | in progress |
-| `*.female.adult.*.*.{front,low-up}.knee-135` | pointed V kneecap front (rest-mesh ridge x~0.14) | open, low (model fairing) |
+| `*.female.adult.*.*.{left,back-3q-*,back}.knee-135` | notch + lit wedge at the lateral crease end (calf overhangs thigh by ~2.5 cm) | fixed: kneeRim remaps both sides' extent to the mean (Swift, uncommitted), installed; lateral step 9.1 -> 2.4 mm. Faint highlight on upper crease (left view) |
+| `*.female.adult.*.*.{front,low-up}.knee-135` | pointed V kneecap front (rest-mesh ridge x~0.14) | open, low: fairing doesn't help; needs kneecap resculpt in the fit (changes rest look) |
 | `*.female.adult.dressed.*.low-up.rest` | small pinched folds in briefs gusset | open, cosmetic |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
@@ -92,10 +92,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - sample: `hispanic.female.adult.bare.XL-XL.face-front.knee-90`, `black.female.adult.dressed.L-XXL.top-down.elbow-90`, `south-asian.female.adult.dressed.M-L.back-3q-right.back-60+shoulder-90` (agent)
-- `*.female.adult.*.*.*.knee-135` lateral crease end + V kneecap (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
 ## Log
+
+- 2026-10-17: knee-135 crease end: pressed() flattens each side; calf section 10-11.6 cm vs thigh 8-9.3 cm overhung. kneeRim (after contactShade) remaps lateral/medial extents near the plane to the two sides' mean: overhang 13.9 -> 6.3 mm; knee-90 ~unchanged; rest/elbow byte-identical. Installed.
 
 - 2026-10-17: inner-arm relabel: torso-held skin >0.14 below the shoulder pivot, within 0.11 of the humerus, normal facing away -> arm. s90 inner-arm lag mean 36 -> 3 mm, arm edges >1.5x 779 -> 16; armpit back-fold edges >1.5x 81 -> 126 (short, no tearing). Non-shoulder poses byte-identical. Installed.
 
