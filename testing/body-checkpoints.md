@@ -56,8 +56,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.{front,low-up}.knee-135` | pointed V kneecap front (rest-mesh ridge x~0.14) | open, low: fairing doesn't help; needs kneecap resculpt in the fit (changes rest look) |
 | `*.female.adult.dressed.*.low-up.rest` | small pinched folds in briefs gusset | open, cosmetic |
 | `*.female.adult.*.*.*.shoulder-90\|160` | upper back/shoulder top slid down with the arm (smoothed arm share reached the spine): hair through neck side, strap crumple, back straps V | fixed: far-share fade in shoulderShares (Swift, uncommitted), installed; check s160 back 'shrug' + man/child shoulders |
-| `*.female.adult.dressed.XXL-*.top-down.back-30` | XXL bra band wave (agent stopped earlier; status unclear) | open, recheck |
-| `*.female.adult.dressed.*.*.rest` | front strap edge slightly wavy at rest (~31 spikes, worst 2.1 mm, all bras) | open (build_figure cut + repack) |
+| `*.female.adult.dressed.XXL-*.top-down.back-30` | XXL bra band wave (agent stopped earlier; status unclear) | in progress |
+| `*.female.adult.dressed.*.*.rest` | front strap edge slightly wavy at rest (~31 spikes, worst 2.1 mm, all bras) | in progress |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
@@ -94,6 +94,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- bra front strap edge wave at rest + XXL band wave top-down back-30 (agent)
+- `*.female.adult.*.*.*.shoulder-160` shoulder-top squash + strap tip (agent)
 
 ## Log
 
