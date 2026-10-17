@@ -518,6 +518,122 @@ def backlit_mask(np, reg, bodies, lo, hi, depth, pitches, yaws):
     return np.where(reg.covered & (m > 0.01), 1 - depth * m, 1)
 
 
+# the same below the head: with the figure turned they glint off skin the body or the hair would shade, a streak on
+# the breasts' inner walls, a sliver in the navel's rim, specks by the collarbones, a spot beside the spine under the
+# nape. Damped there over the checkpoint views; (glint lo, hi, depth, views pitch, yaw, heights in, out, shadow map
+# px, bias, rings the damping spreads)
+BODY_BACKLIT_MASK = (0.02, 0.08, 0.85, (0,), range(-180, 180, 15), (0.3, 1.25), 2048, 0.0015, 12)
+# where (on the base body, mirrored in x): centre, radii (an ellipsoid, fading out over its outer half)
+BODY_BACKLIT_ZONES = {"sternum": ((0, 0.78, 0.2), (0.3, 0.28, 0.18)), "navel": ((0, 0.41, 0.19), (0.065, 0.065, 0.065)),
+                      "collar": ((0.12, 1.05, 0.05), (0.19, 0.11, 0.11)), "nape": ((0, 1.1, -0.17), (0.15, 0.13, 0.1))}
+
+
+def backlit_zones(np, p):
+    w = np.zeros(len(p))
+    for c, r in BODY_BACKLIT_ZONES.values():
+        d = np.linalg.norm((np.stack([np.abs(p[:, 0]), p[:, 1], p[:, 2]], 1) - c) / r, axis=1)
+        w = np.maximum(w, 1 - smoothstep(0.5, 1.0, d))
+    return w
+
+
+def app_normals(np, p, tris):
+    """Figure.normals: smooth, blurred twice"""
+    unit = lambda a: a / np.maximum(np.linalg.norm(a, axis=-1, keepdims=True), 1e-12)
+    f = np.cross(p[tris[:, 1]] - p[tris[:, 0]], p[tris[:, 2]] - p[tris[:, 0]])
+    n = np.zeros_like(p)
+    for k in range(3):
+        np.add.at(n, tris[:, k], f)
+    n = unit(n)
+    for _ in range(2):
+        m = n.copy()
+        for k in range(3):
+            np.add.at(m, tris[:, k], n[tris[:, (k + 1) % 3]] + n[tris[:, (k + 2) % 3]])
+        n = unit(m)
+    return n
+
+
+def _lit_plane(np, p, tris, l, pts, res, bias):
+    """_lit, the depth read off the covering triangle's plane at each point (its max vertex depth shades the skin
+    round a point the light grazes)"""
+    from PIL import Image, ImageDraw
+    a = np.cross(l, [0, 1, 0] if abs(l[1]) < 0.9 else [1, 0, 0])
+    a /= np.linalg.norm(a)
+    q = np.stack([p @ a, p @ np.cross(l, a)], 1)
+    d = p @ l
+    lo = q[pts].min(0) - 0.3
+    uv = (q - lo) * res / (q[pts].max(0) + 0.3 - lo).max()
+    tri = tris[np.argsort(d[tris].mean(1))]
+    im = Image.new("I", (res, res), 0)
+    draw = ImageDraw.Draw(im)
+    for i, t in enumerate(tri):
+        draw.polygon([tuple(uv[k]) for k in t], fill=i + 1)
+    x = np.clip(uv[pts].astype(int), 0, res - 1)
+    hit = np.asarray(im).astype(np.int64)[x[:, 1], x[:, 0]] - 1
+    t = tri[np.maximum(hit, 0)]
+    A, B, C = uv[t[:, 0]], uv[t[:, 1]], uv[t[:, 2]]
+    P = uv[pts]
+    det = (B[:, 0] - A[:, 0]) * (C[:, 1] - A[:, 1]) - (C[:, 0] - A[:, 0]) * (B[:, 1] - A[:, 1])
+    ok = np.abs(det) > 1e-9
+    det = np.where(ok, det, 1)
+    wb = ((P[:, 0] - A[:, 0]) * (C[:, 1] - A[:, 1]) - (C[:, 0] - A[:, 0]) * (P[:, 1] - A[:, 1])) / det
+    wc = ((B[:, 0] - A[:, 0]) * (P[:, 1] - A[:, 1]) - (P[:, 0] - A[:, 0]) * (B[:, 1] - A[:, 1])) / det
+    plane = d[t[:, 0]] + wb * (d[t[:, 1]] - d[t[:, 0]]) + wc * (d[t[:, 2]] - d[t[:, 0]])
+    front = np.where(ok, plane, d[t].max(1))
+    return d[pts] >= np.where(hit >= 0, front, -1e9) - bias
+
+
+def body_backlit_glint(np, tris, p, hair, skip, lo, pitches, yaws, heights, res, bias):
+    """per vertex: the strongest back-light specular (GGX) the body or `hair` (pos, tris) would shade, over the
+    views; `skip`: vertices left out"""
+    unit = lambda a: a / np.maximum(np.linalg.norm(a, axis=-1, keepdims=True), 1e-12)
+    n = app_normals(np, p, tris)
+    pts = np.flatnonzero((p[:, 1] > heights[0]) & (p[:, 1] < heights[1]) & ~skip)
+    q = np.concatenate([p, hair[0]])
+    occ = np.concatenate([tris[(p[tris, 1] > heights[0] - 0.4).any(1)], hair[1] + len(p)])
+    out = np.zeros(len(p))
+    alpha = 0.55 ** 2
+    for pitch in pitches:
+        for yaw in yaws:
+            a, b = np.radians(pitch), np.radians(yaw)
+            R = np.array([[1, 0, 0], [0, np.cos(a), -np.sin(a)], [0, np.sin(a), np.cos(a)]]) @ \
+                np.array([[np.cos(b), 0, np.sin(b)], [0, 1, 0], [-np.sin(b), 0, np.cos(b)]])
+            v = R.T @ np.array([0, 0, 1.0])
+            tot = np.zeros(len(pts))
+            for src, power in BACK_LIGHTS:
+                l = R.T @ unit(np.array(src, float))
+                h = unit(l + v)
+                nf = n[pts]
+                nh, nl, nv = np.clip(nf @ h, 0, 1), nf @ l, nf @ v
+                D = alpha ** 2 / (np.pi * (nh ** 2 * (alpha ** 2 - 1) + 1) ** 2)
+                F = 0.04 + 0.96 * (1 - np.clip(v @ h, 0, 1)) ** 5
+                g = np.where((nl > 0) & (nv > 0), power * D * F / (4 * np.maximum(nv, 0.25)), 0)
+                hot = g > 0.5 * lo
+                if hot.any():
+                    shaded = np.zeros(len(pts), bool)
+                    shaded[hot] = ~_lit_plane(np, q, occ, l, pts[hot], res, bias)
+                    tot += g * shaded
+            out[pts] = np.maximum(out[pts], tot)
+    return out
+
+
+def body_backlit_mask(np, reg, bodies, base, lo, hi, depth, pitches, yaws, heights, res, bias, rings):
+    """specular scale per texel, 1 where the back lights reach; `bodies`: (body, hair) per shipped look (their
+    union), `base`: the body the zones are on"""
+    tris = np.unique(reg.tri_v, axis=0)
+    zone = backlit_zones(np, base)
+    skip = zone <= 0
+    g = np.max([body_backlit_glint(np, tris, p, hair, skip, lo, pitches, yaws, heights, res, bias) for p, hair in bodies], 0)
+    w = smoothstep(lo, hi, g)
+    e = np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]])
+    for _ in range(rings):
+        nb = w.copy()
+        np.maximum.at(nb, e[:, 0], w[e[:, 1]])
+        np.maximum.at(nb, e[:, 1], w[e[:, 0]])
+        w = nb
+    m = np.clip(reg.paint(w * zone, 6), 0, 1)
+    return np.where(reg.covered & (m > 0.01), 1 - depth * m, 1)
+
+
 def save(np, px, path, limit=250_000):
     """JPEG at the best quality that stays under `limit` bytes"""
     from PIL import Image

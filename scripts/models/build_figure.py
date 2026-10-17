@@ -2796,7 +2796,7 @@ def scalp_masks(np, topo, grooms):
 
 def seam_texture(np, mesh=None):
     """skin-seam.png: women's specular mask (skin_textures.SEAM_MASK lip seam, BACKLIT_MASK back-light glints), over
-    the fitted female-adult faces"""
+    the fitted female-adult faces, and BODY_BACKLIT_MASK over their trunks"""
     from PIL import Image
     import skin_textures
     mesh = mesh or skin_textures.Regions(np, RAW, mpfb_data().parents[3] / "user_default" / "mpfb", SKIN_TEX)
@@ -2805,6 +2805,15 @@ def seam_texture(np, mesh=None):
     m = skin_textures.seam_mask(np, mesh, bodies, *skin_textures.SEAM_MASK)
     m = np.minimum(m, skin_textures.backlit_mask(np, mesh, [(b, r["pos:eyes"].astype(np.float64)) for b, r in zip(bodies, raw)],
                                                  *skin_textures.BACKLIT_MASK))
+    # below the head: the shipped trunks (each heritage with its hair, each chest, pregnant)
+    import hair
+    load = loader(np, mesh.tri_v)
+    sculpt = lambda style: tuple(np.load(RAW / f"sculpt.{style}.npz")[k] for k in ("pos", "tri"))
+    looks = [(her, hair.styles_for(["woman"], her)[0]) for her in HERITAGES]
+    looks += [(f"shape-{s}", "woman") for s in SHAPES if s.startswith("chest-")] + [("pregnant", "woman")]
+    trunks = [(load(f"female-adult.{n}")["body"], sculpt(style)) for n, style in looks]
+    m = np.minimum(m, skin_textures.body_backlit_mask(np, mesh, trunks, load("female-adult.neutral")["body"],
+                                                      *skin_textures.BODY_BACKLIT_MASK))
     Image.fromarray(np.round(m * 255).astype(np.uint8), "L").save(OUT / "skin-seam.png", optimize=True)
 
 
