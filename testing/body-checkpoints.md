@@ -52,13 +52,13 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
-| `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | fixed: specular mask skin-seam.png (4a9d805) + Figure.swift (uncommitted), installed; check on device for glancing sheen. Thin lower-lip edge in profile still open |
+| `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | fixed: specular mask skin-seam.png (4a9d805) + Figure.swift (uncommitted), installed; check on device for glancing sheen. Thin lower-lip edge: TUCK_LOWER removed (c247e31), lip fuller; installed |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
 | `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
 | posture couch (all chests), laptop XL/XXL k2-3, computer XXL k3 | arm sunk into bra (220-509 pts); press refused (<80% cleared) | in progress |
 | posture seated briefs | belly/thigh and crotch folds tuck briefs into the crease (300-680 pts, 60-80% fabric-in-fabric); visible only from below | open, low (6 blend variants, smoothing, push-out, rebind all failed) |
-| `black\|hispanic\|southeast-asian.female.adult.*.base.face-side.rest` | small lit patch at the very front of the lower lip (close profile) | in progress |
+| `black\|hispanic\|southeast-asian.female.adult.*.base.face-side.rest` | small lit patch at the very front of the lower lip (close profile) | fixed c247e31 (CLOSE_FRONT cap), installed; black: faint seam strip in close profile, check on device |
 
 ## Open (sweep 2026-10-14)
 
@@ -83,10 +83,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - posture couch / laptop XL-XXL / computer XXL: arm sunk into bra (agent)
-- `black|hispanic|southeast-asian.female.adult.*.base.face-side.rest` lower-lip front lit patch + thin lower-lip edge in profile (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
 ## Log
+
+- 2026-10-17: lower-lip front peak (close_lips lifted verts ahead of the upper lip into its curl) capped by CLOSE_FRONT (black keeps half lift); TUCK_LOWER removed, black lower lip fuller. Lower lip ahead of upper: black 71.6 -> 57, SE-Asian 117.7 -> 52.1, hispanic 59.2 -> 51.4 mm2; other heritages byte-identical. Note: tools/qa/render.py ignores skin-seam.png (agent's patched copy in its .scratch/qa).
 
 - 2026-10-17: posture arm press (a2dae86, e078d81): arm skin pushed out past bra/briefs per key/option, kept if >=80% contacts cleared; phone-bed fit clears the XXL bra. laptop L/M, sitting XL, phone-bed XL/XXL, phone-standing XXL bra clips -> 0. Pregnant bump line not reproduced (pregnant bra clips come from the rest figure). Installed.
 
