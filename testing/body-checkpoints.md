@@ -58,6 +58,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.*.shoulder-90\|160` | upper back/shoulder top slid down with the arm (smoothed arm share reached the spine): hair through neck side, strap crumple, back straps V | fixed: far-share fade in shoulderShares (Swift, uncommitted), installed; check s160 back 'shrug' + man/child shoulders |
 | `*.female.adult.dressed.XXL-*.top-down.back-30` | XXL bra band wave (XXL band low in the hips-option zone; hips deltas dropped mid-back skin up to 6 mm) | fixed 46233dc (level() in hips deltas, re-snapped to surface): hem spread XXL-S 7.3 -> 1.4 mm; pushed, install pending |
 | `*.female.adult.dressed.*.*.rest` | front strap edge slightly wavy at rest (~31 spikes, worst 2.1 mm, all bras) | fixed 46233dc (strap clearance push spread over 2 cm in space, not 10 rings): adult bras 31 -> 0 spikes; senior bra unchanged (no raw); pushed, install pending |
+| `*.female.adult.*.*.{right,back-3q-*,back}.shoulder-90`, `{right,face-side}.shoulder-160` | back-armpit fold edge ~45 deg (share clipped at 1 across one coarse edge); diagonal crease on the mesh-density seam at s160 (convex leak sank coarse skin) | fixed: shoulderReach + eased arm share, relax leak scaled by edge length (Swift, uncommitted); s90 fold 45 -> 20 deg, s160 shading jump 12.4 -> 7.3 deg; install pending |
 | `*.female.adult.*.*.face-side\|front-3q-*.shoulder-160` | sharp lit ridge at the front armpit (relaxConvex blocked the relax on a ridge) | softened: ridge-aware convex cut from 110 deg (Swift, uncommitted); fold 44 -> 21 deg; install pending |
 | `*.female.adult.bare.*.front-3q-*.rest` | bright streak at the sternum between breasts; bright sliver at navel top rim | in progress |
 | `*.female.adult.*.*.*.rest\|shoulder-160` | small lit specks along the collarbone near the neck | in progress |
@@ -99,9 +100,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - skin specks: sternum streak, navel rim, collarbone specks, nape spot (agent)
-- back-armpit fold edge at s90 + diagonal crease below back armpit at s160 (agent)
 
 ## Log
+
+- 2026-10-17: back armpit: s90 fold from the arm share clipping at 1 across 3-6 cm edges -> share reach 1.25x band + smooth ease into 1; s160 diagonal crease from the 10% convex leak sinking coarse skin -> leak scaled by (0.04/h)^2. Inner-arm sag stays fixed; clipping 0; non-shoulder byte-identical. Phone unavailable.
 
 - 2026-10-17: sample round 3: XXL-S back-30 and M-XL back-30 clean, no clipping. Front-armpit ridge at s160 softened (relax may flatten a vertex pulled in alone). New model-side specks listed (sternum, navel rim, collarbone, nape). Phone unavailable: strap/band models + ridge Swift await install.
 
