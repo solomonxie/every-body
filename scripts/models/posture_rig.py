@@ -869,6 +869,11 @@ CLEAR = {"phone": cheapest([dict(out=o, pole=dx) for o in np.arange(0, 0.205, 0.
          "phone-bed": sorted([dict(out=o, pole=dx) for o in np.arange(0, 0.205, 0.025) for dx in (0.0, 0.4, 0.8, 1.2, 1.6)],
                              key=lambda c: c["out"] + 0.01 * c["pole"])}
 HELD = ("phone", "laptop")
+# a woman's upper arms off her bra's sides on every chest option: back (the resting hand nearer the hip, share of the
+# thigh: a straight arm crosses the chest's side) and pole (elbows further out), cheapest first
+BRA_CLEAR = {"rest": sorted([dict(back=round(float(b), 2), pole=p) for b in np.arange(0, 0.41, 0.05) for p in (0.0, 0.4, 0.8)],
+                            key=lambda c: c["back"] + 0.1 * c["pole"]),
+             "held": [dict(pole=p) for p in (0.0, 0.2, 0.4, 0.6, 0.8, 1.2, 1.6)]}
 
 
 def clear_arms(spec, J, finish, bodies, clear, steps, gap=0.008):
@@ -1248,7 +1253,7 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
                                  finish=hold_phone, chair=False, neck="head", focus="C4", topology="sitting", clear="phone"),
           # keys at 0, 15, 30 and 45° of head tilt
           "laptop": dict(keys=LAPTOP, order=["raised", "lap"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=seated_common, finish=use_laptop,
-                         neck="head", focus="C4", topology="sitting", clear="laptop",
+                         neck="head", focus="C4", topology="sitting", clear="laptop", bra_clear="held",
                          # (no pregnant figure: the bump is in the way of the keyboard and the laptop; the app shows the woman)
                          sexes=["male", "female"]),
           # keys at 0, 15, 30 and 45° of neck bend (the head against the upper back)
@@ -1256,7 +1261,7 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
                             chair=False, neck="cervical", focus="C4", topology="sitting", clear="phone-bed", shells=True),
           # keys at 0, 12, 23 and 35° of wrist extension; the camera's close view on the right wrist
           "computer": dict(keys=COMPUTER, order=["neutral", "high"], steps=[0.0, 1 / 3, 2 / 3, 1.0], common=seated_common, finish=at_computer,
-                           focus=("hand-r", "wrist-r"), topology="sitting"),
+                           focus=("hand-r", "wrist-r"), topology="sitting", bra_clear="held"),
           # the calf muscles and leg veins as soft pieces; the close view on the left calf
           "standing": dict(keys=STANDING, order=["pump", "still"], steps=[0.0, 0.5, 1.0], common=standing_still, finish=lambda sp, J: sp, chair=False, clear="hang",
                            soft=("gastrocnemius", "soleus", "leg-vein", "small-saphenous"),
@@ -1264,7 +1269,7 @@ TOPICS = {"sitting": dict(keys=SITTING["keys"], order=["upright", "slouched"], s
           # a reclined couch back with a gap for the lumbar cushion
           "couch": dict(keys=COUCH, order=["supported", "sunk"], steps=[0.0, 0.5, 1.0], common=couch_common,
                         seat=dict(tilt=22.0, gap=CUSHION[2], kind="couch", seat_width=1.3, back_width=1.3, back_height=1.0),
-                        chair_props=lumbar_cushion, topology="sitting"),
+                        chair_props=lumbar_cushion, topology="sitting", bra_clear="rest"),
           # a mat on the floor and a wall behind the upper back
           "floor": dict(keys=FLOOR, order=["wall", "slouch"], steps=[0.0, 0.5, 1.0], common=floor_common,
                         seat=dict(tilt=0.0, upper=True, kind="floor", seat_width=1.4, back_width=1.6, back_height=1.6), topology="sitting")}
@@ -1412,14 +1417,48 @@ def pack(topics=None):
                 bodies = [(r, wear("large"))] + [(r + f["shapes"][k], wear("xxlarge" if k.startswith("chest") else "large"))
                                                  for k in ("chest-xxlarge", "hips-xxlarge") if k in f["shapes"]]
                 fit = Clear(f["W"], btopo, r, J, legs=topic["clear"] == "hang")
-                return [clear_arms(sp, J, finish, bodies, fit, CLEAR[topic["clear"]]) for sp in specs]
+                return bra_clear(sex, [clear_arms(sp, J, finish, bodies, fit, CLEAR[topic["clear"]]) for sp in specs], finish)
             if finish:
-                return [finish(sp, J) for sp in specs]
+                return bra_clear(sex, [finish(sp, J) for sp in specs], finish)
             f = figure(sex)
             r = f["rest"]["body"]
             bodies = [r] + [r + d for d in f["shapes"].values()]
             fit = Rest(f["W"], btopo)
-            return [rest_hands(sp, J, bodies, fit) for sp in specs]
+            return bra_clear(sex, specs, lambda sp, J: rest_hands(sp, J, bodies, fit), done=False)
+
+        def bra_clear(sex, specs, finish, done=True):
+            """per key, the cheapest arm change (BRA_CLEAR) that leaves every chest option's bra clear of the skin"""
+            steps = BRA_CLEAR.get(topic.get("bra_clear")) if sex == "female" else None
+            if not steps:
+                return specs if done else [finish(sp, J) for sp in specs]
+            out = []
+            for k, sp in enumerate(specs):
+                best = None
+                for c in steps:
+                    s = dict(sp, hand_on_thigh=sp["hand_on_thigh"] - c["back"]) if c.get("back") else dict(sp)
+                    if c["pole"]:
+                        s["elbow_pole"] = (np.array(sp.get("elbow_pole", [0.5, 0.0, -1.0]), float) + [c["pole"], 0, 0]).tolist()
+                    s = finish(s, J) if not done or c["pole"] else s
+                    n = bra_inside(sex, pose(s, J))
+                    if best is None or n < best[0]:
+                        best = (n, s, c)
+                    if not n:
+                        break
+                print(f"POSTURES {name} {sex} k{k} bra clear {best[2]} → {best[0]} inside", flush=True)
+                out.append(best[1])
+            return out
+
+        def bra_inside(sex, T):
+            """bra points inside the skin or within half a millimetre of it, summed over the chest options (medium hips)"""
+            f = figure(sex)
+            mid = f["shapes"].get("hips-medium", 0)
+            n = 0
+            for chest in ("large", "small", "medium", "xlarge", "xxlarge"):
+                body = skin_body(f["rest"]["body"] + mid + f["shapes"].get(f"chest-{chest}", 0), f["W"], T)
+                nrm = vertex_normals(body, btopo)
+                q, _ = lay(*worn(sex, chest)[0], body, nrm)
+                n += int((touch.closest(body, nrm, q)[0] < 0.001).sum())
+            return n
         specs = posed_specs("male")
         poses = [pose(sp, J) for sp in specs]
         male = figure("male")
