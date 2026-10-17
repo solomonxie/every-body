@@ -74,6 +74,9 @@ SHAPES = {
 HIP_EASE = 40
 # the breasts' mask (on the fullest option) softened over this many rings: the hips' change is one move over it
 BREAST_EASE = 10
+# over the bra's band (y, scene units: fade in, full) the hips' change keeps level: its move along the tilted back's normal
+# dropped the band's skin at the spine (XXL band sagged in the middle on smaller hips); slid level, same surface
+HIP_LEVEL = (0.32, 0.42)
 # arm swing (radians, out from the body) that goes with a shape
 ARM_OUT = {"hips-medium": 0.018, "hips-large": 0.04, "hips-xlarge": 0.065, "hips-xxlarge": 0.1}
 # group: (sex build, age, hair styles (hair.STYLES), eyebrows, eyelashes)
@@ -1265,6 +1268,22 @@ def body_options(np, load, body_tris):
         full[inner] = k @ d[under]
         return d + carried[:, None] * (full - d)
 
+    vn = vertex_normals(np, f0_fit, body_tris)
+    nh = vn * [1.0, 0, 1.0]
+    hl = np.maximum(np.linalg.norm(nh, axis=1), 0.3)
+    nh /= np.maximum(np.linalg.norm(nh, axis=1, keepdims=True), 1e-9)
+    flat = smoothstep(*HIP_LEVEL, y) * (1 - smoothstep(0.1, 0.25, arms))
+
+    def level(d):
+        """vertical move swapped for the horizontal one giving the same move along the normal, then onto the
+        moved surface (the curved lumbar hollow left it 2 mm off)"""
+        dy = d[:, 1] * flat
+        out = d.copy()
+        out[:, 1] -= dy
+        out += (dy * vn[:, 1] / hl)[:, None] * nh
+        sel = np.flatnonzero(np.abs(dy) > 1e-6)
+        return out + onto_mesh(np, f0 + out, f0 + d, body_tris, sel) - (f0 + out)
+
     def shape_delta(name):
         fit = load.fitted(f"female-adult.shape-{name}")
         d = below * (fit - f0_fit)
@@ -1281,6 +1300,7 @@ def body_options(np, load, body_tris):
             # nothing of it (its spread fullness too) reaches the chest; the breasts ride on the trunk under them (the
             # bra's band, fitted per chest, holds on every hips)
             d = carry_on(d) * (1 - smoothstep(0.62, 0.78, y))[:, None]
+            d = level(d)
             # one move over each breast (its mean there): any change across it, a fade or a ripple, turns the bra cup's
             # triangle frames apart on other hips (creases)
             mean = lambda side: (d * on_breast * side).sum(0) / (on_breast * side).sum()
@@ -1896,6 +1916,57 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
     return abc, w.astype(np.float32), offset.astype(np.float32)
 
 
+def onto_mesh(np, q, surf, tris, sel, k=8):
+    """q with its rows sel moved to their closest points on the mesh (surf, tris)"""
+    from scipy.spatial import cKDTree
+    vt = [[] for _ in range(len(surf))]
+    for t, tri in enumerate(tris):
+        for v in tri:
+            vt[v].append(t)
+    VT = np.full((len(surf), max(map(len, vt))), -1)
+    for v, ts in enumerate(vt):
+        VT[v, :len(ts)] = ts
+    out, tree = q.copy(), cKDTree(surf)
+    for lo in range(0, len(sel), 2048):
+        rows = sel[lo:lo + 2048]
+        p = q[rows]
+        cand = VT[tree.query(p, k=k)[1]].reshape(len(rows), -1)
+        a, b, c = (surf[tris[np.maximum(cand, 0), j]] for j in range(3))
+        x = closest_on_tri(np, p[:, None], a, b, c)
+        dist = np.where(cand >= 0, np.linalg.norm(x - p[:, None], axis=2), np.inf)
+        out[rows] = x[np.arange(len(rows)), dist.argmin(1)]
+    return out
+
+
+def closest_on_tri(np, p, a, b, c):
+    """closest points on triangles (a, b, c) to p (Ericson's region tests, broadcast)"""
+    ab, ac, ap = b - a, c - a, p - a
+    d1, d2 = (ab * ap).sum(-1), (ac * ap).sum(-1)
+    bp = p - b
+    d3, d4 = (ab * bp).sum(-1), (ac * bp).sum(-1)
+    cp = p - c
+    d5, d6 = (ab * cp).sum(-1), (ac * cp).sum(-1)
+    va, vb, vc = d3 * d6 - d5 * d4, d5 * d2 - d1 * d6, d1 * d4 - d3 * d2
+    with np.errstate(all="ignore"):
+        den = va + vb + vc
+        v, w = vb / den, vc / den
+        u = 1 - v - w
+        e = (va <= 0) & (d4 - d3 >= 0) & (d5 - d6 >= 0)
+        t = (d4 - d3) / ((d4 - d3) + (d5 - d6))
+        u, v, w = np.where(e, 0, u), np.where(e, 1 - t, v), np.where(e, t, w)
+        e = (vb <= 0) & (d2 >= 0) & (d6 <= 0)
+        t = d2 / (d2 - d6)
+        u, v, w = np.where(e, 1 - t, u), np.where(e, 0, v), np.where(e, t, w)
+        e = (vc <= 0) & (d1 >= 0) & (d3 <= 0)
+        t = d1 / (d1 - d3)
+        u, v, w = np.where(e, 1 - t, u), np.where(e, t, v), np.where(e, 0, w)
+    for e, k in (((d6 >= 0) & (d5 <= d6), 2), ((d3 >= 0) & (d4 <= d3), 1), ((d1 <= 0) & (d2 <= 0), 0)):
+        u, v, w = np.where(e, k == 0, u), np.where(e, k == 1, v), np.where(e, k == 2, w)
+    bad = ~np.isfinite(u + v + w)
+    u, v, w = np.where(bad, 1, u), np.where(bad, 0, v), np.where(bad, 0, w)
+    return u[..., None] * a + v[..., None] * b + w[..., None] * c
+
+
 def nipple_ids(np, got):
     """the chest centre vertices (the most forward point each side; same topology on every variant)"""
     body, eyes = got["body"], got["eyes"]
@@ -1951,8 +2022,26 @@ def tutte(np, x, free, se):
 CUP_SHEET = (2.0, 3.4)
 # the rest of the bra kept this far off every near skin plane (m)
 STRAP_CLEAR = 0.0005
-# (that push eased out over this many rings round it)
-STRAP_SPREAD = 10
+# (that push eased out over this radius round it, in space: over mesh rings, the cut edge's dense slivers bumped)
+STRAP_SPREAD = 0.02
+
+
+def spread_push(np, q, s, free):
+    """each push widened to its neighbours within STRAP_SPREAD, then averaged over that ball (never below the push)"""
+    from scipy.spatial import cKDTree
+    out = np.zeros(len(s))
+    idx = np.flatnonzero(free)
+    tree = cKDTree(q[idx])
+    for i in np.flatnonzero(s > 0):
+        nb = idx[tree.query_ball_point(q[i], STRAP_SPREAD)]
+        out[nb] = np.maximum(out[nb], s[i])
+    got = np.zeros(len(s))
+    for i, nb in zip(idx, tree.query_ball_point(q[idx], STRAP_SPREAD)):
+        nb = idx[nb]
+        if out[nb].max() > 0:
+            g = np.exp(-2 * ((q[nb] - q[i]) ** 2).sum(1) / STRAP_SPREAD ** 2)
+            got[i] = (g * out[nb]).sum() / g.sum()
+    return got
 
 
 # the band's front pulled taut over the sternum's hollow: (chord reach, slab height, deepest hollow bridged, radius the
@@ -2294,11 +2383,7 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
         k = dots.argmin(1)
         r = np.arange(len(p))
         s += np.maximum(STRAP_CLEAR - dots[r, k], 0) * free / np.maximum((n * vn[ii[r, k]]).sum(1), 0.3)
-    for _ in range(STRAP_SPREAD):
-        acc = np.zeros(len(p))
-        np.add.at(acc, ge[:, 0], s[ge[:, 1]])
-        np.add.at(acc, ge[:, 1], s[ge[:, 0]])
-        s = np.maximum(s, acc / gdeg[:, 0]) * free
+    s = spread_push(np, target, s, free)
     target += s[:, None] * n
     moved = moved | (s > 0)
     # as offsets in each point's triangle frame: a moved point on a sliver (a corner or an edge stored with a corner
