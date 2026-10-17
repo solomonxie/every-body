@@ -85,6 +85,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- `*.female.adult.*.{S-S,L-S,XXL-XXL}.*.shoulder-90|160` with the new port: strap ripple, squashed shoulder top, clipping (agent)
 - posture couch / laptop XL-XXL / computer XXL: arm sunk into bra (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
