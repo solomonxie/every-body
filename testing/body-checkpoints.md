@@ -59,7 +59,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
 | `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
-| posture couch (all chests), laptop XL/XXL k2-3, computer XXL k3 | arm sunk into bra (220-509 pts); press refused (<80% cleared) | in progress |
+| posture couch (all chests), laptop XL/XXL k2-3, computer XXL k3 | arm sunk into bra (220-509 pts); press refused (<80% cleared) | fixed b1ab6c9 (bra_clear: couch hand back + elbow out, laptop/computer elbows out); all 0; installed |
 | posture seated briefs | belly/thigh and crotch folds tuck briefs into the crease (300-680 pts, 60-80% fabric-in-fabric); visible only from below | open, low (6 blend variants, smoothing, push-out, rebind all failed) |
 | `black\|hispanic\|southeast-asian.female.adult.*.base.face-side.rest` | small lit patch at the very front of the lower lip (close profile) | fixed c247e31 (CLOSE_FRONT cap), installed; black: faint seam strip in close profile, check on device |
 
@@ -86,10 +86,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - `*.female.adult.*.{S-S,L-S,XXL-XXL}.*.shoulder-90|160` with the new port: strap ripple, squashed shoulder top, clipping (agent)
-- posture couch / laptop XL-XXL / computer XXL: arm sunk into bra (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
 ## Log
+
+- 2026-10-17: posture bra_clear (b1ab6c9): couch straight arm sank 1.5-3 cm through the breast side; hand moved back on the thigh (~6 cm) + elbow pole; laptop/computer elbows out (<=5 cm). Bra clip 0 in every female posture cell (medium hips); briefs unchanged. Installed.
 
 - 2026-10-17: tools/qa/pose.py now follows Swift bendSkin for adult women (shoulder bands, hinge press, contact shade; render.py draws shade). shoulder-160 black L-S stretch max 40.9 -> 10.1. Noted: back bra strap edge slightly wavy at shoulder-160.
 
