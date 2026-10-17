@@ -94,6 +94,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- sample: `white.female.adult.dressed.XXL-S.back.back-30`, `south-asian.female.adult.dressed.XXL-L.face-side.shoulder-160`, `white.female.adult.bare.M-XL.front-3q-left.back-30` (agent)
 - bra front strap edge wave at rest + XXL band wave top-down back-30 (agent)
 
 ## Log
