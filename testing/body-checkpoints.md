@@ -59,9 +59,9 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.dressed.XXL-*.top-down.back-30` | XXL bra band wave (XXL band low in the hips-option zone; hips deltas dropped mid-back skin up to 6 mm) | fixed 46233dc (level() in hips deltas, re-snapped to surface): hem spread XXL-S 7.3 -> 1.4 mm; pushed, install pending |
 | `*.female.adult.dressed.*.*.rest` | front strap edge slightly wavy at rest (~31 spikes, worst 2.1 mm, all bras) | fixed 46233dc (strap clearance push spread over 2 cm in space, not 10 rings): adult bras 31 -> 0 spikes; senior bra unchanged (no raw); pushed, install pending |
 | `*.female.adult.*.*.face-side\|front-3q-*.shoulder-160` | sharp lit ridge at the front armpit (relaxConvex blocked the relax on a ridge) | softened: ridge-aware convex cut from 110 deg (Swift, uncommitted); fold 44 -> 21 deg; install pending |
-| `*.female.adult.bare.*.front-3q-*.rest` | bright streak at the sternum between breasts; bright sliver at navel top rim | open (model) |
-| `*.female.adult.*.*.*.rest\|shoulder-160` | small lit specks along the collarbone near the neck | open (model) |
-| `*.female.adult.*.*.back-3q-*.*` | bright spot at nape/C7 | open (mesh or lighting?) |
+| `*.female.adult.bare.*.front-3q-*.rest` | bright streak at the sternum between breasts; bright sliver at navel top rim | in progress |
+| `*.female.adult.*.*.*.rest\|shoulder-160` | small lit specks along the collarbone near the neck | in progress |
+| `*.female.adult.*.*.back-3q-*.*` | bright spot at nape/C7 | in progress |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder squashed: partly fixed (shoulderTop keep 1.5, Swift uncommitted, installed): <half-area tris 116 -> 85 of 139, median 0.33 -> 0.40; stronger options creased. Was: top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
@@ -98,6 +98,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- skin specks: sternum streak, navel rim, collarbone specks, nape spot (agent)
+- back-armpit fold edge at s90 + diagonal crease below back armpit at s160 (agent)
 
 ## Log
 
