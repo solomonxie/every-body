@@ -49,6 +49,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.dressed.XL+.*.*` | soft crease where the bra panel meets the steep inner breast wall | fixed dfca54a (fill_gore), committed; install pending phone |
 | `*.female.pregnant.dressed.XXL.*.*` | bra-pregnant-xxlarge ~2100 clip pts in pose.py (port may miss the pregnant chest shape) | waits |
 | `*.female.pregnant.*.base.*.*` with XL/XXL chest | breast underside sinks up to 2 cm into the bump (hidden in the crease) | open (prototype: lift along the bump normal, /tmp/uw/tools/bumpfit.py) |
+| `*.female.adult.dressed.*.back-3q-*\|right\|top-down.shoulder-90\|160` | back bra strap ripple/facets (garment kept chord pinch; normals ignored relax) | fixed: wrapGarment (Swift, uncommitted), installed; check on device + frame time. Tip of strap at shoulder top still crumpled |
+| `*.female.adult.*.*.*.shoulder-90` | upper-arm underside sags, kink near elbow: inner-arm strip bound to back/ribs, share 0.55-0.98 | open (fix in shoulderShares arm labelling; risks armpit) |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
@@ -86,10 +88,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - `{white,black,southeast-asian}.female.adult.*.XXL-XXL.*.knee-max|elbow-max` + low-up rest S-S/XXL-XXL (inner thighs, groin, under-breast) with the new port (agent)
-- `*.female.adult.*.{S-S,L-S,XXL-XXL}.*.shoulder-90|160` with the new port: strap ripple, squashed shoulder top, clipping (agent)
 - `*.female.adult.dressed.*.top-down.back-30` (XXL bra band wave), `south-asian.female.adult.bare.M-L.front-3q-right.rest` (agent)
 
 ## Log
+
+- 2026-10-17: shoulder QA with the new port: no clipping (bra gap 1.5-1.8 mm), no armpit sheets. Back strap ripple fixed by wrapGarment (garment rides its skin behind the shoulder; wave >0.5 mm verts 136 -> 25 at 160); shoulder top squash at 160 median area 0.26 (hidden). Installed.
 
 - 2026-10-17: posture bra_clear (b1ab6c9): couch straight arm sank 1.5-3 cm through the breast side; hand moved back on the thigh (~6 cm) + elbow pole; laptop/computer elbows out (<=5 cm). Bra clip 0 in every female posture cell (medium hips); briefs unchanged. Installed.
 
