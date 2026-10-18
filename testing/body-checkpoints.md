@@ -72,7 +72,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | posture, all keys | lumpy shoulder/chest shading (raw per-vertex normals) | fixed: 2-ring normal blur like Figure.swift (PostureScene, uncommitted), installed; p99 21 -> 7 deg |
 | posture sitting front / slouched | strap ends on shoulder tops; wavy bra band top edge (slouched) | open |
 | posture sitting slouched, floor k2 | hair on shoulders sheared into a ruff at the nape (head tipped back 22 deg vs T1) | fixed: blend ramp top raised up to 0.16 when head tips back (PostureScene, uncommitted); stretched edges black 2640 -> 818, south-asian 1236 -> 0; hispanic long hair keeps a small ruff; installed |
-| posture sitting, `*.dressed.XXL-*.back` | seated briefs back hem low, V at cleft, skin rolls over | open (model); check after 5f9cddd |
+| posture sitting, `*.dressed.XXL-*.back` | seated briefs back hem low, V at cleft, skin rolls over; briefs in hip crease | fixed 649d7a3/d87c98a (waist_to_pelvis, seated_bridge, crease press): sitting clip 2643/1512/887 -> 39/23/0, hem notches 88/70/78 -> 23/14/16; installed. Left: floor hip crease (~1950 pts, -4.6 mm), small-hips standing notch 1.56 mm, slight dip at t=1 |
 | posture laptop k3, phone-* k3/k4 | hispanic long curly hair stretched (head forward) | fixed d7cb566: long hair's lower anchor turned 0.7x head pitch; laptop k3 2739 -> 136, phone-standing k4 5134 -> 2267, phone-bed k3 4685 -> 1406; curly ends lift slightly off nape at 40-53 deg; installed |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder squashed: partly fixed (shoulderTop keep 1.5, Swift uncommitted, installed): <half-area tris 116 -> 85 of 139, median 0.33 -> 0.40; stronger options creased. Was: top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
@@ -110,9 +110,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- posture sitting: seated briefs back hem V + crease clip (agent)
 
 ## Log
+
+- 2026-10-18: seated briefs hem and crease fixed in posture_rig (all 8 posture bins, models pushed, installed). All agents stopped.
 
 - 2026-10-18: all Swift committed (8b24d6d, d7cb566), hourly QA schedule cancelled on user request; long-hair turn installed. Hispanic slouched ruff (head tipped back) left open: turning pushes hair into the back.
 
