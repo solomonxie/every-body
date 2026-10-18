@@ -1810,6 +1810,13 @@ BRIDGE_HIPS = ("small", "medium", "large", "xlarge", "xxlarge")
 # (crease: closer to the skin than this share of the lift; smoothing passes; the skin cleared by this share of the lift;
 # smoothing passes over the sheet's normal it's pushed out along)
 BRIDGE = (0.6, 60, 1.0, 8)
+# the waistband (edge and the band under it) joins the region this near it and, taut over the cleft's top, is smoothed
+# over this radius in space: over mesh rings, its sub-mm slivers left the hem dipping into the groove (notches to 2.6 mm)
+BRIDGE_REACH = 0.01
+WAIST_SPREAD = 0.014
+WAIST_BAND = 0.02
+# (re-bound among this many triangles near it: the nearest 10 lie on one cleft wall or the other, a step between)
+WAIST_CAND = 80
 
 
 def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
@@ -1859,6 +1866,23 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
     for _ in range(2):
         region[ge[region[ge[:, 0]], 1]] = True
         region[ge[region[ge[:, 1]], 0]] = True
+    q0 = carry(bodies[0])
+    edge = waist_rim(np, ge[count == 1], q0)
+    # (with the band under it: left on the groove, the fabric folded over under the lifted edge)
+    waist = np.flatnonzero(cKDTree(q0[edge]).query(q0, distance_upper_bound=WAIST_BAND)[0] < np.inf)
+    region[waist] |= np.isfinite(cKDTree(q0[region]).query(q0[waist], distance_upper_bound=BRIDGE_REACH)[0])
+    # pairs (band point, any point near it); the edge smoothed along itself only
+    tree0, etree = cKDTree(q0), cKDTree(q0[edge])
+    near = [edge[e] if rim[i] else np.array(a) for i, a, e in
+            zip(waist, tree0.query_ball_point(q0[waist], WAIST_SPREAD), etree.query_ball_point(q0[waist], WAIST_SPREAD))]
+    pairs = np.stack([np.repeat(np.arange(len(waist)), [len(a) for a in near]), np.concatenate(near).astype(np.int64)], 1)
+    gw = np.exp(-2 * ((q0[waist[pairs[:, 0]]] - q0[pairs[:, 1]]) ** 2).sum(1) / WAIST_SPREAD ** 2)
+    crowd = np.bincount(pairs[:, 0], gw, len(waist)) > 1.5
+    # (each neighbour weighed by its share of the edge's length or the sheet's area: by count, the slivers outweighed the rest)
+    j = pairs[:, 1]
+    gw /= np.where(rim[waist[pairs[:, 0]]], etree.query_ball_point(q0[j], WAIST_SPREAD, return_length=True),
+                   tree0.query_ball_point(q0[j], WAIST_SPREAD, return_length=True))
+    gsum = np.bincount(pairs[:, 0], gw, len(waist))[:, None]
     r = np.arange(len(w))
 
     def sheet_normals(q):
@@ -1880,7 +1904,11 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
         for it in range(passes):
             acc = np.zeros_like(q)
             np.add.at(acc, to[:, 0], q[to[:, 1]])
-            q[region] += 0.5 * (acc / gdeg - q)[region]
+            acc /= gdeg
+            wq = np.zeros((len(waist), 3))
+            np.add.at(wq, pairs[:, 0], gw[:, None] * q[pairs[:, 1]])
+            acc[waist[crowd]] = (wq / gsum)[crowd]
+            q[region] += 0.5 * (acc - q)[region]
             sn = sheet_normals(q)
             for _ in range(3 if it < passes - 1 else 40):
                 dots, i = depth(tree, body, vn, q)
@@ -1900,7 +1928,7 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
     # re-bound to one of the triangles nearest the first body's sheet, at the closest point on it: the one whose
     # frame carries a single offset closest to the sheet on every body (one side of the cleft or the other would fold)
     body = bodies[0]
-    _, cand = cKDTree(body[tris].mean(1)).query(films[0], k=10)
+    _, cand = cKDTree(body[tris].mean(1)).query(films[0], k=WAIST_CAND)
     a, b, c = (body[tris[cand, k]] for k in range(3))
     v0, v1, v2 = b - a, c - a, films[0][:, None] - a
     d00, d01, d11 = (v0 * v0).sum(2), (v0 * v1).sum(2), (v1 * v1).sum(2)
@@ -1917,20 +1945,46 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
         t1, t2, nt = (x.reshape(cand.shape + (3,)) for x in tri_frame(np, *(x.reshape(-1, 3) for x in corner), n.reshape(-1, 3)))
         local.append((base, (t1, t2, nt), q[:, None] - base))
     o = sum(np.stack([(d * t).sum(2) for t in fr], 2) for _, fr, d in local) / len(bodies)
-    err = np.zeros(cand.shape)
+    err, miss = np.zeros(cand.shape), []
     for body, vn, (base, fr, d) in zip(bodies, vns, local):
         got = base + sum(o[..., k:k + 1] * fr[k] for k in range(3))
-        err += ((got - (base + d)) ** 2).sum(2)
+        miss.append(got - (base + d))
+        err += (miss[-1] ** 2).sum(2)
         # (never one that lands under the skin on any body)
         dots, _ = depth(cKDTree(body[trunk]), body, vn, got.reshape(-1, 3))
         err += (dots.min(1).reshape(cand.shape) < 0) * 1.0
+    ws = np.flatnonzero(np.isin(sel, waist))
+    err[np.setdiff1d(np.arange(len(sel)), ws), 10:] = np.inf
     best = err.argmin(1)
     s = np.arange(len(sel))
+    # on the waistband, each picks the one missing like its neighbours do: a miss that flips from one cleft wall's
+    # triangle to the other's between neighbours notched the hem
+    if len(ws):
+        miss = np.stack(miss, 2)[ws]
+        pr = cKDTree(films[0][ws]).query_pairs(WAIST_SPREAD, output_type="ndarray")
+        pr = np.concatenate([pr, pr[:, ::-1]])
+        g = np.exp(-2 * ((films[0][ws][pr[:, 0]] - films[0][ws][pr[:, 1]]) ** 2).sum(1) / WAIST_SPREAD ** 2)
+        gs = np.maximum(np.bincount(pr[:, 0], g, len(ws)), 1e-12)[:, None, None]
+        for _ in range(20):
+            mean = np.zeros(miss.shape[:1] + miss.shape[2:])
+            np.add.at(mean, pr[:, 0], g[:, None, None] * miss[pr[:, 1], best[ws][pr[:, 1]]])
+            best[ws] = (err[ws] + ((miss - (mean / gs)[:, None]) ** 2).sum((2, 3))).argmin(1)
     abc, w = abc.copy(), w.copy()
     abc[sel], w[sel] = tris[cand[s, best]], bary[s, best, :2]
     offset = np.zeros((len(w), 3))
     offset[sel] = o[s, best]
     return abc, w.astype(np.float32), offset.astype(np.float32)
+
+
+def waist_rim(np, edges, q):
+    """the cut edge's highest loop (the waistband's), its vertices"""
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    n = len(q)
+    _, lab = connected_components(coo_matrix((np.ones(len(edges)), (edges[:, 0], edges[:, 1])), shape=(n, n)), directed=False)
+    on = np.unique(edges)
+    top = max(np.unique(lab[on]), key=lambda c: q[on[lab[on] == c], 1].mean())
+    return on[lab[on] == top]
 
 
 def onto_mesh(np, q, surf, tris, sel, k=8):
