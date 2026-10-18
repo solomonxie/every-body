@@ -127,11 +127,10 @@ def off_arms(abc, w, body, tris, W):
 
 # the women's briefs, bridged by build_figure on the standing hips only: seated, its waistband's slivers sheared into
 # notches (skin over the hem) and it dipped into the cleft. Its band (this near the edge) re-bridged from the plain cut
-# over the standing hips (weighed this many times) and these keys of the sitting topic (every topic shares the binding)
+# over the standing hips, at rest and posed standing, and these keys of the sitting topic (every topic shares the binding)
 SEATED_BRIDGE = (0.0, 0.5, 1.0)
 BRIDGE_HIPS = ("small", "medium", "large", "xlarge", "xxlarge")
 SEATED_WAIST = 0.03
-FLAT_WEIGHT = 2
 # the briefs' skin moving with both pelvis and thigh (thigh weight between these): seated, its folds pressed off the fabric
 CREASE = (0.05, 0.95)
 
@@ -143,7 +142,8 @@ def seated_bridge(fit, gtri, rest, shapes, W, J, tris):
     common = seated_common(J)
     ka, kb = (SITTING["keys"][k] for k in ("upright", "slouched"))
     keys = [pose({**common, **blend_spec(ka, kb, t)}, J) for t in SEATED_BRIDGE]
-    bodies = flat * FLAT_WEIGHT + [skin_body(b, W, T) for T in keys for b in flat]
+    still = pose({**standing_still(J), **STANDING["still"]}, J)
+    bodies = flat + [skin_body(b, W, still) for b in flat] + [skin_body(b, W, T) for T in keys for b in flat]
     abc, w = unbridged("briefs-female")
     arms = sum(W[:, BI[f"{b}-{s}"]] for b in ("uparm", "fore1", "fore2", "hand") for s in SIDES)
     nb, wb, ob = bridge(np, bodies, tris, abc, w, gtri.astype(np.int64), lift * (0.8 + 0.2 * np.minimum(f / 0.01, 1)), arms)
