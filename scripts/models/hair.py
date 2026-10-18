@@ -39,11 +39,11 @@ STYLES = {
     # curls: waves every wave_len cm, turning round the strand (curl) instead of side to side
     "woman-curly": dict(count=2100, width=0.85, rows=36, flow="part", part=0.45, cut=5.0, max_len=32, gravity=0.35, stiff=2.0,
                         lift=0.3, volume=1.8, base=0.3, hug=0.45, hug_reach=2.0, face=1.0, wave=0.7, wave_len=3.2, curl=True, cut_jitter=2.5, recede=0.0, tuck=0.0,
-                        sculpt=dict(locks=False, root=0.7, tip=0.6, smooth=40,
-                                    style=dict(cut_jitter=1.2, lift=0.35, base=0.3, volume=0.45, wave=0.85, wave_len=2.8))),
+                        sculpt=dict(locks=False, root=0.7, tip=0.6, smooth=40, tip_round=(2.0, 2.0),
+                                    style=dict(cut_jitter=0.9, lift=0.35, base=0.3, volume=0.45, wave=0.85, wave_len=2.8))),
     "woman-coily": dict(kind="coil", count=1600, width=1.1, rows=32, flow="part", part=0.0, cut=1.5, max_len=24, gravity=0.2, stiff=2.5,
                         lift=0.6, volume=2.6, base=0.4, hug=0.35, hug_reach=2.0, face=1.0, wave=0.9, wave_len=2.6, curl=True, cut_jitter=2.0, recede=0.0, tuck=0.0,
-                        sculpt=dict(root=0.9, tip=0.8, smooth=65, style=dict(cut_jitter=0.5, volume=1.1, lift=0.35))),
+                        sculpt=dict(root=0.9, tip=0.8, smooth=200, close=0.6, style=dict(cut_jitter=0.5, volume=1.1, lift=0.35))),
     # sculpted: the groom's strands fused into one smooth solid (build_figure.sculpt_hair), no see-through cards;
     # sculpt: tube radius (cm) at the root and tip, every n-th strand
     "sculpt-woman-long": dict(count=2400, width=0.9, rows=16, flow="part", part=0.5, cut=6.5, max_len=34, gravity=0.4, stiff=2.0,
@@ -99,7 +99,8 @@ STYLES = {
 
 # every style is sculpted (stylized, one solid), by strand kind: tube radius (cm) at the root and tip, every n-th
 # strand, voxel size and smoothing passes of the fused solid, bumps (height, size in cm) over its surface, the
-# face-framing locks' thinness (lock_thin), and changes to the style's growth (an even hem, a little lift on top)
+# face-framing locks' thinness (lock_thin), rounded strand ends (tip_round: radius scale, over cm), a
+# closing (close, cm: fills pits and flaps), and changes to the style's growth (an even hem, a little lift on top)
 SCULPT = {"sparse": dict(root=0.8, tip=0.6, every=1, voxel=0.3, smooth=70, locks=True, style=dict(cut_jitter=0.3, lift=0.35, base=0.3, volume=0.35)),
           "dense": dict(root=0.8, tip=0.55, every=1, voxel=0.25, smooth=60, style=dict(tousle=0.05)),
           "coil": dict(root=1.0, tip=0.9, every=1, voxel=0.3, smooth=30, bumps=(0.4, 1.2), decimate=0.35,
