@@ -104,9 +104,12 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- sample: `south-asian.female.adult.dressed.L-XL.face-side.sitting`, `east-asian.female.adult.bare.XL-XL.front-3q-right.knee-135`, `south-asian.female.adult.bare.S-M.low-up.back-30` (agent)
 - briefs top hem notches near the cleft (agent)
 
 ## Log
+
+- 2026-10-17: repo cleanup: 82 finished agent worktrees + branches removed (42 GB -> 1.8 GB), wip-* repointed to rewritten origin, `models` tag moved to master (local + GitHub); .git 764 MB -> 18 MB.
 
 - 2026-10-17: hinge normals turned by R only, ignoring the share gradient; foldNormal applies the exact Jacobian inside the closing bend (knee 69-86, elbow 109-135 deg, flexor side, guarded). Elbow tick and knee-90 speck/smudge reduced; positions unchanged, clipping 0. Installed.
 
