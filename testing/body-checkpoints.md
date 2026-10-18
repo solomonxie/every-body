@@ -107,6 +107,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- sample: `white.female.adult.dressed.L-L.front-3q-right.back-90`, `hispanic.female.adult.bare.M-XL.face-side.sitting`, `east-asian.female.adult.dressed.XXL-XL.back.sitting` (agent)
 - briefs top hem notches near the cleft (agent)
 
 ## Log
