@@ -73,8 +73,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
 | `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | fixed: specular mask skin-seam.png (4a9d805) + Figure.swift (uncommitted), installed; check on device for glancing sheen. Thin lower-lip edge: TUCK_LOWER removed (c247e31), lip fuller; installed |
 | `*.*.adult.*.*.*.shoulder-*` | QA port tools/qa/pose.py lacks the shoulder bands + hinge press: shoulder-pose renders untrustworthy | done: shoulderShares/chord/relax, hinge press + contact shade ported (no app dump; bendCrossing/muscles not ported) |
-| `hispanic.female.adult.*.*.back-3q-left.*` | curly hair hem tips spiky (style cut jitter) | in progress |
-| `black.female.adult.*.*.face-side.*` | faint lit sliver on coily hair inner edge at the neck | in progress |
+| `hispanic.female.adult.*.*.back-3q-left.*` | curly hair hem tips spiky (lone strand ends smoothed to needles) | fixed d8f0c2c (tip_round 2x over last 2 cm, jitter 0.9 cm): needles 8 -> 3; installed |
+| `black.female.adult.*.*.face-side.*` | faint lit sliver on coily hair inner edge at the neck (back-light on curtain/back fold + jaw pit/flap) | fixed d8f0c2c (smooth 200, close 0.6 cm): back-3q fold gone, front folds faint; installed |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
 | `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
@@ -105,9 +105,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - elbow-145 crease-end tick + knee-90 crease-end smudge/speck (agent)
-- hispanic curly hem tips + black coily neck sliver (agent)
 
 ## Log
+
+- 2026-10-17: hair: curly hem needles rounded (tip_round), coily fold/pit closed; only those two hair pieces changed (figure.bin e696eeaa); postures carry no hair. Sculpts copied to build/models/figure + backup. Installed.
 
 - 2026-10-17: phone back; installed all pending (bra strap/band models, armpit ridge, back armpit, back-light mask, kneeOpen). Sample round 4: back-60 XXL and elbow-145 clean of clipping; knee-90 side-shade streaks fixed.
 
