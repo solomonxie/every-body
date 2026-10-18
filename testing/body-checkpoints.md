@@ -68,6 +68,9 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.back-3q-*.elbow-145` | bright zigzag tick at the elbow crease end (dark skin); 3 crushed flipped tris | fixed: foldNormal (Swift, uncommitted), installed; bright px 622 -> 357 (black); flipped tris remain, shaded |
 | `*.female.adult.dressed.*.back\|back-3q-*.back-60` | briefs top hem notches near the cleft (<=2.7 mm, present at rest) | in progress |
 | `*.female.adult.*.*.back-*.back-*` | diagonal highlight on upper back by the spine (sculpted) | open, low (model) |
+| posture chin-down keys (laptop, couch, phone-*), sitting upright | short hair (bob, coily) stretched into a bulb (hair blended to upper back by height) | fixed: skull follow from 12 deg forward (PostureScene, uncommitted), installed; phone-standing stretched edges 3580 -> 0. Bob swings with head at 53 deg |
+| posture, all keys | lumpy shoulder/chest shading (raw per-vertex normals) | fixed: 2-ring normal blur like Figure.swift (PostureScene, uncommitted), installed; p99 21 -> 7 deg |
+| posture sitting front / slouched | strap ends on shoulder tops; wavy bra band top edge (slouched) | open |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder squashed: partly fixed (shoulderTop keep 1.5, Swift uncommitted, installed): <half-area tris 116 -> 85 of 139, median 0.33 -> 0.40; stronger options creased. Was: top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
@@ -104,10 +107,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- sample: `south-asian.female.adult.dressed.L-XL.face-side.sitting`, `east-asian.female.adult.bare.XL-XL.front-3q-right.knee-135`, `south-asian.female.adult.bare.S-M.low-up.back-30` (agent)
 - briefs top hem notches near the cleft (agent)
 
 ## Log
+
+- 2026-10-17: sample round 5: knee-135 XL and low-up back-30 clean. Posture port (tools/qa/posture_obj.py) added; posture hair bulb and skin shading fixed in PostureScene. Installed.
 
 - 2026-10-17: repo cleanup: 82 finished agent worktrees + branches removed (42 GB -> 1.8 GB), wip-* repointed to rewritten origin, `models` tag moved to master (local + GitHub); .git 764 MB -> 18 MB.
 
