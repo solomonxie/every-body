@@ -124,7 +124,8 @@ final class PostureScene {
                 for k in keys.indices { for v in keys[k].indices { keys[k][v] += deltas[k][v] } }
             }
         }
-        if let body = DeformMesh(keys: keys, vmap: model.vmap, uv: model.uv, index: model.index) {
+        // (the skin shades with normals evened out a little, as Figure's)
+        if let body = DeformMesh(keys: keys, vmap: model.vmap, uv: model.uv, index: model.index, blur: 2) {
             let entity = ModelEntity(mesh: body.resource)
             entity.name = "skin"
             var m = pieces.first { $0.id == "body" }?.material as? PhysicallyBasedMaterial ?? BodyScene.material(UIColor(hex: "#F2C9A5"), opacity: 1)
@@ -678,6 +679,8 @@ final class DeformMesh {
     let resource: MeshResource
     private let keys: [[SIMD3<Float>]]
     private let normals: [[SIMD3<Float>]]
+    /// drawn normals: evened out over `blur` rings (Figure's skin shading); garments sit on `normals`
+    private let shade: [[SIMD3<Float>]]
     private let vmap: [UInt32]?
     private let uv: [SIMD2<Float>]
     private let count: Int
@@ -686,7 +689,7 @@ final class DeformMesh {
     private(set) var positions: [SIMD3<Float>] = []
     private(set) var currentNormals: [SIMD3<Float>] = []
 
-    init?(keys: [[SIMD3<Float>]], vmap: [UInt32]?, uv: [SIMD2<Float>], index: [UInt32]) {
+    init?(keys: [[SIMD3<Float>]], vmap: [UInt32]?, uv: [SIMD2<Float>], index: [UInt32], blur: Int = 0) {
         guard let first = keys.first, !first.isEmpty else { return nil }
         count = vmap?.count ?? first.count
         indexCount = index.count
@@ -703,6 +706,19 @@ final class DeformMesh {
                 n[a] += f; n[b] += f; n[c] += f
             }
             return n.map { simd_length($0) > 0 ? simd_normalize($0) : SIMD3(0, 1, 0) }
+        }
+        shade = blur == 0 ? normals : normals.map { n0 in
+            var n = n0
+            for _ in 0..<blur {
+                var m = n
+                for t in stride(from: 0, to: index.count, by: 3) {
+                    let a = Int(vmap.map { $0[Int(index[t])] } ?? index[t]), b = Int(vmap.map { $0[Int(index[t + 1])] } ?? index[t + 1]),
+                        c = Int(vmap.map { $0[Int(index[t + 2])] } ?? index[t + 2])
+                    m[a] += n[b] + n[c]; m[b] += n[a] + n[c]; m[c] += n[a] + n[b]
+                }
+                n = m.map { simd_length($0) > 0 ? simd_normalize($0) : SIMD3(0, 1, 0) }
+            }
+            return n
         }
         var d = LowLevelMesh.Descriptor()
         d.vertexAttributes = [.init(semantic: .position, format: .float3, offset: 0),
@@ -735,9 +751,10 @@ final class DeformMesh {
     }
 
     private func write(_ a: Int, _ b: Int, _ w: Float) {
-        let pa = keys[a], pb = keys[b], na = normals[a], nb = normals[b]
+        let pa = keys[a], pb = keys[b]
         positions = zip(pa, pb).map { $0 + ($1 - $0) * w }
-        currentNormals = zip(na, nb).map { let n = $0 + ($1 - $0) * w; return simd_length(n) > 0 ? simd_normalize(n) : SIMD3(0, 1, 0) }
+        currentNormals = zip(normals[a], normals[b]).map { let n = $0 + ($1 - $0) * w; return simd_length(n) > 0 ? simd_normalize(n) : SIMD3(0, 1, 0) }
+        let na = shade[a], nb = shade[b]
         let vmap = vmap, uv = uv, count = count
         var lo = SIMD3<Float>(repeating: .infinity), hi = SIMD3<Float>(repeating: -.infinity)
         mesh.withUnsafeMutableBytes(bufferIndex: 0) { raw in
@@ -767,6 +784,8 @@ final class HairMesh {
     let resource: MeshResource
     private let p: [SIMD3<Float>], n: [SIMD3<Float>], t: [SIMD3<Float>], uv: [SIMD2<Float>]
     private let w: [Float]
+    /// ends above the shoulders (1.16): nothing to lie on, so it bends with the head (chin down)
+    private let short: Bool
     private let indexCount: Int
 
     init?(_ source: MeshResource) {
@@ -780,6 +799,7 @@ final class HairMesh {
             let k = min(max((1.3 - q.y) / 0.14, 0), 1)
             return k * k * (3 - 2 * k)
         }
+        short = p.allSatisfy { $0.y > 1.16 }
         indexCount = index.count
         var d = LowLevelMesh.Descriptor()
         d.vertexAttributes = [.init(semantic: .position, format: .float3, offset: 0), .init(semantic: .normal, format: .float3, offset: 12),
@@ -801,11 +821,27 @@ final class HairMesh {
 
     func set(head: simd_float4x4, chest: simd_float4x4) {
         let p = p, n = n, t = t, uv = uv, w = w
+        let r = simd_float3x3(SIMD3(chest.columns.0.x, chest.columns.0.y, chest.columns.0.z), SIMD3(chest.columns.1.x, chest.columns.1.y, chest.columns.1.z),
+                              SIMD3(chest.columns.2.x, chest.columns.2.y, chest.columns.2.z)).transpose
+        let u = r * SIMD3(head.columns.1.x, head.columns.1.y, head.columns.1.z), tilt = atan2(u.z, u.y)
+        // short hair held by the upper back stretches into a bulb as the head bends forward: follow the skull from 12°
+        var keep: Float = 1
+        if short {
+            let k = min(max(tilt / (12 * .pi / 180), 0), 1)
+            keep = 1 - k * k * (3 - 2 * k)
+        }
+        // head tipped back against T1 (slouch): the shoulders rise toward the skull; spread that over more hair (ramp top up 0.16 by 16°)
+        let g = min(max(-tilt / (16 * .pi / 180), 0), 1), rise = 0.16 * g * g * (3 - 2 * g)
         var lo = SIMD3<Float>(repeating: .infinity), hi = SIMD3<Float>(repeating: -.infinity)
         mesh.withUnsafeMutableBytes(bufferIndex: 0) { raw in
             let f = raw.bindMemory(to: Float.self)
             for i in p.indices {
-                let m = head * (1 - w[i]) + chest * w[i]
+                var wi = w[i] * keep
+                if rise > 0 {
+                    let k = min(max((1.3 + rise - p[i].y) / (0.14 + rise), 0), 1)
+                    wi = k * k * (3 - 2 * k) * keep
+                }
+                let m = head * (1 - wi) + chest * wi
                 let q4 = m * SIMD4(p[i], 1), q = SIMD3(q4.x, q4.y, q4.z)
                 let n4 = m * SIMD4(n[i], 0), t4 = m * SIMD4(t[i], 0)
                 let nn = simd_normalize(SIMD3(n4.x, n4.y, n4.z)), tt = simd_normalize(SIMD3(t4.x, t4.y, t4.z))
