@@ -64,8 +64,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.*.rest\|shoulder-160` | small lit specks along the collarbone near the neck | fixed 82d9d47 (same mask); pushed, installed |
 | `*.female.adult.*.*.back-3q-*.*` | bright spot at nape/C7 | halved 82d9d47 (rest is a real upper-back highlight); pushed, installed |
 | `*.female.adult.*.*.right\|left\|back-3q-*.knee-90` | dark streaks below the knee crease end (side shade lopsided on an open corner) | fixed: kneeOpen fades side shade below 130 deg (Swift, uncommitted), installed |
-| `*.female.adult.*.*.right\|left.knee-90` | dark smudge + lit speck at the lateral crease end | in progress |
-| `*.female.adult.*.*.back-3q-*.elbow-145` | bright zigzag tick at the elbow crease end (dark skin); 3 crushed flipped tris | in progress |
+| `*.female.adult.*.*.right\|left.knee-90` | dark smudge + lit speck at the lateral crease end | fixed: foldNormal (exact hinge-map normal) + kneeOpen reads plain normal (Swift, uncommitted), installed; peak +122 -> +63. Check knee-110/135 crease ends on device |
+| `*.female.adult.*.*.back-3q-*.elbow-145` | bright zigzag tick at the elbow crease end (dark skin); 3 crushed flipped tris | fixed: foldNormal (Swift, uncommitted), installed; bright px 622 -> 357 (black); flipped tris remain, shaded |
 | `*.female.adult.dressed.*.back\|back-3q-*.back-60` | briefs top hem notches near the cleft (<=2.7 mm, present at rest) | in progress |
 | `*.female.adult.*.*.back-*.back-*` | diagonal highlight on upper back by the spine (sculpted) | open, low (model) |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder squashed: partly fixed (shoulderTop keep 1.5, Swift uncommitted, installed): <half-area tris 116 -> 85 of 139, median 0.33 -> 0.40; stronger options creased. Was: top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
@@ -105,9 +105,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - briefs top hem notches near the cleft (agent)
-- elbow-145 crease-end tick + knee-90 crease-end smudge/speck (agent)
 
 ## Log
+
+- 2026-10-17: hinge normals turned by R only, ignoring the share gradient; foldNormal applies the exact Jacobian inside the closing bend (knee 69-86, elbow 109-135 deg, flexor side, guarded). Elbow tick and knee-90 speck/smudge reduced; positions unchanged, clipping 0. Installed.
 
 - 2026-10-17: hair: curly hem needles rounded (tip_round), coily fold/pit closed; only those two hair pieces changed (figure.bin e696eeaa); postures carry no hair. Sculpts copied to build/models/figure + backup. Installed.
 
