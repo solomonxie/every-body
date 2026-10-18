@@ -68,8 +68,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
 | `black.female.adult.bare.base.face-side\|front-3q-*.rest` | small white wedge at the mouth corner (3/4), thin lower-lip edge in profile (coarse mesh) | fixed: specular mask skin-seam.png (4a9d805) + Figure.swift (uncommitted), installed; check on device for glancing sheen. Thin lower-lip edge: TUCK_LOWER removed (c247e31), lip fuller; installed |
 | `*.*.adult.*.*.*.shoulder-*` | QA port tools/qa/pose.py lacks the shoulder bands + hinge press: shoulder-pose renders untrustworthy | done: shoulderShares/chord/relax, hinge press + contact shade ported (no app dump; bendCrossing/muscles not ported) |
-| `hispanic.female.adult.*.*.back-3q-left.*` | curly hair hem tips spiky (style cut jitter) | open, low |
-| `black.female.adult.*.*.face-side.*` | faint lit sliver on coily hair inner edge at the neck | open, low |
+| `hispanic.female.adult.*.*.back-3q-left.*` | curly hair hem tips spiky (style cut jitter) | in progress |
+| `black.female.adult.*.*.face-side.*` | faint lit sliver on coily hair inner edge at the neck | in progress |
 | `*.female.adult.*.*.face-*.rest` | woman hair regrown (counts −3%); check looks same on device | check |
 | `*.female.adult.*.XL+-*.*.back-*\|shoulder-160` | breasts ignore gravity / arm lift (prototype /tmp/ke/mx/pose_b.py) | feature, user: later |
 | `*.female.pregnant.dressed.*` | briefs vs wrist at the hip (no arm swing on pregnant) | waits (not adult woman scope) |
@@ -99,6 +99,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- hispanic curly hem tips + black coily neck sliver (agent)
 - sample: `hispanic.female.adult.dressed.M-XL.right.knee-90`, `east-asian.female.adult.dressed.M-S.back-3q-right.elbow-145`, `southeast-asian.female.adult.dressed.XXL-XXL.left.back-60` (agent)
 
 ## Log
