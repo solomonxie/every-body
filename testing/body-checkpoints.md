@@ -46,7 +46,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.XXL-XXL.top-down\|back-3q-*.*` | butt/thigh lumps | buttocks confirmed clean (sweep3); inner-thigh ridges reopened below |
 | `east-asian.female.adult.*.*.face-side.rest` | chin, eyes, sallow skin | skin/eyes confirmed (sweep3); chin recedes (style call) |
 | `*.*.adult\|pregnant\|child.*.*.*.shoulder-90\|shoulder-160\|back-*+shoulder-*` | side-chest balloon; armpit skin stretched into thin sheets/flaps (deltoid skin bound to the shoulder blade, turn ramped over a few triangles) | fixed in Blender port (shoulder share: arm/torso split + 0.14 band by distance over the skin, chord blend), uncommitted, installed; check on device. Left: shoulder top squashes (hidden), kid top armhole shows a speck of skin at 160 |
-| `*.female.adult.dressed.XL+.*.*` | soft crease where the bra panel meets the steep inner breast wall | fixed dfca54a (fill_gore), committed; install pending phone |
+| `*.female.adult.dressed.XL+.*.*` | soft crease where the bra panel meets the steep inner breast wall | fixed dfca54a (fill_gore), committed; installed phone |
 | `*.female.pregnant.dressed.XXL.*.*` | bra-pregnant-xxlarge ~2100 clip pts in pose.py (port may miss the pregnant chest shape) | waits |
 | `*.female.pregnant.*.base.*.*` with XL/XXL chest | breast underside sinks up to 2 cm into the bump (hidden in the crease) | open (prototype: lift along the bump normal, /tmp/uw/tools/bumpfit.py) |
 | `*.female.adult.dressed.*.back-3q-*\|right\|top-down.shoulder-90\|160` | back bra strap ripple/facets (garment kept chord pinch; normals ignored relax) | fixed: wrapGarment (Swift, uncommitted), installed; check on device + frame time. Tip of strap at shoulder top still crumpled |
@@ -56,13 +56,18 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.{front,low-up}.knee-135` | pointed V kneecap front (rest-mesh ridge x~0.14) | open, low: fairing doesn't help; needs kneecap resculpt in the fit (changes rest look) |
 | `*.female.adult.dressed.*.low-up.rest` | small pinched folds in briefs gusset | open, cosmetic |
 | `*.female.adult.*.*.*.shoulder-90\|160` | upper back/shoulder top slid down with the arm (smoothed arm share reached the spine): hair through neck side, strap crumple, back straps V | fixed: far-share fade in shoulderShares (Swift, uncommitted), installed; check s160 back 'shrug' + man/child shoulders |
-| `*.female.adult.dressed.XXL-*.top-down.back-30` | XXL bra band wave (XXL band low in the hips-option zone; hips deltas dropped mid-back skin up to 6 mm) | fixed 46233dc (level() in hips deltas, re-snapped to surface): hem spread XXL-S 7.3 -> 1.4 mm; pushed, install pending |
-| `*.female.adult.dressed.*.*.rest` | front strap edge slightly wavy at rest (~31 spikes, worst 2.1 mm, all bras) | fixed 46233dc (strap clearance push spread over 2 cm in space, not 10 rings): adult bras 31 -> 0 spikes; senior bra unchanged (no raw); pushed, install pending |
-| `*.female.adult.*.*.{right,back-3q-*,back}.shoulder-90`, `{right,face-side}.shoulder-160` | back-armpit fold edge ~45 deg (share clipped at 1 across one coarse edge); diagonal crease on the mesh-density seam at s160 (convex leak sank coarse skin) | fixed: shoulderReach + eased arm share, relax leak scaled by edge length (Swift, uncommitted); s90 fold 45 -> 20 deg, s160 shading jump 12.4 -> 7.3 deg; install pending |
-| `*.female.adult.*.*.face-side\|front-3q-*.shoulder-160` | sharp lit ridge at the front armpit (relaxConvex blocked the relax on a ridge) | softened: ridge-aware convex cut from 110 deg (Swift, uncommitted); fold 44 -> 21 deg; install pending |
-| `*.female.adult.bare.*.front-3q-*.rest` | bright streak at the sternum between breasts; bright sliver at navel top rim | fixed 82d9d47: back-light glints (fill/rim cast no shadow) masked in skin-seam.png; black sternum S 123 -> 42; pushed, install pending; check RealityKit scales grazing glints |
-| `*.female.adult.*.*.*.rest\|shoulder-160` | small lit specks along the collarbone near the neck | fixed 82d9d47 (same mask); pushed, install pending |
-| `*.female.adult.*.*.back-3q-*.*` | bright spot at nape/C7 | halved 82d9d47 (rest is a real upper-back highlight); pushed, install pending |
+| `*.female.adult.dressed.XXL-*.top-down.back-30` | XXL bra band wave (XXL band low in the hips-option zone; hips deltas dropped mid-back skin up to 6 mm) | fixed 46233dc (level() in hips deltas, re-snapped to surface): hem spread XXL-S 7.3 -> 1.4 mm; pushed, installed |
+| `*.female.adult.dressed.*.*.rest` | front strap edge slightly wavy at rest (~31 spikes, worst 2.1 mm, all bras) | fixed 46233dc (strap clearance push spread over 2 cm in space, not 10 rings): adult bras 31 -> 0 spikes; senior bra unchanged (no raw); pushed, installed |
+| `*.female.adult.*.*.{right,back-3q-*,back}.shoulder-90`, `{right,face-side}.shoulder-160` | back-armpit fold edge ~45 deg (share clipped at 1 across one coarse edge); diagonal crease on the mesh-density seam at s160 (convex leak sank coarse skin) | fixed: shoulderReach + eased arm share, relax leak scaled by edge length (Swift, uncommitted); s90 fold 45 -> 20 deg, s160 shading jump 12.4 -> 7.3 deg; installed |
+| `*.female.adult.*.*.face-side\|front-3q-*.shoulder-160` | sharp lit ridge at the front armpit (relaxConvex blocked the relax on a ridge) | softened: ridge-aware convex cut from 110 deg (Swift, uncommitted); fold 44 -> 21 deg; installed |
+| `*.female.adult.bare.*.front-3q-*.rest` | bright streak at the sternum between breasts; bright sliver at navel top rim | fixed 82d9d47: back-light glints (fill/rim cast no shadow) masked in skin-seam.png; black sternum S 123 -> 42; pushed, installed; check RealityKit scales grazing glints |
+| `*.female.adult.*.*.*.rest\|shoulder-160` | small lit specks along the collarbone near the neck | fixed 82d9d47 (same mask); pushed, installed |
+| `*.female.adult.*.*.back-3q-*.*` | bright spot at nape/C7 | halved 82d9d47 (rest is a real upper-back highlight); pushed, installed |
+| `*.female.adult.*.*.right\|left\|back-3q-*.knee-90` | dark streaks below the knee crease end (side shade lopsided on an open corner) | fixed: kneeOpen fades side shade below 130 deg (Swift, uncommitted), installed |
+| `*.female.adult.*.*.right\|left.knee-90` | dark smudge + lit speck at the lateral crease end | open |
+| `*.female.adult.*.*.back-3q-*.elbow-145` | bright zigzag tick at the elbow crease end (dark skin); 3 crushed flipped tris | open |
+| `*.female.adult.dressed.*.back\|back-3q-*.back-60` | briefs top hem notches near the cleft (<=2.7 mm, present at rest) | open (model) |
+| `*.female.adult.*.*.back-*.back-*` | diagonal highlight on upper back by the spine (sculpted) | open, low (model) |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder squashed: partly fixed (shoulderTop keep 1.5, Swift uncommitted, installed): <half-area tris 116 -> 85 of 139, median 0.33 -> 0.40; stronger options creased. Was: top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
@@ -81,9 +86,9 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 | Cells | Issue | State |
 |---|---|---|
-| `*.female.adult.*.*-XXL.left\|right\|front-3q-*.rest\|back-*` | sharp diagonal crease at the waist side above the hip bone, XXL hips only, strongest at back-60 (sweep3 /tmp/sweep3/crops/xx-white-back-60-left-flank.png) | fixed f282694 (fair_flank on hips-*), c31cf5c; install pending phone. Check S-XXL sitting hip-front edge |
+| `*.female.adult.*.*-XXL.left\|right\|front-3q-*.rest\|back-*` | sharp diagonal crease at the waist side above the hip bone, XXL hips only, strongest at back-60 (sweep3 /tmp/sweep3/crops/xx-white-back-60-left-flank.png) | fixed f282694 (fair_flank on hips-*), c31cf5c; installed phone. Check S-XXL sitting hip-front edge |
 | `*.female.adult.*.*.top-down.*` | 3-4 ridges on the inner thigh (base mesh, all hips) | fixed a96ae01 (HIP_SCALE, THIGH_PULL), daa3c5d, installed. Soft diagonal shade on upper inner thigh left |
-| `*.female.adult.*.*.back.back-60+shoulder-90` | bright vertical knob where the arm meets the back | fixed (Swift: exact chord Jacobian normals + band normal smoothing, uncommitted); install pending phone |
+| `*.female.adult.*.*.back.back-60+shoulder-90` | bright vertical knob where the arm meets the back | fixed (Swift: exact chord Jacobian normals + band normal smoothing, uncommitted); installed phone |
 | `*.female.adult.*.*.front-3q-left.back-60+shoulder-90` | lumpy chest/rib shading under the raised arm, sharp front-armpit line | fixed (same change); shoulder-45 arm normal error up slightly (11.7 -> 17.4 p90) |
 | `*.female.adult.bare.*.left\|front-3q-*.rest` | faint horizontal step across mid-thigh (KNEE_REFINE band edge) | fixed (cause: HIP_REFINE row-divided Laplacian at band edge); faint knee-band edge (-0.52) left. Also moves male/child legs (max ~10 mm) |
 | `*.female.adult.dressed.XXL-XXL.back\|top-down.shoulder-160` | bra strap edge ripple near armpit | fixed (Swift: smoothed garment slide + closest-triangle garment follow, uncommitted), installed. verified (gfol): non-shoulder poses byte-identical, briefs unchanged, bra clip better at 90; ml-ea 160 'clip' is a depthNormal metric artefact (true signed distance: 0 inside, min gap 0.7 -> 1.7 mm) |
@@ -100,9 +105,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - hispanic curly hem tips + black coily neck sliver (agent)
-- sample: `hispanic.female.adult.dressed.M-XL.right.knee-90`, `east-asian.female.adult.dressed.M-S.back-3q-right.elbow-145`, `southeast-asian.female.adult.dressed.XXL-XXL.left.back-60` (agent)
 
 ## Log
+
+- 2026-10-17: phone back; installed all pending (bra strap/band models, armpit ridge, back armpit, back-light mask, kneeOpen). Sample round 4: back-60 XXL and elbow-145 clean of clipping; knee-90 side-shade streaks fixed.
 
 - 2026-10-17: sternum/navel/collar/nape specks are back-light (fill -3,2,-4 / rim 1.5,3,-5, no shadows) glints on skin the body or hair should shade; mesh clean. body_backlit_mask over 24 yaws x 6 heritages x chests, 4 soft zones, into skin-seam.png (82d9d47). Pushed c9214be; phone unavailable.
 
@@ -110,7 +116,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 - 2026-10-17: sample round 3: XXL-S back-30 and M-XL back-30 clean, no clipping. Front-armpit ridge at s160 softened (relax may flatten a vertex pulled in alone). New model-side specks listed (sternum, navel rim, collarbone, nape). Phone unavailable: strap/band models + ridge Swift await install.
 
-- 2026-10-17: bra strap spikes came from the clearance push spread over 10 rings of <1 mm slivers; spread_push over 2 cm. XXL band sag on S/M hips levelled in the hips deltas. Clipping 0 in 42 checks; all 8 postures repacked. Models pushed (5270132); phone unavailable, install pending.
+- 2026-10-17: bra strap spikes came from the clearance push spread over 10 rings of <1 mm slivers; spread_push over 2 cm. XXL band sag on S/M hips levelled in the hips deltas. Clipping 0 in 42 checks; all 8 postures repacked. Models pushed (5270132); phone unavailable, installed.
 
 - 2026-10-17: shoulder top at 160: chord blend pulls skin toward the pivot + relax drags it to the armpit. shoulderTop gives back 1.5x the lost axis distance over the top (eased 60-160 deg; garments take their skin's weight). Median area 0.33 -> 0.40, strap tip crease p99 58 -> 53 deg; no clipping; non-shoulder byte-identical. Installed.
 
