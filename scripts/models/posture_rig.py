@@ -125,6 +125,75 @@ def off_arms(abc, w, body, tris, W):
     return abc, w
 
 
+# the women's briefs, bridged by build_figure on the standing hips only: seated, its waistband's slivers sheared into
+# notches (skin over the hem) and it dipped into the cleft. Its band (this near the edge) re-bridged from the plain cut
+# over the standing hips, at rest and posed standing, and these keys of the sitting topic (every topic shares the binding)
+SEATED_BRIDGE = (0.0, 0.5, 1.0)
+BRIDGE_HIPS = ("small", "medium", "large", "xlarge", "xxlarge")
+SEATED_WAIST = 0.03
+# the briefs' skin moving with both pelvis and thigh (thigh weight between these): seated, its folds pressed off the fabric
+CREASE = (0.05, 0.95)
+
+
+def seated_bridge(fit, gtri, rest, shapes, W, J, tris):
+    from build_figure import bridge, waist_rim
+    _, _, f, lift, offset = fit
+    flat = [rest + shapes.get(f"hips-{h}", 0) for h in BRIDGE_HIPS]
+    common = seated_common(J)
+    ka, kb = (SITTING["keys"][k] for k in ("upright", "slouched"))
+    keys = [pose({**common, **blend_spec(ka, kb, t)}, J) for t in SEATED_BRIDGE]
+    still = pose({**standing_still(J), **STANDING["still"]}, J)
+    bodies = flat + [skin_body(b, W, still) for b in flat] + [skin_body(b, W, T) for T in keys for b in flat]
+    abc, w = unbridged("briefs-female")
+    arms = sum(W[:, BI[f"{b}-{s}"]] for b in ("uparm", "fore1", "fore2", "hand") for s in SIDES)
+    nb, wb, ob = bridge(np, bodies, tris, abc, w, gtri.astype(np.int64), lift * (0.8 + 0.2 * np.minimum(f / 0.01, 1)), arms)
+    # kept on the waistband only: one offset can't follow the hip crease both flat and folded (pressed off it instead)
+    ge, count = np.unique(np.sort(np.concatenate([gtri[:, [0, 1]], gtri[:, [1, 2]], gtri[:, [2, 0]]]), 1), axis=0, return_counts=True)
+    q = lay(*fit, flat[0], vertex_normals_tris(flat[0], tris))[0]
+    rim = waist_rim(np, ge[count == 1].astype(np.int64), q)
+    from scipy.spatial import cKDTree
+    keep = cKDTree(q[rim]).query(q)[0] < SEATED_WAIST
+    out_abc, out_w = fit[0].astype(np.int64).copy(), fit[1].astype(np.float32).copy()
+    out_o = np.zeros((len(f), 3), np.float32) if offset is None else offset.reshape(-1, 3).astype(np.float32).copy()
+    out_abc[keep], out_w[keep], out_o[keep] = nb[keep], wb[keep], ob[keep]
+    return out_abc.astype(np.uint32), out_w, f, lift, out_o.reshape(-1)
+
+
+def unbridged(name):
+    """a garment's binding as build_figure cuts it, before its bridge (from the raw fit data)"""
+    import build_figure as bf
+    topo = dict(np.load(bf.RAW / "topo.body.npz"))
+    body_tris = topo["vmap"][topo["index"].reshape(-1, 3)]
+    load = bf.loader(np, body_tris)
+    refine = bf.HipRefine(np, topo)
+    f0, shape_delta = bf.body_options(np, load, body_tris)
+    got = {}
+
+    def capture(np_, bodies, tris, abc, w, *rest):
+        got["fit"] = abc.astype(np.int64), w.astype(np.float64)
+        return abc, w, np.zeros((len(w), 3), np.float32)
+
+    class Sink:
+        def add(self, a):
+            return 0
+    keep, bf.bridge = bf.bridge, capture
+    try:
+        bf.garments(np, Sink(), refine.topo, None, refine(f0 + shape_delta("hips-large")), None, chests={}, arms=refine.arms,
+                    refined_from=refine.count, bridged={name: [None]},
+                    skip=("briefs-male", "briefs-pregnant", "bra", "nappy", "briefs-kid", "top-kid"))
+    finally:
+        bf.bridge = keep
+    return got["fit"]
+
+
+def vertex_normals_tris(p, tris):
+    f = np.cross(p[tris[:, 1]] - p[tris[:, 0]], p[tris[:, 2]] - p[tris[:, 0]])
+    n = np.zeros_like(p)
+    for k in range(3):
+        np.add.at(n, tris[:, k], f)
+    return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
+
+
 def vertex_normals(p, topo):
     vm = topo["vmap"].astype(np.int64)
     t = vm[topo["index"].astype(np.int64)]
@@ -221,14 +290,17 @@ class Contact:
                 push[v[keep]] = dn[keep]
         return size, push, hits
 
-    def press(self, p, normals, garments, movable, gap=0.002, rounds=12, spread=4, limit=0.01):
+    def press(self, p, normals, garments, movable, gap=0.002, rounds=12, spread=4, limit=0.01, best=False):
         """garments: (abc, w, f, lift, offset); movable: per vertex 0/1; no vertex moves further than limit. Kept only
-        when it clears most of the contacts (an arm sunk through the trunk isn't pushed about)"""
+        when it clears most of the contacts (an arm sunk through the trunk isn't pushed about). best: the round that
+        left the fewest (fabric carried along can stall it)"""
         p0, p = p, p.copy()
-        first = None
+        first = keep = None
         for r in range(rounds + 1):
             size, push, hits = self.contacts(p, normals, garments, movable, gap)
             first = hits if first is None else first
+            if best and (keep is None or hits < keep[0]):
+                keep = (hits, p)
             if not hits or r == rounds:
                 break
             # spread over the neighbours (no single-vertex dents)
@@ -243,6 +315,8 @@ class Contact:
                 d += 0.5 * movable[:, None] * (self.mean @ d - d)
             m = np.linalg.norm(d, axis=1, keepdims=True)
             p = p0 + d * np.minimum(1, limit / np.maximum(m, 1e-12))
+        if best:
+            hits, p = keep
         return p if hits <= first * 0.2 else p0
 
 
@@ -430,6 +504,7 @@ def skin_weights(n, J, pos, tris, groin=False):
     w = base_weights(hips.count, J, pos[:hips.count], hips.raw_tris)
     if groin:
         w = spread_groin(w, pos[:hips.count], hips.raw_tris)
+        w = waist_to_pelvis(w, pos[:hips.count])
     for sp in hips.passes:
         w = np.concatenate([w, w[sp].mean(1)])
     return w
@@ -453,6 +528,22 @@ def spread_groin(w, p, tris):
     for _ in range(passes):
         w = w + k * (a @ w - w)
     return w / w.sum(1, keepdims=True)
+
+
+# seated, MakeHuman's thigh weights up the back to the waist (0.1-0.3 there) slid the briefs' waistband ~3 cm down the
+# buttocks, below the cleft's top (the hem dipped into it): handed to the pelvis between these heights, behind z
+WAIST = (0.14, 0.24, (0.0, -0.04))
+
+
+def waist_to_pelvis(w, p):
+    (y0, y1), (z0, z1) = WAIST[:2], WAIST[2]
+    m = ramp(p[:, 1], y0, y1) * ramp(-p[:, 2], -z0, -z1)
+    w = w.copy()
+    for s in SIDES:
+        moved = w[:, BI[f"thigh-{s}"]] * m
+        w[:, BI[f"thigh-{s}"]] -= moved
+        w[:, BI["pelvis"]] += moved
+    return w
 
 
 _hips = {}
@@ -1349,8 +1440,11 @@ def pack(topics=None):
                 abc, gw, fa, tri, lift, color, offset = fig.binding(g)
                 abc, gw = off_arms(abc, gw, r["body"], tris.reshape(-1, 3).astype(np.int64), w)
                 garments[g] = dict(fit=(abc, gw, fa, lift, offset), tri=tri, color=color)
-            cache[sex] = dict(rest=r, W=w, shapes={k: keep * d for k in SHAPES.get(sex, []) if (d := fig.shape(k)) is not None},
-                              garments=garments)
+            shapes = {k: keep * d for k in SHAPES.get(sex, []) if (d := fig.shape(k)) is not None}
+            if "briefs-female" in garments and sex == "female":
+                b = garments["briefs-female"]
+                b["fit"] = seated_bridge(b["fit"], b["tri"], r["body"], shapes, w, J, tris.astype(np.int64))
+            cache[sex] = dict(rest=r, W=w, shapes=shapes, garments=garments)
         return cache[sex]
 
     def worn(sex, chest):
@@ -1374,6 +1468,9 @@ def pack(topics=None):
         arm = sum(f["W"][:, BI[f"{b}-{s}"]] for b in ("uparm", "fore1", "fore2", "hand") for s in SIDES) > 0.5
         normals = lambda p: vertex_normals(p, btopo)
         hips = [k for k in deltas if k.startswith("hips-")]
+        # the hip crease's and the seat's folds pressed apart off the briefs too, carrying their fabric
+        thigh = sum(f["W"][:, BI[f"thigh-{s}"]] for s in SIDES)
+        crease = ((thigh > CREASE[0]) & (thigh < CREASE[1]) & ~arm).astype(float) if sex == "female" else None
         for i, p in enumerate(posed):
             mid = deltas["hips-medium"][i] if "hips-medium" in deltas else 0
             fix = {}
@@ -1392,6 +1489,8 @@ def pack(topics=None):
             for h in hips or [None]:
                 body = posed[i] + small + (deltas[h][i] if h else 0)
                 d = touch.press(body, normals, [briefs], movable(arm, briefs)) - body
+                if crease is not None:
+                    d = touch.press(body + d, normals, [briefs], crease, best=True) - body
                 if h:
                     deltas[h][i] = deltas[h][i] + d
                 else:
