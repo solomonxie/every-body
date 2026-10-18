@@ -64,8 +64,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.*.rest\|shoulder-160` | small lit specks along the collarbone near the neck | fixed 82d9d47 (same mask); pushed, installed |
 | `*.female.adult.*.*.back-3q-*.*` | bright spot at nape/C7 | halved 82d9d47 (rest is a real upper-back highlight); pushed, installed |
 | `*.female.adult.*.*.right\|left\|back-3q-*.knee-90` | dark streaks below the knee crease end (side shade lopsided on an open corner) | fixed: kneeOpen fades side shade below 130 deg (Swift, uncommitted), installed |
-| `*.female.adult.*.*.right\|left.knee-90` | dark smudge + lit speck at the lateral crease end | open |
-| `*.female.adult.*.*.back-3q-*.elbow-145` | bright zigzag tick at the elbow crease end (dark skin); 3 crushed flipped tris | open |
+| `*.female.adult.*.*.right\|left.knee-90` | dark smudge + lit speck at the lateral crease end | in progress |
+| `*.female.adult.*.*.back-3q-*.elbow-145` | bright zigzag tick at the elbow crease end (dark skin); 3 crushed flipped tris | in progress |
 | `*.female.adult.dressed.*.back\|back-3q-*.back-60` | briefs top hem notches near the cleft (<=2.7 mm, present at rest) | open (model) |
 | `*.female.adult.*.*.back-*.back-*` | diagonal highlight on upper back by the spine (sculpted) | open, low (model) |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder squashed: partly fixed (shoulderTop keep 1.5, Swift uncommitted, installed): <half-area tris 116 -> 85 of 139, median 0.33 -> 0.40; stronger options creased. Was: top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
@@ -104,6 +104,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
+- elbow-145 crease-end tick + knee-90 crease-end smudge/speck (agent)
 - hispanic curly hem tips + black coily neck sliver (agent)
 
 ## Log
