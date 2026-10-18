@@ -832,6 +832,12 @@ final class HairMesh {
         }
         // head tipped back against T1 (slouch): the shoulders rise toward the skull; spread that over more hair (ramp top up 0.16 by 16°)
         let g = min(max(-tilt / (16 * .pi / 180), 0), 1), rise = 0.16 * g * g * (3 - 2 * g)
+        // long hair, head bent forward: the part on the back turns 0.7 of the way with it (about the neck at y 1.18), so the nape stretches less
+        var low = chest
+        if !short && tilt > 0 {
+            let c = cos(0.7 * tilt), s = sin(0.7 * tilt)
+            low = chest * simd_float4x4(SIMD4(1, 0, 0, 0), SIMD4(0, c, s, 0), SIMD4(0, -s, c, 0), SIMD4(0, 1.18 * (1 - c), -1.18 * s, 1))
+        }
         var lo = SIMD3<Float>(repeating: .infinity), hi = SIMD3<Float>(repeating: -.infinity)
         mesh.withUnsafeMutableBytes(bufferIndex: 0) { raw in
             let f = raw.bindMemory(to: Float.self)
@@ -841,7 +847,7 @@ final class HairMesh {
                     let k = min(max((1.3 + rise - p[i].y) / (0.14 + rise), 0), 1)
                     wi = k * k * (3 - 2 * k) * keep
                 }
-                let m = head * (1 - wi) + chest * wi
+                let m = head * (1 - wi) + low * wi
                 let q4 = m * SIMD4(p[i], 1), q = SIMD3(q4.x, q4.y, q4.z)
                 let n4 = m * SIMD4(n[i], 0), t4 = m * SIMD4(t[i], 0)
                 let nn = simd_normalize(SIMD3(n4.x, n4.y, n4.z)), tt = simd_normalize(SIMD3(t4.x, t4.y, t4.z))
