@@ -66,11 +66,14 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.right\|left\|back-3q-*.knee-90` | dark streaks below the knee crease end (side shade lopsided on an open corner) | fixed: kneeOpen fades side shade below 130 deg (Swift, uncommitted), installed |
 | `*.female.adult.*.*.right\|left.knee-90` | dark smudge + lit speck at the lateral crease end | fixed: foldNormal (exact hinge-map normal) + kneeOpen reads plain normal (Swift, uncommitted), installed; peak +122 -> +63. Check knee-110/135 crease ends on device |
 | `*.female.adult.*.*.back-3q-*.elbow-145` | bright zigzag tick at the elbow crease end (dark skin); 3 crushed flipped tris | fixed: foldNormal (Swift, uncommitted), installed; bright px 622 -> 357 (black); flipped tris remain, shaded |
-| `*.female.adult.dressed.*.back\|back-3q-*.back-60` | briefs top hem notches near the cleft (<=2.7 mm, present at rest) | in progress |
+| `*.female.adult.dressed.*.back\|back-3q-*.back-60` | briefs top hem notches near the cleft (<=2.7 mm, present at rest) | fixed 5f9cddd (waistband bridged over the cleft in space, 0.75 cm ball): notches 0 on every hips option and pose; figure + sitting bins pushed; install queued (load) |
 | `*.female.adult.*.*.back-*.back-*` | diagonal highlight on upper back by the spine (sculpted) | open, low (model) |
 | posture chin-down keys (laptop, couch, phone-*), sitting upright | short hair (bob, coily) stretched into a bulb (hair blended to upper back by height) | fixed: skull follow from 12 deg forward (PostureScene, uncommitted), installed; phone-standing stretched edges 3580 -> 0. Bob swings with head at 53 deg |
 | posture, all keys | lumpy shoulder/chest shading (raw per-vertex normals) | fixed: 2-ring normal blur like Figure.swift (PostureScene, uncommitted), installed; p99 21 -> 7 deg |
 | posture sitting front / slouched | strap ends on shoulder tops; wavy bra band top edge (slouched) | open |
+| posture sitting slouched, floor k2 | hair on shoulders sheared into a ruff at the nape (head tipped back 22 deg vs T1) | fixed: blend ramp top raised up to 0.16 when head tips back (PostureScene, uncommitted); stretched edges black 2640 -> 818, south-asian 1236 -> 0; hispanic long hair keeps a small ruff; install queued |
+| posture sitting, `*.dressed.XXL-*.back` | seated briefs back hem low, V at cleft, skin rolls over | open (model); check after 5f9cddd |
+| posture laptop k3, phone-* k3/k4 | hispanic long curly hair stretched (head forward) | open |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder squashed: partly fixed (shoulderTop keep 1.5, Swift uncommitted, installed): <half-area tris 116 -> 85 of 139, median 0.33 -> 0.40; stronger options creased. Was: top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
@@ -107,10 +110,11 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- sample: `white.female.adult.dressed.L-L.front-3q-right.back-90`, `hispanic.female.adult.bare.M-XL.face-side.sitting`, `east-asian.female.adult.dressed.XXL-XL.back.sitting` (agent)
-- briefs top hem notches near the cleft (agent)
+- none
 
 ## Log
+
+- 2026-10-18: sample round 6: white back-90 clean (bra +2.2, briefs +1.1 mm); posture slouched hair ruff fixed (Swift); briefs hem notches fixed (5f9cddd, models pushed). Install waits on load (~170, other project's simulator tests).
 
 - 2026-10-17: sample round 5: knee-135 XL and low-up back-30 clean. Posture port (tools/qa/posture_obj.py) added; posture hair bulb and skin shading fixed in PostureScene. Installed.
 
