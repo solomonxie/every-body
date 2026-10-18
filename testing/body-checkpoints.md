@@ -60,9 +60,9 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.dressed.*.*.rest` | front strap edge slightly wavy at rest (~31 spikes, worst 2.1 mm, all bras) | fixed 46233dc (strap clearance push spread over 2 cm in space, not 10 rings): adult bras 31 -> 0 spikes; senior bra unchanged (no raw); pushed, install pending |
 | `*.female.adult.*.*.{right,back-3q-*,back}.shoulder-90`, `{right,face-side}.shoulder-160` | back-armpit fold edge ~45 deg (share clipped at 1 across one coarse edge); diagonal crease on the mesh-density seam at s160 (convex leak sank coarse skin) | fixed: shoulderReach + eased arm share, relax leak scaled by edge length (Swift, uncommitted); s90 fold 45 -> 20 deg, s160 shading jump 12.4 -> 7.3 deg; install pending |
 | `*.female.adult.*.*.face-side\|front-3q-*.shoulder-160` | sharp lit ridge at the front armpit (relaxConvex blocked the relax on a ridge) | softened: ridge-aware convex cut from 110 deg (Swift, uncommitted); fold 44 -> 21 deg; install pending |
-| `*.female.adult.bare.*.front-3q-*.rest` | bright streak at the sternum between breasts; bright sliver at navel top rim | in progress |
-| `*.female.adult.*.*.*.rest\|shoulder-160` | small lit specks along the collarbone near the neck | in progress |
-| `*.female.adult.*.*.back-3q-*.*` | bright spot at nape/C7 | in progress |
+| `*.female.adult.bare.*.front-3q-*.rest` | bright streak at the sternum between breasts; bright sliver at navel top rim | fixed 82d9d47: back-light glints (fill/rim cast no shadow) masked in skin-seam.png; black sternum S 123 -> 42; pushed, install pending; check RealityKit scales grazing glints |
+| `*.female.adult.*.*.*.rest\|shoulder-160` | small lit specks along the collarbone near the neck | fixed 82d9d47 (same mask); pushed, install pending |
+| `*.female.adult.*.*.back-3q-*.*` | bright spot at nape/C7 | halved 82d9d47 (rest is a real upper-back highlight); pushed, install pending |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder squashed: partly fixed (shoulderTop keep 1.5, Swift uncommitted, installed): <half-area tris 116 -> 85 of 139, median 0.33 -> 0.40; stronger options creased. Was: top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
@@ -100,9 +100,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - sample: `hispanic.female.adult.dressed.M-XL.right.knee-90`, `east-asian.female.adult.dressed.M-S.back-3q-right.elbow-145`, `southeast-asian.female.adult.dressed.XXL-XXL.left.back-60` (agent)
-- skin specks: sternum streak, navel rim, collarbone specks, nape spot (agent)
 
 ## Log
+
+- 2026-10-17: sternum/navel/collar/nape specks are back-light (fill -3,2,-4 / rim 1.5,3,-5, no shadows) glints on skin the body or hair should shade; mesh clean. body_backlit_mask over 24 yaws x 6 heritages x chests, 4 soft zones, into skin-seam.png (82d9d47). Pushed c9214be; phone unavailable.
 
 - 2026-10-17: back armpit: s90 fold from the arm share clipping at 1 across 3-6 cm edges -> share reach 1.25x band + smooth ease into 1; s160 diagonal crease from the 10% convex leak sinking coarse skin -> leak scaled by (0.04/h)^2. Inner-arm sag stays fixed; clipping 0; non-shoulder byte-identical. Phone unavailable.
 
