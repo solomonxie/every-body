@@ -419,6 +419,15 @@ def sculpt_hair(np, gid):
             f = np.linspace(0, 1, len(s))
             # thin at the root (a soft hairline), full a little way out, tapering to the tip
             r = (r0 + (r1 - r0) * f ** 1.5) * (root + (1 - root) * smoothstep(0.0, 0.12, f))
+            if cfg.get("tip_round"):
+                # a ringlet's end: fuller over the last cm (a thin loose end smooths into a needle)
+                scale, span = cfg["tip_round"]
+                seg = np.linalg.norm(np.diff(s, axis=0), axis=1)
+                to_end = (seg.sum() - np.concatenate([[0], np.cumsum(seg)])) / U
+                grow = r * (scale - 1) * (1 - smoothstep(0.0, span, to_end))
+                # (grown off the skin: the inner side stays put)
+                s = s + head.depth(np, s)[1] * (grow * U)[:, None]
+                r = r + grow
             sp = cu.splines.new("POLY")
             sp.points.add(len(s) - 1)
             for i, q in enumerate(s):
@@ -432,6 +441,14 @@ def sculpt_hair(np, gid):
         bpy.context.scene.collection.objects.link(mo)
         rm = mo.modifiers.new("remesh", "REMESH")
         rm.mode, rm.voxel_size = "VOXEL", cfg.get("voxel", 0.2) * U
+        if cfg.get("close"):
+            # closing (grown out, re-fused, shrunk back): no narrow pits or flaps (the back lights cast no shadow)
+            grow = mo.modifiers.new("close-out", "DISPLACE")
+            grow.direction, grow.mid_level, grow.strength = "NORMAL", 0.0, cfg["close"] * U
+            fuse = mo.modifiers.new("close-fuse", "REMESH")
+            fuse.mode, fuse.voxel_size = "VOXEL", cfg.get("voxel", 0.2) * U
+            back = mo.modifiers.new("close-in", "DISPLACE")
+            back.direction, back.mid_level, back.strength = "NORMAL", 0.0, -cfg["close"] * U
         sm = mo.modifiers.new("smooth", "SMOOTH")
         sm.iterations, sm.factor = cfg.get("smooth", 40), 1.0
         cs = mo.modifiers.new("relax", "LAPLACIANSMOOTH")
