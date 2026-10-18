@@ -110,7 +110,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 
 ## In progress
 
-- none
+- posture sitting: seated briefs back hem V + crease clip (agent)
+- posture head-forward keys: long curly hair stretch, hispanic slouched ruff (agent)
 
 ## Log
 
