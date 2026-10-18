@@ -73,7 +73,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | posture sitting front / slouched | strap ends on shoulder tops; wavy bra band top edge (slouched) | open |
 | posture sitting slouched, floor k2 | hair on shoulders sheared into a ruff at the nape (head tipped back 22 deg vs T1) | fixed: blend ramp top raised up to 0.16 when head tips back (PostureScene, uncommitted); stretched edges black 2640 -> 818, south-asian 1236 -> 0; hispanic long hair keeps a small ruff; installed |
 | posture sitting, `*.dressed.XXL-*.back` | seated briefs back hem low, V at cleft, skin rolls over | open (model); check after 5f9cddd |
-| posture laptop k3, phone-* k3/k4 | hispanic long curly hair stretched (head forward) | open |
+| posture laptop k3, phone-* k3/k4 | hispanic long curly hair stretched (head forward) | fixed d7cb566: long hair's lower anchor turned 0.7x head pitch; laptop k3 2739 -> 136, phone-standing k4 5134 -> 2267, phone-bed k3 4685 -> 1406; curly ends lift slightly off nape at 40-53 deg; installed |
 | `*.*.adult.*.*.*.shoulder-160` | top of shoulder squashed: partly fixed (shoulderTop keep 1.5, Swift uncommitted, installed): <half-area tris 116 -> 85 of 139, median 0.33 -> 0.40; stronger options creased. Was: top of shoulder slightly squashed after armpit smoothing (man max stretch 4.7×) | check on device |
 | `*.*.child.*.base.face-side.rest` | sharp faceted flap in front of the ear (base-head ears moved rigidly) | open |
 | `black.female\|*.male\|*.child.*.base.low-up.rest` | thin white eyeball sliver under the lower lid | woman: not eyeball, lid-rim strip catching back light; LIFT_LIDS 0.9 (15e87ee) pale px 5382 -> 3094 (black 2327 -> 1210). Male/child wait |
@@ -111,9 +111,10 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - posture sitting: seated briefs back hem V + crease clip (agent)
-- posture head-forward keys: long curly hair stretch, hispanic slouched ruff (agent)
 
 ## Log
+
+- 2026-10-18: all Swift committed (8b24d6d, d7cb566), hourly QA schedule cancelled on user request; long-hair turn installed. Hispanic slouched ruff (head tipped back) left open: turning pushes hair into the back.
 
 - 2026-10-18: sample round 6: white back-90 clean (bra +2.2, briefs +1.1 mm); posture slouched hair ruff fixed (Swift); briefs hem notches fixed (5f9cddd, models pushed). Installed.
 
