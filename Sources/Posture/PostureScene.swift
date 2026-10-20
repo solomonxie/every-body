@@ -792,7 +792,7 @@ final class DeformMesh {
         let na = shade[a], nb = shade[b]
         let vmap = vmap, uv = uv, count = count
         var lo = SIMD3<Float>(repeating: .infinity), hi = SIMD3<Float>(repeating: -.infinity)
-        mesh.withUnsafeMutableBytes(bufferIndex: 0) { raw in
+        mesh.replaceUnsafeMutableBytes(bufferIndex: 0) { raw in
             let f = raw.bindMemory(to: Float.self)
             for r in 0..<count {
                 let v = vmap.map { Int($0[r]) } ?? r
@@ -876,7 +876,7 @@ final class HairMesh {
             low = chest * simd_float4x4(SIMD4(1, 0, 0, 0), SIMD4(0, c, s, 0), SIMD4(0, -s, c, 0), SIMD4(0, 1.18 * (1 - c), -1.18 * s, 1))
         }
         var lo = SIMD3<Float>(repeating: .infinity), hi = SIMD3<Float>(repeating: -.infinity)
-        mesh.withUnsafeMutableBytes(bufferIndex: 0) { raw in
+        mesh.replaceUnsafeMutableBytes(bufferIndex: 0) { raw in
             let f = raw.bindMemory(to: Float.self)
             for i in p.indices {
                 var wi = w[i] * keep
@@ -943,7 +943,7 @@ final class GarmentMesh {
             qs.append(q); ns.append(nn)
         }
         if !g.offset.isEmpty { ns = Figure.surfaceNormals(qs, g.index, fallback: ns, offset: g.offset) }
-        mesh.withUnsafeMutableBytes(bufferIndex: 0) { raw in
+        mesh.replaceUnsafeMutableBytes(bufferIndex: 0) { raw in
             let f = raw.bindMemory(to: Float.self)
             for v in g.f.indices {
                 let q = qs[v], nn = ns[v], o = v * 8
