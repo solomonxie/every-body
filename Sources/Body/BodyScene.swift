@@ -1515,22 +1515,27 @@ final class BodyScene {
             hold = next
         }
         // a small island of one holder inside another's skin (a few hand vertices bound to a far bone) joins its surround
-        var label = [Int](repeating: -1, count: hold.count), sizes: [Int] = []
-        for start in hold.indices where label[start] < 0 {
-            var stack = [start], n = 0
-            label[start] = sizes.count
-            while let v = stack.popLast() {
-                n += 1
-                for w in adjacent[v] where label[w] < 0 && hold[w] == hold[v] { label[w] = sizes.count; stack.append(w) }
+        // repeated: two islands that swap holders (a stray beside strays) leave one stray behind
+        for _ in 0..<4 {
+            var label = [Int](repeating: -1, count: hold.count), sizes: [Int] = []
+            for start in hold.indices where label[start] < 0 {
+                var stack = [start], n = 0
+                label[start] = sizes.count
+                while let v = stack.popLast() {
+                    n += 1
+                    for w in adjacent[v] where label[w] < 0 && hold[w] == hold[v] { label[w] = sizes.count; stack.append(w) }
+                }
+                sizes.append(n)
             }
-            sizes.append(n)
-        }
-        var votes = [[Int: Int]](repeating: [:], count: sizes.count)
-        for i in hold.indices where sizes[label[i]] < 150 {
-            for j in adjacent[i] where label[j] != label[i] { votes[label[i]][hold[j], default: 0] += 1 }
-        }
-        for i in hold.indices where sizes[label[i]] < 150 {
-            if let top = votes[label[i]].max(by: { ($0.value, $1.key) < ($1.value, $0.key) })?.key { hold[i] = top }
+            var votes = [[Int: Int]](repeating: [:], count: sizes.count)
+            for i in hold.indices where sizes[label[i]] < 150 {
+                for j in adjacent[i] where label[j] != label[i] { votes[label[i]][hold[j], default: 0] += 1 }
+            }
+            var changed = false
+            for i in hold.indices where sizes[label[i]] < 150 {
+                if let top = votes[label[i]].max(by: { ($0.value, $1.key) < ($1.value, $0.key) })?.key, top != hold[i] { hold[i] = top; changed = true }
+            }
+            if !changed { break }
         }
         return hold
     }
