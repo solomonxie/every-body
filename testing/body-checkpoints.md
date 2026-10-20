@@ -91,6 +91,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.*.*.*.*.*.elbow-*\|shoulder-*` (all women) | thin skin strip from the heel of the hand to the hip side (RealityKit only): one thigh vertex per side (12026/4873) bound to the forearm; tidy's island merge swapped two adjacent stray islands and left it behind | fixed: tidy repeats the island merge until stable (Swift, uncommitted to master); elbow-145 max edge stretch 94x (62 cm) -> 1.8x; only those 2 holders change (men none); posture/cpr bench hashes identical, drag hash changes. Port (pose.py settle) never showed it. Not installed |
 | `*.female.adult.*.*.*.knee-*\|elbow-*` (close-ups) | dotted dark outline round the contact-shade overlay (RealityKit: repeat-wrapped ramp texture sampled just outside the overlay's edge) | fixed: clamped, unmipped sampler (SkinDeformer, uncommitted to master); outline px 233 -> 0 (/tmp/r7/crop-e2-medial-ba.png). Not installed |
 | `*.female.adult.dressed.*.back-3q-*.shoulder-160` | raised-side back strap jogs/kinks over the shoulder blade (rest S-curve smooth) | fixed 49f6936 (wrapGarment slides with the mean skin slide within 0.05, not the bulging slide under it): RK edge turn SEA XXL-XXL 14/18 -> 11/11 deg (rest 8), S-S 15 -> 11; clip 0; non-shoulder hashes identical. Not installed; broad S still a little wider than rest on XXL. /tmp/r8/crop-strap-kink-*-rest-before-after.png |
+| `black.female.adult.*.*.front\|front-3q-*\|face-front.*` (close zoom), faint on south-asian | pale chalky V at the sternal notch + short streak on the right collarbone (RealityKit only; skin specular, gone with specular 0; Blender port shows none). Faint at full-body distance | open, low (model: skin-seam.png back-light mask doesn't reach the clavicle tops/notch); RK spec-minus-nospec px >30 in the collar strip black S 15667, max +146. /tmp/qa8/crop-collar-glint.png, /tmp/qa8/rk-collar-spec.png |
+| `*.female.adult.dressed.L+-*.front-3q-*\|low-up.*` (rest and bends) | front strap jogs sideways where it crosses the collarbone / shoulder crest (dogleg up to ~half a strap width at 3q, S from below) | open, low (model: strap lay in the cut); outer-edge S residual from a quadratic, y 0.95-1.25, black hips XXL: S 4.4, M 3.2, L 2.9, XL 3.2, XXL 1.5 mm (inner 0.7-1.4); straps.py spikes 0. /tmp/qa8/crop-strap-jog.png, /tmp/qa8/rk-strapjoin-chests.png (L/XL/XXL low-up) |
 
 ## Open (sweep 2026-10-14)
 
@@ -115,6 +117,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 ## In progress
 
 - none
+
+- 2026-10-20: sample round 8: EA S-S bare back-60+s160 (low-up/3q), black XXL-XXL dressed knee135+elbow145 both sides (b3q/low-up/side), hispanic S-S dressed neck70+s90 (top-down/back-3q/face), SA XL-L bare neck70 b3q, SEA XL-L dressed s160 face-side, hispanic L-XXL sitting b3q: clean in port and RealityKit (rib relief on S-S at back-60 is sculpt; navel glint masked in RK; raised-side strap kink fixed in RK). New model-side rows (low): collar specular V on dark skin, front strap jog at the collarbone. No Swift change. Sheet /tmp/qa8/round8-sheet.png.
 
 ## Log
 
