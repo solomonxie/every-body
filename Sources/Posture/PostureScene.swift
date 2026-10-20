@@ -95,6 +95,8 @@ final class PostureScene {
         meshes = []; skin = []; headPieces = []; hair = nil; garments = []; body = nil; bones = []; discs = []; muscles = []; dimmed = []; halos = []; props = []; hot = []; vessels = []
         self.region = region
         shown = -1
+        calmPainted = false
+        paints = [:]; haloPaint = nil
         guard let model = (modelCache?.topic == topic ? modelCache?.data : nil) ?? PostureModel.load(topic) else { return }
         modelCache = (topic, model)
         self.model = model
@@ -577,44 +579,72 @@ final class PostureScene {
         let glow = min(max((load - 1.3) / 0.55, 0), 1)
         let beat = glow * (0.5 + 0.5 * sin(clock * 2 * .pi * 1.1))
         let lumbar = discs.filter { $0.level >= 0 }
-        for (entity, level) in discs {
-            var m = BodyScene.material(level >= 0 ? heat : UIColor(hex: "#B9C8D8"), opacity: 1)
-            if level >= 0 {
-                m.emissiveColor = .init(color: heat)
-                m.emissiveIntensity = 0.3 + 1.4 * glow + 0.6 * beat
+        if !lumbar.isEmpty {
+            let m = paint(0, heat, texture: nil, glow: 0.3 + 1.4 * glow + 0.6 * beat)
+            for (entity, _) in lumbar { entity.model?.materials = [m] }
+        }
+        if !calmPainted {
+            calmPainted = true
+            for (entity, level) in discs where level < 0 { entity.model?.materials = [Self.calmDisc] }
+        }
+        if !halos.isEmpty {
+            var m: UnlitMaterial
+            if let last = haloPaint, last.tint == heat { m = last.m } else {
+                m = UnlitMaterial(color: heat)
+                m.writesDepth = false
             }
-            entity.model?.materials = [m]
-        }
-        for (halo, disc) in zip(halos, lumbar) {
-            let box = disc.entity.visualBounds(relativeTo: stage)
-            halo.position = box.center
-            let swell = 0.6 + 0.2 * glow + 0.06 * beat
-            halo.scale = SIMD3(box.extents.x * swell, box.extents.y * (0.7 + 0.5 * glow), box.extents.z * swell)
-            var m = UnlitMaterial(color: heat)
             m.blending = .transparent(opacity: .init(floatLiteral: 0.1 + 0.4 * glow + 0.12 * beat))
-            m.writesDepth = false
-            halo.model?.materials = [m]
+            haloPaint = (heat, m)
+            for (halo, disc) in zip(halos, lumbar) {
+                let box = disc.entity.visualBounds(relativeTo: stage)
+                halo.position = box.center
+                let swell = 0.6 + 0.2 * glow + 0.06 * beat
+                halo.scale = SIMD3(box.extents.x * swell, box.extents.y * (0.7 + 0.5 * glow), box.extents.z * swell)
+                halo.model?.materials = [m]
+            }
         }
-        for entity in hot {
-            var m = BodyScene.material(heat, opacity: 1, texture: Textures.bone)
-            m.emissiveColor = .init(color: heat)
-            m.emissiveIntensity = 0.3 + 1.4 * glow + 0.6 * beat
-            entity.model?.materials = [m]
+        if !hot.isEmpty {
+            let m = paint(1, heat, texture: Textures.bone, glow: 0.3 + 1.4 * glow + 0.6 * beat)
+            for entity in hot { entity.model?.materials = [m] }
         }
-        for entity in vessels {
-            var m = BodyScene.material(heat, opacity: 1)
-            m.emissiveColor = .init(color: heat)
-            m.emissiveIntensity = 0.4 + 1.2 * glow + 0.5 * beat
-            entity.model?.materials = [m]
+        if !vessels.isEmpty {
+            let m = paint(2, heat, texture: nil, glow: 0.4 + 1.2 * glow + 0.5 * beat)
+            for entity in vessels { entity.model?.materials = [m] }
         }
         let s = region.workAtStart ? 1 - strain : strain
-        for entity in muscles {
-            var m = BodyScene.material(PostureColors.mix(UIColor(hex: "#A98683"), UIColor(hex: "#FF3B1F"), s), opacity: 0.3 + 0.5 * s, texture: Textures.muscle)
-            m.emissiveColor = .init(color: UIColor(hex: "#FF3B1F"))
-            m.emissiveIntensity = 1.1 * s + 0.35 * s * beat
-            entity.model?.materials = [m]
+        if !muscles.isEmpty {
+            let m = paint(3, PostureColors.mix(UIColor(hex: "#A98683"), UIColor(hex: "#FF3B1F"), s), texture: Textures.muscle,
+                          emissive: UIColor(hex: "#FF3B1F"), opacity: 0.3 + 0.5 * s, glow: 1.1 * s + 0.35 * s * beat)
+            for entity in muscles { entity.model?.materials = [m] }
         }
     }
+
+    /// BodyScene.material(tint, opacity, texture) glowing `emissive` (else the tint) at `glow`, one per group and shared.
+    /// Every material setter rebuilds its shader parameters: only what changed since the group's last paint is set.
+    private func paint(_ group: Int, _ tint: UIColor, texture: TextureResource?, emissive: UIColor? = nil, opacity: Float = 1, glow: Float) -> PhysicallyBasedMaterial {
+        guard let last = paints[group] else {
+            var m = BodyScene.material(tint, opacity: opacity, texture: texture)
+            m.emissiveColor = .init(color: emissive ?? tint)
+            m.emissiveIntensity = glow
+            paints[group] = (tint, opacity, glow, m)
+            return m
+        }
+        var m = last.m
+        if last.tint != tint {
+            m.baseColor = .init(tint: tint, texture: texture.map { .init($0) })
+            if emissive == nil { m.emissiveColor = .init(color: tint) }
+        }
+        if last.opacity != opacity { m.blending = opacity < 1 ? .transparent(opacity: .init(floatLiteral: opacity)) : .opaque }
+        if last.glow != glow { m.emissiveIntensity = glow }
+        paints[group] = (tint, opacity, glow, m)
+        return m
+    }
+
+    private var paints: [Int: (tint: UIColor, opacity: Float, glow: Float, m: PhysicallyBasedMaterial)] = [:]
+    private var haloPaint: (tint: UIColor, m: UnlitMaterial)?
+    private static let calmDisc = BodyScene.material(UIColor(hex: "#B9C8D8"), opacity: 1)
+    /// the discs off the topic's region keep one colour: painted once per build
+    private var calmPainted = false
 
     // MARK: camera
 
