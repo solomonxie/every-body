@@ -186,6 +186,71 @@ def unbridged(name):
     return got["fit"]
 
 
+# the bra strap over the shoulder top: the cut's clearance push, spread over the strap's width, stood it up to 9 mm off
+# the skin there (a tab on the shoulder line once the trunk leans forward); eased back to the plain lift between these
+# rest heights
+STRAP_CREST = (1.07, 1.11)
+# bra points standing off the skin by this much (from, full; the cups, the gore) re-bound to a wide triangle of skin
+# vertices round them, up to this radius: on the one small triangle under them the skin's crumple when slouched waved
+# the fabric (the wide one's corners keep within these angles of the point's normal, else it shrinks)
+WIDE = (0.008, 0.02, 0.05)
+WIDE_TILT = (25, 40)
+
+
+def settle_bra(fit, body, vn):
+    """a bra binding (abc, w, f, lift, offset) on this rest body: strap crest laid to the lift, the cup sheet bound wide"""
+    from scipy.spatial import cKDTree
+    from build_figure import tri_frame
+    abc, w, f, lift, offset = fit
+    if offset is None:
+        return fit
+    abc, w = abc.astype(np.int64), w.astype(np.float64)
+    o = offset.reshape(-1, 3).astype(np.float64)
+    wc = np.clip(1 - w.sum(1), 0, None)
+    corners = body[abc[:, 0]], body[abc[:, 1]], body[abc[:, 2]]
+    base = w[:, :1] * corners[0] + w[:, 1:] * corners[1] + wc[:, None] * corners[2]
+    nn = w[:, :1] * vn[abc[:, 0]] + w[:, 1:] * vn[abc[:, 1]] + wc[:, None] * vn[abc[:, 2]]
+    nn /= np.linalg.norm(nn, axis=1, keepdims=True)
+    t1, t2, nt = tri_frame(np, *corners, nn)
+    moved = np.abs(o).sum(1) > 0
+    L = lift * (0.8 + 0.2 * np.minimum(f / 0.01, 1))
+    plain = np.stack([(nn * t1).sum(1), (nn * t2).sum(1), (nn * nt).sum(1)], 1) * L[:, None]
+    o = o + (ramp(base[:, 1], *STRAP_CREST) * moved)[:, None] * (plain - o)
+    q = base + o[:, :1] * t1 + o[:, 1:2] * t2 + o[:, 2:] * nt
+    abc, w = abc.copy(), w.copy()
+    r = WIDE[2] * ramp(np.linalg.norm(q - base, axis=1), *WIDE[:2]) * moved
+    tree = cKDTree(body)
+    flat, tilt = np.cos(np.radians(WIDE_TILT))
+    for i in np.flatnonzero(r > 0.006):
+        ax = np.cross(nn[i], [0.0, 1.0, 0.0])
+        ax /= np.linalg.norm(ax)
+        ay = np.cross(nn[i], ax)
+        for rr in r[i] * np.array([1.0, 0.75, 0.5, 0.35]):
+            ids = [tree.query(base[i] + rr * (np.cos(t) * ax + np.sin(t) * ay))[1] for t in np.radians([90, 210, 330])]
+            a, b, c = body[ids]
+            fn = np.cross(b - a, c - a)
+            if len(set(ids)) == 3 and np.linalg.norm(fn) > 1e-8 and abs(fn @ nn[i]) / np.linalg.norm(fn) > flat \
+                    and (vn[ids] @ nn[i]).min() > tilt:
+                break
+        else:
+            continue
+        # the old anchor projected into the wide triangle
+        fn /= np.linalg.norm(fn)
+        v0, v1, v2 = b - a, c - a, base[i] - ((base[i] - a) @ fn) * fn - a
+        d00, d01, d11 = v0 @ v0, v0 @ v1, v1 @ v1
+        den = d00 * d11 - d01 * d01
+        bv, bw = (d11 * (v2 @ v0) - d01 * (v2 @ v1)) / den, (d00 * (v2 @ v1) - d01 * (v2 @ v0)) / den
+        bary = np.array([1 - bv - bw, bv, bw])
+        if bary.min() < -1e-4:
+            continue
+        bary = np.clip(bary, 0, 1) / np.clip(bary, 0, 1).sum()
+        side = bary @ vn[ids]
+        f1, f2, f3 = tri_frame(np, a[None], b[None], c[None], (side / np.linalg.norm(side))[None])
+        d = q[i] - bary @ body[ids]
+        abc[i], w[i], o[i] = ids, bary[:2], (d @ f1[0], d @ f2[0], d @ f3[0])
+    return abc.astype(np.uint32), w.astype(np.float32), f, lift, o.astype(np.float32).reshape(-1)
+
+
 def vertex_normals_tris(p, tris):
     f = np.cross(p[tris[:, 1]] - p[tris[:, 0]], p[tris[:, 2]] - p[tris[:, 0]])
     n = np.zeros_like(p)
@@ -1435,12 +1500,19 @@ def pack(topics=None):
             r = fig.pieces(f"{SEXES[sex]}.white")
             w = skin_weights(len(r["body"]), J, r["body"], tris, groin=sex == "female")
             keep = 1 - sum(w[:, BI[f"{b}-{s}"]] for b in ("uparm", "fore1", "fore2", "hand") for s in SIDES)[:, None]
+            shapes = {k: keep * d for k in SHAPES.get(sex, []) if (d := fig.shape(k)) is not None}
             garments = {}
             for g in GARMENTS[sex]:
                 abc, gw, fa, tri, lift, color, offset = fig.binding(g)
                 abc, gw = off_arms(abc, gw, r["body"], tris.reshape(-1, 3).astype(np.int64), w)
-                garments[g] = dict(fit=(abc, gw, fa, lift, offset), tri=tri, color=color)
-            shapes = {k: keep * d for k in SHAPES.get(sex, []) if (d := fig.shape(k)) is not None}
+                fit = (abc, gw, fa, lift, offset)
+                if sex == "pregnant" and g in BRAS:
+                    # (the woman's settled cut: shared arrays, and her chest is the same)
+                    fit = figure("female")["garments"][g]["fit"]
+                elif g.startswith("bra"):
+                    on = r["body"] + shapes.get(f"chest-{g.split('-')[-1]}", 0)
+                    fit = settle_bra(fit, on, vertex_normals(on, btopo))
+                garments[g] = dict(fit=fit, tri=tri, color=color)
             if "briefs-female" in garments and sex == "female":
                 b = garments["briefs-female"]
                 b["fit"] = seated_bridge(b["fit"], b["tri"], r["body"], shapes, w, J, tris.astype(np.int64))
