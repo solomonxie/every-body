@@ -70,7 +70,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.back-*.back-*` | diagonal highlight on upper back by the spine (sculpted) | open, low (model) |
 | posture chin-down keys (laptop, couch, phone-*), sitting upright | short hair (bob, coily) stretched into a bulb (hair blended to upper back by height) | fixed: skull follow from 12 deg forward (PostureScene, uncommitted), installed; phone-standing stretched edges 3580 -> 0. Bob swings with head at 53 deg |
 | posture, all keys | lumpy shoulder/chest shading (raw per-vertex normals) | fixed: 2-ring normal blur like Figure.swift (PostureScene, uncommitted), installed; p99 21 -> 7 deg |
-| posture sitting front / slouched | strap ends on shoulder tops; wavy bra band top edge (slouched) | open |
+| posture sitting front / slouched | strap ends on shoulder tops; wavy bra band top edge (slouched) | fixed ef65212 (posture_rig settle_bra: strap crest offsets eased to the plain lift; cup-sheet points >8 mm off skin bound to a wide skin triangle): strap crest gap max 8.8 -> 3.6-5.1 mm (no tab on the shoulder line), slouched bra faces >20 deg S 1103 -> 731, M 650 -> 475, L 990 -> 769, XXL 1283 -> 1136 (XL 1071 -> 1158), ragged S/M top edge at strap roots gone; bra clip 0 on all 8 bins; all bins repacked, not pushed. Left: L+ gore top edge still dips with the slouched cleavage (skin), tip-zone seam arc on L cups, figure.bin strap crest same 8.8 mm (main figure view) |
 | posture sitting slouched, floor k2 | hair on shoulders sheared into a ruff at the nape (head tipped back 22 deg vs T1) | fixed: blend ramp top raised up to 0.16 when head tips back (PostureScene, uncommitted); stretched edges black 2640 -> 818, south-asian 1236 -> 0; hispanic long hair keeps a small ruff; installed |
 | posture sitting, `*.dressed.XXL-*.back` | seated briefs back hem low, V at cleft, skin rolls over; briefs in hip crease | fixed 649d7a3/d87c98a (waist_to_pelvis, seated_bridge, crease press): sitting clip 2643/1512/887 -> 39/23/0, hem notches 88/70/78 -> 23/14/16; installed. Left: floor hip crease (~1950 pts, -4.6 mm), small-hips standing notch 1.56 mm, slight dip at t=1 |
 | posture laptop k3, phone-* k3/k4 | hispanic long curly hair stretched (head forward) | fixed d7cb566: long hair's lower anchor turned 0.7x head pitch; laptop k3 2739 -> 136, phone-standing k4 5134 -> 2267, phone-bed k3 4685 -> 1406; curly ends lift slightly off nape at 40-53 deg; installed |
@@ -113,6 +113,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 - none
 
 ## Log
+
+- 2026-10-20: posture sitting bra: strap crest stood 8.8 mm off the shoulder (cut's clearance push spread over the strap width) -> eased to lift in posture bins (3.6-5.1 mm); slouched cup-sheet ripple from single small anchor triangles -> wide skin triangles (rest look 0.000 mm). Female bra clip 0 on all 8 bins (min gap phone-standing 0.61 -> 0.35 mm), bodies byte-equal except arm press (phone-standing XXL <=1 mm, pregnant phone-bed arm re-pick); sitting.bin +79 KB. Bins repacked in worktree, not pushed/installed.
 
 - 2026-10-18: seated briefs hem and crease fixed in posture_rig (all 8 posture bins, models pushed, installed). All agents stopped.
 
