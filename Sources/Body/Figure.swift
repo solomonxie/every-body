@@ -42,7 +42,7 @@ enum Figure {
         let shapes: [String: Int]?
     }
 
-    private static let file: (header: Header, payload: Data)? = {
+    nonisolated private static let file: (header: Header, payload: Data)? = {
         guard let url = ModelLibrary.url(for: "figure.bin"), let raw = try? Data(contentsOf: url), raw.count > 12,
               raw.prefix(4) == Data("EBF1".utf8) else { return nil }
         let n = Int(raw.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: 4, as: UInt32.self) })
@@ -53,6 +53,11 @@ enum Figure {
     }()
 
     static var available: Bool { file != nil }
+
+    /// Reads and unpacks figure.bin off the main thread (the first look built would, on it).
+    nonisolated static func warm() async {
+        await Task.detached(priority: .userInitiated) { _ = file }.value
+    }
 
     private static var cache: [Look: [ModelLibrary.Piece]] = [:]
     private static var surfaces: [Look: Surface] = [:]

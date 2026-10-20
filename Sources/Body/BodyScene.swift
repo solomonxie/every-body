@@ -2693,6 +2693,7 @@ final class BodyScene {
     static func prepare() async {
         if let warming { return await warming.value }
         let task = Task { @MainActor in
+            async let figure: Void = Figure.warm()
             await ModelLibrary.prepare()
             await InternalModels.prepare()
             var shapes = Catalog.body.parts.filter { !(ModelLibrary.hasSkeleton && $0.layer == .skeletal) && !InternalModels.replaces($0.id) }.map(\.shape)
@@ -2706,6 +2707,7 @@ final class BodyScene {
                 if let raw { meshCache[shape] = raw.resource() }
                 if i % 40 == 0 { await Task.yield() }
             }
+            await figure
         }
         warming = task
         await task.value

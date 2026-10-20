@@ -39,11 +39,11 @@ final class Bench: NSObject, NSApplicationDelegate {
         let repeats = Int(ProcessInfo.processInfo.environment["REPEAT"] ?? "1") ?? 1
         let what = Set((CommandLine.arguments.dropFirst().first ?? "load,drag,posture,cpr").split(separator: ",").map(String.init))
         var t0 = DispatchTime.now().uptimeNanoseconds
-        _ = Figure.available
-        report("load: figure.bin decode", [Double(DispatchTime.now().uptimeNanoseconds - t0) / 1e6])
-        t0 = DispatchTime.now().uptimeNanoseconds
         await BodyScene.prepare()
         report("load: BodyScene.prepare", [Double(DispatchTime.now().uptimeNanoseconds - t0) / 1e6])
+        t0 = DispatchTime.now().uptimeNanoseconds
+        _ = Figure.available
+        report("load: figure.bin decode (after)", [Double(DispatchTime.now().uptimeNanoseconds - t0) / 1e6])
         let look = Figure.Look(female: true, age: .adult, pregnant: false, heritage: .white, underwear: true)
         report("load: Figure.pieces (woman)", [ms { _ = Figure.pieces(look) }])
 
