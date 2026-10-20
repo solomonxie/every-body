@@ -2095,6 +2095,9 @@ CUP_SHEET = (2.0, 3.4)
 STRAP_CLEAR = 0.0005
 # (that push eased out over this radius round it, in space: over mesh rings, the cut edge's dense slivers bumped)
 STRAP_SPREAD = 0.02
+# (but not over the shoulder top, above these rest heights: there the near planes of the convex top read as skin coming
+# through, and the push, spread over the strap's width, stood it up to 9 mm off; the plain lift clears it by 2.7+ mm)
+STRAP_CREST = (1.07, 1.11)
 
 
 def spread_push(np, q, s, free):
@@ -2455,8 +2458,9 @@ def cup(np, body, tris, p, abc, w, gtri, nipples, lift, inner=0.03, ref=None):
         r = np.arange(len(p))
         s += np.maximum(STRAP_CLEAR - dots[r, k], 0) * free / np.maximum((n * vn[ii[r, k]]).sum(1), 0.3)
     s = spread_push(np, target, s, free)
-    target += s[:, None] * n
     moved = moved | (s > 0)
+    s *= 1 - smoothstep(*STRAP_CREST, p[:, 1])
+    target += s[:, None] * n
     # as offsets in each point's triangle frame: a moved point on a sliver (a corner or an edge stored with a corner
     # repeated) is re-bound to the nearest well-sized triangle round it, at the closest point on it; one on the chest
     # centre's small steep facets to a single triangle by the centre (the cup there moves as one: neighbours on
