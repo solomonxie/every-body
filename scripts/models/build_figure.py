@@ -1234,7 +1234,7 @@ def loader(np, body_tris):
                 smoothed("female-adult.neutral")
                 body = body + evened["female-adult.neutral"]
             elif n.startswith("female-adult."):
-                evened[n] = fair_trunk(np, body, body_tris) - body
+                evened[n] = fair_spine(np, fair_trunk(np, body, body_tris), body_tris) - body
                 body = body + evened[n]
             loaded[n] = dict(got, body=body)
         return loaded[n]
@@ -2618,6 +2618,40 @@ def fair_trunk(np, p, tris):
         n = vertex_normals(np, q, tris)
         for step in (0.5, -0.53):
             q = q + step * w * ((mean(q) - q) * n).sum(1, keepdims=True) * n
+    return q
+
+
+# the adult woman's fitted back has a narrow furrow down the spine, its walls turning ~18 deg mid-back: bent forward,
+# the back lights catch a wall as a bright diagonal streak by the spine. Smoothed along the normal over
+# (passes, heights in, full, full, out, |x| full, out); front, sides and arms kept
+SPINE_FAIR = (20, (0.5, 0.6, 1.1, 1.2), (0.08, 0.12))
+
+
+def fair_spine(np, p, tris):
+    """the adult woman's spine furrow eased (the same weights on every option: taken on the base)"""
+    passes, (y0, y1, y2, y3), (x0, x1) = SPINE_FAIR
+    if not passes:
+        return p
+    e = np.unique(np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), axis=1), axis=0)
+    f0 = np.load(RAW / "female-adult.neutral.npz")["pos:body"].astype(np.float64)
+    k = 1 / np.maximum(((f0[e[:, 0]] - f0[e[:, 1]]) ** 2).sum(1), 1e-8)[:, None]
+    deg = (np.bincount(e[:, 0], k[:, 0], len(p)) + np.bincount(e[:, 1], k[:, 0], len(p)) + 1e-8)[:, None]
+
+    def mean(q):
+        acc = np.zeros_like(q)
+        np.add.at(acc, e[:, 0], k * q[e[:, 1]])
+        np.add.at(acc, e[:, 1], k * q[e[:, 0]])
+        return acc / deg
+
+    x, y, _ = f0.T
+    nz = vertex_normals(np, f0, tris)[:, 2]
+    w = smoothstep(y0, y1, y) * (1 - smoothstep(y2, y3, y)) * (1 - smoothstep(x0, x1, np.abs(x))) * smoothstep(0.4, 0.7, -nz)
+    w *= 1 - smoothstep(0.01, 0.05, np.load(RAW / "regions.npz")["arms"])
+    w = w[:, None]
+    q = p.copy()
+    for _ in range(passes):
+        n = vertex_normals(np, q, tris)
+        q = q + 0.5 * w * ((mean(q) - q) * n).sum(1, keepdims=True) * n
     return q
 
 
