@@ -94,6 +94,7 @@ final class Bench: NSObject, NSApplicationDelegate {
             for topic in ["sitting", "phone-standing"] {
                 let p = PostureScene()
                 report("posture: build \(topic)", [ms { p.build(topic: topic, female: true, heritage: .white) }])
+                if repeats > 1 { report("posture: rebuild \(topic)", (1..<repeats).map { k in ms { p.build(topic: topic, female: true, heritage: k % 2 == 0 ? .white : .black) } }) }
                 var hashes: [String] = []
                 let steps = (0...60 * repeats).map { Float($0 % 61) / 60 }
                 report("posture: scrub \(topic)", steps.map { b in ms { p.goalBlend = b; p.settle() } })

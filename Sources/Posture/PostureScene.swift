@@ -233,13 +233,18 @@ final class PostureScene {
             entity.model?.materials = [m]
             entity.components.set(ModelSortGroupComponent(group: sortGroup, order: entity.name == "skin:hair" ? 4 : 3))
         }
-        // the limbs, ribs and skull a paler grey so the spine and pelvis read first
+        // the limbs, ribs and skull a paler grey so the spine and pelvis read first (their bases differ only in colour, which
+        // this replaces: one material for all, its setters run once)
+        var pale: PhysicallyBasedMaterial?
         for (entity, base) in dimmed {
-            var m = base
-            m.baseColor = .init(tint: UIColor(hex: "#E4E6EA"), texture: base.baseColor.texture)
-            m.blending = .transparent(opacity: .init(floatLiteral: 0.38))
-            m.writesDepth = false
-            entity.model?.materials = [m]
+            if pale == nil {
+                var m = base
+                m.baseColor = .init(tint: UIColor(hex: "#E4E6EA"), texture: base.baseColor.texture)
+                m.blending = .transparent(opacity: .init(floatLiteral: 0.38))
+                m.writesDepth = false
+                pale = m
+            }
+            entity.model?.materials = [pale!]
             entity.components.set(ModelSortGroupComponent(group: sortGroup, order: 0))
         }
         let inner = seeThrough
@@ -819,11 +824,13 @@ final class HairMesh {
     private let indexCount: Int
 
     init?(_ source: MeshResource) {
-        guard let part = source.contents.models.first?.parts.first, let index = part.triangleIndices?.elements else { return nil }
-        p = part.positions.elements
-        n = part.normals?.elements ?? Array(repeating: SIMD3(0, 1, 0), count: p.count)
+        guard let part = source.contents.models.first?.parts.first, let index = Figure.source(source)?.triangles ?? part.triangleIndices?.elements else { return nil }
+        // (the figure's own arrays: reading a MeshBuffer back is slow)
+        let own = Figure.source(source)
+        p = own?.positions ?? part.positions.elements
+        n = own?.normals ?? part.normals?.elements ?? Array(repeating: SIMD3(0, 1, 0), count: p.count)
         t = part.tangents?.elements ?? Array(repeating: SIMD3(0, -1, 0), count: p.count)
-        uv = part.textureCoordinates?.elements ?? Array(repeating: .zero, count: p.count)
+        uv = own?.uv ?? part.textureCoordinates?.elements ?? Array(repeating: .zero, count: p.count)
         // skull above y 1.3, back and shoulders below 1.16 (scene units, rest pose)
         w = p.map { q in
             let k = min(max((1.3 - q.y) / 0.14, 0), 1)

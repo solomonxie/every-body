@@ -104,7 +104,7 @@ enum Figure {
             d.textureCoordinates = MeshBuffers.TextureCoordinates(uv)
             d.primitives = .triangles(index)
             guard let mesh = try? MeshResource.generate(from: [d]) else { continue }
-            if name == "body" { sources[ObjectIdentifier(mesh)] = Source(mesh: mesh, positions: rendered, normals: shown, uv: uv, triangles: index) }
+            if name == "body" || name.hasPrefix("hair") { sources[ObjectIdentifier(mesh)] = Source(mesh: mesh, positions: rendered, normals: shown, uv: uv, triangles: index) }
             let id = name.hasPrefix("brows") ? "brows" : name.hasPrefix("lashes") ? "lashes" : name.hasPrefix("hair") ? "hair" : name
             out.append(.init(id: id, mesh: mesh, transform: .identity, material: material(name, look: look, kid: kid)))
         }
