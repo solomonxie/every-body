@@ -58,6 +58,11 @@ final class Bench: NSObject, NSApplicationDelegate {
                 scene.build(skinColor: NSColor(hex: "#F2C9A5"), female: true, points: [], flowStops: [])
                 scene.setLayers([.skin, .organs])
             }])
+            for _ in 0..<(repeats - 1) { scene.build(skinColor: NSColor(hex: "#F2C9A5"), female: true, points: [], flowStops: []); scene.setLayers([.skin, .organs]) }
+            let ids = scene.partIDs.sorted()
+            report("tap: setParts select", ids.prefix(10).map { id in ms { scene.setParts(PartState(), selected: id) } })
+            report("toggle: setLayers", [[.skin, .organs, .skeletal], [.skin, .organs], [.muscular], [.skin, .organs]].map { (l: Set<LayerID>) in ms { scene.setLayers(l) } })
+            scene.setParts(PartState(), selected: nil)
             report("frame: BodyScene.update", (0..<60).map { _ in ms { scene.update(dt: 1 / 60) } })
             if what.contains("drag") {
                 report("drag: first bend (bindSkin)", [ms { scene.setJoint("shoulder-l", degrees: 2) }])

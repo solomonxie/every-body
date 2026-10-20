@@ -66,7 +66,8 @@ final class BodyScene {
     private let rig = Entity()
     private var partEntities: [String: ModelEntity] = [:]
     private var partLayer: [String: LayerID] = [:]
-    private var baseMaterials: [String: PhysicallyBasedMaterial] = [:]
+    /// each part's own material (Self.material's key)
+    private var baseMaterials: [String: MaterialKey] = [:]
     private var skinEntities: [(entity: ModelEntity, material: PhysicallyBasedMaterial)] = []
     /// the real (MakeHuman) skin is one mesh: it can't bend, so it steps aside while a joint is bent
     private var realSkin = false
@@ -249,8 +250,8 @@ final class BodyScene {
             let entity = ModelEntity(mesh: piece.mesh)
             entity.transform = piece.transform
             entity.name = part.id
-            baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1)
-            entity.model?.materials = [baseMaterials[part.id]!]
+            baseMaterials[part.id] = MaterialKey(UIColor(hex: part.color), opacity: 1)
+            entity.model?.materials = [Self.material(baseMaterials[part.id]!)]
             entity.components.set(InputTargetComponent())
             Task { @MainActor in
                 if let shape = await ModelLibrary.collision(for: piece) { entity.components.set(CollisionComponent(shapes: [shape])) }
@@ -266,8 +267,8 @@ final class BodyScene {
             entity.transform = piece.transform
             entity.name = part.id
             let texture = part.layer == .muscular ? Textures.muscle : part.layer == .organs ? Textures.organ : nil
-            baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1, texture: texture)
-            entity.model?.materials = [baseMaterials[part.id]!]
+            baseMaterials[part.id] = MaterialKey(UIColor(hex: part.color), opacity: 1, texture: texture)
+            entity.model?.materials = [Self.material(baseMaterials[part.id]!)]
             entity.components.set(InputTargetComponent())
             Task { @MainActor in
                 if let shape = await ModelLibrary.collision(for: piece) { entity.components.set(CollisionComponent(shapes: [shape])) }
@@ -283,8 +284,8 @@ final class BodyScene {
             && (part.sex == nil || part.sex == organSex) {
             let entity = Self.entity(for: part.shape)
             entity.name = part.id
-            baseMaterials[part.id] = Self.material(UIColor(hex: part.color), opacity: 1, texture: Textures.for(part.layer))
-            entity.model?.materials = [baseMaterials[part.id]!]
+            baseMaterials[part.id] = MaterialKey(UIColor(hex: part.color), opacity: 1, texture: Textures.for(part.layer))
+            entity.model?.materials = [Self.material(baseMaterials[part.id]!)]
             Self.makeTappable(entity, shape: part.shape)
             parent(of: part.id).addChild(entity)
             partEntities[part.id] = entity
@@ -2263,18 +2264,20 @@ final class BodyScene {
             // deep muscle cores fill gaps in a muscle-only view but would hide the bones
             let deep = id.hasPrefix("deep-") && layers.contains(.skeletal)
             entity.isEnabled = layers.contains(layer) && parts.visible(id) && !deep && !hiddenForAge.contains(id)
-            var m = baseMaterials[id]!
-            if layer == .muscular && muscleOpacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: muscleOpacity)) }
-            // written both ways: on iOS the copy can share the base's resource, so a plain copy keeps the glow
-            m.emissiveColor = .init(color: id == selected ? UIColor(hex: "#FFD166") : .black)
-            m.emissiveIntensity = id == selected ? 0.8 : 0
-            entity.model?.materials = [m]
+            let look = PartLook(base: baseMaterials[id]!, opacity: layer == .muscular ? muscleOpacity : 1, selected: id == selected)
+            entity.model?.materials = [Self.partMaterial(look)]
         }
         for (id, entity) in organEntities where Catalog.organ(id)?.region != true {
             // the brain is an organ but belongs in the nervous system view too
             entity.isEnabled = (layers.contains(.organs) || (id == "brain" && layers.contains(.nervous))) && parts.visible(id)
             for case let piece as ModelEntity in entity.children {
                 guard let own = organOpacity[ObjectIdentifier(piece)], var m = piece.model?.materials.first as? PhysicallyBasedMaterial else { continue }
+                // (already so: a setter rebuilds the material's shader parameters)
+                switch m.blending {
+                case .opaque where own >= 1: continue
+                case let .transparent(o) where own < 1 && o.scale == own && o.texture == nil: continue
+                default: break
+                }
                 m.blending = own < 1 ? .transparent(opacity: .init(floatLiteral: own)) : .opaque
                 piece.model?.materials = [m]
             }
@@ -2451,12 +2454,43 @@ final class BodyScene {
     }
 
     static func material(_ color: UIColor, opacity: Float, texture: TextureResource? = nil) -> PhysicallyBasedMaterial {
+        material(MaterialKey(color, opacity: opacity, texture: texture))
+    }
+
+    struct MaterialKey: Hashable {
+        let color: UIColor, opacity: Float, texture: TextureResource?
+        init(_ color: UIColor, opacity: Float, texture: TextureResource? = nil) { self.color = color; self.opacity = opacity; self.texture = texture }
+        static func == (a: Self, b: Self) -> Bool { a.color == b.color && a.opacity == b.opacity && a.texture === b.texture }
+        func hash(into h: inout Hasher) { h.combine(color); h.combine(opacity); h.combine(texture.map(ObjectIdentifier.init)) }
+    }
+
+    /// Every material setter rebuilds its shader parameters (~0.1 ms): materials are made once per look and copied.
+    private static var materials: [MaterialKey: PhysicallyBasedMaterial] = [:]
+    static func material(_ key: MaterialKey) -> PhysicallyBasedMaterial {
+        if let hit = materials[key] { return hit }
         var m = PhysicallyBasedMaterial()
-        m.baseColor = .init(tint: color, texture: texture.map { .init($0) })
+        m.baseColor = .init(tint: key.color, texture: key.texture.map { .init($0) })
         m.roughness = .init(floatLiteral: 0.55)
         m.metallic = .init(floatLiteral: 0)
         m.faceCulling = .back
-        if opacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: opacity)) }
+        if key.opacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: key.opacity)) }
+        if materials.count > 512 { materials = [:] }
+        materials[key] = m
+        return m
+    }
+
+    /// a part's material as shown: faded (muscles over bones), lit when selected
+    private struct PartLook: Hashable { let base: MaterialKey; let opacity: Float; let selected: Bool }
+    private static var partMaterials: [PartLook: PhysicallyBasedMaterial] = [:]
+    private static func partMaterial(_ look: PartLook) -> PhysicallyBasedMaterial {
+        if let hit = partMaterials[look] { return hit }
+        var m = material(look.base)
+        if look.opacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: look.opacity)) }
+        // written both ways: on iOS the copy can share the base's resource, so a plain copy keeps the glow
+        m.emissiveColor = .init(color: look.selected ? UIColor(hex: "#FFD166") : .black)
+        m.emissiveIntensity = look.selected ? 0.8 : 0
+        if partMaterials.count > 512 { partMaterials = [:] }
+        partMaterials[look] = m
         return m
     }
 
