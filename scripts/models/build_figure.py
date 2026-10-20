@@ -1850,6 +1850,34 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
         dots[d > 1.5 * d[:, :1] + 0.005] = np.inf
         return dots, i
 
+    # (the trunk's triangles round each vertex)
+    ttri = tris[(arms[tris] < 0.05).all(1)]
+    tv, tt = ttri.ravel(), np.repeat(np.arange(len(ttri)), 3)
+    order = np.argsort(tv, kind="stable")
+    tv, tt = tv[order], tt[order]
+    slot = np.arange(len(tv)) - np.searchsorted(tv, tv)
+    fan = np.full((len(arms), slot.max() + 1), -1)
+    fan[tv, slot] = tt
+
+    def clearance(tree, body, vn, q):
+        """true distance out of the trunk's skin, shaped as depth's (with the closest corner). depth stays the crease
+        finder: pushed off its planes, a coarse groin corner's tilted plane sagged the gusset into a pinched dimple"""
+        d = np.full((len(q), 1), np.inf)
+        i = np.zeros((len(q), 1), np.int64)
+        for lo in range(0, len(q), 2048):
+            p = q[lo:lo + 2048]
+            cand = fan[trunk[tree.query(p, k=12)[1]]].reshape(len(p), -1)
+            t = ttri[np.maximum(cand, 0)]
+            x = closest_on_tri(np, p[:, None], body[t[..., 0]], body[t[..., 1]], body[t[..., 2]])
+            dist = np.where(cand >= 0, np.linalg.norm(x - p[:, None], axis=2), np.inf)
+            r = np.arange(len(p))
+            j = dist.argmin(1)
+            tj, xj = t[r, j], x[r, j]
+            side = np.sign(((p - xj) * vn[tj].sum(1)).sum(1))
+            d[lo:lo + len(p), 0] = side * dist[r, j]
+            i[lo:lo + len(p), 0] = tj[r, np.linalg.norm(body[tj] - xj[:, None], axis=2).argmin(1)]
+        return d, i
+
     ge, count = np.unique(np.sort(np.concatenate([gtri[:, [0, 1]], gtri[:, [1, 2]], gtri[:, [2, 0]]]), axis=1), axis=0,
                           return_counts=True)
     ge = ge.astype(np.int64)
@@ -1883,7 +1911,6 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
     gw /= np.where(rim[waist[pairs[:, 0]]], etree.query_ball_point(q0[j], WAIST_SPREAD, return_length=True),
                    tree0.query_ball_point(q0[j], WAIST_SPREAD, return_length=True))
     gsum = np.bincount(pairs[:, 0], gw, len(waist))[:, None]
-    r = np.arange(len(w))
 
     def sheet_normals(q):
         f = np.cross(q[gtri[:, 1]] - q[gtri[:, 0]], q[gtri[:, 2]] - q[gtri[:, 0]])
@@ -1898,6 +1925,10 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
             n = acc
         return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-12)
 
+    # (the waistband keeps the planes' push: its bridge over the cleft's top is tuned on it)
+    plane = region & np.isin(np.arange(len(w)), waist)
+    true = region & ~plane
+
     def film(body, vn):
         tree = cKDTree(body[trunk])
         q = lifted(body, vn)
@@ -1911,15 +1942,18 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
             q[region] += 0.5 * (acc - q)[region]
             sn = sheet_normals(q)
             for _ in range(3 if it < passes - 1 else 40):
-                dots, i = depth(tree, body, vn, q)
+                d, i = np.full(len(q), np.inf), np.zeros(len(q), np.int64)
+                d[true], i[true] = (x[:, 0] for x in clearance(tree, body, vn, q[true]))
+                dots, ii = depth(tree, body, vn, q[plane])
                 k = dots.argmin(1)
-                low = region & (dots[r, k] < clear * lift)
+                d[plane], i[plane] = dots[np.arange(len(k)), k], ii[np.arange(len(k)), k]
+                low = region & (d < clear * lift)
                 if not low.any():
                     break
                 # out along the sheet's smoothed normal (along the skin's, a narrow crease's walls face each other and
                 # push it across: it stayed folded down the deep XXL cleft, a dark mark)
-                out = sn * np.sign((sn * vn[i[r, k]]).sum(1, keepdims=True) + 1e-9)
-                q[low] += out[low] * (clear * lift - dots[r, k])[low, None]
+                out = sn * np.sign((sn * vn[i]).sum(1, keepdims=True) + 1e-9)
+                q[low] += out[low] * (clear * lift - d)[low, None]
         return q
 
     sel = np.flatnonzero(region)
@@ -1951,7 +1985,7 @@ def bridge(np, bodies, tris, abc, w, gtri, lift, arms):
         miss.append(got - (base + d))
         err += (miss[-1] ** 2).sum(2)
         # (never one that lands under the skin on any body)
-        dots, _ = depth(cKDTree(body[trunk]), body, vn, got.reshape(-1, 3))
+        dots, _ = clearance(cKDTree(body[trunk]), body, vn, got.reshape(-1, 3))
         err += (dots.min(1).reshape(cand.shape) < 0) * 1.0
     ws = np.flatnonzero(np.isin(sel, waist))
     err[np.setdiff1d(np.arange(len(sel)), ws), 10:] = np.inf
