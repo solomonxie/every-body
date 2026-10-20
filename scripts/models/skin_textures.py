@@ -525,7 +525,12 @@ def backlit_mask(np, reg, bodies, lo, hi, depth, pitches, yaws):
 BODY_BACKLIT_MASK = (0.02, 0.08, 0.85, (0,), range(-180, 180, 15), (0.3, 1.25), 2048, 0.0015, 12)
 # where (on the base body, mirrored in x): centre, radii (an ellipsoid, fading out over its outer half)
 BODY_BACKLIT_ZONES = {"sternum": ((0, 0.78, 0.2), (0.3, 0.28, 0.18)), "navel": ((0, 0.41, 0.19), (0.065, 0.065, 0.065)),
-                      "collar": ((0.12, 1.05, 0.05), (0.19, 0.11, 0.11)), "nape": ((0, 1.1, -0.17), (0.15, 0.13, 0.1))}
+                      "collar": ((0.12, 1.05, 0.05), (0.19, 0.11, 0.11)), "nape": ((0, 1.1, -0.17), (0.15, 0.13, 0.1)),
+                      "notch": ((0.06, 1.12, 0.02), (0.22, 0.07, 0.09))}
+# RealityKit's environment light has no occlusion: upward skin under the chin (the sternal notch's rim, the
+# collarbones' tops) mirrors the bright sky through the neck, a pale V from the front. Counted as a glint where the
+# body or hair blocks the reflection; (power, directions over the upper hemisphere, cone deg, shadow map px)
+BODY_SKY = (2.0, 64, 30, 1024)
 
 
 def backlit_zones(np, p):
@@ -592,13 +597,23 @@ def body_backlit_glint(np, tris, p, hair, skip, lo, pitches, yaws, heights, res,
     occ = np.concatenate([tris[(p[tris, 1] > heights[0] - 0.4).any(1)], hair[1] + len(p)])
     out = np.zeros(len(p))
     alpha = 0.55 ** 2
+    power, k, cone, sky_res = BODY_SKY
+    i = np.arange(k) + 0.5
+    y = i / k
+    sky = np.stack([np.sqrt(1 - y ** 2) * np.cos(np.pi * (1 + 5 ** 0.5) * i), y, np.sqrt(1 - y ** 2) * np.sin(np.pi * (1 + 5 ** 0.5) * i)], 1)
+    seen = np.stack([_lit_plane(np, q, occ, d, pts, sky_res, bias) for d in sky], 1)
     for pitch in pitches:
         for yaw in yaws:
             a, b = np.radians(pitch), np.radians(yaw)
             R = np.array([[1, 0, 0], [0, np.cos(a), -np.sin(a)], [0, np.sin(a), np.cos(a)]]) @ \
                 np.array([[np.cos(b), 0, np.sin(b)], [0, 1, 0], [-np.sin(b), 0, np.cos(b)]])
             v = R.T @ np.array([0, 0, 1.0])
-            tot = np.zeros(len(pts))
+            nv = n[pts] @ v
+            r = 2 * nv[:, None] * n[pts] - v
+            near = r @ sky.T > np.cos(np.radians(cone))
+            blocked = 1 - (near & seen).sum(1) / np.maximum(near.sum(1), 1)
+            F = 0.04 + 0.41 * (1 - np.clip(nv, 0, 1)) ** 5
+            tot = np.where(nv > 0, power * F * smoothstep(0, 0.5, r @ (R.T @ [0, 1.0, 0])) * blocked * near.any(1), 0)
             for src, power in BACK_LIGHTS:
                 l = R.T @ unit(np.array(src, float))
                 h = unit(l + v)
