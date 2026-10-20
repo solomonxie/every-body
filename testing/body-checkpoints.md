@@ -87,6 +87,9 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | posture couch (all chests), laptop XL/XXL k2-3, computer XXL k3 | arm sunk into bra (220-509 pts); press refused (<80% cleared) | fixed b1ab6c9 (bra_clear: couch hand back + elbow out, laptop/computer elbows out); all 0; installed |
 | posture seated briefs | belly/thigh and crotch folds tuck briefs into the crease (300-680 pts, 60-80% fabric-in-fabric); visible only from below | open, low (6 blend variants, smoothing, push-out, rebind all failed) |
 | `black\|hispanic\|southeast-asian.female.adult.*.base.face-side.rest` | small lit patch at the very front of the lower lip (close profile) | fixed c247e31 (CLOSE_FRONT cap), installed; black: faint seam strip in close profile, check on device |
+| `*.*.*.*.*.*.elbow-*\|shoulder-*` (all women) | thin skin strip from the heel of the hand to the hip side (RealityKit only): one thigh vertex per side (12026/4873) bound to the forearm; tidy's island merge swapped two adjacent stray islands and left it behind | fixed: tidy repeats the island merge until stable (Swift, uncommitted to master); elbow-145 max edge stretch 94x (62 cm) -> 1.8x; only those 2 holders change (men none); posture/cpr bench hashes identical, drag hash changes. Port (pose.py settle) never showed it. Not installed |
+| `*.female.adult.*.*.*.knee-*\|elbow-*` (close-ups) | dotted dark outline round the contact-shade overlay (RealityKit: repeat-wrapped ramp texture sampled just outside the overlay's edge) | fixed: clamped, unmipped sampler (SkinDeformer, uncommitted to master); outline px 233 -> 0 (/tmp/r7/crop-e2-medial-ba.png). Not installed |
+| `*.female.adult.dressed.*.back-3q-*.shoulder-160` | raised-side back strap jogs/kinks over the shoulder blade (rest S-curve smooth) | open: RK turn at the kink 8-11 -> 18 deg, strap width 34-49 -> 37-61 px (XXL-XXL), S-S same; /tmp/r7/crop-e1-strap-kink.png |
 
 ## Open (sweep 2026-10-14)
 
@@ -113,6 +116,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 - none
 
 ## Log
+
+- 2026-10-20: sample round 7: XXL-XXL top-down s160, S-S low-up knee135/elbow145, XXL-XXL back-90, black XL-M back-90, south-asian low-up neck-70, hispanic face s160 clean in port. RealityKit: hand-to-hip skin strip on every elbow/shoulder bend (stray thigh vertex on the forearm) fixed in tidy; contact-shade dotted outline fixed (clamped sampler); raised-side strap kink at s160 open. Swift in worktree branch, not installed. Sheet /tmp/r7/round7-sheet.png.
 
 - 2026-10-20: posture sitting bra: strap crest stood 8.8 mm off the shoulder (cut's clearance push spread over the strap width) -> eased to lift in posture bins (3.6-5.1 mm); slouched cup-sheet ripple from single small anchor triangles -> wide skin triangles (rest look 0.000 mm). Female bra clip 0 on all 8 bins (min gap phone-standing 0.61 -> 0.35 mm), bodies byte-equal except arm press (phone-standing XXL <=1 mm, pregnant phone-bed arm re-pick); sitting.bin +79 KB. Bins repacked in worktree, not pushed/installed.
 
