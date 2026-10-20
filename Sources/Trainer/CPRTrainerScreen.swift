@@ -231,7 +231,7 @@ private struct CPRTrainer: View {
                 .accessibilityElement(children: .combine)
             }
             DepthGauge(depth: coach.lastDepth, band: band, label: settings.t("Depth", "深度"))
-            FlowMeter(flow: coach.flow, label: settings.t("Blood to the brain", "脑部供血"))
+            FlowMeter(flow: coach.shownFlow, label: settings.t("Blood to the brain", "脑部供血"))
         }
         .padding(Space.m)
         .background(.regularMaterial, in: .rect(cornerRadius: Radius.card, style: .continuous))

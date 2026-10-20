@@ -32,7 +32,14 @@ final class CPRCoach {
     private(set) var breathsGiven = 0
     private(set) var foreheadDone = false
     /// blood reaching the brain, 0…1: rises with good pushes, drains in pauses
-    private(set) var flow: Double = 0
+    @ObservationIgnored private(set) var flow: Double = 0 {
+        didSet {
+            let shown = flow < 1e-4 ? 0 : flow
+            if shown != shownFlow && (shown == 0 || abs(shown - shownFlow) >= 0.001) { shownFlow = shown }
+        }
+    }
+    /// flow as the meter draws it: the drain each frame (re-rendering the whole screen) only once it shows
+    private(set) var shownFlow: Double = 0
     private(set) var shocks = 0
     /// bumps each time something worth a haptic happens
     private(set) var successes = 0
@@ -476,7 +483,7 @@ final class CPRCoach {
         if abs(tiltGoal - scene.tilt) < 0.002 { scene.tilt = tiltGoal }
         // blood to the brain drains within seconds of stopping
         flow *= exp(-Double(dt) / (stage == .compress ? 6 : 3))
-        if pushStarts.last.map({ clock - $0 > 2.5 }) ?? false { rate = 0 }
+        if rate != 0, pushStarts.last.map({ clock - $0 > 2.5 }) ?? false { rate = 0 }
         scene.update(dt: dt)
     }
 }
