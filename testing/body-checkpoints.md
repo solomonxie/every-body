@@ -67,7 +67,7 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 | `*.female.adult.*.*.right\|left.knee-90` | dark smudge + lit speck at the lateral crease end | fixed: foldNormal (exact hinge-map normal) + kneeOpen reads plain normal (Swift, uncommitted), installed; peak +122 -> +63. Check knee-110/135 crease ends on device |
 | `*.female.adult.*.*.back-3q-*.elbow-145` | bright zigzag tick at the elbow crease end (dark skin); 3 crushed flipped tris | fixed: foldNormal (Swift, uncommitted), installed; bright px 622 -> 357 (black); flipped tris remain, shaded |
 | `*.female.adult.dressed.*.back\|back-3q-*.back-60` | briefs top hem notches near the cleft (<=2.7 mm, present at rest) | fixed 5f9cddd (waistband bridged over the cleft in space, 0.75 cm ball): notches 0 on every hips option and pose; figure + sitting bins pushed; installed |
-| `*.female.adult.*.*.back-*.back-*` | diagonal highlight on upper back by the spine (sculpted) | open, low (model) |
+| `*.female.adult.*.*.back-*.back-*` | diagonal highlight on upper back by the spine (sculpted) | softened (SPINE_FAIR, figure.bin 41f3f586), not pushed/installed; furrow walls 18 -> 14 deg. Postures keep the old back |
 | posture chin-down keys (laptop, couch, phone-*), sitting upright | short hair (bob, coily) stretched into a bulb (hair blended to upper back by height) | fixed: skull follow from 12 deg forward (PostureScene, uncommitted), installed; phone-standing stretched edges 3580 -> 0. Bob swings with head at 53 deg |
 | posture, all keys | lumpy shoulder/chest shading (raw per-vertex normals) | fixed: 2-ring normal blur like Figure.swift (PostureScene, uncommitted), installed; p99 21 -> 7 deg |
 | posture sitting front / slouched | strap ends on shoulder tops; wavy bra band top edge (slouched) | open |
@@ -113,6 +113,8 @@ Render: app renderer `scripts/render_body/render.sh` (needs Mac unlocked), else 
 - none
 
 ## Log
+
+- 2026-10-20: spine streak: the fit's back furrow walls turn ~18 deg mid-back (y 0.6-0.8, every heritage/option), lit as a diagonal streak when bent; nape streak at rest back-3q (half masked by skin-seam.png). SPINE_FAIR (20 normal passes, |x|<0.1, y 0.5-1.2): walls 18 -> 14 deg, body max 2.3 mm (mean 0.009), shapes <0.7 mm. Spine streak px (white L-S, high-pass): rest 3q 215 -> 76, back-30 357 -> 15, back-60 774/2787 -> 358/2517. Clipping unchanged (60 cells), straps identical, briefs <0.05 mm, bras re-cut. Models not pushed.
 
 - 2026-10-18: seated briefs hem and crease fixed in posture_rig (all 8 posture bins, models pushed, installed). All agents stopped.
 
