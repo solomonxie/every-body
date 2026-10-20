@@ -89,15 +89,17 @@ enum Figure {
                 surfaces[look] = Surface(positions: positions, normals: normals)
             }
             var d = MeshDescriptor(name: name)
-            d.positions = MeshBuffers.Positions(vmap.map { positions[Int($0)] })
+            let rendered = vmap.map { positions[Int($0)] }
+            d.positions = MeshBuffers.Positions(rendered)
             // the skin shades with its normals evened out a little (garments and points keep the plain ones)
             let shade = name == "body" ? Self.normals(positions, vmap: vmap, index: index, blur: 2) : normals
-            d.normals = MeshBuffers.Normals(vmap.map { shade[Int($0)] })
-            d.textureCoordinates = MeshBuffers.TextureCoordinates((0..<info.render).map {
-                SIMD2(Float(uv16[2 * $0]) / 65535, Float(uv16[2 * $0 + 1]) / 65535)
-            })
+            let shown = vmap.map { shade[Int($0)] }
+            d.normals = MeshBuffers.Normals(shown)
+            let uv = (0..<info.render).map { SIMD2(Float(uv16[2 * $0]) / 65535, Float(uv16[2 * $0 + 1]) / 65535) }
+            d.textureCoordinates = MeshBuffers.TextureCoordinates(uv)
             d.primitives = .triangles(index)
             guard let mesh = try? MeshResource.generate(from: [d]) else { continue }
+            if name == "body" { sources[ObjectIdentifier(mesh)] = Source(mesh: mesh, positions: rendered, normals: shown, uv: uv, triangles: index) }
             let id = name.hasPrefix("brows") ? "brows" : name.hasPrefix("lashes") ? "lashes" : name.hasPrefix("hair") ? "hair" : name
             out.append(.init(id: id, mesh: mesh, transform: .identity, material: material(name, look: look, kid: kid)))
         }
@@ -245,7 +247,19 @@ enum Figure {
         d.normals = MeshBuffers.Normals(normals)
         d.textureCoordinates = MeshBuffers.TextureCoordinates(uv)
         d.primitives = .triangles(index)
-        return try? MeshResource.generate(from: [d])
+        guard let mesh = try? MeshResource.generate(from: [d]) else { return nil }
+        sources[ObjectIdentifier(mesh)] = Source(mesh: mesh, positions: positions, normals: normals, uv: uv, triangles: index)
+        return mesh
+    }
+
+    /// A built skin or garment mesh's own arrays: reading them back from the MeshResource (SkinDeformer) is slow.
+    struct Source {
+        let mesh: MeshResource
+        let positions: [SIMD3<Float>], normals: [SIMD3<Float>], uv: [SIMD2<Float>], triangles: [UInt32]
+    }
+    private static var sources: [ObjectIdentifier: Source] = [:]
+    static func source(_ mesh: MeshResource) -> Source? {
+        sources[ObjectIdentifier(mesh)].flatMap { $0.mesh === mesh ? $0 : nil }
     }
 
     /// vertex v's stored move in its triangle's own frame (first edge, across, the triangle's normal turned to `side`)

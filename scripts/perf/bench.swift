@@ -47,7 +47,7 @@ final class Bench: NSObject, NSApplicationDelegate {
         let look = Figure.Look(female: true, age: .adult, pregnant: false, heritage: .white, underwear: true)
         report("load: Figure.pieces (woman)", [ms { _ = Figure.pieces(look) }])
 
-        if what.contains("load") || what.contains("drag") {
+        if what.contains("load") || what.contains("drag") || what.contains("skinbind") {
             let scene = BodyScene()
             scene.heritage = .white; scene.underwear = true
             report("load: BodyScene.build (woman)", [ms {
@@ -64,8 +64,14 @@ final class Bench: NSObject, NSApplicationDelegate {
             report("toggle: setLayers", [[.skin, .organs, .skeletal], [.skin, .organs], [.muscular], [.skin, .organs]].map { (l: Set<LayerID>) in ms { scene.setLayers(l) } })
             scene.setParts(PartState(), selected: nil)
             report("frame: BodyScene.update", (0..<60).map { _ in ms { scene.update(dt: 1 / 60) } })
-            if what.contains("drag") {
+            if what.contains("drag") || what.contains("skinbind") {
                 report("drag: first bend (bindSkin)", [ms { scene.setJoint("shoulder-l", degrees: 2) }])
+                if what.contains("skinbind") {
+                    report("skinbind: rebuild + first bend", (0..<repeats).map { _ in ms {
+                        scene.build(skinColor: NSColor(hex: "#F2C9A5"), female: true, points: [], flowStops: [])
+                        scene.setJoint("shoulder-l", degrees: 2)
+                    } })
+                }
                 var hashes: [String] = []
                 for (id, maxDeg) in [("shoulder-l", 160), ("elbow-l", 145), ("knee-r", 135), ("shoulder-r", 120), ("back", 40), ("neck", 30)] as [(String, Int)] {
                     guard scene.joints.contains(where: { $0.id == id }) else { print("no joint", id); continue }
@@ -74,6 +80,7 @@ final class Bench: NSObject, NSApplicationDelegate {
                     hashes.append(deformerHash(scene.skinDeformers))
                 }
                 print("HASH drag", hashes.joined(separator: " "))
+                if ProcessInfo.processInfo.environment["DEBUG"] == "1" { for d in scene.skinDeformers { print("DEBUG", d.entity.name, deformerHash([d]), d.rest.count) } }
             }
         }
 

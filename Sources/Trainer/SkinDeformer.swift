@@ -21,12 +21,18 @@ final class SkinDeformer {
 
     /// nil when the entity's mesh can't be read back
     init?(_ entity: ModelEntity) {
-        guard let part = entity.model?.mesh.contents.models.first?.parts.first,
-              let tri = part.triangleIndices else { return nil }
-        let p = Array(part.positions)
-        let n = part.normals.map(Array.init) ?? Array(repeating: SIMD3(0, 0, 1), count: p.count)
-        let uv = part.textureCoordinates.map(Array.init) ?? Array(repeating: SIMD2<Float>(0, 0), count: p.count)
-        let index = Array(tri)
+        let p: [SIMD3<Float>], n: [SIMD3<Float>], uv: [SIMD2<Float>], index: [UInt32]
+        if let resource = entity.model?.mesh, let s = Figure.source(resource) {
+            (p, n, uv, index) = (s.positions, s.normals, s.uv, s.triangles)
+        } else {
+            guard let part = entity.model?.mesh.contents.models.first?.parts.first,
+                  let tri = part.triangleIndices else { return nil }
+            // (elements: iterating a MeshBuffer goes through AnyIterator, several times slower)
+            p = part.positions.elements
+            n = part.normals?.elements ?? Array(repeating: SIMD3(0, 0, 1), count: p.count)
+            uv = part.textureCoordinates?.elements ?? Array(repeating: SIMD2<Float>(0, 0), count: p.count)
+            index = tri.elements
+        }
         var d = LowLevelMesh.Descriptor()
         d.vertexCapacity = p.count
         d.indexCapacity = index.count

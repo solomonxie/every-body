@@ -1246,8 +1246,7 @@ final class BodyScene {
         }
         // points over every bone at rest, in their container's space (the rig's rest coordinates), in a grid
         let cell: Float = 0.08
-        var grid: [SIMD3<Int32>: [(SIMD3<Float>, Int, Float)]] = [:]
-        func key(_ p: SIMD3<Float>) -> SIMD3<Int32> { SIMD3<Int32>(Int32(floor(p.x / cell)), Int32(floor(p.y / cell)), Int32(floor(p.z / cell))) }
+        var bonePoints: [(SIMD3<Float>, Int, Float)] = []
         // how far a bone's skin reaches: a hand hangs beside the thigh, whose skin must stay with the deep femur
         func reach(_ id: String) -> Float {
             if ["phalanges", "metacarpal", "carpals", "thumb", "metatarsal", "toe", "talus", "tarsal", "calcaneus"].contains(where: id.hasPrefix) { return 0.06 }
@@ -1258,21 +1257,24 @@ final class BodyScene {
         let restMatrix = Dictionary(rest.map { (ObjectIdentifier($0.entity), $0.matrix) }) { a, _ in a }
         for (id, e) in partEntities.sorted(by: { $0.key < $1.key }) where partLayer[id] == .skeletal {
             guard let part = e.model?.mesh.contents.models.first?.parts.first else { continue }
-            let p = Array(part.positions), m = restMatrix[ObjectIdentifier(e)] ?? e.transform.matrix, h = holder(e.parent ?? rig), far = reach(id)
+            let p = part.positions.elements, m = restMatrix[ObjectIdentifier(e)] ?? e.transform.matrix, h = holder(e.parent ?? rig), far = reach(id)
             let step = max(1, p.count / 400)
             for i in stride(from: 0, to: p.count, by: step) {
                 let q = m * SIMD4(p[i], 1)
-                grid[key(SIMD3(q.x, q.y, q.z)), default: []].append((SIMD3(q.x, q.y, q.z), h, far))
+                bonePoints.append((SIMD3(q.x, q.y, q.z), h, far))
             }
         }
+        let grid = CellGrid(bonePoints.map(\.0), cell: cell)
         // the nearest bone within its reach and under the skin (a hand resting on the thigh is outside the thigh's
         // surface, so it can't claim that skin); failing that the nearest large bone; failing that whatever is nearest
         func nearest(_ q: SIMD3<Float>, _ n: SIMD3<Float>, cells: Int, _ ok: (Float, Float, Float) -> Bool) -> Int? {
-            let c = key(q)
+            let c = grid.key(q)
             var best = Float.infinity, pick: Int?
             for r in 1...cells {
-                for dx in -r...r { for dy in -r...r { for dz in -r...r {
-                    for (p, h, far) in grid[c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))] ?? [] {
+                // the cells inside were searched by the smaller rings
+                for dx in -r...r { for dy in -r...r { for dz in stride(from: -r, through: r, by: r == 1 || abs(dx) == r || abs(dy) == r ? 1 : 2 * r) {
+                    for e in grid.cell(c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))) {
+                        let (p, h, far) = bonePoints[Int(grid.items[e])]
                         let d = simd_length_squared(p - q)
                         if d < best && ok(d, far, simd_dot(p - q, n)) { best = d; pick = h }
                     }
@@ -1288,17 +1290,17 @@ final class BodyScene {
                 ?? nearest(q, n, cells: 12) { _, _, _ in true } ?? 0
         }
         // garments follow the body skin under them, the body (bound first) its nearest bone
-        var skinGrid: [SIMD3<Int32>: [Int]] = [:]
+        var skinGrid = CellGrid([], cell: 0.03)
         var skinPoints: [SIMD3<Float>] = [], skinHolder: [Int] = [], skinTris: [UInt32] = [], skinVertTris: [[Int]] = []
         let skinCell: Float = 0.03
-        func skinKey(_ p: SIMD3<Float>) -> SIMD3<Int32> { SIMD3<Int32>(Int32(floor(p.x / skinCell)), Int32(floor(p.y / skinCell)), Int32(floor(p.z / skinCell))) }
+        func skinKey(_ p: SIMD3<Float>) -> SIMD3<Int32> { skinGrid.key(p) }
         func underSkin(_ q: SIMD3<Float>) -> Int {
             let c = skinKey(q)
             for r in 1...6 {
                 var best = Float.infinity, pick = -1
                 for dx in -r...r { for dy in -r...r { for dz in -r...r {
-                    for i in skinGrid[c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))] ?? [] {
-                        let d = simd_length_squared(skinPoints[i] - q)
+                    for e in skinGrid.cell(c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))) {
+                        let i = Int(skinGrid.items[e]), d = simd_length_squared(skinPoints[i] - q)
                         if d < best { best = d; pick = i }
                     }
                 } } }
@@ -1314,10 +1316,17 @@ final class BodyScene {
             let c = skinKey(q)
             var found: [(Float, Int)] = []
             for dx in -1...1 { for dy in -1...1 { for dz in -1...1 {
-                for i in skinGrid[c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))] ?? [] { found.append((simd_distance_squared(skinPoints[i], q), i)) }
+                for e in skinGrid.cell(c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))) {
+                    let i = Int(skinGrid.items[e]), d = simd_distance_squared(skinPoints[i], q)
+                    // the 8 nearest, ties in the order found (as a stable sort's first 8)
+                    guard found.count < 8 || d < found[7].0 else { continue }
+                    let at = found.firstIndex { d < $0.0 } ?? found.count
+                    found.insert((d, i), at: at)
+                    if found.count > 8 { found.removeLast() }
+                }
             } } }
             var best = Float.infinity, pick: [(Int, Float)] = [(near, 1)]
-            for k in Set(found.sorted { $0.0 < $1.0 }.prefix(8).flatMap { skinVertTris[$0.1] }).sorted() {
+            for k in Set(found.flatMap { skinVertTris[$0.1] }).sorted() {
                 let v = (Int(skinTris[3 * k]), Int(skinTris[3 * k + 1]), Int(skinTris[3 * k + 2]))
                 let w = Self.closestOnTriangle(q, skinPoints[v.0], skinPoints[v.1], skinPoints[v.2])
                 let d = simd_distance_squared(w.x * skinPoints[v.0] + w.y * skinPoints[v.1] + w.z * skinPoints[v.2], q)
@@ -1329,7 +1338,9 @@ final class BodyScene {
             let reach: Float = 0.04, c = skinKey(q)
             var sum: Float = 0, total: Float = 0
             for dx in -2...2 { for dy in -2...2 { for dz in -2...2 {
-                for i in skinGrid[c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))] ?? [] where skinHolder[i] == h {
+                for e in skinGrid.cell(c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))) {
+                    let i = Int(skinGrid.items[e])
+                    guard skinHolder[i] == h else { continue }
                     let d = simd_distance(skinPoints[i], q)
                     guard d < reach else { continue }
                     let k = (1 - d / reach) * (1 - d / reach)
@@ -1341,7 +1352,9 @@ final class BodyScene {
             var best = Float.infinity, pick = -1
             for r in 3...8 {
                 for dx in -r...r { for dy in -r...r { for dz in -r...r where max(abs(dx), abs(dy), abs(dz)) == r {
-                    for i in skinGrid[c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))] ?? [] where skinHolder[i] == h {
+                    for e in skinGrid.cell(c &+ SIMD3<Int32>(Int32(dx), Int32(dy), Int32(dz))) {
+                        let i = Int(skinGrid.items[e])
+                        guard skinHolder[i] == h else { continue }
                         let d = simd_distance_squared(skinPoints[i], q)
                         if d < best { best = d; pick = i }
                     }
@@ -1366,9 +1379,11 @@ final class BodyScene {
             var bindRest = rest, bindNormals = normals
             if entity.name == "skin:body", let look = unshaped, let plain = ModelLibrary.skin(look)?.first(where: { $0.id == "body" }),
                let part = plain.mesh.contents.models.first?.parts.first, part.positions.count == rest.count {
-                let pm = plain.transform.matrix
-                bindRest = part.positions.map { (p: SIMD3<Float>) -> SIMD3<Float> in let q = pm * SIMD4(p, 1); return SIMD3(q.x, q.y, q.z) }
-                if let pn = part.normals { bindNormals = pn.map { (p: SIMD3<Float>) -> SIMD3<Float> in let n = pm * SIMD4(p, 0); return simd_normalize(SIMD3(n.x, n.y, n.z)) } }
+                let pm = plain.transform.matrix, source = Figure.source(plain.mesh)
+                bindRest = (source?.positions ?? part.positions.elements).map { (p: SIMD3<Float>) -> SIMD3<Float> in let q = pm * SIMD4(p, 1); return SIMD3(q.x, q.y, q.z) }
+                if let pn = source?.normals ?? part.normals?.elements {
+                    bindNormals = pn.map { (p: SIMD3<Float>) -> SIMD3<Float> in let n = pm * SIMD4(p, 0); return simd_normalize(SIMD3(n.x, n.y, n.z)) }
+                }
             }
             let body = entity.name == "skin:body" || skinPoints.isEmpty
             let under = body ? [] : rest.map { underSkin($0) }
@@ -1413,7 +1428,7 @@ final class BodyScene {
                 skinPoints = rest; skinHolder = hold; skinShare = share; skinSide = side; skinTop = top; skinTris = t
                 skinVertTris = [[Int]](repeating: [], count: rest.count)
                 for k in 0..<t.count / 3 { for j in 0..<3 { skinVertTris[Int(t[3 * k + j])].append(k) } }
-                for (i, p) in rest.enumerated() { skinGrid[skinKey(p), default: []].append(i) }
+                skinGrid = CellGrid(rest, cell: skinCell)
             }
             var bend = SkinBend(bender: b, toLocal: m.inverse, rest: rest, normals: normals, holder: hold, shoulder: share, side: side,
                                 top: top, canon: canon, band: band, bandNear: bandNear, bandConvex: bandConvex, bandTris: bandTris,
@@ -1425,15 +1440,56 @@ final class BodyScene {
         for s in skinBends where !s.band.isEmpty { s.carry(followed) }
     }
 
+    /// Points in a dense grid of cubes `cell` wide (lookups were most of bindSkin as a dictionary): per cube, its points'
+    /// indices in the order given.
+    private struct CellGrid {
+        let cell: Float
+        let items: [Int32]
+        private let lo, size: SIMD3<Int32>
+        private let start: [Int32]
+
+        init(_ p: [SIMD3<Float>], cell: Float) {
+            self.cell = cell
+            let keys = p.map { SIMD3<Int32>(Int32(floor($0.x / cell)), Int32(floor($0.y / cell)), Int32(floor($0.z / cell))) }
+            var lo = keys.first ?? .zero, hi = lo
+            for k in keys { lo = simd_min(lo, k); hi = simd_max(hi, k) }
+            let size = keys.isEmpty ? .zero : hi &- lo &+ 1
+            self.lo = lo; self.size = size
+            var start = [Int32](repeating: 0, count: Int(size.x) * Int(size.y) * Int(size.z) + 1)
+            func at(_ k: SIMD3<Int32>) -> Int { Int(k.x - lo.x) + Int(size.x) * (Int(k.y - lo.y) + Int(size.y) * Int(k.z - lo.z)) }
+            for k in keys { start[at(k) + 1] += 1 }
+            for c in 1..<start.count { start[c] += start[c - 1] }
+            var fill = start, items = [Int32](repeating: 0, count: p.count)
+            for (i, k) in keys.enumerated() { let c = at(k); items[Int(fill[c])] = Int32(i); fill[c] += 1 }
+            self.start = start; self.items = items
+        }
+
+        func key(_ p: SIMD3<Float>) -> SIMD3<Int32> { SIMD3<Int32>(Int32(floor(p.x / cell)), Int32(floor(p.y / cell)), Int32(floor(p.z / cell))) }
+
+        /// the cube's slots in `items` (none outside the grid)
+        func cell(_ k: SIMD3<Int32>) -> Range<Int> {
+            let d = k &- lo
+            guard d.x >= 0, d.y >= 0, d.z >= 0, d.x < size.x, d.y < size.y, d.z < size.z else { return 0..<0 }
+            let c = Int(d.x) + Int(size.x) * (Int(d.y) + Int(size.y) * Int(d.z))
+            return Int(start[c])..<Int(start[c + 1])
+        }
+    }
+
     /// strays (a few vertices bound across a gap, where a hand rests on the thigh) take their neighbours' side
     private static func tidy(_ labels: [Int], _ adjacent: [[Int]]) -> [Int] {
         var hold = labels
+        // the most common neighbour label (ties: the smallest), counted in place of a dictionary per vertex
+        var key: [Int] = [], count: [Int] = []
         for _ in 0..<8 {
             var next = hold
             for i in hold.indices where !adjacent[i].isEmpty {
-                var votes: [Int: Int] = [:]
-                for j in adjacent[i] { votes[hold[j], default: 0] += 1 }
-                if let (top, n) = votes.max(by: { ($0.value, $1.key) < ($1.value, $0.key) }), top != hold[i], n * 3 >= adjacent[i].count * 2 { next[i] = top }
+                key.removeAll(keepingCapacity: true); count.removeAll(keepingCapacity: true)
+                for j in adjacent[i] {
+                    if let k = key.firstIndex(of: hold[j]) { count[k] += 1 } else { key.append(hold[j]); count.append(1) }
+                }
+                var top = 0
+                for k in 1..<key.count where count[k] > count[top] || (count[k] == count[top] && key[k] < key[top]) { top = k }
+                if key[top] != hold[i], count[top] * 3 >= adjacent[i].count * 2 { next[i] = key[top] }
             }
             hold = next
         }
