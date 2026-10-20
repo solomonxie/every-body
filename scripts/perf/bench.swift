@@ -75,11 +75,17 @@ final class Bench: NSObject, NSApplicationDelegate {
                 var hashes: [String] = []
                 for (id, maxDeg) in [("shoulder-l", 160), ("elbow-l", 145), ("knee-r", 135), ("shoulder-r", 120), ("back", 40), ("neck", 30)] as [(String, Int)] {
                     guard scene.joints.contains(where: { $0.id == id }) else { print("no joint", id); continue }
-                    let steps = stride(from: 0, through: maxDeg, by: max(1, maxDeg / 40)).map(Float.init)
+                    let sweep = stride(from: 0, through: maxDeg, by: max(1, maxDeg / 40)).map(Float.init)
+                    let steps = (0..<repeats).flatMap { $0 % 2 == 0 ? sweep : sweep.reversed() }
                     report("drag: setJoint \(id)", steps.map { d in ms { scene.setJoint(id, degrees: d) } })
                     hashes.append(deformerHash(scene.skinDeformers))
                 }
                 print("HASH drag", hashes.joined(separator: " "))
+                // the parts crossing the joints, bent while hidden, then shown
+                scene.setLayers([.skin, .muscular, .organs, .circulatory, .nervous])
+                let benders = Mirror(reflecting: scene).children.first { $0.label == "benders" }?.value as? [String: SkinDeformer] ?? [:]
+                print("HASH parts", benders.count, deformerHash(benders.sorted { $0.key < $1.key }.map(\.value)))
+                report("drag: setJoint back (all layers)", (0...20).map { d in ms { scene.setJoint("back", degrees: Float(d)) } })
                 if ProcessInfo.processInfo.environment["DEBUG"] == "1" { for d in scene.skinDeformers { print("DEBUG", d.entity.name, deformerHash([d]), d.rest.count) } }
             }
         }

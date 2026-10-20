@@ -11,7 +11,7 @@ SRC="scripts/render_body/Shim.swift scripts/perf/bench.swift \
   Sources/Posture/PostureModel.swift Sources/Posture/PostureScene.swift \
   Sources/Trainer/CPRTrainerScene.swift Sources/Trainer/SkinDeformer.swift Sources/Trainer/CPRCoach.swift"
 if [ ! -x "$BIN" ] || [ -n "$(find $SRC -newer "$BIN" 2>/dev/null)" ]; then
-  nice -n 10 swiftc -O -parse-as-library -o "$BIN" $SRC 2>&1 | grep -E "error" >&2 && rm -f "$BIN" || true
+  nice -n 10 swiftc -O -g -parse-as-library -o "$BIN" $SRC 2>&1 | grep -E "error" >&2 && rm -f "$BIN" || true
 fi
 # (hash order changes some bends per launch: fixed for comparable checksums)
 SWIFT_DETERMINISTIC_HASHING=1 BODY_ATLAS_DATA=Resources/Data BODY_ATLAS_MODELS="${MODELS:-Resources/Models}" nice -n 10 "$BIN" "$@"
