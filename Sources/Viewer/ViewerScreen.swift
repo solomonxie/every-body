@@ -265,7 +265,7 @@ struct ViewerScreen: View {
                 if let joint = tryJoint {
                     JointControl(joint: joint, angle: angles[joint.id] ?? 0) { deg in
                         angles[joint.id] = deg
-                        scene.setJoint(joint.id, degrees: deg)
+                        scene.dragJoint(joint.id, degrees: deg)
                     }
                 }
                 if isAcupuncture, let sp = systemPoints {

@@ -142,7 +142,7 @@ final class BodyScene {
         let pregnant = pregnant && female && age == .adult
         rig.children.removeAll()
         partEntities = [:]; skinEntities = []; organEntities = [:]; organOpacity = [:]; jointOuter = [:]; pointEntities = [:]; pointColors = [:]; smallPoints = []; meridianEntities = [:]
-        benders = [:]; crossing = [:]; unbent = [:]; skinBends = []; skinPose = nil; holders = []; jointAngles = [:]; backRest = [:]
+        benders = [:]; crossing = [:]; unbent = [:]; pendingJoints = [:]; skinBends = []; skinPose = nil; holders = []; jointAngles = [:]; backRest = [:]
 
         // joint pivots: outer at the pivot (rotates), inner offset back so children use body coords
         var inner: [String: Entity] = [:]
@@ -652,7 +652,12 @@ final class BodyScene {
         applyVisibility()
     }
 
+    /// A slider's move, bent on the next frame (update): a drag sends more moves than frames, each a full skin bend.
+    func dragJoint(_ id: String, degrees: Float) { pendingJoints[id] = degrees }
+    private var pendingJoints: [String: Float] = [:]
+
     func setJoint(_ id: String, degrees: Float) {
+        pendingJoints[id] = nil
         guard let joint = joints.first(where: { $0.id == id }), let outer = jointOuter[id] else { return }
         outer.orientation = simd_quatf(angle: degrees * .pi / 180, axis: simd_normalize(joint.axis.simd))
         jointAngles[id] = degrees
@@ -2407,6 +2412,7 @@ final class BodyScene {
 
     func update(dt: Float) {
         clock += dt
+        for (id, degrees) in pendingJoints.sorted(by: { $0.key < $1.key }) { setJoint(id, degrees: degrees) }
         let k = 1 - exp(-6 * dt)
         if !touched { yaw += dt * 0.35 }
         if let goal = goalYaw {
