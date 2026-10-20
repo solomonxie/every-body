@@ -183,9 +183,16 @@ final class BodyScene {
             // the body itself can be tapped (a joint to bend, on a skin-only view)
             if piece.id == "body" {
                 entity.components.set(InputTargetComponent())
-                let mesh = piece.mesh
-                Task { @MainActor in
-                    if let shape = try? await ShapeResource.generateStaticMesh(from: mesh) { entity.components.set(CollisionComponent(shapes: [shape])) }
+                let mesh = piece.mesh, key = ObjectIdentifier(mesh)
+                if let hit = Self.skinShapes[key], hit.mesh === mesh {
+                    entity.components.set(CollisionComponent(shapes: [hit.shape]))
+                } else {
+                    Task { @MainActor in
+                        if let shape = try? await ShapeResource.generateStaticMesh(from: mesh) {
+                            Self.skinShapes[key] = (mesh, shape)
+                            entity.components.set(CollisionComponent(shapes: [shape]))
+                        }
+                    }
                 }
             }
         }
@@ -2679,6 +2686,8 @@ final class BodyScene {
 
     static func meridianShape(_ paths: [[Vec3]]) -> PartShape { .tubes(paths: paths, radius: 0.0036) }
     private static var meshCache: [PartShape: MeshResource] = [:]
+    /// the skin's tap shape per figure mesh (~88k triangles): made once per look, not per build
+    private static var skinShapes: [ObjectIdentifier: (mesh: MeshResource, shape: ShapeResource)] = [:]
     private static var collisionCache: [PartShape: ShapeResource] = [:]
     private static var warming: Task<Void, Never>?
 
