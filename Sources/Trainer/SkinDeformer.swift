@@ -1,4 +1,5 @@
 import Foundation
+import Metal
 import RealityKit
 import simd
 #if canImport(UIKit)
@@ -122,7 +123,7 @@ final class SkinDeformer {
             d.indexType = .uint32
             guard let mesh = try? LowLevelMesh(descriptor: d), let resource = try? MeshResource(from: mesh) else { return }
             var m = UnlitMaterial()
-            m.color = .init(tint: .black, texture: .init(ramp))
+            m.color = .init(tint: .black, texture: .init(ramp, sampler: .init(Self.shadeSampler)))
             m.blending = .transparent(opacity: .init(floatLiteral: 1))
             let e = ModelEntity(mesh: resource, materials: [m])
             e.name = "contact-shade"
@@ -177,6 +178,14 @@ final class SkinDeformer {
                                   provider: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
         else { return nil }
         return try? TextureResource(image: image, options: .init(semantic: .color))
+    }()
+
+    /// clamped, no mips: a sample just outside the overlay's edge must not wrap to the opaque end
+    private static let shadeSampler: MTLSamplerDescriptor = {
+        let d = MTLSamplerDescriptor()
+        d.sAddressMode = .clampToEdge; d.tAddressMode = .clampToEdge
+        d.minFilter = .linear; d.magFilter = .linear; d.mipFilter = .notMipmapped
+        return d
     }()
 
     /// positions and normals as last written
