@@ -718,6 +718,10 @@ final class BodyScene {
         /// garment: per vertex its rest offset from that skin point and how far behind the shoulder it lies (wrapGarment)
         var followOffset: [SIMD3<Float>] = []
         var followBehind: [Float] = []
+        /// garment: per vertex whether it takes its skin's smoothed slide (wrapSlide); body: the skin those follow, each
+        /// with its holder's skin round it as offsets into slideIdx, slideW
+        var slideOn: [Bool] = []
+        var slideVerts: [Int32] = [], slideStart: [Int32] = [], slideIdx: [Int32] = [], slideW: [Float] = []
         /// packed for bendSkin: band neighbours as offsets + slots (a band vertex's slot, or past the band one per neighbour
         /// off it: `ghosts`, held fixed during a smoothing), the vertices whose welded one is on the band, the garment's follow
         var nearStart: [Int32] = [], nearSlot: [Int32] = [], ghosts: [Int32] = []
@@ -775,8 +779,8 @@ final class BodyScene {
 
     /// per-call buffers for bendSkin, allocated once per skin, and the band's neighbour lists (SkinBend.nearStart, nearSlot)
     private final class SkinScratch {
-        /// per vertex; pre, jac, move and the turned skin (now, nowN, for wrapGarment) only on the body (`banded`)
-        let pos, nrm, pre, jac, move, now, nowN: UnsafeMutablePointer<SIMD3<Float>>
+        /// per vertex; pre, jac, move and the turned skin (now, nowN, its smoothed slide; for wrapGarment) only on the body (`banded`)
+        let pos, nrm, pre, jac, move, now, nowN, slide: UnsafeMutablePointer<SIMD3<Float>>
         let occ: UnsafeMutablePointer<Float>
         /// per vertex: the hinge side whose crease it lies in (contactShade), 0 none
         let crease: UnsafeMutablePointer<Int32>
@@ -806,7 +810,7 @@ final class BodyScene {
             }
             let nb = banded ? n : 0
             pos = make(n, .zero); nrm = make(n, .zero); pre = make(nb, .zero); jac = make(nb, .zero); move = make(nb, .zero)
-            now = make(nb, .zero); nowN = make(nb, .zero)
+            now = make(nb, .zero); nowN = make(nb, .zero); slide = make(nb, .zero)
             occ = make(n, 0); crease = make(n, Int32(0))
             k = make(b, 0); kn = make(b, 0); wn = make(b, 0); active = make(b, 0); inward = make(b, 0); ridge = make(b, 0)
             delta = make(b, .zero); ref = make(b, .zero); p = make(b, .zero); step = make(b, .zero)
@@ -814,7 +818,7 @@ final class BodyScene {
             self.start = copy(start); self.slot = copy(slot)
             size = make(start.count, 0)
             for i in 0..<start.count - 1 { size[i] = Float(start[i + 1] - start[i]) }
-            all = [pos, nrm, pre, jac, move, now, nowN, delta, ref, p, step, g, m, next, t].map { UnsafeMutableRawPointer($0) }
+            all = [pos, nrm, pre, jac, move, now, nowN, slide, delta, ref, p, step, g, m, next, t].map { UnsafeMutableRawPointer($0) }
                 + [occ, k, kn, wn, size, inward, ridge].map { UnsafeMutableRawPointer($0) } + [active, self.start, self.slot, crease].map { UnsafeMutableRawPointer($0) }
         }
 
@@ -857,6 +861,9 @@ final class BodyScene {
     /// behind the pivot (body units) the convex cut fades out: the chord leaves a rounded bump on the back of the shoulder;
     /// garments ride the skin fully this far behind it, not at all this far in front (wrapGarment)
     private static let relaxBehind: Float = 0.06
+    /// a wrapped garment slides as its holder's skin does on average this far round it (body units): the skin's own slide
+    /// bulges over the shoulder blade and a back strap jogged with it
+    private static let wrapSlide: Float = 0.05
     /// the cut's leak per pass scales by (relaxScale / edge length)^2, up to free: the mean's pull grows with the edge
     /// length squared, so coarse armpit skin sank far and the fine skin below it not (a crease along their seam)
     private static let relaxScale: Float = 0.04
@@ -1418,7 +1425,7 @@ final class BodyScene {
             hold = Self.tidy(hold, adjacent)
             var share = [Float](repeating: 0, count: rest.count), side = rest.map { $0.x < 0 ? Float(-1) : 1 }
             var canon: [Int] = [], band: [Int] = [], bandNear: [[Int]] = [], bandTris: [Int] = [], follow: [[(Int, Float)]] = []
-            var followOffset: [SIMD3<Float>] = [], followBehind: [Float] = [], top: [Float] = []
+            var followOffset: [SIMD3<Float>] = [], followBehind: [Float] = [], top: [Float] = [], slideOn: [Bool] = []
             var bandConvex: [Float] = [], bandGrad: [SIMD3<Float>] = [], bandOf: [Int] = []
             if body {
                 (share, side, canon) = Self.shoulderShares(bindRest, normals: bindNormals, adjacent: adjacent, hold: hold, shoulders: shoulders)
@@ -1444,6 +1451,7 @@ final class BodyScene {
                     followBehind.append(Self.smooth(-Self.relaxBehind, Self.relaxBehind, pivotZ - on.z))
                 }
                 if !skinTop.isEmpty { top = follow.map { $0.reduce(0) { $0 + $1.1 * skinTop[$1.0] } } }
+                slideOn = rest.indices.map { i in followBehind[i] > 0 && follow[i].contains { skinShare[$0.0] >= 1e-3 } }
             }
             if entity.name == "skin:body" {
                 skinPoints = rest; skinHolder = hold; skinShare = share; skinSide = side; skinTop = top; skinTris = t
@@ -1454,11 +1462,45 @@ final class BodyScene {
             var bend = SkinBend(bender: b, toLocal: m.inverse, rest: rest, normals: normals, holder: hold, shoulder: share, side: side,
                                 top: top, canon: canon, band: band, bandNear: bandNear, bandConvex: bandConvex, bandTris: bandTris,
                                 bandGrad: bandGrad, bandOf: bandOf, follow: follow, followOffset: followOffset, followBehind: followBehind)
+            bend.slideOn = slideOn
             bend.pack()
             skinBends.append(bend)
         }
         let followed = Set(skinBends.flatMap { $0.followIdx.map(Int.init) })
         for s in skinBends where !s.band.isEmpty { s.carry(followed) }
+        if let k = skinBends.firstIndex(where: { !$0.band.isEmpty }) {
+            let sliding = Set(skinBends.flatMap { s in s.slideOn.indices.filter { s.slideOn[$0] }.flatMap { s.follow[$0].map(\.0) } }).sorted()
+            let r = Self.wrapSlide, reach = Int32((r / skinCell).rounded(.up))
+            var start: [Int32] = [0], idx: [Int32] = [], wt: [Float] = []
+            for i in sliding {
+                let c = skinKey(skinPoints[i]), from = idx.count
+                var total: Float = 0
+                for dx in -reach...reach { for dy in -reach...reach { for dz in -reach...reach {
+                    for e in skinGrid.cell(c &+ SIMD3<Int32>(dx, dy, dz)) {
+                        let j = Int(skinGrid.items[e])
+                        guard skinHolder[j] == skinHolder[i] else { continue }
+                        let d = simd_distance_squared(skinPoints[j], skinPoints[i]) / (r * r)
+                        guard d < 1 else { continue }
+                        idx.append(Int32(j)); wt.append((1 - d) * (1 - d)); total += (1 - d) * (1 - d)
+                    }
+                } } }
+                for e in from..<idx.count { wt[e] /= total }
+                start.append(Int32(idx.count))
+            }
+            skinBends[k].slideVerts = sliding.map(Int32.init)
+            skinBends[k].slideStart = start; skinBends[k].slideIdx = idx; skinBends[k].slideW = wt
+        }
+    }
+
+    /// Per skin vertex garments slide with (SkinBend.slideVerts) on a turned side, the mean slide of its holder's skin round
+    /// it (wrapSlide), into scratch.slide.
+    private static func slideSkin(_ s: SkinBend, sides: [Float], pos: UnsafePointer<SIMD3<Float>>) {
+        let start = s.slideStart, idx = s.slideIdx, w = s.slideW, rest = s.rest, slide = s.scratch.slide
+        for (k, v) in s.slideVerts.enumerated() where sides.contains(s.side[Int(v)]) {
+            var d = SIMD3<Float>.zero
+            for e in Int(start[k])..<Int(start[k + 1]) { let j = Int(idx[e]); d += w[e] * (pos[j] - rest[j]) }
+            slide[Int(v)] = d
+        }
     }
 
     /// Points in a dense grid of cubes `cell` wide (lookups were most of bindSkin as a dictionary): per cube, its points'
@@ -1849,25 +1891,31 @@ final class BodyScene {
     }
 
     /// Over a turned shoulder's band a garment rides its skin: the closest skin point plus its rest offset, offset and
-    /// normal turned as the skin's normal did; behind the shoulder fully, fading out in front (there the smoothed slide
-    /// keeps a strap from stretching with the skin). Its own chord and the smoothed slide leave a back strap wavy, the
-    /// chord's normal shades it in facets. In place on pos, nrm (rig space), after the relax's carry.
+    /// normal turned as the skin's normal did; along the skin it slides as the skin round it does on average (slideSkin);
+    /// behind the shoulder fully, fading out in front (there the smoothed slide keeps a strap from stretching with the
+    /// skin). Its own chord and the smoothed slide leave a back strap wavy, the chord's normal shades it in facets. In
+    /// place on pos, nrm (rig space), after the relax's carry.
     private static func wrapGarment(_ s: SkinBend, skin: SkinBend, sides: [Float],
                                     pos: UnsafeMutablePointer<SIMD3<Float>>, nrm: UnsafeMutablePointer<SIMD3<Float>>) {
         let fs = s.followStart, fi = s.followIdx, fw = s.followW, now = skin.scratch.now, nowN = skin.scratch.nowN
+        let slide = skin.scratch.slide
         for i in 0..<s.rest.count {
-            var w: Float = 0, a = SIMD3<Float>.zero, b = SIMD3<Float>.zero, on = SIMD3<Float>.zero
+            var w: Float = 0, a = SIMD3<Float>.zero, b = SIMD3<Float>.zero, on = SIMD3<Float>.zero, d = SIMD3<Float>.zero
+            var sliding = s.slideOn[i]
             for e in Int(fs[i])..<Int(fs[i + 1]) {
-                let j = Int(fi[e]), f = fw[e]
-                if skin.bandOf[j] >= 0 && sides.contains(skin.side[j]) { w += f }
+                let j = Int(fi[e]), f = fw[e], turned = sides.contains(skin.side[j])
+                if skin.bandOf[j] >= 0 && turned { w += f }
                 a += f * skin.normals[j]; b += f * nowN[j]; on += f * now[j]
+                if turned { d += f * slide[j] } else { sliding = false }
             }
             guard w > 0, simd_length(a) > 1e-12, simd_length(b) > 1e-12 else { continue }
             a = simd_normalize(a); b = simd_normalize(b)
             let c = simd_dot(a, b), k = simd_cross(a, b)
             guard c > -0.99 else { continue }
             func turn(_ v: SIMD3<Float>) -> SIMD3<Float> { v * c + simd_cross(k, v) + k * (simd_dot(k, v) / (1 + c)) }
-            pos[i] += w * s.followBehind[i] * (on + turn(s.followOffset[i]) - pos[i])
+            var to = on + turn(s.followOffset[i])
+            if sliding { let u = s.rest[i] + d - to; to += u - simd_dot(u, b) * b }
+            pos[i] += w * s.followBehind[i] * (to - pos[i])
             nrm[i] += w * (simd_normalize(turn(s.normals[i])) - simd_normalize(nrm[i]))
         }
     }
@@ -2097,6 +2145,7 @@ final class BodyScene {
                 relaxMove = Self.relaxShoulders(s, turns: turns, pos: pos, nrm: nrm, pre: pre, jac: jac, carry: carry) ? x.move : nil
                 x.now.update(from: pos, count: count)
                 x.nowN.update(from: nrm, count: count)
+                Self.slideSkin(s, sides: turns.map(\.side), pos: pos)
                 wrapSkin = s
             } else if !s.followStart.isEmpty {
                 let fs = s.followStart, fi = s.followIdx, fw = s.followW
