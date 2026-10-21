@@ -1235,6 +1235,13 @@ def loader(np, body_tris):
                 body = body + evened["female-adult.neutral"]
             elif n.startswith("female-adult."):
                 evened[n] = fair_spine(np, fair_trunk(np, body, body_tris), body_tris) - body
+                # (the kneecaps' move taken on the base, the same on every option)
+                if n == "female-adult.neutral":
+                    faired = body + evened[n]
+                    evened["knees"] = round_knees(np, faired, body_tris) - faired
+                else:
+                    smoothed("female-adult.neutral")
+                evened[n] = evened[n] + evened["knees"]
                 body = body + evened[n]
             loaded[n] = dict(got, body=body)
         return loaded[n]
@@ -2691,6 +2698,86 @@ def fair_spine(np, p, tris):
         n = vertex_normals(np, q, tris)
         q = q + 0.5 * w * ((mean(q) - q) * n).sum(1, keepdims=True) * n
     return q
+
+
+# MakeHuman's adult woman's kneecap fronts in a narrow vertical ridge (x ~0.15, its section a V): bent 135 the knee's
+# front outline comes to a point. Each leg's horizontal section is rounded: its radius about the section's centre,
+# smoothed over the direction round the leg (deg) and over height, moves the skin straight out or in, over (passes,
+# heights in, full, full, out; directions from the front full, out; smoothing over the direction, over height)
+KNEE_ROUND = (3, (-0.84, -0.79, -0.61, -0.55), (50, 85), 14, 0.012)
+
+
+def section_radius(np, segs, c, th):
+    """outermost radius of a section (segments in x-z) about c along each direction (from +z toward +x)"""
+    a, e = segs[:, 0] - c, segs[:, 1] - segs[:, 0]
+    d = np.stack([np.sin(th), np.cos(th)], 1)
+    den = e[None, :, 0] * d[:, None, 1] - e[None, :, 1] * d[:, None, 0]
+    ok = np.abs(den) > 1e-12
+    s = (a[None, :, 1] * d[:, None, 0] - a[None, :, 0] * d[:, None, 1]) / np.where(ok, den, 1)
+    t = ((a[None] + s[..., None] * e[None]) * d[:, None]).sum(2)
+    t = np.where(ok & (s >= 0) & (s <= 1) & (t > 0), t, -np.inf)
+    return t.max(1)
+
+
+def round_knees(np, p, tris):
+    """the adult woman's kneecaps rounded (taken on the base: the same move on every option)"""
+    for _ in range(KNEE_ROUND[0]):
+        p = round_knees_once(np, p, tris)
+    return p
+
+
+def round_knees_once(np, p, tris):
+    _, (y0, y1, y2, y3), (a0, a1), sa, sy = KNEE_ROUND
+    legs = np.load(RAW / "regions.npz")["arms"][tris].max(1) < 0.05
+    t = tris[legs & (p[tris, 1].min(1) < y3 + 0.03) & (p[tris, 1].max(1) > y0 - 0.03)]
+    ys = np.arange(y0 - 0.02, y3 + 0.021, 0.005)
+    th = np.radians(np.arange(-120, 120.1, 1.0))
+    out = p.copy()
+    for side in (1, -1):
+        cs, rs = [], []
+        for y in ys:
+            d = p[t, 1] - y
+            cut = (d.max(1) > 0) & (d.min(1) < 0) & (p[t, 0] * side > 0.03).all(1)
+            tc, dc = t[cut], d[cut]
+            pts = []
+            for k in range(3):
+                a, b, da, db = tc[:, k], tc[:, (k + 1) % 3], dc[:, k], dc[:, (k + 1) % 3]
+                m = da * db < 0
+                pts.append(np.where(m[:, None], p[a] + (da / np.where(m, da - db, 1))[:, None] * (p[b] - p[a]), np.nan))
+            pts = np.stack(pts, 1)[..., [0, 2]]
+            segs = np.array([q[~np.isnan(q[:, 0])] for q in pts if (~np.isnan(q[:, 0])).sum() == 2])
+            flat = segs.reshape(-1, 2)
+            c = (flat.min(0) + flat.max(0)) / 2
+            cs.append(c)
+            # (directions mirrored: + toward the leg's outer side)
+            rs.append(section_radius(np, segs, c, side * th))
+        cs, r = np.array(cs), np.array(rs)
+        k = np.exp(-0.5 * (np.arange(-3 * sa, 3 * sa + 1) / sa) ** 2)
+        k /= k.sum()
+        pad = np.pad(r, ((0, 0), (3 * sa, 3 * sa)), mode="edge")
+        dr = np.stack([np.convolve(row, k, "valid") for row in pad]) - r
+        ky = np.exp(-0.5 * ((ys[:, None] - ys[None]) / sy) ** 2)
+        dr = (ky / ky.sum(1, keepdims=True)) @ dr
+        dr *= (smoothstep(y0, y1, ys) * (1 - smoothstep(y2, y3, ys)))[:, None]
+        dr *= 1 - smoothstep(a0, a1, np.abs(np.degrees(th)))
+        vy = p[:, 1]
+        sel = np.flatnonzero((p[:, 0] * side > 0.03) & (vy > y0) & (vy < y3))
+        sel = sel[np.load(RAW / "regions.npz")["arms"][sel] < 0.05]
+        fy = np.interp(p[sel, 1], ys, np.arange(len(ys)))
+        i0 = np.minimum(fy.astype(int), len(ys) - 2)
+        u = (fy - i0)[:, None]
+        c = cs[i0] * (1 - u) + cs[i0 + 1] * u
+        rel = p[sel][:, [0, 2]] - c
+        ang = np.degrees(np.arctan2(side * rel[:, 0], rel[:, 1]))
+        fa = np.clip(ang + 120, 0, len(th) - 1.001)
+        j0 = fa.astype(int)
+        v = fa - j0
+        m = (dr[i0, j0] * (1 - v) + dr[i0, j0 + 1] * v) * (1 - u[:, 0]) + (dr[i0 + 1, j0] * (1 - v) + dr[i0 + 1, j0 + 1] * v) * u[:, 0]
+        m = np.where(np.isfinite(m), m, 0)
+        dirn = rel / np.maximum(np.linalg.norm(rel, axis=1, keepdims=True), 1e-9)
+        out[sel, 0] += m * dirn[:, 0]
+        out[sel, 2] += m * dirn[:, 1]
+    return out
 
 
 # MakeHuman's waist side bends sharply where the hip flare starts (a diagonal ridge above the hip bone, lit as a
